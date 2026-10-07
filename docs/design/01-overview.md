@@ -1,0 +1,130 @@
+# Overview and run structure
+
+## Core idea
+
+- The player controls a citizen who must reach the end of the journey alive.
+- The citizen cannot attack. Mercenaries (mercs) fight on their own.
+- The player decides where the citizen goes, what the mercs carry, and how the mercs prioritize targets and skills.
+- If the citizen dies, the run ends. Mercs die permanently.
+
+Closest references:
+
+- Slay the Spire for the branching map.
+- Final Fantasy XII gambits and Dragon Age tactics for configurable AI. This game uses simpler toggles.
+- Darkest Dungeon for roster, upkeep and stress.
+- Dragon's Dogma pawns for autonomous companions.
+- Ragnarok Online (rAthena) for damage rules, equipment and cards.
+- Diablo 2 for randomized item stats.
+
+## Seeds
+
+- Every run comes from a seed. The default seed is random. The player can type one.
+- The seed string is hashed to a number. Each subsystem gets its own random stream derived from it: `map`, `layout`, `loot`, `combat`, `events`, `recruits`, `craft`.
+- Each phase derives its streams from `hash(runSeed, phaseIndex, streamName)`.
+- Separate streams mean player choices in one system never change the results of another. Two players on the same seed see the same map.
+
+## Structure
+
+```
+Run (seed)
+  Phase 1..N        a biome with modifiers
+    Stage graph     a layered graph of nodes, 8 layers
+      Stage         a playable isometric level
+```
+
+### Phases
+
+- Each phase has a biome: forest road, marsh, mountain pass, ruined city, capital.
+- Each phase rolls one or two modifiers: night, rain, plague, war zone, faction control.
+- Each phase starts at a Waystation, where the party's vault opens. See [items](06-items-inventory.md#vault).
+- Each phase ends with a boss or gate stage.
+
+### Stage node types
+
+- Combat, Elite and Boss.
+- Camp: rest, reorganize the party, swap the bench, craft.
+- Town: merchant, tavern, blacksmith, temple.
+- Event: a text choice with consequences.
+- Ambush: looks like a safe node, but is a fight.
+- Refugee: an extra NPC to escort for a reward.
+- Shrine: a buff, or a stronger buff with a curse. Shrines are the Creditor's altars. See [lore](10-lore.md#the-creditors-strength).
+- Treasure.
+- Shortcut: skips layers and costs supplies.
+
+### Stages
+
+- The citizen must reach the exit.
+- Monsters wait in the level. More arrive when an alarm is raised.
+- There is no time limit.
+- The main choices are the route through the level and where the citizen stands.
+- Reinforcements come from alarms and noise, not from a timer. A fight that goes on too long near an alarm draws more monsters.
+- Layouts are built from hand-made room templates joined together. This gives more control than fully random generation.
+
+## Run length
+
+Target: 60 to 75 minutes for a full run.
+
+| Part | Count | Time |
+|---|---|---|
+| Phases | 4. The last one ends at the capital with the final boss. | |
+| Nodes visited per phase | 8 | 15 to 18 minutes per phase |
+| Combat stage | 60% of nodes | 1.5 to 3 minutes each |
+| Other nodes | 40% of nodes | about 1 minute each, with menus |
+
+- A run can be saved and resumed at any node.
+
+### Endless mode
+
+- A separate mode, chosen from the main menu. It is not part of the story and has no ending.
+- It uses the same structure as story mode: phases made of stage graphs.
+- Its phases are numbered, not named. They are not the four layers of the Hollow.
+- Each phase rolls a biome from the full pool, plus modifiers.
+- Phases never end. Enemy tiers and modifiers keep rising until the citizen dies.
+- There is no Writ, no Creditor and no final fight.
+
+## Between runs
+
+There is no meta progression. Every run starts from the same footing. Every job and background is available from the first run.
+
+The game stores only two things:
+
+- The compendium.
+- One suspended run. See [saves](02-tech-stack.md#saves).
+
+No items, recipes, gold or currency carry over.
+
+### Compendium
+
+The compendium records what the player has discovered. It unlocks no power. It carries the player's knowledge from run to run.
+
+- Mercs met: each merc recruited or met, with its job, traits and portrait.
+- Monsters beaten: each monster kind, with its race, element, skills and card.
+- Items acquired: bases, uniques, set pieces, cards and recipes.
+- Each section shows how much of it the player has found.
+
+#### Hidden until discovered
+
+The UI hides details the player has not discovered in any run yet.
+
+| Entry | Hidden until | What shows before that |
+|---|---|---|
+| Monster | The player beats that monster kind once | Name and model. Race, element, level, weak points, skills and card show as "?". |
+| Boss | The player beats that boss once | Name and model. Its mechanics show as "?". |
+| Card | The player acquires it once | Its name, once seen in a drop. Its effect shows as "?" until picked up. |
+| Unique or set piece | The player acquires it once | The compendium shows its silhouette. Its value ranges appear after the first copy. |
+| Recipe | The player learns it once | Not listed. |
+
+- Only the UI hides details. The mercs' AI always reads the real data. A merc with the "weak to my element" toggle still picks the right target against an unknown monster.
+- Hidden details affect how the player plans: which mercs to bring, which gear to craft, which path to take. They never weaken the mercs.
+- Item identification is separate. An unidentified item hides its rolls in every run, even when its base is known.
+
+### Seeds
+
+- Seeds can be shared, so players can compare runs on the same seed.
+
+## Tone
+
+- Adult. Mercs are paid killers with vices.
+- Injuries leave lasting scars.
+- Unpaid mercs desert or betray the citizen.
+- Occult enemies can corrupt mercs.
