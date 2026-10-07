@@ -6,8 +6,23 @@
 - Four keeps the AI readable and the screen clear. It still leaves room for a tank, a damage dealer, a support and one flexible slot.
 - The bench can only be swapped at a Camp or a Town.
 - The run starts with 1 merc, picked from 3 offers rolled from the seed.
-- A typical run reaches 2 or 3 mercs by the end of phase 1 and 4 by the middle of phase 2.
-- Gold and wages limit growth, not a hard unlock.
+
+### Recruiting window
+
+Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building the party the player already has.
+
+| Phase | Focus |
+|---|---|
+| 1 | Gather mercs. Taverns, wandering mercs and events offer recruits. |
+| 2 | Finish the roster. The last chance to recruit. |
+| 3 | Build: gear, cards, refines, skill points. No recruits. |
+| 4 | Build and prepare for the final fight. No recruits. |
+
+- In phases 3 and 4, no tavern, wandering merc or event offers a recruit.
+- A merc lost in phases 3 or 4 cannot be replaced. Dismissing one shrinks the party for good. Resurrection matters more.
+- Contracts can still be renewed in phases 3 and 4.
+- The lore gives the reason: below the Rift Road, no one is left to hire.
+- Endless mode has no story. It offers recruits in every phase, since the party has no other way to replace losses.
 
 ## Wages and contracts
 
@@ -139,6 +154,7 @@ Target priority. The player checks up to 3, in order:
 
 - Enemies attacking the citizen.
 - Casters and healers.
+- Heralds running to an alarm bell. See [stages](11-stages.md#alarms).
 - Lowest health.
 - Elites.
 - Weak to my element.

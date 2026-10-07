@@ -29,15 +29,18 @@ Closest references:
 Run (seed)
   Phase 1..N        a biome with modifiers
     Stage graph     a layered graph of nodes, 8 layers
-      Stage         a playable isometric level
+      Stage         an area of the world, joined seamlessly to the next
 ```
+
+Inside a phase, the world is one continuous place, as Diablo 2's areas. The stage graph is not a separate map screen. Each node is an area, and each edge is a path the party walks. See [stages](11-stages.md#seamless-connections).
 
 ### Phases
 
-- Each phase has a biome: forest road, marsh, mountain pass, ruined city, capital.
+- Each phase is a layer of the Hollow with its own biome. See [lore](10-lore.md#why-the-citizen-keeps-going-deeper).
 - Each phase rolls one or two modifiers: night, rain, plague, war zone, faction control.
 - Each phase starts at a Waystation, where the party's vault opens. See [items](06-items-inventory.md#vault).
-- Each phase ends with a boss or gate stage.
+- Each phase ends with a boss in a closed arena.
+- After the boss, the party descends to the next layer. This is the only loading screen inside a run.
 
 ### Stage node types
 
@@ -49,7 +52,7 @@ Run (seed)
 - Refugee: an extra NPC to escort for a reward.
 - Shrine: a buff, or a stronger buff with a curse. Shrines are the Creditor's altars. See [lore](10-lore.md#the-creditors-strength).
 - Treasure.
-- Shortcut: skips layers and costs supplies.
+- Shortcut: a path that skips one or two layers of the stage graph. See [stages](11-stages.md#shortcuts).
 
 ### Stages
 
@@ -58,7 +61,7 @@ Run (seed)
 - There is no time limit.
 - The main choices are the route through the level and where the citizen stands.
 - Reinforcements come from alarms and noise, not from a timer. A fight that goes on too long near an alarm draws more monsters.
-- Layouts are built from hand-made room templates joined together. This gives more control than fully random generation.
+- Stages are open fields, as in Diablo 2's outdoor areas. See [stages](11-stages.md#layout).
 
 ## Run length
 

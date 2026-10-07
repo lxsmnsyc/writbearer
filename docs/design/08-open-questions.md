@@ -3,6 +3,7 @@
 ## Still open
 
 - Lore details. The twist is decided. See [lore](10-lore.md#open-choices).
+- Stage questions. See [stages](11-stages.md#open-questions).
 - Final numbers for the element table, Discipline thresholds and refine rates.
 
 ## Answered

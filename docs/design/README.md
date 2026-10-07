@@ -18,6 +18,7 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 8. [Open questions](08-open-questions.md)
 9. [Skill trees](09-skill-trees.md)
 10. [Lore](10-lore.md) (draft)
+11. [Stages](11-stages.md) (draft)
 
 ## Decisions so far
 
@@ -47,6 +48,11 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 | Between runs | Only the compendium and one suspended run are stored. No unlocks. |
 | Compendium | Hides monster, boss, card and unique details until discovered once. Only the UI hides them. |
 | Squad sets | Added after uniques are tested. |
+| Stages | Open fields, as in Diablo 2, joined seamlessly. Paths collapse behind the party. Bosses fight in closed arenas. |
+| Recruiting | Only in phases 1 and 2. Phases 3 and 4 are for building the party. |
+| Shortcuts | No supplies resource. A shortcut costs the skipped content and saves souls. |
+| Controls | Click-to-move and WASD both work. Every key can be rebound. |
+| Pause | Menus pause the game. |
 | Story twist | The citizen is the final boss. At the end the player loses control, and the hired mercs must beat the citizen. |
 | Run length | 4 phases, 60 to 75 minutes. No stage time limit. |
 | Rendering and art | Three.js. Claude builds the art in code. |

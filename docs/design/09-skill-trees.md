@@ -234,7 +234,7 @@ These jobs do not appear in the first pick of a run. They are outlines. Full tre
 | Alchemist | Brews (belt items), Volatiles (Venom and Fire flasks), Transmutation (camp crafting) | Philosopher's Stone: at a Camp, turns 3 cards into 1 random card of the next tier. |
 | Sapper | Demolition (bombs, breaking walls), Fortify (barricades), Mines | Controlled Collapse: brings down a ceiling on an area, blocking it for the rest of the stage. |
 | Beastmaster | Pack (the pet), Wild (Earth), Bond | Unbroken Bond: the pet comes back on its own 10 seconds after dying. |
-| Scout | Pathfinder (map), Skirmish (hit and run), Survival (supplies) | Trailblazer: makes a Shortcut node appear on the next map layer. |
+| Scout | Pathfinder (map), Skirmish (hit and run), Survival (camping and resting) | Trailblazer: makes a Shortcut node appear on the next map layer. |
 | Hexblade | Curses, Lifesteal, Pact (spends health) | Soulbound: health it drains also gives the citizen a Ward. Raises its own corruption. |
 | Necromancer | Raise (monster corpses), Bone (armor from corpses), Undying | Undying Servant: raises a dead merc as an undead servant. The servant draws no wage, can never be resurrected, and lowers the party's morale. |
 

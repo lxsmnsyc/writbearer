@@ -346,7 +346,7 @@ A run has 4 phases of 8 nodes. About 19 of the nodes are fights, including 4 bos
 
 - Drops: random. They fill slots. A fight drops 3 to 5 pieces of equipment.
 - About half of equipment drops can be used by a job in the party.
-- After each fight, the player picks 1 of 3 rewards, as in Slay the Spire. This steers the build.
+- After each fight, the player picks 1 of 3 rewards, as in Slay the Spire. The choice comes from a cache at the area's exit. This steers the build.
 - Crafting: targeted. It fills gaps, such as gear for a merc who joined late or resistance before a boss.
 - Recruits arrive with gear suited to the current phase, as in Inotia. New gear replaces items instead of filling empty slots.
 
@@ -354,8 +354,8 @@ A run has 4 phases of 8 nodes. About 19 of the nodes are fights, including 4 bos
 
 | Phase | Focus |
 |---|---|
-| 1 | Fill the slots with Normal and Magic items. Learn the first recipes. |
-| 2 | Rares, the first cards, the first crafted pieces. |
+| 1 | Recruit. Fill the slots with Normal and Magic items. Learn the first recipes. |
+| 2 | Finish recruiting. Rares, the first cards, the first crafted pieces. |
 | 3 | Sockets, cards and refines. |
 | 4 | Final upgrades and preparing for the boss. |
 

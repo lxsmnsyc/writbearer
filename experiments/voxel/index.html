@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Writbearer: voxel proof</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b0a0f;
+      }
+      #stage {
+        display: grid;
+        place-items: center;
+        height: 100%;
+      }
+      #stage canvas {
+        width: 1536px;
+        height: 864px;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -71,7 +71,7 @@ The game stores two things in the browser's IndexedDB. Nothing else is kept.
 ### Suspended run
 
 - There is one save slot.
-- The game writes it when the party enters a node. Quitting during a stage resumes at the start of that stage.
+- The game writes it when the party crosses into a new area. Quitting inside an area resumes at its entrance.
 - The save is a snapshot of the run state and the position of each random stream. It does not replay an action log.
 - Loading a save does not delete it. Because the random streams are saved, replaying a node gives the same rolls.
 - The save is deleted when the run ends, by winning or by the citizen's death.
