@@ -6,11 +6,11 @@
 |---|---|---|
 | Language | TypeScript | Decided. |
 | Simulation | Plain TypeScript, no DOM | Runs headless in tests. Can move to a Web Worker later. |
-| Rendering | Three.js with an orthographic camera at an isometric angle | The art is made in code as 3D models. See [art](#art). It only draws, so it does not compete with the simulation. |
+| Rendering | Canvas 2D | Figures are drawn from projected skeletons, so no sprite sheets are needed. The whole frame is drawn small and scaled up. See [art](#art) and `experiments/demo`. It only draws, so it does not compete with the simulation. PixiJS stays an option if performance needs it. |
 | UI | SolidJS over the canvas | Inventory, toggles and sheets are dense menus, which the DOM handles better than a canvas. |
 | Build and tests | Vite, pnpm, Vitest, Playwright, oxlint, oxfmt | Same as the other repositories. |
 
-PixiJS and Phaser were considered. Both are 2D and need sprite sheets for every direction and animation. Phaser also brings its own scene and physics model, which would compete with a separate simulation.
+Three.js with voxel models and 2D sprite sheets were both tried and dropped. Phaser was not used, since it brings its own scene and physics model, which would compete with a separate simulation.
 
 ## Simulation
 
@@ -52,15 +52,59 @@ PixiJS and Phaser were considered. Both are 2D and need sprite sheets for every 
 
 Claude makes the art. Claude cannot paint or generate raster images. Claude can write code that builds art. The art style follows from that.
 
-- Units, monsters, props and tiles are low-poly or voxel models built in code from simple shapes.
-- Models are made of rigid parts: head, torso, arms, legs, weapon. Animations move the parts. This is enough for walk, attack, cast, hit and death.
-- Equipment is visible. A helmet, a shield or a weapon is a part attached to the model, so loot changes how a merc looks.
-- Colors come from a small palette per biome, so everything matches.
-- Lighting, shadows and fog come from Three.js.
-- Item icons and UI art are SVG written in code.
-- Merc portraits are SVG busts generated from the recruit's seed, so each merc has its own face.
-- Effects such as fire, frost and sparks are particles and simple shaders.
+The working reference is `experiments/demo`. Its rig is in `experiments/demo/rig.ts`.
+
+### Visual tone
+
+The game is mature: cult imagery, gore and corruption are part of the look.
+
+- **Greyscale world.** Almost everything is grey.
+- **Color is information.** Only a few things keep color, and each color has one meaning:
+  - Red: blood, damage, danger, cult marks.
+  - Gold: light, the bearer, treasure, the Writ's seal.
+  - Teal: the Hollow's dead and magic.
+  - Element effects (fire, frost, venom and so on) show their color briefly.
+- **Gore stays.** Hits spray blood that stains the floor. The dead fall apart into paper pieces that remain in pools of blood.
+- **Cult and death props:** blood sigils with candles, altars, gibbets with hanging bodies, heads on pikes, flayed banners.
+
+### Pixel art
+
+- The frame is drawn at 384×216 and scaled up 3× with no smoothing.
+- Every pixel snaps to the palette: a grey ramp plus the information colors, with a light ordered dither.
+
+### Light
+
+- The world outside light is dark but still visible.
+- The bearer's lantern lights hard rings around it, each a step brighter. There is no soft glow, since soft gradients speckle in pixel art.
+- Candles light small rings. Each merc carries a faint light, so the party never disappears.
+- Glowing things (eyes, flames, growths) are drawn after the darkness, so they shine through it.
+
+### Figures
+
+- Units are cut-paper figures: flat angular shapes, tapered limbs, a plain polygon head and no face.
+- Each figure is a 3D skeleton of joints, turned to face any angle and projected into the isometric view. Paper pieces are drawn between the projected joints and sorted back to front. A body narrows when seen from the side.
+- Legs use two-bone IK. Feet step and lift, and the walk cycle advances with distance walked, so feet do not slide.
+- Attacks have a windup, a strike and a recovery. Damage lands on the strike frame.
+- Equipment is a shape attached to a joint, so loot changes how a merc looks. Signature items have thickness, so they still read edge-on.
+
+### Other art
+
+- Item icons and UI art are drawn in code in the same style.
+- Merc portraits are cut-paper busts generated from the recruit's seed.
+- Effects such as fire, frost and sparks are pixel particles.
 - Claude checks the result through Playwright screenshots and adjusts.
+
+### Unit design
+
+The art is minimalist. A unit's design must show its job at a glance.
+
+- Each unit is a plain body plus one oversized signature item. The Vanguard is a tower shield wider and taller than its body. The Ranger is a bow taller than itself.
+- Detail is cut, not added. If a shape does not help tell the job apart, it goes.
+- Sides read by brightness:
+  - Mercs are pale.
+  - Monsters are dark, with glowing features such as eyes or growths.
+  - The bearer is small and dark, and only the lantern is bright.
+- Every new unit is checked in a screenshot at game resolution before it is accepted.
 
 Hand-made art can replace any of this later. The renderer reads models from one place, so a swap does not touch the simulation.
 
@@ -96,7 +140,7 @@ src/
   content/
     jobs/ skills/ statuses/ items/ affixes/ cards/ monsters/ biomes/ events/
   gen/         phase, stage graph, stage layout, loot
-  render/      Three.js scene, models built in code, animation, effects
+  render/      canvas renderer, figure rig, light, palette snapping, effects
   ui/          Solid: map, inventory, toggles, merc sheet
 ```
 
@@ -107,7 +151,7 @@ The goal is to prove the combat engine before anything else.
 1. Port `core/` from the-fighting-game. Add trigonometry tables.
 2. Build the damage pipeline for physical and magical damage and one element. Test each step with Vitest.
 3. Run a headless fight: one merc, three monsters and the citizen on a grid. Test that a guard merc keeps the citizen alive.
-4. Draw that fight with the Three.js isometric view.
+4. Draw that fight with the isometric canvas renderer.
 5. Add the toggle panel in Solid.
 
 ## Later milestones

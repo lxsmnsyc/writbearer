@@ -56,4 +56,5 @@
 
 | Question | Answer |
 |---|---|
-| Who makes the art? | Claude, in code. This moves rendering from PixiJS to Three.js. See [art](02-tech-stack.md#art). |
+| Who makes the art? | Claude, in code. Cut-paper figures on a 3D skeleton, drawn with Canvas 2D as pixel art. See [art](02-tech-stack.md#art). |
+| Visual tone? | Greyscale, mature, with color used only for information. See [visual tone](02-tech-stack.md#visual-tone). |

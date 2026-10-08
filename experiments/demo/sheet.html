@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Writbearer: rig sheet</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #1b1b1b;
+        color: #9a9a9a;
+        font: 13px ui-monospace, monospace;
+      }
+      canvas {
+        image-rendering: pixelated;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="sheet"></canvas>
+    <script type="module">
+      import { drawUnit } from './rig.ts';
+
+      // Rows: each unit at 8 facings, then a walk cycle, then an attack.
+      const C = {
+        ink: '#0c0c0c', merc: '#e4e4e4', bearer: '#7a7a7a', monster: '#1c1c1c', cultist: '#2a2a2a',
+        wood: '#2e2e2e', skin: '#b8b8b8', bone: '#d6d6d6', blood: '#8e1414', gold: '#c9973a', flame: '#f2c25a', teal: '#5fd4c0',
+      };
+      const kinds = ['bearer', 'vanguard', 'ranger', 'soldier', 'cultist', 'crawler'];
+      const CELL_W = 44;
+      const CELL_H = 50;
+      const COLS = 8;
+      const SECTIONS = ['facing', 'walk', 'attack'];
+      const SCALE = 4;
+      const canvas = document.getElementById('sheet');
+      canvas.width = CELL_W * COLS * SCALE;
+      canvas.height = CELL_H * kinds.length * SECTIONS.length * SCALE + 60;
+      const small = document.createElement('canvas');
+      small.width = CELL_W * COLS;
+      small.height = CELL_H * kinds.length * SECTIONS.length;
+      const ctx = small.getContext('2d');
+      ctx.fillStyle = '#3e3e3e';
+      ctx.fillRect(0, 0, small.width, small.height);
+
+      SECTIONS.forEach((section, si) => {
+        kinds.forEach((kind, ki) => {
+          const row = si * kinds.length + ki;
+          for (let col = 0; col < COLS; col++) {
+            const cx = col * CELL_W + CELL_W / 2;
+            const cy = row * CELL_H + CELL_H - 8;
+            ctx.fillStyle = (row + col) % 2 ? '#373737' : '#3e3e3e';
+            ctx.fillRect(col * CELL_W, row * CELL_H, CELL_W, CELL_H);
+            const iso = (x, z) => ({ x: Math.round(cx + (x - z) * 16), y: Math.round(cy + (x + z) * 8) });
+            const u = {
+              kind, x: 0, z: 0,
+              angle: section === 'facing' ? (col / 8) * Math.PI * 2 : Math.PI / 4 - 0.6,
+              walk: section === 'walk' ? (col / 8) * Math.PI * 2 : 0,
+              stride: section === 'walk' ? 1 : 0,
+              atk: section === 'attack' ? col / 7.001 : -1,
+              hurt: 9,
+              alert: section === 'attack',
+            };
+            drawUnit(ctx, u, iso, C, 0, false);
+          }
+        });
+      });
+      const out = canvas.getContext('2d');
+      out.imageSmoothingEnabled = false;
+      out.drawImage(small, 0, 0, small.width * SCALE, small.height * SCALE);
+      window.ready = true;
+    </script>
+  </body>
+</html>
