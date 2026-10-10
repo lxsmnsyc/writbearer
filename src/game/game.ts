@@ -1,8 +1,9 @@
 import { EventPriority } from '../core/event-emitter';
 import { RunStreams, Stream, randomSeed } from '../core/seed';
 import { SimEvents } from '../sim/events';
+import { look } from '../render/rig';
 import Sim, { TICK } from '../sim/sim';
-import { Side } from '../sim/types';
+import { DamageFlags, DamagePriority, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
@@ -14,6 +15,10 @@ import { type Stage, populate, sealingSite, spawnWave } from './stage';
 const MAX_FRAME = 0.25;
 const WAVE_EVERY = 16;
 const MAX_MONSTERS = 9;
+// Impact: hits at least this heavy freeze the world briefly and shake it.
+const HEAVY_HIT = 14;
+const HIT_STOP = 0.06;
+const MAX_SHAKE = 3;
 
 export interface GameHooks {
   // Called when the player selects a merc, or clears the selection with null.
@@ -41,6 +46,9 @@ export default class Game {
   private frameId = 0;
   private last = 0;
   private selected: Unit | null = null;
+  // Impact: a short freeze on heavy hits, and screen shake in pixels.
+  private hitStop = 0;
+  private shake = 0;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -78,8 +86,9 @@ export default class Game {
       }
       const r = this.views.rig(u, 1);
       const b = this.renderer.iso(r.x, r.z);
-      const inside = Math.abs(s.x - b.x) <= 8 && s.y >= b.y - 36 && s.y <= b.y + 4;
-      const d = Math.hypot(s.x - b.x, s.y - (b.y - 16));
+      const z = look.zoom;
+      const inside = Math.abs(s.x - b.x) <= 8 * z && s.y >= b.y - 36 * z && s.y <= b.y + 4 * z;
+      const d = Math.hypot(s.x - b.x, s.y - (b.y - 16 * z));
       if (inside && d < bestD) {
         best = u;
         bestD = d;
@@ -99,6 +108,13 @@ export default class Game {
     for (let i = 0; i < 6; i++) {
       this.effects.stain(rng.range(3, 23), rng.range(3, 23), rng.range(0.4, 0.9), '#560b0b');
     }
+    this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
+      if (event.value < HEAVY_HIT || event.flags & DamageFlags.DoT) {
+        return;
+      }
+      this.hitStop = Math.max(this.hitStop, HIT_STOP);
+      this.shake = Math.max(this.shake, Math.min(MAX_SHAKE, event.value / 12));
+    });
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       if (event.source.side === Side.Monster) {
         this.slain++;
@@ -213,6 +229,14 @@ export default class Game {
       return;
     }
     this.time += dt;
+    this.shake *= 0.82;
+    if (this.hitStop > 0) {
+      // Hit-stop: the world holds still for a moment on a heavy blow.
+      this.hitStop -= dt;
+      this.render(this.acc / TICK);
+      this.frameId = requestAnimationFrame(this.frame);
+      return;
+    }
     if (!this.over) {
       this.acc += dt;
       while (this.acc >= TICK) {
@@ -241,6 +265,7 @@ export default class Game {
       over: this.over,
       paused: this.paused,
       selected: this.selected,
+      shake: this.shake,
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;

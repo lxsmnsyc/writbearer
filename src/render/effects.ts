@@ -6,6 +6,7 @@ import type Unit from '../sim/unit';
 import { EventPriority } from '../core/event-emitter';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import { C } from './palette';
+import { look } from './rig';
 import type { Views } from './view';
 
 interface Decal {
@@ -86,6 +87,10 @@ export class Effects {
         return;
       }
       this.views.hit(event.target);
+      const dx = event.target.x - event.source.x;
+      const dz = event.target.z - event.source.z;
+      const d = Math.hypot(dx, dz) || 1;
+      this.views.knock(event.target, (dx / d) * 0.18, (dz / d) * 0.18);
       if (event.flags & DamageFlags.Projectile) {
         this.arrows.push({
           from: event.source,
@@ -96,7 +101,7 @@ export class Effects {
           life: 0.12,
         });
       }
-      this.spray(event.target, event.source, 7);
+      this.spray(event.target, event.source, 16);
       if (this.rng.chance(0.5)) {
         this.stain(
           event.target.x + this.rng.range(-0.4, 0.4),
@@ -225,7 +230,12 @@ export class Effects {
 
   drawDecals(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
     for (const d of this.decals) {
-      fillPoly(ctx, blob(iso(d.x, d.z), d.r * 16, d.r * 8, 8, d.seed), d.color, null);
+      fillPoly(
+        ctx,
+        blob(iso(d.x, d.z), d.r * 16 * look.zoom, d.r * 8 * look.zoom, 8, d.seed),
+        d.color,
+        null,
+      );
     }
   }
 
@@ -240,14 +250,14 @@ export class Effects {
       ctx.strokeStyle = C.bone;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(b.x, b.y - 22);
-      ctx.lineTo(b.x + ((e.x - b.x) / d) * 5, b.y - 22 + ((e.y - b.y) / d) * 5);
+      ctx.moveTo(b.x, b.y - 22 * look.zoom);
+      ctx.lineTo(b.x + ((e.x - b.x) / d) * 5, b.y - 22 * look.zoom + ((e.y - b.y) / d) * 5);
       ctx.stroke();
     }
     ctx.fillStyle = C.blood;
     for (const p of this.particles) {
       const b = iso(p.x, p.z);
-      ctx.fillRect(Math.round(b.x), Math.round(b.y - p.h * HEIGHT_PX), 1, 1);
+      ctx.fillRect(Math.round(b.x), Math.round(b.y - p.h * HEIGHT_PX * look.zoom), 1, 1);
     }
   }
 }
@@ -259,10 +269,11 @@ export function drawPiece(
   p: Piece,
 ): void {
   const b = iso(p.x, p.z);
-  const c = pt(b.x, b.y - p.h * HEIGHT_PX);
+  const z = look.zoom;
+  const c = pt(b.x, b.y - p.h * HEIGHT_PX * z);
   const r = p.rot;
   if (p.kind === 'head') {
-    fillPoly(ctx, hex(c, 3, r), p.color);
+    fillPoly(ctx, hex(c, 3 * z, r), p.color);
   } else if (p.kind === 'limb') {
     fillPoly(
       ctx,
@@ -277,7 +288,7 @@ export function drawPiece(
   } else if (p.kind === 'chunk') {
     fillPoly(
       ctx,
-      hex(c, 3.5, r).map((q, i) => (i % 2 ? pt(q.x, q.y + 1) : q)),
+      hex(c, 3.5 * z, r).map((q, i) => (i % 2 ? pt(q.x, q.y + z) : q)),
       p.color,
     );
   } else {

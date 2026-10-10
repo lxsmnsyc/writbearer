@@ -71,13 +71,16 @@ export default function MercPanel(props: Props): JSX.Element {
 
   return (
     <aside
+      data-part="panel"
       class="absolute top-6 right-6 w-80 border border-zinc-700 bg-zinc-950/95 p-4 text-sm text-zinc-300 shadow-xl"
       aria-label={`Orders for ${props.unit.name}`}
     >
       <header class="mb-4 flex items-baseline justify-between">
         <div>
-          <h2 class="font-serif text-lg text-zinc-100">{props.unit.name}</h2>
-          <p class="text-xs text-zinc-500">
+          <h2 data-part="title" class="font-serif text-lg text-zinc-100">
+            {props.unit.name}
+          </h2>
+          <p data-part="note" class="text-xs text-zinc-500">
             Level {props.unit.level} · {hp()} health
           </p>
         </div>
@@ -93,13 +96,16 @@ export default function MercPanel(props: Props): JSX.Element {
       </header>
 
       <section class="mb-4">
-        <h3 class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">Stance</h3>
+        <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
+          Stance
+        </h3>
         <div class="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Stance">
           <For each={STANCES}>
             {(s) => (
               <button
                 type="button"
                 role="radio"
+                data-part="choice"
                 aria-checked={toggles().stance === s.value}
                 class="border px-2 py-1"
                 classList={{
@@ -116,17 +122,19 @@ export default function MercPanel(props: Props): JSX.Element {
             )}
           </For>
         </div>
-        <p class="mt-2 text-xs text-zinc-500">
+        <p data-part="note" class="mt-2 text-xs text-zinc-500">
           {STANCES.find((s) => s.value === toggles().stance)?.note}
         </p>
       </section>
 
       <section class="mb-4">
-        <h3 class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">Targets, in order</h3>
+        <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
+          Targets, in order
+        </h3>
         <ol class="space-y-1" aria-label="Target priorities">
           <For each={toggles().priorities}>
             {(p, i) => (
-              <li class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
+              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
                 <span class="w-4 text-zinc-600">{i() + 1}</span>
                 <span class="flex-1">{priorityName(p)}</span>
                 <button
@@ -152,6 +160,7 @@ export default function MercPanel(props: Props): JSX.Element {
                 <button
                   type="button"
                   aria-label="Remove"
+                  data-part="danger"
                   class="px-1 text-zinc-500 hover:text-red-400"
                   onClick={() => {
                     remove(i());
@@ -164,7 +173,9 @@ export default function MercPanel(props: Props): JSX.Element {
           </For>
         </ol>
         <Show when={toggles().priorities.length === 0}>
-          <p class="text-xs text-zinc-500">No priorities: the merc fights whatever is nearest.</p>
+          <p data-part="note" class="text-xs text-zinc-500">
+            No priorities: the merc fights whatever is nearest.
+          </p>
         </Show>
         <Show when={toggles().priorities.length < MAX_PRIORITIES && unused().length > 0}>
           <div class="mt-2 flex flex-wrap gap-1">
@@ -172,6 +183,7 @@ export default function MercPanel(props: Props): JSX.Element {
               {(p) => (
                 <button
                   type="button"
+                  data-part="add"
                   class="border border-dashed border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 hover:border-zinc-500"
                   onClick={() => {
                     add(p);
@@ -186,7 +198,9 @@ export default function MercPanel(props: Props): JSX.Element {
       </section>
 
       <section>
-        <h3 class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">Chase</h3>
+        <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
+          Chase
+        </h3>
         <input
           type="range"
           aria-label="Chase distance"
@@ -198,12 +212,12 @@ export default function MercPanel(props: Props): JSX.Element {
             update({ ...toggles(), chase: Number(e.currentTarget.value) });
           }}
         />
-        <p class="text-xs text-zinc-500">
+        <p data-part="note" class="text-xs text-zinc-500">
           Chases enemies up to {toggles().chase} tiles from the bearer.
         </p>
       </section>
 
-      <footer class="mt-4 text-xs text-zinc-600">
+      <footer data-part="note" class="mt-4 text-xs text-zinc-600">
         Paused while orders are open. Esc to close.
       </footer>
     </aside>

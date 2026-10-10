@@ -21,6 +21,9 @@ export interface View {
   moving: boolean;
   // Seconds since the unit was last hit
   hurt: number;
+  // A drawn push back from the last hit, in tiles. It eases out.
+  kx: number;
+  kz: number;
 }
 
 export class Views {
@@ -39,6 +42,8 @@ export class Views {
         stride: 0,
         moving: false,
         hurt: 9,
+        kx: 0,
+        kz: 0,
       };
       this.views.set(u, v);
     }
@@ -69,11 +74,20 @@ export class Views {
       d = Math.atan2(Math.sin(d), Math.cos(d));
       v.angle += Math.sign(d) * Math.min(Math.abs(d), 10 * dt);
       v.stride += ((v.moving ? 1 : 0) - v.stride) * Math.min(1, dt * 10);
+      const ease = Math.max(0, 1 - dt * 10);
+      v.kx *= ease;
+      v.kz *= ease;
     }
   }
 
   hit(u: Unit): void {
     this.get(u).hurt = 0;
+  }
+
+  knock(u: Unit, dx: number, dz: number): void {
+    const v = this.get(u);
+    v.kx = dx;
+    v.kz = dz;
   }
 
   /** The rig's view of a unit, `alpha` of the way from the last tick to this one. */
@@ -85,8 +99,8 @@ export class Views {
     }
     return {
       kind,
-      x: v.px + (v.x - v.px) * alpha,
-      z: v.pz + (v.z - v.pz) * alpha,
+      x: v.px + (v.x - v.px) * alpha + v.kx,
+      z: v.pz + (v.z - v.pz) * alpha + v.kz,
       angle: v.angle,
       walk: v.walk,
       stride: v.stride,

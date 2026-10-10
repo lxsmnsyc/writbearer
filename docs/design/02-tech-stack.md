@@ -72,18 +72,40 @@ The game is mature: the Church's blood rites, gore and corruption are part of th
 ### Pixel art
 
 - The frame is drawn at 384×216 and scaled up 3× with no smoothing.
-- Every pixel snaps to the palette: a grey ramp plus the information colors, with a light ordered dither.
+- Every pixel snaps to the palette: a neutral grey ramp, a warm one for lit stone, a cool one for the dark, and the information colors, with a light ordered dither.
+- The floor is worn flagstones of uneven size, drawn once per stage: mortar, cracks, grit, grime, puddles of black water, rubble and bones. There is no visible grid.
+- The camera stays at its normal distance. A closer camera was tried and dropped, since it cost the player too much field of view.
 
 ### Light
 
-- The world outside light is dark but still visible.
+- The scene is multiplied by a light map: a cold, dim ambient, plus warm light where lights reach.
 - The bearer's lantern lights hard rings around it, each a step brighter. There is no soft glow, since soft gradients speckle in pixel art.
-- Candles light small rings. Each merc carries a faint light, so the party never disappears.
-- Glowing things (eyes, flames, growths) are drawn after the darkness, so they shine through it.
+- Candles light small rings. Each merc carries a faint, cold light, so the party never disappears.
+- Glowing things (eyes, flames, growths) are drawn after the light, so they shine through the dark.
+- Light casts no shadows. The light map covers the whole screen and has no depth, so shadows fell across figures standing in front of them. Fog of war does the hiding instead.
+
+### Fog of war
+
+- The party sees only around itself: the bearer 7 tiles, each merc 4.5. Pillars, altars and other solid props block sight; bodies do not.
+- Ground the party has seen stays dimly remembered. Props there are drawn dimmed. Monsters there are hidden.
+- Ground never seen is black, so packs come out of the dark.
+- The fog lives on a grid of quarter tiles and is drawn on the floor, under everything that stands. Each standing thing is shown, dimmed or hidden by the cell it stands on, so the fog never covers a figure in front of it.
+- Fog of war is visual only. Monster and merc AI keep their own sight.
+
+### Atmosphere and impact
+
+- Low fog drifts through the light, ash rises through it, and fine grain and a vignette sit over the frame.
+- Heavy hits freeze the frame for a moment and shake the screen. Whoever is hit is pushed back a little, and blood sprays.
+
+### Interface
+
+- Panels and party cards are torn paper with ink text in IM Fell English, an old print face that echoes the Writ and the Church's manuscripts.
+- The interface is due for another pass.
 
 ### Figures
 
 - Units are cut-paper figures: flat angular shapes, tapered limbs, a plain polygon head and no face.
+- Pieces are thick, with slightly uneven hand-cut edges, and each casts a hard paper shadow.
 - Each figure is a 3D skeleton of joints, turned to face any angle and projected into the isometric view. Paper pieces are drawn between the projected joints and sorted back to front. A body narrows when seen from the side.
 - Legs use two-bone IK. Feet step and lift, and the walk cycle advances with distance walked, so feet do not slide.
 - Attacks have a windup, a strike and a recovery. Damage lands on the strike frame.
@@ -142,7 +164,7 @@ src/
   content/
     jobs/ skills/ statuses/ items/ affixes/ cards/ monsters/ biomes/ events/
   gen/         phase, stage graph, stage layout, loot
-  render/      canvas renderer, figure rig, light, palette snapping, effects
+  render/      canvas renderer, figure rig, floor, light, fog of war, atmosphere, palette snapping, effects
   ui/          Solid: map, inventory, toggles, merc sheet
 ```
 

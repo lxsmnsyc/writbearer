@@ -29,12 +29,22 @@ const hex = (h: string): RGB => [
   parseInt(h.slice(5, 7), 16),
 ];
 
-// A 16-step grey ramp plus the information colors and their dark steps.
+const ramp = (steps: number, r: number, g: number, b: number): RGB[] =>
+  Array.from({ length: steps }, (_, i): RGB => {
+    const v = 8 + i * (247 / (steps - 1));
+    return [
+      Math.min(255, Math.round(v * r)),
+      Math.min(255, Math.round(v * g)),
+      Math.min(255, Math.round(v * b)),
+    ];
+  });
+
+// A neutral grey ramp, a warm one for lantern light, a cold one for the dark,
+// and the information colors with their dark steps.
 const PALETTE: RGB[] = [
-  ...Array.from({ length: 16 }, (_, i): RGB => {
-    const g = Math.round(8 + i * 15.5);
-    return [g, g, g];
-  }),
+  ...ramp(16, 1, 1, 1),
+  ...ramp(12, 1.08, 0.97, 0.8),
+  ...ramp(8, 0.9, 0.94, 1.08),
   ...[C.blood, C.bloodDark, '#3a0808', C.gold, '#7a5a22', C.flame, C.teal, '#2f6a60'].map(hex),
 ];
 
@@ -64,13 +74,13 @@ function nearest(r: number, g: number, b: number): number {
 /**
  * Snaps every pixel to the palette, with a light ordered dither.
  */
-export function quantize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+export function quantize(ctx: CanvasRenderingContext2D, w: number, h: number, dither = 6): void {
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const t = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.5) * 6;
+      const t = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.5) * dither;
       const c =
         PALETTE[
           nearest(Math.max(0, d[i] + t), Math.max(0, d[i + 1] + t), Math.max(0, d[i + 2] + t))

@@ -44,7 +44,7 @@ export default function App(): JSX.Element {
   });
 
   return (
-    <main class="relative grid h-full place-items-center bg-black">
+    <main class="relative grid h-full place-items-center bg-black" data-ui="paper">
       <canvas
         ref={(el) => {
           canvas = el;
@@ -57,6 +57,8 @@ export default function App(): JSX.Element {
           {(m, i) => (
             <button
               type="button"
+              data-part="card"
+              aria-pressed={selected() === m.unit}
               class="w-40 border bg-zinc-950/90 px-3 py-2 text-left text-xs"
               classList={{
                 'border-amber-500': selected() === m.unit,
@@ -70,8 +72,9 @@ export default function App(): JSX.Element {
                 <span>{m.unit.name}</span>
                 <span class="text-zinc-600">{i() + 1}</span>
               </div>
-              <div class="mt-1 h-1 bg-zinc-800">
+              <div data-part="bar" class="mt-1 h-1 bg-zinc-800">
                 <div
+                  data-part="bar-fill"
                   class="h-1 bg-amber-500"
                   style={{ width: `${Math.max(0, (100 * m.hp) / m.maxHp)}%` }}
                 />

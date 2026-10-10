@@ -12,3 +12,124 @@
     font-family: ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/*
+ * The paper interface. Panels and party cards are torn paper with ink text
+ * and an old print face, like the Writ and the Church's manuscripts. These
+ * rules sit outside Tailwind's layers, so they override its utilities.
+ */
+[data-ui='paper'] [data-part='panel'],
+[data-ui='paper'] [data-part='card'] {
+  background-color: #cbc2ae;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgb(0 0 0 / 0.05), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgb(0 0 0 / 0.06), transparent 45%);
+  color: #1d1914;
+  border: none;
+  font-family: 'IM Fell English', Georgia, serif;
+  clip-path: polygon(
+    0 5px,
+    7% 1px,
+    15% 4px,
+    24% 0,
+    33% 3px,
+    41% 1px,
+    52% 4px,
+    60% 0,
+    69% 3px,
+    78% 1px,
+    86% 4px,
+    94% 0,
+    100% 3px,
+    calc(100% - 3px) 14%,
+    100% 31%,
+    calc(100% - 2px) 47%,
+    100% 63%,
+    calc(100% - 4px) 79%,
+    100% 93%,
+    97% 100%,
+    88% calc(100% - 3px),
+    79% 100%,
+    70% calc(100% - 4px),
+    60% 100%,
+    51% calc(100% - 2px),
+    41% 100%,
+    32% calc(100% - 4px),
+    22% 100%,
+    13% calc(100% - 2px),
+    4% 100%,
+    0 calc(100% - 4px),
+    3px 84%,
+    0 68%,
+    2px 52%,
+    0 36%,
+    4px 20%
+  );
+}
+
+[data-ui='paper'] [data-part='card'][aria-pressed='true'] {
+  background-color: #e2d9c4;
+}
+
+[data-ui='paper'] [data-part='title'],
+[data-ui='paper'] [data-part='heading'] {
+  font-family: 'IM Fell English SC', Georgia, serif;
+  color: #1d1914;
+}
+
+[data-ui='paper'] [data-part='title'] {
+  font-size: 1.5rem;
+}
+
+[data-ui='paper'] [data-part='heading'] {
+  color: #5d5446;
+  letter-spacing: 0.12em;
+  text-transform: none;
+  font-size: 0.95rem;
+}
+
+[data-ui='paper'] [data-part='note'] {
+  color: #5d5446;
+  font-style: italic;
+}
+
+[data-ui='paper'] [data-part='choice'] {
+  border-color: #6d6456;
+  color: #3a332a;
+  background: transparent;
+}
+
+[data-ui='paper'] [data-part='choice'][aria-checked='true'] {
+  background: #1d1914;
+  color: #e6dece;
+  border-color: #1d1914;
+}
+
+[data-ui='paper'] [data-part='row'] {
+  border-color: #a69d8b;
+}
+
+[data-ui='paper'] [data-part='add'] {
+  border-color: #8a8172;
+  color: #3a332a;
+}
+
+[data-ui='paper'] [data-part='danger'] {
+  color: #8e1414;
+}
+
+[data-ui='paper'] [data-part='bar'] {
+  background: #9c9381;
+}
+
+[data-ui='paper'] [data-part='bar-fill'] {
+  background: #7a5a22;
+}
+
+[data-ui='paper'] input[type='range'] {
+  accent-color: #1d1914;
+}
+
+[data-ui='paper'] [data-part='card'] * {
+  color: #1d1914;
+}

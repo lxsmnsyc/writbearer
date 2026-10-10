@@ -68,6 +68,9 @@ test('clicking a merc on the canvas opens its orders', async ({ page }) => {
   if (!box) {
     throw new Error('No canvas');
   }
-  await page.mouse.click(box.x + box.width * (0.5 + 32 / 384), box.y + box.height * (0.5 - 16 / 216));
+  await page.mouse.click(
+    box.x + box.width * (0.5 + 32 / 384),
+    box.y + box.height * (0.5 - 16 / 216),
+  );
   await expect(page.getByRole('complementary', { name: 'Orders for Vanguard' })).toBeVisible();
 });

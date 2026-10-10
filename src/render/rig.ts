@@ -85,6 +85,14 @@ const clamp01 = (t: number): number => Math.max(0, Math.min(1, t));
 const FLOOR_K = 0.011;
 const HEIGHT_K = 0.3;
 
+/**
+ * How figures are drawn. `zoom` scales every pixel size with the camera.
+ */
+export const look = { zoom: 1 };
+
+// Small fixed offsets per corner, so cut edges look hand cut.
+const CUT = [0.3, -0.4, 0.5, -0.2, 0.1, -0.5, 0.4, -0.3, 0.2, -0.1];
+
 // ---------- projection ----------
 export type Iso = (x: number, z: number) => Pt;
 
@@ -102,7 +110,7 @@ function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
     const X = u.x + (f * c - r * s) * FLOOR_K;
     const Z = u.z + (f * s + r * c) * FLOOR_K;
     const o = iso(X, Z);
-    return { x: o.x, y: o.y - p[2] * size * HEIGHT_K, depth: X + Z };
+    return { x: o.x, y: o.y - p[2] * size * HEIGHT_K * look.zoom, depth: X + Z };
   };
 }
 
@@ -274,26 +282,38 @@ interface Part {
   draw: (ctx: CanvasRenderingContext2D) => void;
 }
 
-function fill(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, ink: string | null): void {
+function trace(ctx: CanvasRenderingContext2D, pts: Pt[], dx: number, dy: number): void {
   ctx.beginPath();
   pts.forEach((p, i) => {
+    const cut = CUT[i % CUT.length] * look.zoom;
     if (i) {
-      ctx.lineTo(p.x, p.y);
+      ctx.lineTo(p.x + dx + cut, p.y + dy - cut);
     } else {
-      ctx.moveTo(p.x, p.y);
+      ctx.moveTo(p.x + dx + cut, p.y + dy - cut);
     }
   });
   ctx.closePath();
+}
+
+function fill(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, ink: string | null): void {
+  // A hard shadow under each piece, as layered paper casts.
+  trace(ctx, pts, look.zoom, look.zoom);
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fill();
+  trace(ctx, pts, 0, 0);
   ctx.fillStyle = color;
   ctx.fill();
   if (ink) {
     ctx.strokeStyle = ink;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = look.zoom;
     ctx.stroke();
   }
 }
 
-function taper(a: Pt, b: Pt, wa: number, wb: number): Pt[] {
+function taper(a: Pt, b: Pt, wideA: number, wideB: number): Pt[] {
+  const k = look.zoom * 1.5;
+  const wa = wideA * k;
+  const wb = wideB * k;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const l = Math.hypot(dx, dy) || 1;
@@ -307,7 +327,8 @@ function taper(a: Pt, b: Pt, wa: number, wb: number): Pt[] {
   ];
 }
 
-function hexAt(c: Pt, r: number): Pt[] {
+function hexAt(c: Pt, radius: number): Pt[] {
+  const r = radius * look.zoom * 1.15;
   return [0, 1, 2, 3, 4, 5].map((i) => ({
     x: c.x + r * Math.cos((i * Math.PI) / 3 + 0.5),
     y: c.y + r * Math.sin((i * Math.PI) / 3 + 0.5),
@@ -448,8 +469,8 @@ export function drawUnit(
   ctx.ellipse(
     base.x,
     base.y,
-    u.kind === 'crawler' ? 10 : 7,
-    u.kind === 'crawler' ? 4 : 2.5,
+    (u.kind === 'crawler' ? 10 : 7) * look.zoom,
+    (u.kind === 'crawler' ? 4 : 2.5) * look.zoom,
     0,
     0,
     Math.PI * 2,
@@ -630,13 +651,13 @@ export function drawUnit(
       depth: avg(T, Bm, M) + 0.0007,
       draw: (c) => {
         c.strokeStyle = C.gold;
-        c.lineWidth = 1.5;
+        c.lineWidth = 1.5 * look.zoom;
         c.beginPath();
         c.moveTo(T.x, T.y);
         c.quadraticCurveTo(2 * M.x - (T.x + Bm.x) / 2, 2 * M.y - (T.y + Bm.y) / 2, Bm.x, Bm.y);
         c.stroke();
         c.strokeStyle = C.bone;
-        c.lineWidth = 0.6;
+        c.lineWidth = 0.6 * look.zoom;
         c.beginPath();
         c.moveTo(T.x, T.y);
         if (S) {
@@ -648,7 +669,7 @@ export function drawUnit(
           // The nocked arrow, from the string to past the bow.
           const tip = proj(add(g, v(14, 0, 0)));
           c.strokeStyle = C.bone;
-          c.lineWidth = 0.8;
+          c.lineWidth = 0.8 * look.zoom;
           c.beginPath();
           c.moveTo(S.x, S.y);
           c.lineTo(tip.x, tip.y);
@@ -691,7 +712,7 @@ export function drawUnit(
       depth: L.depth + 0.0006,
       draw: (c) => {
         c.strokeStyle = C.ink;
-        c.lineWidth = 0.8;
+        c.lineWidth = 0.8 * look.zoom;
         c.beginPath();
         c.moveTo(hand.x, hand.y);
         c.lineTo(L.x, L.y);
