@@ -1,4 +1,4 @@
-import type { Prop, Stage } from '../game/stage';
+import type { Prop, Stage } from '../gen/stage';
 import { BURN, CHILL, DREAD, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
 import type Sim from '../sim/sim';
 import { Rank, Side } from '../sim/types';
@@ -53,6 +53,8 @@ export interface Frame {
   alpha: number;
   time: number;
   slain: number;
+  // Which stage of the descent this is, from 1
+  depth: number;
   over: boolean;
   paused: boolean;
   // The merc whose orders are open
@@ -131,7 +133,9 @@ export default class Renderer {
     ctx.fillStyle = C.void;
     ctx.fillRect(0, 0, W, H);
     this.drawStoneFloor(f);
-    this.drawSigil(f.stage);
+    for (const s of f.stage.sigils) {
+      this.drawSigil(s);
+    }
     f.effects.drawDecals(ctx, iso);
     for (const p of f.effects.pieces) {
       if (p.h === 0) {
@@ -140,7 +144,7 @@ export default class Renderer {
     }
     // Fog covers the floor only. Standing things are hidden by their own cell below.
     const fog = this.updateFog(f);
-    fog.draw(ctx, iso, C.void);
+    fog.draw(ctx, iso, C.void, this.floorOnScreen());
     f.effects.drawRings(ctx, iso);
 
     // A gold ring marks the merc whose orders are open.
@@ -157,17 +161,17 @@ export default class Renderer {
     // Everything that stands, sorted back to front.
     const list: { depth: number; draw: () => void }[] = [];
     for (const p of f.stage.props) {
+      const b = iso(p.x, p.z);
       // Props stay where they were seen, dimmed while out of sight.
-      if (!fog.knownAround(p.x, p.z, 0.5)) {
+      if (!onScreen(b) || !fog.knownAround(p.x, p.z, p.r ?? 0.3)) {
         continue;
       }
-      const dim = (1 - fog.visibleAround(p.x, p.z, 0.5)) * 0.62;
+      const dim = (1 - fog.visibleAround(p.x, p.z, p.r ?? 0.3)) * 0.62;
       list.push({
         depth: p.x + p.z,
         draw: () => {
-          this.dimmed(dim, (c) => {
+          this.dimmed(dim, b, (c) => {
             // Props are drawn in design pixels, scaled to the zoom.
-            const b = iso(p.x, p.z);
             c.save();
             c.translate(b.x, b.y);
             c.scale(z, z);
@@ -230,7 +234,7 @@ export default class Renderer {
   // What the party sees this frame. Solid props block sight; bodies do not.
   private updateFog(f: Frame): Fog {
     if (this.fog?.stage !== f.stage) {
-      this.fog = { stage: f.stage, fog: new Fog(f.stage.size) };
+      this.fog = { stage: f.stage, fog: new Fog(f.stage.width, f.stage.depth) };
     }
     const viewers = f.sim.living(Side.Party).map((u) => {
       const r = f.views.rig(u, f.alpha);
@@ -240,20 +244,53 @@ export default class Renderer {
     return this.fog.fog;
   }
 
-  // Draws something darkened by `amount`, without darkening what is behind it.
-  private dimmed(amount: number, draw: (ctx: CanvasRenderingContext2D) => void): void {
+  /** The camera jumps to the bearer on the next frame instead of gliding. */
+  snapCamera(): void {
+    this.camReady = false;
+  }
+
+  // The floor area on screen, in tiles, for drawing only what can be seen.
+  private floorOnScreen(): { x0: number; x1: number; z0: number; z1: number } {
+    const corners = [
+      [0, 0],
+      [W, 0],
+      [0, H],
+      [W, H],
+    ].map(([sx, sy]) => {
+      const X = sx + this.cam.x + this.jolt.x;
+      const Y = sy + this.cam.y + this.jolt.y;
+      const a = (2 * X) / tw();
+      const b = (2 * Y) / th();
+      return { x: (a + b) / 2, z: (b - a) / 2 };
+    });
+    return {
+      x0: Math.min(...corners.map((c) => c.x)) - 1,
+      x1: Math.max(...corners.map((c) => c.x)) + 1,
+      z0: Math.min(...corners.map((c) => c.z)) - 1,
+      z1: Math.max(...corners.map((c) => c.z)) + 1,
+    };
+  }
+
+  // Draws a prop at `at` darkened by `amount`, without darkening what is
+  // behind it. Only the box around the prop is touched.
+  private dimmed(amount: number, at: Pt, draw: (ctx: CanvasRenderingContext2D) => void): void {
     if (amount < 0.02) {
       draw(this.ctx);
       return;
     }
+    const z = look.zoom;
+    const x = Math.floor(at.x - 48 * z);
+    const y = Math.floor(at.y - 96 * z);
+    const w = Math.ceil(96 * z);
+    const h = Math.ceil(124 * z);
     const s = this.scratch;
     s.globalCompositeOperation = 'source-over';
-    s.clearRect(0, 0, W, H);
+    s.clearRect(x, y, w, h);
     draw(s);
     s.globalCompositeOperation = 'source-atop';
     s.fillStyle = `rgba(0,0,0,${amount})`;
-    s.fillRect(0, 0, W, H);
-    this.ctx.drawImage(s.canvas, 0, 0);
+    s.fillRect(x, y, w, h);
+    this.ctx.drawImage(s.canvas, x, y, w, h, x, y, w, h);
   }
 
   // The worn stone floor, drawn once per stage and zoom, then copied.
@@ -290,6 +327,15 @@ export default class Renderer {
           color: [255, 180, 100],
           strength: 0.6,
         });
+      } else if (p.kind === 'brazier') {
+        // The braziers by the stair burn bright, so the way down shows once found.
+        lights.push({
+          x: p.x,
+          z: p.z,
+          radius: 3.2 + flicker,
+          color: [255, 170, 90],
+          strength: 0.8,
+        });
       }
     }
     // Each merc carries a faint, cold light, so the party never disappears.
@@ -313,9 +359,9 @@ export default class Renderer {
   }
 
   // The Church's sealing sigil, painted in blood on the floor.
-  private drawSigil(stage: Stage): void {
+  private drawSigil(at: { x: number; z: number }): void {
     const { ctx } = this;
-    const sc = this.iso(stage.sigil.x, stage.sigil.z);
+    const sc = this.iso(at.x, at.z);
     ctx.strokeStyle = C.blood;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -363,6 +409,11 @@ export default class Renderer {
       if (p.kind === 'candle' && fog.known(p.x, p.z)) {
         const b = this.iso(p.x, p.z);
         ctx.fillRect(b.x, b.y - Math.round(8 * look.zoom), 1, 2);
+      } else if (p.kind === 'brazier' && fog.known(p.x, p.z)) {
+        const b = this.iso(p.x, p.z);
+        const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9) * 1.5);
+        ctx.fillRect(b.x - 2, b.y - Math.round(16 * look.zoom), 4, 2);
+        ctx.fillRect(b.x - 1 + lick, b.y - Math.round(19 * look.zoom), 2, 3);
       }
     }
   }
@@ -461,7 +512,9 @@ export default class Renderer {
       16,
       26,
     );
-    out.fillText(`Slain: ${f.slain}`, W * SCALE - 120, 26);
+    out.fillText(`Depth ${f.depth} · Slain: ${f.slain}`, W * SCALE - 210, 26);
+    out.fillStyle = '#8a8274';
+    out.fillText('Find the stair down, to the east.', 16, 52);
     if (f.over) {
       out.fillStyle = 'rgba(0,0,0,0.6)';
       out.fillRect(0, 0, W * SCALE, H * SCALE);
@@ -475,6 +528,11 @@ export default class Renderer {
       out.textAlign = 'start';
     }
   }
+}
+
+// Whether a floor point's screen spot is near enough the frame to draw what stands there.
+function onScreen(b: Pt): boolean {
+  return b.x > -64 && b.x < W + 64 && b.y > -24 && b.y < H + 120;
 }
 
 function barHeight(u: Unit): number {
@@ -598,6 +656,65 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     ctx.fill();
     ctx.fillStyle = C.blood;
     ctx.fillRect(base.x + 9, base.y - 47, 2, 2);
+  } else if (p.kind === 'wall') {
+    // A block of the ruined wall. Some stand tall, some are broken low.
+    const h = 14 + Math.round(p.seed * 30);
+    block(ctx, base, 0.5, h, p.seed);
+  } else if (p.kind === 'rubble') {
+    const r = p.r ?? 0.5;
+    block(ctx, pt(base.x - 4, base.y - 1), r * 0.6, 6 + p.seed * 6, p.seed);
+    block(ctx, pt(base.x + 5, base.y + 2), r * 0.5, 4 + p.seed * 4, 1 - p.seed);
+    block(ctx, pt(base.x, base.y + 4), r * 0.4, 3, p.seed * 0.5);
+  } else if (p.kind === 'chest') {
+    block(ctx, base, 0.32, 9, 0.5, C.wood);
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(base.x - 1, base.y - 7, 2, 2);
+  } else if (p.kind === 'stair') {
+    // A dark opening with steps going down into it.
+    const corner = (dx: number, dz: number): Pt =>
+      pt(base.x + (dx - dz) * 16, base.y + (dx + dz) * 8);
+    fillPoly(
+      ctx,
+      [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)],
+      C.void,
+      C.stoneLine,
+    );
+    for (let i = 0; i < 4; i++) {
+      const t = -0.8 + i * 0.4;
+      const a = corner(t, -0.9);
+      const b = corner(t, 0.9);
+      ctx.fillStyle = i % 2 ? C.stoneB : C.stoneA;
+      ctx.fillRect(
+        Math.round(Math.min(a.x, b.x)),
+        Math.round(a.y + i * 1.5),
+        Math.round(Math.abs(b.x - a.x)),
+        1,
+      );
+    }
+  } else if (p.kind === 'brazier') {
+    // An iron bowl on three legs. The fire is drawn after the light.
+    fillPoly(
+      ctx,
+      [pt(base.x - 4, base.y), pt(base.x - 1, base.y - 10), pt(base.x - 3, base.y - 10)],
+      C.ink,
+      null,
+    );
+    fillPoly(
+      ctx,
+      [pt(base.x + 4, base.y), pt(base.x + 1, base.y - 10), pt(base.x + 3, base.y - 10)],
+      C.ink,
+      null,
+    );
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 6, base.y - 14),
+        pt(base.x + 6, base.y - 14),
+        pt(base.x + 3, base.y - 9),
+        pt(base.x - 3, base.y - 9),
+      ],
+      C.wood,
+    );
   } else if (p.kind === 'altar') {
     const t = pt(base.x, base.y - 10);
     fillPoly(
@@ -632,4 +749,29 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
       null,
     );
   }
+}
+
+// A stone block on the floor: `r` tiles to each side, `h` pixels tall. Lit
+// from the upper left: the top is lightest and the right face darkest.
+function block(
+  ctx: CanvasRenderingContext2D,
+  base: Pt,
+  r: number,
+  h: number,
+  seed: number,
+  color: string = C.stoneA,
+): void {
+  const left = pt(base.x - 32 * r, base.y);
+  const right = pt(base.x + 32 * r, base.y);
+  const front = pt(base.x, base.y + 16 * r);
+  const back = pt(base.x, base.y - 16 * r);
+  const up = (q: Pt): Pt => pt(q.x, q.y - h);
+  // Broken tops lean a little, so no two blocks look alike.
+  const tilt = (seed - 0.5) * 4;
+  const top = [up(left), up(back), up(right), up(front)];
+  top[0] = pt(top[0].x, top[0].y + tilt);
+  top[2] = pt(top[2].x, top[2].y - tilt);
+  fillPoly(ctx, [left, front, top[3], top[0]], C.stoneB);
+  fillPoly(ctx, [front, right, top[2], top[3]], '#2c2c2c');
+  fillPoly(ctx, top, color === C.stoneA ? '#4a4a4a' : color);
 }

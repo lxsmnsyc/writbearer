@@ -8,13 +8,14 @@ import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
-import { type Stage, populate, sealingSite, spawnWave } from './stage';
+import { type Stage, generateStage } from '../gen/stage';
+import { carryParty, enterStage, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
 const MAX_FRAME = 0.25;
-const WAVE_EVERY = 16;
-const MAX_MONSTERS = 9;
+// The bearer takes the stair down once this close to it.
+const EXIT_REACH = 1.2;
 // Impact: hits at least this heavy freeze the world briefly and shake it.
 const HEAVY_HIT = 14;
 const HIT_STOP = 0.06;
@@ -42,7 +43,8 @@ export default class Game {
   private acc = 0;
   private slain = 0;
   private over = false;
-  private waveTimer = 0;
+  // Which stage of the run the party is on, from 0
+  private stageIndex = 0;
   private frameId = 0;
   private last = 0;
   private selected: Unit | null = null;
@@ -100,14 +102,12 @@ export default class Game {
   reset(): void {
     this.streams = new RunStreams(randomSeed());
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
-    this.stage = sealingSite();
+    this.stageIndex = 0;
+    this.stage = this.buildStage();
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
-    this.bearer = populate(this.sim, this.stage);
-    const rng = this.streams.get(1, Stream.Layout);
-    for (let i = 0; i < 6; i++) {
-      this.effects.stain(rng.range(3, 23), rng.range(3, 23), rng.range(0.4, 0.9), '#560b0b');
-    }
+    this.bearer = spawnParty(this.sim, this.stage);
+    this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
       if (event.value < HEAVY_HIT || event.flags & DamageFlags.DoT) {
         return;
@@ -127,7 +127,29 @@ export default class Game {
     this.over = false;
     this.select(null);
     this.acc = 0;
-    this.waveTimer = 14;
+  }
+
+  private buildStage(): Stage {
+    return generateStage(this.streams.area(1, Stream.Layout, this.stageIndex), this.stageIndex);
+  }
+
+  // Lays out the current stage around the party.
+  private enter(): void {
+    enterStage(this.sim, this.stage);
+    for (const s of this.stage.stains) {
+      this.effects.stain(s.x, s.z, s.r, '#560b0b');
+    }
+  }
+
+  // The bearer took the stair down: on to the next stage, party and all.
+  private descend(): void {
+    this.stageIndex++;
+    this.stage = this.buildStage();
+    carryParty(this.sim, this.stage);
+    this.effects.clear();
+    this.views.snap(this.sim);
+    this.renderer.snapCamera();
+    this.enter();
   }
 
   start(): void {
@@ -187,10 +209,9 @@ export default class Game {
       return;
     }
     const spot = this.renderer.unproject(e.clientX, e.clientY);
-    const max = this.stage.size - 0.5;
     this.bearer.order = {
-      x: Math.min(max, Math.max(0.5, spot.x)),
-      z: Math.min(max, Math.max(0.5, spot.z)),
+      x: Math.min(this.stage.width - 0.5, Math.max(0.5, spot.x)),
+      z: Math.min(this.stage.depth - 0.5, Math.max(0.5, spot.z)),
     };
   };
 
@@ -243,8 +264,11 @@ export default class Game {
         this.steer();
         this.sim.tick(TICK);
         this.views.afterTick(this.sim);
-        this.waves();
         this.acc -= TICK;
+        if (this.bearer.alive && this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH) {
+          this.descend();
+          this.acc = 0;
+        }
       }
     }
     this.views.frame(this.sim, dt);
@@ -262,6 +286,7 @@ export default class Game {
       alpha,
       time: this.time,
       slain: this.slain,
+      depth: this.stageIndex + 1,
       over: this.over,
       paused: this.paused,
       selected: this.selected,
@@ -269,13 +294,5 @@ export default class Game {
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;
-  }
-
-  private waves(): void {
-    this.waveTimer -= TICK;
-    if (this.waveTimer <= 0 && this.sim.living(Side.Monster).length < MAX_MONSTERS) {
-      spawnWave(this.sim, this.streams.get(1, Stream.Events), this.bearer, this.stage.size);
-      this.waveTimer = WAVE_EVERY;
-    }
   }
 }

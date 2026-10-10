@@ -113,7 +113,7 @@ function engage(u: Unit, target: Unit, dt: number): void {
     u.face(target);
     u.startAttack(target);
   } else {
-    u.walkTo(target.x, target.z, dt, u.kit.reach * 0.9);
+    u.travel(target.x, target.z, dt, u.kit.reach * 0.9);
   }
 }
 
@@ -170,7 +170,7 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
   const a = bearer.angle;
   const gx = bearer.x + Math.cos(a) * ahead - Math.sin(a) * spread * side;
   const gz = bearer.z + Math.sin(a) * ahead + Math.cos(a) * spread * side;
-  u.walkTo(gx, gz, dt, 0.3);
+  u.travel(gx, gz, dt, 0.3);
 }
 
 // A monster's skills, used whenever their rule says so.
@@ -204,7 +204,7 @@ function support(sim: Sim, u: Unit, party: Unit[], dt: number): void {
     const d = Math.hypot(dx, dz) || 1;
     u.walkTo(u.x + (dx / d) * 2, u.z + (dz / d) * 2, dt);
   } else if (ally && u.distanceTo(ally) > SUPPORT_NEAR) {
-    u.walkTo(ally.x, ally.z, dt, SUPPORT_NEAR);
+    u.travel(ally.x, ally.z, dt, SUPPORT_NEAR);
   }
 }
 
@@ -277,7 +277,7 @@ export function think(sim: Sim, u: Unit, dt: number): void {
     return;
   }
   if (u === sim.bearer) {
-    if (u.order && u.walkTo(u.order.x, u.order.z, dt, 0.01)) {
+    if (u.order && u.travel(u.order.x, u.order.z, dt, 0.01)) {
       u.order = null;
     }
     return;

@@ -1,5 +1,5 @@
 import RNG from '../core/rng';
-import type { Stage } from '../game/stage';
+import type { Stage } from '../gen/stage';
 import { type Pt, pt } from './draw';
 
 export interface FloorImage {
@@ -21,12 +21,12 @@ const PAD = 4;
 export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage {
   const tw = 32 * zoom;
   const th = 16 * zoom;
-  const size = stage.size;
+  const { width, depth } = stage;
   const canvas = document.createElement('canvas');
-  canvas.width = Math.ceil(size * tw + PAD * 2);
-  canvas.height = Math.ceil(size * th + PAD * 2);
+  canvas.width = Math.ceil(((width + depth) * tw) / 2 + PAD * 2);
+  canvas.height = Math.ceil(((width + depth) * th) / 2 + PAD * 2);
   const ctx = canvas.getContext('2d')!;
-  const ox = size * (tw / 2) + PAD;
+  const ox = depth * (tw / 2) + PAD;
   const oy = PAD;
   const at = (x: number, z: number): Pt => pt((x - z) * (tw / 2) + ox, (x + z) * (th / 2) + oy);
   const rng = new RNG(seed);
@@ -45,10 +45,10 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     ctx.fill();
   };
 
-  poly([at(0, 0), at(size, 0), at(size, size), at(0, size)], MORTAR);
+  poly([at(0, 0), at(width, 0), at(width, depth), at(0, depth)], MORTAR);
 
-  for (let x = 0; x < size; x++) {
-    for (let z = 0; z < size; z++) {
+  for (let x = 0; x < width; x++) {
+    for (let z = 0; z < depth; z++) {
       for (const s of splitTile(x, z, rng)) {
         stone(ctx, at, rng, s, zoom, poly);
       }
@@ -56,8 +56,9 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
   }
 
   // Dark grime where feet and blood have worn the stone.
-  for (let i = 0; i < size * 3; i++) {
-    const c = at(rng.range(1, size - 1), rng.range(1, size - 1));
+  const area = (width * depth) / 26;
+  for (let i = 0; i < area * 3; i++) {
+    const c = at(rng.range(1, width - 1), rng.range(1, depth - 1));
     ctx.fillStyle = 'rgba(10,10,10,0.25)';
     ctx.beginPath();
     ctx.ellipse(c.x, c.y, rng.range(6, 18) * zoom, rng.range(3, 8) * zoom, 0, 0, Math.PI * 2);
@@ -65,8 +66,8 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
   }
 
   // Puddles of black water.
-  for (let i = 0; i < Math.round(size / 4); i++) {
-    const c = at(rng.range(2, size - 2), rng.range(2, size - 2));
+  for (let i = 0; i < Math.round(area / 4); i++) {
+    const c = at(rng.range(2, width - 2), rng.range(2, depth - 2));
     const rx = rng.range(8, 16) * zoom;
     ctx.fillStyle = '#141414';
     ctx.beginPath();
@@ -80,8 +81,8 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
   }
 
   // Rubble and old bones.
-  for (let i = 0; i < size * 4; i++) {
-    const c = at(rng.range(0.5, size - 0.5), rng.range(0.5, size - 0.5));
+  for (let i = 0; i < area * 4; i++) {
+    const c = at(rng.range(0.5, width - 0.5), rng.range(0.5, depth - 0.5));
     if (rng.chance(0.75)) {
       const r = rng.range(1, 2.6) * zoom;
       const pts = [0, 1, 2, 3, 4].map((k) => {

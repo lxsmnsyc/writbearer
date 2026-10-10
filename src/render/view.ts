@@ -58,6 +58,19 @@ export class Views {
     return v;
   }
 
+  /** Forgets where units were, after they were moved to a new stage. */
+  snap(sim: Sim): void {
+    for (const u of sim.units) {
+      const v = this.get(u);
+      v.px = u.x;
+      v.pz = u.z;
+      v.x = u.x;
+      v.z = u.z;
+      v.kx = 0;
+      v.kz = 0;
+    }
+  }
+
   /** Records where each unit ended the tick. */
   afterTick(sim: Sim): void {
     for (const u of sim.units) {

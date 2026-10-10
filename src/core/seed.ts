@@ -55,6 +55,15 @@ export class RunStreams {
     return rng;
   }
 
+  /**
+   * A fresh stream for one area of a phase, such as a stage. It depends only
+   * on the run seed, the phase, the stream name and the area, so an area is
+   * the same however the run reached it.
+   */
+  area(phase: number, stream: Stream, area: number): RNG {
+    return new RNG(hashSeed(this.seed, phase, stream, 'area', area));
+  }
+
   /** The state of every stream drawn from so far, for the suspend save. */
   save(): Record<string, number> {
     return Object.fromEntries(Array.from(this.streams, ([key, rng]) => [key, rng.state]));

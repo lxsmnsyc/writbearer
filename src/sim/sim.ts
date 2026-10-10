@@ -3,6 +3,7 @@ import RNG from '../core/rng';
 import { think } from './ai';
 import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
+import Nav from './nav';
 import type { Projectile } from './projectile';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
@@ -180,8 +181,13 @@ export default class Sim extends EventEngine<SimEventMap> {
   // Solid round props, such as pillars. Units cannot stand inside them.
   readonly obstacles: { x: number; z: number; r: number }[] = [];
 
-  // The floor's size, in tiles. Units stay inside. Infinite means no bounds.
-  size = Infinity;
+  // The floor's size, in tiles, along x and z. Units stay inside. Infinite
+  // means no bounds.
+  width = Infinity;
+  depth = Infinity;
+
+  // Where units can walk, once the floor is set. Without it, they walk straight.
+  nav: Nav | null = null;
 
   // Arrows and other things in flight.
   readonly projectiles: Projectile[] = [];
@@ -190,6 +196,13 @@ export default class Sim extends EventEngine<SimEventMap> {
     super();
     this.rng = typeof rng === 'number' ? new RNG(rng) : rng;
     setupMechanics(this);
+  }
+
+  /** Sets the floor's size and builds where units can walk around the obstacles. */
+  setFloor(width: number, depth: number): void {
+    this.width = width;
+    this.depth = depth;
+    this.nav = new Nav(width, depth, this.obstacles);
   }
 
   add(unit: Unit): Unit {
@@ -307,9 +320,11 @@ export default class Sim extends EventEngine<SimEventMap> {
           u.z = o.z + ((u.z - o.z) / d) * o.r;
         }
       }
-      if (Number.isFinite(this.size)) {
-        u.x = Math.min(this.size - 0.5, Math.max(0.5, u.x));
-        u.z = Math.min(this.size - 0.5, Math.max(0.5, u.z));
+      if (Number.isFinite(this.width)) {
+        u.x = Math.min(this.width - 0.5, Math.max(0.5, u.x));
+      }
+      if (Number.isFinite(this.depth)) {
+        u.z = Math.min(this.depth - 0.5, Math.max(0.5, u.z));
       }
     }
   }

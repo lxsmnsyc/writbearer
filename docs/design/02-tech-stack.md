@@ -165,7 +165,7 @@ src/
     ai/        toggle evaluator, utility movement, personality
   content/
     jobs/ skills/ statuses/ items/ affixes/ cards/ monsters/ biomes/ events/
-  gen/         phase, stage graph, stage layout, loot
+  gen/         phase, stage graph, stage layout (stage.ts), loot
   render/      canvas renderer, figure rig, floor, light, fog of war, atmosphere, palette snapping, effects
   ui/          Solid: map, inventory, toggles, merc sheet
 ```

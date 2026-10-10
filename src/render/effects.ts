@@ -172,6 +172,22 @@ export class Effects {
     });
   }
 
+  /** Forgets everything on the old stage's floor and in its air. */
+  clear(): void {
+    this.decals.length = 0;
+    this.particles.length = 0;
+    this.pieces.length = 0;
+    this.rings.length = 0;
+    this.motes.length = 0;
+    // The torn-apart dead who came along stay torn apart.
+    for (const u of this.gibbed) {
+      if (!this.sim.units.has(u)) {
+        this.gibbed.delete(u);
+      }
+    }
+    this.lastHit.clear();
+  }
+
   /** Old blood already on the floor when a stage begins. */
   stain(x: number, z: number, r: number, color: string): void {
     this.decals.push({ x, z, r, color, seed: this.rng.random() * 99 });

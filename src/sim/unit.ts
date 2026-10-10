@@ -9,6 +9,7 @@ import {
   type UnitDamageEvent,
   type UnitHealEvent,
 } from './events';
+import type { Spot } from './nav';
 import type Sim from './sim';
 import type { Cast, Skill } from './skill';
 import type { ActiveStatus, StatusDef } from './status';
@@ -65,6 +66,10 @@ export interface UnitSpec {
   hunt?: Hunt;
   skills?: Skill[];
 }
+
+// A route is found again when its goal moves this far, or after this long.
+const ROUTE_DRIFT = 0.75;
+const ROUTE_AGE = 1;
 
 // Buildup starts to fade this long after the last hit, then fades this fast.
 const BUILDUP_HOLD = 2;
@@ -127,6 +132,8 @@ export default class Unit {
   hunt: Hunt | undefined;
   // Where the bearer was told to walk.
   order: { x: number; z: number } | null = null;
+  // The path being followed around obstacles, and the goal it was found for
+  private route: { x: number; z: number; at: number; points: Spot[] } | null = null;
 
   readonly skills: Skill[];
   // Seconds until each skill may be used again, by skill id
@@ -241,6 +248,43 @@ export default class Unit {
   /** Whether the unit is in the middle of an attack or a skill. */
   get busy(): boolean {
     return this.swing >= 0 || this.cast !== null;
+  }
+
+  /**
+   * Walks toward a point, around obstacles when something is in the way.
+   * Returns true once it is within `stop` tiles of it.
+   */
+  travel(x: number, z: number, dt: number, stop = 0.05): boolean {
+    const { nav } = this.sim;
+    if (!nav || nav.clear(this.x, this.z, x, z)) {
+      this.route = null;
+      return this.walkTo(x, z, dt, stop);
+    }
+    let route = this.route;
+    // A route is found again when the goal moves or it grows old.
+    if (
+      !route ||
+      Math.hypot(route.x - x, route.z - z) > ROUTE_DRIFT ||
+      this.sim.time - route.at > ROUTE_AGE
+    ) {
+      route = { x, z, at: this.sim.time, points: nav.path(this, { x, z }) };
+      this.route = route;
+    }
+    // Skip ahead to the furthest waypoint in a straight line.
+    while (
+      route.points.length > 1 &&
+      nav.clear(this.x, this.z, route.points[1].x, route.points[1].z)
+    ) {
+      route.points.shift();
+    }
+    const next = route.points.at(0);
+    if (!next) {
+      return this.walkTo(x, z, dt, stop);
+    }
+    if (this.walkTo(next.x, next.z, dt, 0.05)) {
+      route.points.shift();
+    }
+    return Math.hypot(x - this.x, z - this.z) <= stop;
   }
 
   /** Starts a basic attack. The blow lands later, on the hit frame. */

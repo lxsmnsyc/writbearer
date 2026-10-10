@@ -79,6 +79,24 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 7. Place monster packs from a threat budget. Packs gather near points of interest and the exit. Some patrol between them.
 8. Apply the phase modifiers, such as night or rain.
 
+### In the game so far
+
+`src/gen/stage.ts` builds a stage from the `layout` stream with the stage's index, so a seed always gives the same descent. It follows the steps above, for one kind of field: ruined flagstone plazas.
+
+- **Size:** 54 to 62 tiles wide and 34 to 42 deep. The entrance is on the west edge and the stair down on the east edge, between two burning braziers.
+- **Choke point:** a ruined wall runs across the whole field, about halfway. It has one breach, and sometimes a second. A pack watches the first one from the far side.
+- **Places:**
+  - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
+  - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other side of the wall from the site.
+  - A cache, a chest for now.
+- **Terrain from noise:** pillars where the noise runs high, rubble where it runs low, plus pikes and gibbets along the way. Every place keeps clear ground around it.
+- **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.
+- **Packs:** a threat budget of 24, plus 5 per stage deeper. Each monster costs 2 or 3, and an elite costs 6 more. Packs of 2 or 3 come from one faction: Blight crawlers, the Old King's dead, Penitents with the Hollowed, or the Hollowed alone. No pack stands within 13 tiles of the entrance.
+- **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
+- **Descending:** when the bearer reaches the stair, the next stage is built. The party, living and dead, arrives at its entrance. The old stage's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
+
+Not yet: water, ledges, grass, alarms, patrols, forks and the map screen.
+
 ### Map
 
 - The darkness hides unexplored ground.
