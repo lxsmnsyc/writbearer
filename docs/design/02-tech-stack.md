@@ -21,7 +21,9 @@ Three.js with voxel models and 2D sprite sheets were both tried and dropped. Pha
 
 ## Randomness
 
-- Reuse `alea.ts` from the-fighting-game for seeded streams.
+- Streams use mulberry32 (`src/core/rng.ts`). Its whole state is one 32-bit number, so a save stores each stream as one number.
+- A stream's seed is a hash of the run seed, the phase and the stream name (`src/core/seed.ts`). Drawing from one stream never changes another.
+- Run seeds are 8 characters of Crockford base 32, such as `7KQ2M9XA`. A typed seed is trimmed and upper-cased. Any other text works.
 - Reuse `prd.ts` for crit and proc chances, so streaks of luck stay short.
 - One stream per subsystem. See [overview](01-overview.md#seeds).
 
