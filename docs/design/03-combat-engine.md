@@ -112,6 +112,23 @@ Timing values per skill, taken from rAthena:
 
 A skill that hits several times sends one `UnitSkillHit` per hit. Each hit goes through the full pipeline, so on-hit effects scale with hit count.
 
+### Projectiles
+
+- An arrow leaves on the release frame and lands when it reaches its target. Damage comes on landing, not on release.
+- A basic attack's arrow follows its target, as in rAthena, so it cannot be dodged by walking.
+- A skill shot, such as Piercing Arrow, flies straight. It hits each enemy it passes and can be walked out of.
+
+### First skills
+
+These two are in the game, at rank 1, before skill trees exist:
+
+| Skill | Job | Cost | Cooldown | Windup | Effect | Auto rule |
+|---|---|---|---|---|---|---|
+| Challenge | Vanguard | 12 | 9 s | 0.35 s | Taunts every enemy within 3 tiles for 4 s. A taunted enemy only attacks the Vanguard. | Something near goes for the bearer, or two near go for others. |
+| Piercing Arrow | Ranger | 14 | 6 s | 0.9 s | A straight arrow through every enemy in its line, at 180%. | Two or more enemies in line, an elite, or an enemy going for the bearer. |
+
+Each skill has a toggle in the merc's orders: Auto, Elites (only when the use would reach an elite or boss) or Off.
+
 ## Hit check
 
 `CheckHit` runs before damage, because a crit decides whether evasion applies.

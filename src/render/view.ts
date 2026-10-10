@@ -4,6 +4,8 @@ import { HIT_FRACTION, type Kind, type RigUnit, isKind } from './rig';
 
 // Matches the simulation's recovery after a blow.
 const RECOVERY = 0.2;
+// Skills drawn as a shout: the Vanguard bangs its shield.
+const SHOUTS = new Set(['challenge']);
 
 /**
  * What the renderer remembers about a unit between frames: where it was on
@@ -105,6 +107,7 @@ export class Views {
       walk: v.walk,
       stride: v.stride,
       atk: attackProgress(u, kind),
+      shout: shoutProgress(u),
       hurt: v.hurt,
       alert: u.target?.alive === true,
     };
@@ -113,13 +116,30 @@ export class Views {
 
 // Maps the simulation's swing time onto the rig's 0 to 1 attack, so the
 // drawn blow lands on the same frame as the damage.
+// A skill with no pose of its own is drawn as a slower basic attack.
 function attackProgress(u: Unit, kind: Kind): number {
+  const h = HIT_FRACTION[kind];
+  if (u.cast && !SHOUTS.has(u.cast.skill.id)) {
+    return progress(u.cast.t, u.cast.skill.windup, u.cast.skill.recovery, h);
+  }
   if (u.swing < 0) {
     return -1;
   }
-  const h = HIT_FRACTION[kind];
-  if (u.swing < u.kit.hitAt) {
-    return (u.swing / u.kit.hitAt) * h;
+  return progress(u.swing, u.kit.hitAt, RECOVERY, h);
+}
+
+// A shout's progress from 0 to 1. It lands at the middle.
+function shoutProgress(u: Unit): number {
+  if (!u.cast || !SHOUTS.has(u.cast.skill.id)) {
+    return -1;
   }
-  return Math.min(1, h + ((u.swing - u.kit.hitAt) / RECOVERY) * (1 - h));
+  return progress(u.cast.t, u.cast.skill.windup, u.cast.skill.recovery, 0.5);
+}
+
+// Maps time in a windup and recovery onto 0 to 1, with the release at `at`.
+function progress(t: number, windup: number, recovery: number, at: number): number {
+  if (t < windup) {
+    return (t / windup) * at;
+  }
+  return Math.min(1, at + ((t - windup) / recovery) * (1 - at));
 }

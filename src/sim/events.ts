@@ -8,6 +8,7 @@ import type {
   Range,
   ValuePriority,
 } from './types';
+import type { Skill } from './skill';
 import type Unit from './unit';
 
 export const enum SimEvents {
@@ -16,6 +17,9 @@ export const enum SimEvents {
   UnitDamage = 'UnitDamage',
   UnitHeal = 'UnitHeal',
   UnitDies = 'UnitDies',
+  CheckSkillCost = 'CheckSkillCost',
+  UnitSkillWindup = 'UnitSkillWindup',
+  UnitSkillRelease = 'UnitSkillRelease',
 }
 
 /**
@@ -70,6 +74,27 @@ export interface UnitDiesEvent extends BaseEvent {
   killer: Unit | null;
 }
 
+/** Asks the final mana cost of a skill. `value` starts at the skill's cost. */
+export interface CheckSkillCostEvent extends BaseEvent {
+  source: Unit;
+  skill: Skill;
+  value: number;
+}
+
+/** A skill's windup begins. Disabling it cancels the skill before mana is spent. */
+export interface UnitSkillWindupEvent extends BaseEvent {
+  source: Unit;
+  skill: Skill;
+  target: Unit | null;
+}
+
+/** A skill takes effect. Disabling it makes the skill fizzle. */
+export interface UnitSkillReleaseEvent extends BaseEvent {
+  source: Unit;
+  skill: Skill;
+  target: Unit | null;
+}
+
 /** Which event carries which shape, on which priority scale. */
 export interface SimEventMap extends EventMap {
   [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
@@ -77,4 +102,7 @@ export interface SimEventMap extends EventMap {
   [SimEvents.UnitDamage]: [UnitDamageEvent, DamagePriority];
   [SimEvents.UnitHeal]: [UnitHealEvent, HealPriority];
   [SimEvents.UnitDies]: [UnitDiesEvent, EventPriority];
+  [SimEvents.CheckSkillCost]: [CheckSkillCostEvent, ValuePriority];
+  [SimEvents.UnitSkillWindup]: [UnitSkillWindupEvent, EventPriority];
+  [SimEvents.UnitSkillRelease]: [UnitSkillReleaseEvent, EventPriority];
 }

@@ -5,7 +5,10 @@ import {
   Stance,
   type Toggles,
   setToggles as applyToggles,
+  copyToggles,
+  skillMode,
 } from '../sim/ai';
+import { SkillMode } from '../sim/skill';
 import type Unit from '../sim/unit';
 
 // How many target priorities a merc follows. Discipline will set this later.
@@ -26,6 +29,12 @@ const PRIORITIES: { value: Priority; name: string }[] = [
   { value: Priority.Elites, name: 'Elites and bosses' },
 ];
 
+const SKILL_MODES: { value: SkillMode; name: string }[] = [
+  { value: SkillMode.Auto, name: 'Auto' },
+  { value: SkillMode.Elites, name: 'Elites' },
+  { value: SkillMode.Off, name: 'Off' },
+];
+
 const priorityName = (p: Priority): string => PRIORITIES.find((x) => x.value === p)?.name ?? '';
 
 interface Props {
@@ -35,11 +44,9 @@ interface Props {
 
 /** One merc's standing orders. The game is paused while this is open. */
 export default function MercPanel(props: Props): JSX.Element {
-  const start = props.unit.toggles ?? DEFAULT_TOGGLES;
-  const [toggles, setToggles] = createSignal<Toggles>({
-    ...start,
-    priorities: [...start.priorities],
-  });
+  const [toggles, setToggles] = createSignal<Toggles>(
+    copyToggles(props.unit.toggles ?? DEFAULT_TOGGLES),
+  );
 
   const update = (next: Toggles): void => {
     setToggles(next);
@@ -67,6 +74,12 @@ export default function MercPanel(props: Props): JSX.Element {
   const unused = (): Priority[] =>
     PRIORITIES.map((p) => p.value).filter((p) => !toggles().priorities.includes(p));
 
+  const setSkill = (id: string, mode: SkillMode): void => {
+    update({ ...toggles(), skills: { ...toggles().skills, [id]: mode } });
+  };
+
+  const mana = (): string => `${Math.floor(props.unit.mana)} / ${props.unit.derived.maxMana}`;
+
   const hp = (): string => `${Math.max(0, Math.ceil(props.unit.hp))} / ${props.unit.derived.maxHp}`;
 
   return (
@@ -81,7 +94,7 @@ export default function MercPanel(props: Props): JSX.Element {
             {props.unit.name}
           </h2>
           <p data-part="note" class="text-xs text-zinc-500">
-            Level {props.unit.level} · {hp()} health
+            Level {props.unit.level} · {hp()} health · {mana()} mana
           </p>
         </div>
         <button
@@ -196,6 +209,59 @@ export default function MercPanel(props: Props): JSX.Element {
           </div>
         </Show>
       </section>
+
+      <Show when={props.unit.skills.length > 0}>
+        <section class="mb-4">
+          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
+            Skills
+          </h3>
+          <ul class="space-y-2">
+            <For each={props.unit.skills}>
+              {(skill) => (
+                <li>
+                  <div class="mb-1 flex items-baseline justify-between">
+                    <span>{skill.name}</span>
+                    <span data-part="note" class="text-xs text-zinc-500">
+                      {skill.cost} mana
+                    </span>
+                  </div>
+                  <div
+                    class="grid grid-cols-3 gap-1"
+                    role="radiogroup"
+                    aria-label={`Use ${skill.name}`}
+                  >
+                    <For each={SKILL_MODES}>
+                      {(m) => (
+                        <button
+                          type="button"
+                          role="radio"
+                          data-part="choice"
+                          aria-checked={skillMode(toggles(), skill.id) === m.value}
+                          class="border px-2 py-0.5 text-xs"
+                          classList={{
+                            'border-amber-500 text-amber-400':
+                              skillMode(toggles(), skill.id) === m.value,
+                            'border-zinc-700 text-zinc-400 hover:border-zinc-500':
+                              skillMode(toggles(), skill.id) !== m.value,
+                          }}
+                          onClick={() => {
+                            setSkill(skill.id, m.value);
+                          }}
+                        >
+                          {m.name}
+                        </button>
+                      )}
+                    </For>
+                  </div>
+                  <p data-part="note" class="mt-1 text-xs text-zinc-500">
+                    {skill.description}
+                  </p>
+                </li>
+              )}
+            </For>
+          </ul>
+        </section>
+      </Show>
 
       <section>
         <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">

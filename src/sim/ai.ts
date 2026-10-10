@@ -1,4 +1,5 @@
 import type Sim from './sim';
+import { SkillMode } from './skill';
 import { Rank, Side } from './types';
 import type Unit from './unit';
 
@@ -25,17 +26,30 @@ export interface Toggles {
   priorities: Priority[];
   // How far from the bearer the merc may chase, in tiles
   chase: number;
+  // How each skill may be used, by skill id. A missing skill is Auto.
+  skills: Record<string, SkillMode>;
 }
 
 export const DEFAULT_TOGGLES: Toggles = {
   stance: Stance.Guard,
   priorities: [Priority.AttackingBearer, Priority.Nearest],
   chase: 7,
+  skills: {},
 };
+
+/** A copy of a merc's orders, so changing one never changes another. */
+export function copyToggles(toggles: Toggles): Toggles {
+  return { ...toggles, priorities: [...toggles.priorities], skills: { ...toggles.skills } };
+}
 
 /** Gives a merc new standing orders. The merc keeps its own copy. */
 export function setToggles(unit: Unit, toggles: Toggles): void {
-  unit.toggles = { ...toggles, priorities: [...toggles.priorities] };
+  unit.toggles = copyToggles(toggles);
+}
+
+/** How a merc may use a skill, under its orders. */
+export function skillMode(toggles: Toggles, id: string): SkillMode {
+  return toggles.skills[id] ?? SkillMode.Auto;
 }
 
 /** What a monster goes for. */
@@ -43,6 +57,9 @@ export const enum Hunt {
   Bearer = 0,
   Nearest = 1,
 }
+
+/** The status a taunt puts on a monster. Its source is whom it must fight. */
+export const TAUNTED = 'taunted';
 
 // A monster that notices the party wakes every monster this close to it.
 const PACK_RADIUS = 4;
@@ -94,6 +111,23 @@ function engage(u: Unit, target: Unit, dt: number): void {
   }
 }
 
+// Uses the first skill the merc's orders allow and its rule wants.
+function useSkill(sim: Sim, u: Unit, toggles: Toggles, target: Unit | null): boolean {
+  for (const skill of u.skills) {
+    const mode = skillMode(toggles, skill.id);
+    if (mode === SkillMode.Off || !u.canCast(skill) || !skill.wants(u, target, sim)) {
+      continue;
+    }
+    if (mode === SkillMode.Elites && !skill.elite(u, target, sim)) {
+      continue;
+    }
+    if (u.startCast(skill, target)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function thinkMerc(sim: Sim, u: Unit, dt: number): void {
   const toggles = u.toggles ?? DEFAULT_TOGGLES;
   const bearer = sim.bearer?.alive ? sim.bearer : null;
@@ -109,6 +143,10 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
     );
   });
   const target = pick(u, toggles, bearer, enemies);
+  if (useSkill(sim, u, toggles, target)) {
+    u.target = target;
+    return;
+  }
   if (target) {
     engage(u, target, dt);
     return;
@@ -142,7 +180,16 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
     }
   }
   const bearer = sim.bearer?.alive ? sim.bearer : null;
-  let target: Unit | null = u.hunt === Hunt.Bearer && bearer ? bearer : nearest(u, party);
+  // A taunted monster goes for whoever taunted it.
+  const taunt = u.statuses.get(TAUNTED);
+  let target: Unit | null;
+  if (taunt?.source.alive) {
+    target = taunt.source;
+  } else if (u.hunt === Hunt.Bearer && bearer) {
+    target = bearer;
+  } else {
+    target = nearest(u, party);
+  }
   if (!target) {
     u.target = null;
     return;
@@ -150,8 +197,9 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   // A party member standing in reach is in the way, and gets hit first.
   // The monster still counts as going for its real target, so mercs that
   // guard the bearer see it coming.
+  // A taunted monster has eyes only for its taunter.
   const intended = target;
-  if (u.distanceTo(target) > u.kit.reach) {
+  if (!taunt?.source.alive && u.distanceTo(target) > u.kit.reach) {
     const blocker = party.find((p) => p !== target && u.distanceTo(p) <= u.kit.reach);
     if (blocker) {
       target = blocker;
@@ -163,7 +211,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
 
 /** One unit's decision for this tick. Units mid-swing are committed to it. */
 export function think(sim: Sim, u: Unit, dt: number): void {
-  if (!u.alive || u.swing >= 0) {
+  if (!u.alive || u.busy) {
     return;
   }
   if (u === sim.bearer) {

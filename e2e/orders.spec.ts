@@ -74,3 +74,20 @@ test('clicking a merc on the canvas opens its orders', async ({ page }) => {
   );
   await expect(page.getByRole('complementary', { name: 'Orders for Vanguard' })).toBeVisible();
 });
+
+test('each skill can be set to Auto, Elites or Off, and the setting stays', async ({ page }) => {
+  await page.keyboard.press('1');
+  const panel = page.getByRole('complementary', { name: 'Orders for Vanguard' });
+  const challenge = panel.getByRole('radiogroup', { name: 'Use Challenge' });
+  await expect(challenge.getByRole('radio', { name: 'Auto' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await challenge.getByRole('radio', { name: 'Off' }).click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('1');
+  await expect(challenge.getByRole('radio', { name: 'Off' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+});

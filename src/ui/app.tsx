@@ -7,10 +7,12 @@ interface PartyEntry {
   unit: Unit;
   hp: number;
   maxHp: number;
+  mana: number;
+  maxMana: number;
   alive: boolean;
 }
 
-// How often the party bar reads health from the game, in milliseconds.
+// How often the party bar reads health and mana from the game, in milliseconds.
 const PARTY_REFRESH = 200;
 
 export default function App(): JSX.Element {
@@ -32,9 +34,14 @@ export default function App(): JSX.Element {
     setGame(g);
     const timer = setInterval(() => {
       setParty(
-        g
-          .mercs()
-          .map((unit) => ({ unit, hp: unit.hp, maxHp: unit.derived.maxHp, alive: unit.alive })),
+        g.mercs().map((unit) => ({
+          unit,
+          hp: unit.hp,
+          maxHp: unit.derived.maxHp,
+          mana: unit.mana,
+          maxMana: unit.derived.maxMana,
+          alive: unit.alive,
+        })),
       );
     }, PARTY_REFRESH);
     onCleanup(() => {
@@ -77,6 +84,13 @@ export default function App(): JSX.Element {
                   data-part="bar-fill"
                   class="h-1 bg-amber-500"
                   style={{ width: `${Math.max(0, (100 * m.hp) / m.maxHp)}%` }}
+                />
+              </div>
+              <div data-part="bar" class="mt-0.5 h-0.5 bg-zinc-800">
+                <div
+                  data-part="mana-fill"
+                  class="h-0.5 bg-teal-600"
+                  style={{ width: `${m.maxMana ? (100 * m.mana) / m.maxMana : 0}%` }}
                 />
               </div>
               <Show when={!m.alive}>

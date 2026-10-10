@@ -95,7 +95,9 @@ describe('a fight with no rendering', () => {
     const damageTaken = (priorities: Priority[]): number => {
       let total = 0;
       for (const seed of [1, 2, 3, 4, 5, 6]) {
-        const f = fight(seed, AMBUSH, { toggles: { stance: Stance.Guard, priorities, chase: 9 } });
+        const f = fight(seed, AMBUSH, {
+          toggles: { stance: Stance.Guard, priorities, chase: 9, skills: {} },
+        });
         // An ambush is sprung, not noticed: every monster starts awake.
         for (const m of f.monsters) {
           m.aware = true;

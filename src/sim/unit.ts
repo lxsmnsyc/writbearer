@@ -1,6 +1,13 @@
 import type { Hunt, Toggles } from './ai';
-import { type CheckHitEvent, SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
+import {
+  type CheckHitEvent,
+  type CheckSkillCostEvent,
+  SimEvents,
+  type UnitDamageEvent,
+  type UnitHealEvent,
+} from './events';
 import type Sim from './sim';
+import type { Cast, Skill } from './skill';
 import {
   type BaseStats,
   type Derived,
@@ -52,6 +59,14 @@ export interface UnitSpec {
   // Mercs follow the player's toggles. Monsters follow their hunt.
   toggles?: Toggles;
   hunt?: Hunt;
+  skills?: Skill[];
+}
+
+/** A timed effect on a unit, such as being taunted. */
+export interface Status {
+  source: Unit;
+  // Seconds left
+  remaining: number;
 }
 
 export interface HitOptions {
@@ -111,6 +126,14 @@ export default class Unit {
   // Where the bearer was told to walk.
   order: { x: number; z: number } | null = null;
 
+  readonly skills: Skill[];
+  // Seconds until each skill may be used again, by skill id
+  readonly skillCooldowns = new Map<string, number>();
+  // The skill being used, or null
+  cast: Cast | null = null;
+  // Timed effects, by status id
+  readonly statuses = new Map<string, Status>();
+
   constructor(
     readonly sim: Sim,
     spec: UnitSpec,
@@ -133,6 +156,7 @@ export default class Unit {
     this.z = spec.z ?? 0;
     this.toggles = spec.toggles;
     this.hunt = spec.hunt;
+    this.skills = [...(spec.skills ?? [])];
     this.recalc();
     this.hp = this.derived.maxHp;
     this.mana = this.derived.maxMana;
@@ -178,9 +202,14 @@ export default class Unit {
     return d - step <= stop;
   }
 
+  /** Whether the unit is in the middle of an attack or a skill. */
+  get busy(): boolean {
+    return this.swing >= 0 || this.cast !== null;
+  }
+
   /** Starts a basic attack. The blow lands later, on the hit frame. */
   startAttack(target: Unit): boolean {
-    if (this.swing >= 0 || this.cooldown > 0 || this.kit.interval <= 0) {
+    if (this.busy || this.cooldown > 0 || this.kit.interval <= 0) {
       return false;
     }
     this.swing = 0;
@@ -188,6 +217,45 @@ export default class Unit {
     this.cooldown = this.kit.interval;
     this.face(target);
     return true;
+  }
+
+  /** The mana a skill costs this unit now, after passives and items. */
+  skillCost(skill: Skill): number {
+    const event: CheckSkillCostEvent = {
+      id: 'CheckSkillCost',
+      disabled: false,
+      source: this,
+      skill,
+      value: skill.cost,
+    };
+    this.sim.emit(SimEvents.CheckSkillCost, event);
+    return Math.max(0, Math.round(event.value));
+  }
+
+  /** Whether the unit is free, the skill is off cooldown and the mana is there. */
+  canCast(skill: Skill): boolean {
+    return (
+      this.alive &&
+      !this.busy &&
+      (this.skillCooldowns.get(skill.id) ?? 0) <= 0 &&
+      this.mana >= this.skillCost(skill)
+    );
+  }
+
+  /** Starts a skill's windup. Returns false if it cannot be used now. */
+  startCast(skill: Skill, target: Unit | null): boolean {
+    if (!this.canCast(skill)) {
+      return false;
+    }
+    const event = {
+      id: 'UnitSkillWindup',
+      disabled: false,
+      source: this,
+      skill,
+      target,
+    };
+    this.sim.emit(SimEvents.UnitSkillWindup, event);
+    return !event.disabled;
   }
 
   /**

@@ -1,4 +1,5 @@
 import type { Prop, Stage } from '../game/stage';
+import { TAUNTED } from '../sim/ai';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -122,6 +123,7 @@ export default class Renderer {
     // Fog covers the floor only. Standing things are hidden by their own cell below.
     const fog = this.updateFog(f);
     fog.draw(ctx, iso, C.void);
+    f.effects.drawRings(ctx, iso);
 
     // A gold ring marks the merc whose orders are open.
     if (f.selected?.alive) {
@@ -188,7 +190,7 @@ export default class Renderer {
     for (const item of list) {
       item.draw();
     }
-    f.effects.drawAir(ctx, iso);
+    f.effects.drawAir(ctx, iso, (px, pz) => fog.visible(px, pz) > 0.5);
 
     if (bearer) {
       const b = f.views.rig(bearer, f.alpha);
@@ -323,6 +325,14 @@ export default class Renderer {
       const r = f.views.rig(u, f.alpha);
       if (seen(fog, u, r.x, r.z) < 0.5) {
         continue;
+      }
+      if (u.statuses.has(TAUNTED)) {
+        // A red notch over the head: this one has turned on the Vanguard.
+        const b = this.iso(r.x, r.z);
+        const y = b.y - Math.round((barHeight(u) + 5) * look.zoom);
+        ctx.fillStyle = C.blood;
+        ctx.fillRect(b.x - 1, y - 3, 2, 3);
+        ctx.fillRect(b.x - 1, y + 1, 2, 1);
       }
       for (const e of emissives(r, this.iso, f.time)) {
         if (e.color === 'teal') {

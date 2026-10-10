@@ -31,7 +31,7 @@
       const CELL_W = 44;
       const CELL_H = 50;
       const COLS = 8;
-      const SECTIONS = ['facing', 'walk', 'attack'];
+      const SECTIONS = ['facing', 'walk', 'attack', 'skill'];
       const SCALE = 4;
       const canvas = document.getElementById('sheet');
       canvas.width = CELL_W * COLS * SCALE;
@@ -58,8 +58,9 @@
               walk: section === 'walk' ? (col / 8) * Math.PI * 2 : 0,
               stride: section === 'walk' ? 1 : 0,
               atk: section === 'attack' ? col / 7.001 : -1,
+              shout: section === 'skill' && kind === 'vanguard' ? col / 7.001 : -1,
               hurt: 9,
-              alert: section === 'attack',
+              alert: section === 'attack' || section === 'skill',
             };
             drawUnit(ctx, u, iso, C, 0, false);
           }

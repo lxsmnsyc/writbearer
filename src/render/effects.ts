@@ -1,7 +1,7 @@
 import RNG from '../core/rng';
 import { SimEvents } from '../sim/events';
 import type Sim from '../sim/sim';
-import { DamageFlags, DamagePriority, Side } from '../sim/types';
+import { DamagePriority, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { EventPriority } from '../core/event-emitter';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
@@ -40,14 +40,19 @@ export interface Piece {
   color: string;
 }
 
-interface Arrow {
-  from: Unit;
+// A ring that spreads on the floor, such as a Vanguard's Challenge.
+interface Ring {
   x: number;
   z: number;
-  tx: number;
-  tz: number;
+  // Reach in tiles at the end
+  radius: number;
+  age: number;
   life: number;
 }
+
+const RING_LIFE = 0.45;
+// How high arrows fly, in pixels
+const ARROW_HEIGHT = 22;
 
 const MAX_DECALS = 400;
 const GRAVITY = 9;
@@ -68,20 +73,27 @@ export function bodyColor(u: Unit): string {
 }
 
 /**
- * Blood, flying paper pieces and arrows. They only decorate: the simulation
- * never reads them, and they draw from their own random stream.
+ * Blood, flying paper pieces, arrows and skill marks. They only decorate:
+ * the simulation never reads them, and they draw from their own random
+ * stream. Arrows are the simulation's own projectiles, drawn where they are.
  */
 export class Effects {
   readonly decals: Decal[] = [];
   readonly particles: Particle[] = [];
   readonly pieces: Piece[] = [];
-  readonly arrows: Arrow[] = [];
+  readonly rings: Ring[] = [];
   private readonly rng = new RNG(99);
 
   constructor(
-    sim: Sim,
+    private readonly sim: Sim,
     private readonly views: Views,
   ) {
+    sim.on(SimEvents.UnitSkillRelease, EventPriority.Post, (event) => {
+      if (event.skill.id === 'challenge') {
+        const u = event.source;
+        this.rings.push({ x: u.x, z: u.z, radius: 3, age: 0, life: RING_LIFE });
+      }
+    });
     sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
       if (event.value <= 0) {
         return;
@@ -91,16 +103,6 @@ export class Effects {
       const dz = event.target.z - event.source.z;
       const d = Math.hypot(dx, dz) || 1;
       this.views.knock(event.target, (dx / d) * 0.18, (dz / d) * 0.18);
-      if (event.flags & DamageFlags.Projectile) {
-        this.arrows.push({
-          from: event.source,
-          x: event.source.x,
-          z: event.source.z,
-          tx: event.target.x,
-          tz: event.target.z,
-          life: 0.12,
-        });
-      }
       this.spray(event.target, event.source, 16);
       if (this.rng.chance(0.5)) {
         this.stain(
@@ -222,10 +224,10 @@ export class Effects {
       }
     }
 
-    for (const a of this.arrows) {
-      a.life -= dt;
+    for (const ring of this.rings) {
+      ring.age += dt;
     }
-    removeWhere(this.arrows, (a) => a.life <= 0);
+    removeWhere(this.rings, (ring) => ring.age >= ring.life);
   }
 
   drawDecals(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
@@ -239,23 +241,56 @@ export class Effects {
     }
   }
 
-  drawAir(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
-    for (const a of this.arrows) {
-      const t = 1 - a.life / 0.12;
-      const x = a.x + (a.tx - a.x) * t;
-      const z = a.z + (a.tz - a.z) * t;
-      const b = iso(x, z);
-      const e = iso(a.tx, a.tz);
-      const d = Math.hypot(e.x - b.x, e.y - b.y) || 1;
-      ctx.strokeStyle = C.bone;
-      ctx.lineWidth = 1;
+  /** Rings on the floor, drawn under everything that stands. */
+  drawRings(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
+    ctx.lineWidth = look.zoom;
+    // Red is danger: whatever stands inside must turn and fight.
+    ctx.strokeStyle = C.blood;
+    for (const ring of this.rings) {
+      const t = ring.age / ring.life;
+      const c = iso(ring.x, ring.z);
+      // A tile's half-diagonal is 16 pixels across and 8 down.
+      const rx = ring.radius * Math.sqrt(t) * 16 * Math.SQRT2 * look.zoom;
+      ctx.globalAlpha = 1 - t * t;
       ctx.beginPath();
-      ctx.moveTo(b.x, b.y - 22 * look.zoom);
-      ctx.lineTo(b.x + ((e.x - b.x) / d) * 5, b.y - 22 * look.zoom + ((e.y - b.y) / d) * 5);
+      ctx.ellipse(c.x, c.y, rx, rx / 2, 0, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, rx * 0.8, rx * 0.4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Arrows in flight and blood in the air. `seen` hides what the party cannot see. */
+  drawAir(
+    ctx: CanvasRenderingContext2D,
+    iso: (x: number, z: number) => Pt,
+    seen: (x: number, z: number) => boolean,
+  ): void {
+    ctx.lineWidth = 1;
+    const h = ARROW_HEIGHT * look.zoom;
+    for (const p of this.sim.projectiles) {
+      if (!seen(p.x, p.z)) {
+        continue;
+      }
+      const head = iso(p.x, p.z);
+      // A skill arrow leaves a long pale streak, a plain one a short shaft.
+      const length = p.skill ? 1.1 : 0.3;
+      const tail = iso(p.x - p.dx * length, p.z - p.dz * length);
+      ctx.strokeStyle = p.skill ? C.bone : C.ink;
+      ctx.beginPath();
+      ctx.moveTo(tail.x, tail.y - h);
+      ctx.lineTo(head.x, head.y - h);
+      ctx.stroke();
+      ctx.fillStyle = C.bone;
+      ctx.fillRect(Math.round(head.x), Math.round(head.y - h), 1, 1);
     }
     ctx.fillStyle = C.blood;
     for (const p of this.particles) {
+      if (!seen(p.x, p.z)) {
+        continue;
+      }
       const b = iso(p.x, p.z);
       ctx.fillRect(Math.round(b.x), Math.round(b.y - p.h * HEIGHT_PX * look.zoom), 1, 1);
     }

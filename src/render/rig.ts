@@ -48,6 +48,8 @@ export interface RigUnit {
   stride: number;
   // Attack progress from 0 to 1, or -1 when not attacking.
   atk: number;
+  // Shout progress from 0 to 1, landing at 0.5, or -1. The Vanguard's Challenge.
+  shout: number;
   // Time since the last hit taken, for the flinch.
   hurt: number;
   // True while the unit has an enemy to face. Rangers raise the bow.
@@ -169,9 +171,12 @@ function skeleton(u: RigUnit, time: number): Skeleton {
     u.atk >= 0 && u.kind !== 'ranger'
       ? Math.max(0, Math.sin(clamp01((u.atk - 0.35) / 0.65) * Math.PI))
       : 0;
+  // A shout leans back to draw breath, then forward into the roar.
+  const roar = u.shout >= 0 ? -Math.sin(u.shout * Math.PI * 2) * 5 : 0;
   const lean =
     st * 4 -
     flinch +
+    roar +
     (u.kind === 'hollowSoldier' ? 4 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
 
@@ -378,7 +383,13 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     // The shield arm holds the shield out in front.
     reach(sk, 'L', add(sk.chest, v(16, -6, -6)), v(-1, -1, 0));
     g.shield = { center: add(sk.handL, v(5, 2, 0)) };
-    if (a >= 0) {
+    if (u.shout >= 0) {
+      // Sword raised high, then brought down flat on the shield's face.
+      const ph = phases(u.shout, 0.45, 0.5);
+      const up = add(sk.head, v(-6, 10, 20));
+      const bang = add(g.shield.center, v(-2, 4, 6));
+      reach(sk, 'R', handPath(ph, v(10, 14, 56), up, bang), v(-1, 1, 0));
+    } else if (a >= 0) {
       const ph = phases(a, 0.5, 0.65);
       const up = v(-8, 12, 108);
       const down = v(30, 6, 52);

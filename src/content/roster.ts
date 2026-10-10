@@ -1,9 +1,11 @@
 import { Hunt, type Toggles } from '../sim/ai';
 import type Sim from '../sim/sim';
+import type { Skill } from '../sim/skill';
 import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
 import type { Rank } from '../sim/types';
 import { Element, Race, Range, Side } from '../sim/types';
 import Unit, { type Kit } from '../sim/unit';
+import { CHALLENGE, PIERCING_ARROW } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
 // starting point for balance, not final values.
@@ -19,6 +21,7 @@ interface Template {
   element?: Element;
   elementLevel?: number;
   hunt?: Hunt;
+  skills?: Skill[];
 }
 
 const stats = (
@@ -70,6 +73,7 @@ export const MERCS = {
       { stat: 'blockChance', add: 35 },
       { stat: 'blockAmount', add: 60 },
     ],
+    skills: [CHALLENGE],
   },
   ranger: {
     job: job('Ranger', 180, 18, 60, Range.Ranged),
@@ -77,6 +81,7 @@ export const MERCS = {
     weapon: { min: 24, max: 32, matk: 0 },
     kit: { reach: 5.5, interval: 1.1, hitAt: 0.7, moveSpeed: 2.7 },
     modifiers: [{ stat: 'armor', add: 20 }],
+    skills: [PIERCING_ARROW],
   },
 } satisfies Record<string, Template>;
 
@@ -143,6 +148,7 @@ function spawn(
       element: t.element,
       elementLevel: t.elementLevel,
       hunt: t.hunt,
+      skills: t.skills,
       toggles,
       x,
       z,

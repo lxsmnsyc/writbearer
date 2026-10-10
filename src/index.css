@@ -126,6 +126,10 @@
   background: #7a5a22;
 }
 
+[data-ui='paper'] [data-part='mana-fill'] {
+  background: #2f5f5a;
+}
+
 [data-ui='paper'] input[type='range'] {
   accent-color: #1d1914;
 }
