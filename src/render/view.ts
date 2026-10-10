@@ -1,4 +1,5 @@
 import type Sim from '../sim/sim';
+import { Rank } from '../sim/types';
 import type Unit from '../sim/unit';
 import { HIT_FRACTION, type Kind, type RigUnit, isKind } from './rig';
 
@@ -122,6 +123,7 @@ export class Views {
       fall: v.dead < 0 ? -1 : Math.min(1, v.dead / FALL_TIME),
       hurt: v.hurt,
       alert: u.alive && u.target?.alive === true,
+      elite: u.rank !== Rank.Normal,
     };
   }
 }

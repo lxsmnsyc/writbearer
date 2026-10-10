@@ -153,7 +153,7 @@ The player picks one:
 Target priority. The player checks up to 3, in order:
 
 - Enemies attacking the citizen.
-- Casters and healers.
+- Casters and healers. In the game: monsters that have skills.
 - Heralds running to an alarm bell. See [stages](11-stages.md#alarms).
 - Lowest health.
 - Elites.

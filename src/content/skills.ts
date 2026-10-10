@@ -155,3 +155,39 @@ export const PIERCING_ARROW: Skill = {
     });
   },
 };
+
+const HYMN_RADIUS = 4;
+const HYMN_SHARE = 0.2;
+// Allies below this share of health make the Cantor sing.
+const HYMN_WOUNDED = 0.7;
+
+// The Cantor's flock: monsters within the hymn's reach, itself included.
+function flock(u: Unit): Unit[] {
+  return u.sim.living(Side.Monster).filter((m) => u.distanceTo(m) <= HYMN_RADIUS);
+}
+
+/**
+ * Penitent Cantor. A long hymn that mends every monster within 4 tiles by a
+ * fifth of its health. Breaking it off with a stun or a Shield Bash wastes it.
+ */
+export const HYMN: Skill = {
+  id: 'hymn',
+  name: 'Hymn of Mending',
+  description: `A long hymn that heals every ally within ${HYMN_RADIUS} tiles for ${HYMN_SHARE * 100}% of their health.`,
+  cost: 20,
+  cooldown: 6,
+  windup: 1.6,
+  recovery: 0.4,
+  targeting: Targeting.Self,
+  wants(u) {
+    return flock(u).some((m) => m.hp < m.derived.maxHp * HYMN_WOUNDED);
+  },
+  elite() {
+    return false;
+  },
+  release(u) {
+    for (const m of flock(u)) {
+      u.heal(m, m.derived.maxHp * HYMN_SHARE);
+    }
+  },
+};

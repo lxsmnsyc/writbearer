@@ -67,11 +67,22 @@ export function populate(sim: Sim, stage: Stage): Unit {
   ]) {
     spawnMonster(sim, 'penitent', 4, x, z);
   }
+  // Their Cantor keeps behind them, ready to mend them.
+  spawnMonster(sim, 'cantor', 4, 19.5, 7);
+  // An elite of the Old King's guard with two of its dead.
+  spawnMonster(sim, 'hollowSoldier', 5, 20.5, 18.7, { elite: true });
   for (const [x, z] of [
     [20, 18],
     [21, 19.4],
   ]) {
     spawnMonster(sim, 'hollowSoldier', 4, x, z);
+  }
+  // The Hollowed haunt the pillars to the north.
+  for (const [x, z] of [
+    [13, 21],
+    [14, 22.4],
+  ]) {
+    spawnMonster(sim, 'hollowed', 4, x, z);
   }
   for (const [x, z] of [
     [8, 4],
@@ -82,7 +93,7 @@ export function populate(sim: Sim, stage: Stage): Unit {
   return bearer;
 }
 
-const WAVE: MonsterKind[] = ['hollowSoldier', 'hollowSoldier', 'crawler', 'penitent'];
+const WAVE: MonsterKind[] = ['hollowSoldier', 'hollowSoldier', 'crawler', 'penitent', 'hollowed'];
 
 /** A pack out of the dark, about 10 tiles from the bearer. It comes awake. */
 export function spawnWave(sim: Sim, rng: RNG, bearer: Unit, size: number): void {

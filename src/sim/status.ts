@@ -21,6 +21,8 @@ export interface StatusDef {
   disables?: boolean;
   // Move speed is multiplied by this
   slow?: number;
+  // The unit runs from the source and cannot fight, as with fear
+  flees?: boolean;
   // Ends early when its source dies, as a taunt does
   endsWithSource?: boolean;
   // Runs every tick while active

@@ -1,7 +1,7 @@
 import type { Prop, Stage } from '../game/stage';
-import { BURN, CHILL, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
+import { BURN, CHILL, DREAD, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
 import type Sim from '../sim/sim';
-import { Side } from '../sim/types';
+import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import Atmosphere from './atmosphere';
@@ -36,11 +36,12 @@ const STATUS_COLOR: Record<string, string> = {
   [SHOCK.id]: C.storm,
   [PETRIFY.id]: C.earth,
   [POISON.id]: C.venom,
+  [DREAD.id]: C.teal,
 };
 
 // Statuses that build up, by id, to read their thresholds.
 const BUILDUP_STATUS = new Map(
-  [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON].map((def) => [def.id, def]),
+  [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON, DREAD].map((def) => [def.id, def]),
 );
 
 export interface Frame {
@@ -477,13 +478,17 @@ export default class Renderer {
 }
 
 function barHeight(u: Unit): number {
+  const elite = u.rank === Rank.Normal ? 1 : 1.25;
   if (u.kind === 'bearer') {
     return 36;
   }
   if (u.kind === 'crawler') {
-    return 16;
+    return 16 * elite;
   }
-  return 44;
+  if (u.kind === 'hollowed') {
+    return 38 * elite;
+  }
+  return 44 * elite;
 }
 
 // How visible a unit is, 0 to 1. The party is always seen.

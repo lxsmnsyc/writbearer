@@ -147,11 +147,35 @@ export const POISON: StatusDef = {
   },
 };
 
-/** The status each element builds up. Radiant, Occult and Spectral have none yet. */
+/**
+ * Occult. The whispers break the nerve: the unit drops its Ward and runs
+ * from the source. The bearer is driven on by the Writ and never runs.
+ */
+export const DREAD: StatusDef = {
+  id: 'dread',
+  name: 'Dread',
+  duration: 2.5,
+  immunity: 5,
+  threshold: (u) => (u === u.sim.bearer ? Infinity : threshold('wil')(u)),
+  flees: true,
+  setup: (s) => ({
+    start: () => {
+      s.unit.ward = 0;
+      s.unit.swing = -1;
+      s.unit.cast = null;
+    },
+    stop: () => {
+      // Nothing to undo: the lost Ward does not come back.
+    },
+  }),
+};
+
+/** The status each element builds up. Radiant and Spectral have none yet. */
 export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Fire]: BURN,
   [Element.Frost]: CHILL,
   [Element.Storm]: SHOCK,
   [Element.Earth]: PETRIFY,
   [Element.Venom]: POISON,
+  [Element.Occult]: DREAD,
 };

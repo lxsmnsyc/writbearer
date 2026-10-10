@@ -1,7 +1,7 @@
 import RNG from '../core/rng';
 import { SimEvents } from '../sim/events';
 import type Sim from '../sim/sim';
-import { DamageFlags, DamagePriority, Side } from '../sim/types';
+import { DamageFlags, DamagePriority, HealPriority, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { EventPriority } from '../core/event-emitter';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
@@ -48,6 +48,15 @@ interface Ring {
   radius: number;
   age: number;
   life: number;
+  color: string;
+}
+
+// A mote of light rising off a healed body.
+interface Mote {
+  x: number;
+  z: number;
+  h: number;
+  life: number;
 }
 
 const RING_LIFE = 0.45;
@@ -69,7 +78,7 @@ export function bodyColor(u: Unit): string {
   if (u.side === Side.Party) {
     return C.merc;
   }
-  if (u.kind === 'penitent') {
+  if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'hollowed') {
     return C.penitent;
   }
   return C.monster;
@@ -85,6 +94,7 @@ export class Effects {
   readonly particles: Particle[] = [];
   readonly pieces: Piece[] = [];
   readonly rings: Ring[] = [];
+  readonly motes: Mote[] = [];
   // Units torn apart. They leave pieces instead of a corpse.
   readonly gibbed = new Set<Unit>();
   // The last blow each unit took
@@ -96,9 +106,33 @@ export class Effects {
     private readonly views: Views,
   ) {
     sim.on(SimEvents.UnitSkillRelease, EventPriority.Post, (event) => {
+      const u = event.source;
       if (event.skill.id === 'challenge') {
-        const u = event.source;
-        this.rings.push({ x: u.x, z: u.z, radius: 3, age: 0, life: RING_LIFE });
+        // Red is danger: whatever stands inside must turn and fight.
+        this.rings.push({ x: u.x, z: u.z, radius: 3, age: 0, life: RING_LIFE, color: C.blood });
+      } else if (event.skill.id === 'hymn') {
+        // Gold is light: the Church's rite, mending its own.
+        this.rings.push({
+          x: u.x,
+          z: u.z,
+          radius: 4,
+          age: 0,
+          life: RING_LIFE * 1.5,
+          color: C.gold,
+        });
+      }
+    });
+    sim.on(SimEvents.UnitHeal, HealPriority.Post, (event) => {
+      if (event.value <= 0) {
+        return;
+      }
+      for (let i = 0; i < 5; i++) {
+        this.motes.push({
+          x: event.target.x + this.rng.range(-0.25, 0.25),
+          z: event.target.z + this.rng.range(-0.25, 0.25),
+          h: this.rng.range(0.2, 1.6),
+          life: this.rng.range(0.5, 1),
+        });
       }
     });
     sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
@@ -248,6 +282,11 @@ export class Effects {
       ring.age += dt;
     }
     removeWhere(this.rings, (ring) => ring.age >= ring.life);
+    for (const m of this.motes) {
+      m.h += dt * 1.2;
+      m.life -= dt;
+    }
+    removeWhere(this.motes, (m) => m.life <= 0);
   }
 
   drawDecals(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
@@ -264,9 +303,8 @@ export class Effects {
   /** Rings on the floor, drawn under everything that stands. */
   drawRings(ctx: CanvasRenderingContext2D, iso: (x: number, z: number) => Pt): void {
     ctx.lineWidth = look.zoom;
-    // Red is danger: whatever stands inside must turn and fight.
-    ctx.strokeStyle = C.blood;
     for (const ring of this.rings) {
+      ctx.strokeStyle = ring.color;
       const t = ring.age / ring.life;
       const c = iso(ring.x, ring.z);
       // A tile's half-diagonal is 16 pixels across and 8 down.
@@ -305,6 +343,13 @@ export class Effects {
       ctx.stroke();
       ctx.fillStyle = C.bone;
       ctx.fillRect(Math.round(head.x), Math.round(head.y - h), 1, 1);
+    }
+    ctx.fillStyle = C.gold;
+    for (const m of this.motes) {
+      if (seen(m.x, m.z)) {
+        const b = iso(m.x, m.z);
+        ctx.fillRect(Math.round(b.x), Math.round(b.y - m.h * HEIGHT_PX * look.zoom), 1, 1);
+      }
     }
     ctx.fillStyle = C.blood;
     for (const p of this.particles) {

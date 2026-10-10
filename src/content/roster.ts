@@ -2,10 +2,9 @@ import { Hunt, type Toggles } from '../sim/ai';
 import type Sim from '../sim/sim';
 import type { Skill } from '../sim/skill';
 import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
-import type { Rank } from '../sim/types';
-import { Element, Race, Range, Side } from '../sim/types';
+import { Element, Race, Range, Rank, Side } from '../sim/types';
 import Unit, { type Kit } from '../sim/unit';
-import { CHALLENGE, PIERCING_ARROW, SHIELD_BASH } from './skills';
+import { CHALLENGE, HYMN, PIERCING_ARROW, SHIELD_BASH } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
 // starting point for balance, not final values.
@@ -108,6 +107,31 @@ export const MONSTERS = {
     element: Element.Radiant,
     hunt: Hunt.Bearer,
   },
+  // A Penitent who leads the rites in song. It keeps behind the others and
+  // mends them with a long hymn.
+  cantor: {
+    job: job('Penitent Cantor', 110, 10, 80, Range.Melee),
+    base: stats(4, 6, 6, 14, 8, 12),
+    weapon: { min: 6, max: 9, matk: 20 },
+    kit: { reach: 1.0, interval: 1.4, hitAt: 0.6, moveSpeed: 2.1 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Support,
+    skills: [HYMN],
+  },
+  // A Penitent who listened too long to the whispers. It lopes past anyone
+  // in its way to claw at the bearer, and its touch is Occult: dread builds
+  // up in whoever it strikes.
+  hollowed: {
+    job: job('Hollowed', 120, 11, 0, Range.Melee),
+    base: stats(9, 14, 5, 1, 9, 1),
+    weapon: { min: 12, max: 17, matk: 0 },
+    kit: { reach: 1.0, interval: 0.75, hitAt: 0.45, moveSpeed: 3.0 },
+    race: Race.Human,
+    element: Element.Occult,
+    attackElement: Element.Occult,
+    hunt: Hunt.Assassin,
+  },
   // A Blight crawler. It bites whoever is closest.
   crawler: {
     job: job('Crawler', 110, 10, 0, Range.Melee),
@@ -177,12 +201,33 @@ export function spawnMerc(
   return spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles);
 }
 
+// An elite has far more health, hits harder and is better armored.
+const ELITE: Modifier[] = [
+  { stat: 'maxHp', percent: 150 },
+  { stat: 'atkMin', percent: 30 },
+  { stat: 'atkMax', percent: 30 },
+  { stat: 'armor', add: 25 },
+];
+
 export function spawnMonster(
   sim: Sim,
   kind: MonsterKind,
   level: number,
   x: number,
   z: number,
+  options: { elite?: boolean } = {},
 ): Unit {
-  return spawn(sim, kind, MONSTERS[kind], Side.Monster, level, x, z);
+  const t: Template = MONSTERS[kind];
+  if (!options.elite) {
+    return spawn(sim, kind, t, Side.Monster, level, x, z);
+  }
+  return spawn(
+    sim,
+    kind,
+    { ...t, rank: Rank.Elite, modifiers: [...(t.modifiers ?? []), ...ELITE] },
+    Side.Monster,
+    level,
+    x,
+    z,
+  );
 }

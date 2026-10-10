@@ -19,6 +19,8 @@ export const enum Priority {
   Nearest = 1,
   LowestHealth = 2,
   Elites = 3,
+  // Monsters with skills of their own, such as healers
+  Casters = 4,
 }
 
 /** The player's settings for one merc. */
@@ -57,6 +59,10 @@ export function skillMode(toggles: Toggles, id: string): SkillMode {
 export const enum Hunt {
   Bearer = 0,
   Nearest = 1,
+  // Goes for the bearer and does not stop for anyone in the way
+  Assassin = 2,
+  // Stays behind its allies and keeps away from the party
+  Support = 3,
 }
 
 // A monster that notices the party wakes every monster this close to it.
@@ -84,6 +90,8 @@ function pick(merc: Unit, toggles: Toggles, bearer: Unit | null, enemies: Unit[]
       pool = bearer ? enemies.filter((e) => e.target === bearer) : [];
     } else if (p === Priority.Elites) {
       pool = enemies.filter((e) => e.rank !== Rank.Normal);
+    } else if (p === Priority.Casters) {
+      pool = enemies.filter((e) => e.skills.length > 0);
     } else {
       pool = enemies;
     }
@@ -165,6 +173,50 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
   u.walkTo(gx, gz, dt, 0.3);
 }
 
+// A monster's skills, used whenever their rule says so.
+function monsterSkill(sim: Sim, u: Unit, target: Unit | null): boolean {
+  for (const skill of u.skills) {
+    if (u.canCast(skill) && skill.wants(u, target, sim) && u.startCast(skill, target)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// How far a support monster keeps from the party, and from its allies.
+const SUPPORT_GAP = 4.5;
+const SUPPORT_NEAR = 2.5;
+
+// Keeps behind its allies, out of the party's reach.
+function support(sim: Sim, u: Unit, party: Unit[], dt: number): void {
+  const threat = nearest(u, party);
+  if (threat && u.distanceTo(threat) <= u.kit.reach) {
+    engage(u, threat, dt);
+    return;
+  }
+  u.target = threat;
+  const allies = sim.living(Side.Monster).filter((m) => m !== u && m.aware);
+  const ally = nearest(u, allies);
+  if (threat && u.distanceTo(threat) < SUPPORT_GAP) {
+    // Step back, away from the party.
+    const dx = u.x - threat.x;
+    const dz = u.z - threat.z;
+    const d = Math.hypot(dx, dz) || 1;
+    u.walkTo(u.x + (dx / d) * 2, u.z + (dz / d) * 2, dt);
+  } else if (ally && u.distanceTo(ally) > SUPPORT_NEAR) {
+    u.walkTo(ally.x, ally.z, dt, SUPPORT_NEAR);
+  }
+}
+
+// Runs from whatever frightens it.
+function flee(u: Unit, from: Unit, dt: number): void {
+  const dx = u.x - from.x;
+  const dz = u.z - from.z;
+  const d = Math.hypot(dx, dz) || 1;
+  u.target = null;
+  u.walkTo(u.x + (dx / d) * 2, u.z + (dz / d) * 2, dt);
+}
+
 function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const party = sim.living(Side.Party);
   if (!u.aware) {
@@ -180,10 +232,17 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A taunted monster goes for whoever taunted it.
   const taunt = u.statuses.get(TAUNTED.id);
+  if (monsterSkill(sim, u, taunt?.source ?? u.target)) {
+    return;
+  }
+  if (u.hunt === Hunt.Support && !taunt) {
+    support(sim, u, party, dt);
+    return;
+  }
   let target: Unit | null;
   if (taunt?.source.alive) {
     target = taunt.source;
-  } else if (u.hunt === Hunt.Bearer && bearer) {
+  } else if ((u.hunt === Hunt.Bearer || u.hunt === Hunt.Assassin) && bearer) {
     target = bearer;
   } else {
     target = nearest(u, party);
@@ -197,7 +256,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   // guard the bearer see it coming.
   // A taunted monster has eyes only for its taunter.
   const intended = target;
-  if (!taunt?.source.alive && u.distanceTo(target) > u.kit.reach) {
+  if (!taunt?.source.alive && u.hunt !== Hunt.Assassin && u.distanceTo(target) > u.kit.reach) {
     const blocker = party.find((p) => p !== target && u.distanceTo(p) <= u.kit.reach);
     if (blocker) {
       target = blocker;
@@ -210,6 +269,11 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
 /** One unit's decision for this tick. Units mid-swing are committed to it. */
 export function think(sim: Sim, u: Unit, dt: number): void {
   if (!u.alive || u.busy || u.disabled) {
+    return;
+  }
+  const fear = u.fear;
+  if (fear && u !== sim.bearer) {
+    flee(u, fear, dt);
     return;
   }
   if (u === sim.bearer) {

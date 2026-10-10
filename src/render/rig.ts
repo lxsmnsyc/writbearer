@@ -4,7 +4,15 @@
 // projected joints and sorted back to front, so a body narrows when seen from
 // the side and limbs pass in front of or behind it as it turns.
 
-export type Kind = 'bearer' | 'vanguard' | 'ranger' | 'hollowSoldier' | 'penitent' | 'crawler';
+export type Kind =
+  | 'bearer'
+  | 'vanguard'
+  | 'ranger'
+  | 'hollowSoldier'
+  | 'penitent'
+  | 'cantor'
+  | 'hollowed'
+  | 'crawler';
 
 // Where in each drawn attack (0 to 1) the blow lands or the arrow leaves.
 // The view lines the simulation's hit frame up with it.
@@ -14,6 +22,8 @@ const KINDS = new Set<string>([
   'ranger',
   'hollowSoldier',
   'penitent',
+  'cantor',
+  'hollowed',
   'crawler',
 ]);
 
@@ -27,6 +37,8 @@ export const HIT_FRACTION: Record<Kind, number> = {
   ranger: 0.7,
   hollowSoldier: 0.65,
   penitent: 0.6,
+  cantor: 0.8,
+  hollowed: 0.5,
   crawler: 0.5,
 };
 
@@ -52,6 +64,8 @@ export interface RigUnit {
   shout: number;
   // How far through falling dead, 0 to 1, or -1 while alive.
   fall: number;
+  // Elites are drawn a quarter larger.
+  elite?: boolean;
   // Time since the last hit taken, for the flinch.
   hurt: number;
   // True while the unit has an enemy to face. Rangers raise the bow.
@@ -105,7 +119,7 @@ interface Projected extends Pt {
 }
 
 function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
-  const size = u.kind === 'bearer' ? 0.82 : 1;
+  const size = (u.kind === 'bearer' ? 0.82 : 1) * (u.elite ? 1.25 : 1);
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
   const fallen = topple(u);
@@ -206,6 +220,7 @@ function skeleton(u: RigUnit, time: number): Skeleton {
     flinch +
     roar +
     (u.kind === 'hollowSoldier' ? 4 : 0) +
+    (u.kind === 'hollowed' ? 30 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
 
   const pelvis = v(0, 0, 46 + bob);
@@ -290,7 +305,7 @@ function paperColor(kind: Kind, C: Palette): string {
   if (kind === 'vanguard' || kind === 'ranger') {
     return C.merc;
   }
-  if (kind === 'penitent') {
+  if (kind === 'penitent' || kind === 'cantor' || kind === 'hollowed') {
     return C.penitent;
   }
   return C.monster;
@@ -402,6 +417,8 @@ interface Gear {
   knife?: { hand: V3; dir: V3 };
   lantern?: V3;
   shield?: { center: V3 };
+  staff?: { hand: V3 };
+  claws?: { hand: V3; dir: V3 }[];
 }
 
 function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
@@ -484,6 +501,34 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     const dir = a >= 0 && a < 0.5 ? v(0, 0, 1) : norm(sub(sk.handR, sk.elbowR));
     g.knife = { hand: sk.handR, dir };
   }
+  if (u.kind === 'cantor') {
+    // The staff of the eye, held upright. The hymn lifts it high, then plants it.
+    let hand = add(sk.chest, v(10, 10, -4));
+    if (a >= 0) {
+      const ph = phases(a, HIT_FRACTION.cantor, HIT_FRACTION.cantor + 0.08);
+      const up = add(sk.head, v(6, 8, 18));
+      hand = handPath(ph, hand, up, hand);
+      reach(sk, 'L', add(sk.head, v(8, -6, 6)), v(-1, -1, 0));
+    }
+    reach(sk, 'R', hand, v(-1, 1, 0));
+    g.staff = { hand: sk.handR };
+  }
+  if (u.kind === 'hollowed') {
+    // Long arms hang forward, claws out. The rake comes down from above.
+    for (const side of ['L', 'R'] as const) {
+      const k = side === 'L' ? -1 : 1;
+      let hand = add(sk.chest, v(26, k * 9, -34));
+      if (a >= 0) {
+        const ph = phases(a, side === 'L' ? 0.4 : 0.45, side === 'L' ? 0.5 : 0.55);
+        hand = handPath(ph, hand, add(sk.head, v(4, k * 10, 10)), add(sk.chest, v(30, k * 4, -24)));
+      }
+      reach(sk, side, hand, v(-1, k, 0));
+    }
+    g.claws = [
+      { hand: sk.handL, dir: norm(sub(sk.handL, sk.elbowL)) },
+      { hand: sk.handR, dir: norm(sub(sk.handR, sk.elbowR)) },
+    ];
+  }
   if (u.kind === 'bearer') {
     // The lantern swings on its handle as the bearer walks.
     reach(sk, 'R', add(sk.chest, v(14, 10, -14)), v(-1, 1, -0.5));
@@ -553,7 +598,17 @@ export function drawUnit(
     add(sk.hipR, v(0, -1, 0)),
     add(sk.hipL, v(0, 1, 0)),
   ].map(proj);
-  if (u.kind === 'penitent') {
+  if (u.kind === 'hollowed') {
+    // A robe torn off at the knee, over bare legs.
+    const hem = [v(12, 0, 22), v(-10, 0, 26), v(0, 15, 20), v(0, -15, 24), v(8, 11, 16)].map(proj);
+    const rags = hull([...torso, ...hem]);
+    parts.push({
+      depth: avg(...torso) - 0.001,
+      draw: (c) => {
+        fill(c, rags, color, ink);
+      },
+    });
+  } else if (u.kind === 'penitent' || u.kind === 'cantor') {
     // A robe to the ground instead of legs.
     const hem = [
       v(14, 0, 0),
@@ -605,7 +660,13 @@ export function drawUnit(
   });
 
   // Hoods, crowns and the Writ.
-  if (u.kind === 'ranger' || u.kind === 'bearer' || u.kind === 'penitent') {
+  if (
+    u.kind === 'ranger' ||
+    u.kind === 'bearer' ||
+    u.kind === 'penitent' ||
+    u.kind === 'cantor' ||
+    u.kind === 'hollowed'
+  ) {
     const hood = [
       add(sk.head, v(-6, -5, -2)),
       add(sk.head, v(-6, 5, -2)),
@@ -744,6 +805,37 @@ export function drawUnit(
       },
     });
   }
+  if (gear.staff) {
+    const h = gear.staff.hand;
+    const a = proj(add(h, v(0, 0, -40)));
+    const b = proj(add(h, v(0, 0, 44)));
+    // The Church's eye on top: a pale disc with a red pupil.
+    const eye = proj(add(h, v(0, 0, 50)));
+    parts.push({
+      depth: avg(a, b) + 0.0006,
+      draw: (c) => {
+        fill(c, taper(a, b, 0.7, 0.7), C.wood, null);
+        fill(c, hexAt(eye, 3.4), C.bone, ink);
+        c.fillStyle = C.blood;
+        c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
+      },
+    });
+  }
+  for (const claw of gear.claws ?? []) {
+    // Three long fingers, fanned.
+    const a = proj(claw.hand);
+    const tips = [-1, 0, 1].map((k) =>
+      proj(add(claw.hand, add(scale(claw.dir, 16), v(0, k * 5, k === 0 ? 0 : -3)))),
+    );
+    parts.push({
+      depth: a.depth + 0.0005,
+      draw: (c) => {
+        for (const b of tips) {
+          fill(c, taper(a, b, 0.6, 0.1), C.bone, null);
+        }
+      },
+    });
+  }
   if (gear.lantern) {
     const hand = proj(sk.handR);
     const L = proj(gear.lantern);
@@ -871,16 +963,13 @@ export function emissives(
     }
     return out;
   }
-  if ((u.kind === 'hollowSoldier' || u.kind === 'penitent') && toCamera) {
+  const eyed = ['hollowSoldier', 'penitent', 'cantor', 'hollowed'];
+  if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
-    out.push({
-      p: proj(add(sk.head, v(3, -1.5, 1))),
-      color: u.kind === 'hollowSoldier' ? 'teal' : 'blood',
-    });
-    out.push({
-      p: proj(add(sk.head, v(3, 1.5, 1))),
-      color: u.kind === 'hollowSoldier' ? 'teal' : 'blood',
-    });
+    // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
+    const color = u.kind === 'hollowSoldier' || u.kind === 'hollowed' ? 'teal' : 'blood';
+    out.push({ p: proj(add(sk.head, v(3, -1.5, 1))), color });
+    out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }
   return out;
 }

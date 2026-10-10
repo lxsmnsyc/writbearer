@@ -219,6 +219,16 @@ export default class Unit {
     return false;
   }
 
+  /** Whom the unit is running from, if a status frightens it. */
+  get fear(): Unit | null {
+    for (const s of this.statuses.values()) {
+      if (s.def.flees) {
+        return s.source;
+      }
+    }
+    return null;
+  }
+
   /** Move speed after slows. */
   get speed(): number {
     let speed = this.kit.moveSpeed;

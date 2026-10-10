@@ -27,6 +27,7 @@ const PRIORITIES: { value: Priority; name: string }[] = [
   { value: Priority.Nearest, name: 'Nearest enemy' },
   { value: Priority.LowestHealth, name: 'Weakest enemy' },
   { value: Priority.Elites, name: 'Elites and bosses' },
+  { value: Priority.Casters, name: 'Casters and healers' },
 ];
 
 const SKILL_MODES: { value: SkillMode; name: string }[] = [
