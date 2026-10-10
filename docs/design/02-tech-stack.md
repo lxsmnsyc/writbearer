@@ -58,16 +58,16 @@ The working reference is `experiments/demo`. Its rig is in `experiments/demo/rig
 
 ### Visual tone
 
-The game is mature: cult imagery, gore and corruption are part of the look.
+The game is mature: the Church's blood rites, gore and corruption are part of the look.
 
 - **Greyscale world.** Almost everything is grey.
 - **Color is information.** Only a few things keep color, and each color has one meaning:
-  - Red: blood, damage, danger, cult marks.
+  - Red: blood, damage, danger, the Church's sealing marks.
   - Gold: light, the bearer, treasure, the Writ's seal.
   - Teal: the Hollow's dead and magic.
   - Element effects (fire, frost, venom and so on) show their color briefly.
 - **Gore stays.** Hits spray blood that stains the floor. The dead fall apart into paper pieces that remain in pools of blood.
-- **Cult and death props:** blood sigils with candles, altars, gibbets with hanging bodies, heads on pikes, flayed banners.
+- **Church and death props:** blood sigils with candles, altars, gibbets with hanging bodies, heads on pikes, flayed banners with the Church's eye.
 
 ### Pixel art
 

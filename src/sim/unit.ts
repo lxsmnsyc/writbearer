@@ -1,3 +1,4 @@
+import type { Hunt, Toggles } from './ai';
 import { type CheckHitEvent, SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
 import type Sim from './sim';
 import {
@@ -10,6 +11,23 @@ import {
   deriveStats,
 } from './stats';
 import { DamageFlags, DamageKind, Element, Race, type Range, Rank, type Side } from './types';
+
+/**
+ * How a unit moves and swings. Distances are in tiles, times in seconds.
+ */
+export interface Kit {
+  // How close the unit must be to land a basic attack
+  reach: number;
+  // Time between the starts of two basic attacks
+  interval: number;
+  // When in the swing the blow lands, or the arrow leaves
+  hitAt: number;
+  moveSpeed: number;
+  // How far the unit notices enemies
+  sight: number;
+}
+
+const DEFAULT_KIT: Kit = { reach: 1, interval: 1, hitAt: 0.5, moveSpeed: 2.5, sight: 7 };
 
 export interface UnitSpec {
   name: string;
@@ -26,6 +44,12 @@ export interface UnitSpec {
   // The element of basic attacks
   attackElement?: Element;
   modifiers?: Modifier[];
+  kit?: Partial<Kit>;
+  x?: number;
+  z?: number;
+  // Mercs follow the player's toggles. Monsters follow their hunt.
+  toggles?: Toggles;
+  hunt?: Hunt;
 }
 
 export interface HitOptions {
@@ -64,6 +88,26 @@ export default class Unit {
   ward = 0;
   alive = true;
 
+  // Position on the floor, in tiles, and facing in radians. 0 faces +x.
+  x: number;
+  z: number;
+  angle = 0;
+  readonly kit: Kit;
+
+  // Seconds into the current basic attack, or -1 when not attacking.
+  swing = -1;
+  swingTarget: Unit | null = null;
+  // Seconds until the next basic attack may start.
+  cooldown = 0;
+  // Whom the unit is fighting, chosen by its AI each tick.
+  target: Unit | null = null;
+  // Monsters stand idle until they notice the party.
+  aware = false;
+  toggles: Toggles | undefined;
+  hunt: Hunt | undefined;
+  // Where the bearer was told to walk.
+  order: { x: number; z: number } | null = null;
+
   constructor(
     readonly sim: Sim,
     spec: UnitSpec,
@@ -80,6 +124,11 @@ export default class Unit {
     this.elementLevel = spec.elementLevel ?? 1;
     this.attackElement = spec.attackElement ?? Element.Neutral;
     this.modifiers = [...(spec.modifiers ?? [])];
+    this.kit = { ...DEFAULT_KIT, ...spec.kit };
+    this.x = spec.x ?? 0;
+    this.z = spec.z ?? 0;
+    this.toggles = spec.toggles;
+    this.hunt = spec.hunt;
     this.recalc();
     this.hp = this.derived.maxHp;
     this.mana = this.derived.maxMana;
@@ -87,6 +136,54 @@ export default class Unit {
 
   get derived(): Derived {
     return this.stats.derived;
+  }
+
+  distanceTo(other: { x: number; z: number }): number {
+    return Math.hypot(other.x - this.x, other.z - this.z);
+  }
+
+  face(other: { x: number; z: number }): void {
+    if (other.x !== this.x || other.z !== this.z) {
+      this.angle = Math.atan2(other.z - this.z, other.x - this.x);
+    }
+  }
+
+  /**
+   * Whether `attacker` stands outside this unit's front arc, about 110°
+   * to each side. Shields only block from the front.
+   */
+  isFlankedBy(attacker: Unit): boolean {
+    const dx = attacker.x - this.x;
+    const dz = attacker.z - this.z;
+    const d = Math.hypot(dx, dz) || 1;
+    return (Math.cos(this.angle) * dx + Math.sin(this.angle) * dz) / d < -0.35;
+  }
+
+  /** Walks toward a point. Returns true once it is within `stop` tiles of it. */
+  walkTo(x: number, z: number, dt: number, stop = 0.05): boolean {
+    const dx = x - this.x;
+    const dz = z - this.z;
+    const d = Math.hypot(dx, dz);
+    if (d <= stop) {
+      return true;
+    }
+    const step = Math.min(d - stop, this.kit.moveSpeed * dt);
+    this.x += (dx / d) * step;
+    this.z += (dz / d) * step;
+    this.angle = Math.atan2(dz, dx);
+    return d - step <= stop;
+  }
+
+  /** Starts a basic attack. The blow lands later, on the hit frame. */
+  startAttack(target: Unit): boolean {
+    if (this.swing >= 0 || this.cooldown > 0 || this.kit.interval <= 0) {
+      return false;
+    }
+    this.swing = 0;
+    this.swingTarget = target;
+    this.cooldown = this.kit.interval;
+    this.face(target);
+    return true;
   }
 
   /**

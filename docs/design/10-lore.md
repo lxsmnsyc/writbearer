@@ -30,6 +30,32 @@ The whole run builds the party that has to beat the player.
 - The Blight is the Hollow trying to keep the body down. It is not attacking the surface.
 - The monster compendium is a list of people who died trying to stop the player.
 
+### Who the party fights
+
+Every enemy in the Hollow has a reason to stop the bearer. "Monsters" is only what the party calls them.
+
+The Creditor has no servants in the Hollow. Its only agents are on the surface: the Guild, and the contracts the mercs signed. Nothing that spawns helps the party, and nothing that spawns wants the bearer to reach the tomb. The only exception is the final fight, once the Creditor has woken: then it takes corrupted mercs and raises unresurrected ones.
+
+| Enemy | Who they are | Why they attack |
+|---|---|---|
+| Hollow soldiers | The Old King's soldiers, bound by his curse to guard the tomb forever. | Duty. They know what the bearer carries. |
+| Penitents | Members of the Church, the kingdom's religion. See [the Church](#the-church). | They keep the seal, and the bearer is what it holds back. |
+| Blight creatures | The Hollow's own flesh, grown to keep the Creditor's body down. | Like an immune response, they attack what does not belong. |
+| The Hollowed | Penitents driven mad by the Creditor's whispers. See [the Church](#the-church). | Hunger. They want to tear the bearer apart and take what it carries. |
+
+### The Church
+
+- The Church was the kingdom's religion, and the Old King was its protector.
+- When the King sank the capital, the Church sealed the tomb with blood rites. Its most faithful stayed below to keep the seal: the Penitents.
+- The blood sigils, candles and altars in the Hollow are sealing rites, not summonings. The gore is real, and it is done to keep something worse shut.
+
+The Church did not stay pure. Centuries underground, beside the body, wore it down in two ways:
+
+- **The Penitents became fanatics.** The seal needs fresh blood, and the rites grew from symbolic to real. They take people from the surface for it. The bodies on the gibbets and the heads on pikes are their offerings. They are right to stop the bearer, and they are horrifying.
+- **Some went mad: the Hollowed.** They listened too long to the Creditor's whispers. The whispers gave them no loyalty, only hunger. They are drawn to the Writ and want to tear the bearer apart for it. Their faith is gone, and they are Occult now, so Radiant attacks hurt them.
+- The eye on their banners is the Church's: the faithful watching over the seal.
+- Their faith is Radiant. The party's own Cleric shares it, and Radiant attacks deal nothing to Penitents, who are Radiant themselves. The holy magic the party relies on refuses to hurt the Church.
+
 ## Why the citizen keeps going deeper
 
 The journey goes down. Each phase is a layer of the Hollow.
@@ -53,6 +79,9 @@ Reasons to go deeper:
 ## Clues along the way
 
 Each clue is true from the start. The player only understands them at the end.
+
+- The Cleric's holy magic does nothing to Penitents.
+- The Church's eye banners hang along the whole descent, as if something has been watching for the bearer.
 
 - Many monsters ignore the mercs and go only for the citizen.
 - Dead mercs do not rot. Their corpses wait. The contract holds their souls.
@@ -135,6 +164,8 @@ His regalia lies scattered across the Hollow:
 - A player who knows will prepare on purpose: resurrect every dead merc, cleanse corruption, bring Radiant damage, and pay wages so morale holds.
 
 ## Open choices
+
+- Is the Temple in surface Towns the same Church? If so, its priests heal the party without knowing what the bearer is.
 
 - Should each background get its own ending lines?
 - Exact soul values and thresholds for the Creditor.

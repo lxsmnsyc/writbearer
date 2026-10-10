@@ -56,7 +56,7 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 | Story twist | The citizen is the final boss. At the end the player loses control, and the hired mercs must beat the citizen. |
 | Run length | 4 phases, 60 to 75 minutes. No stage time limit. |
 | Figure design | Cut paper: flat angular shapes, tapered limbs, no face, on a 3D skeleton that faces any angle. Claude builds the art in code. |
-| Visual tone | Greyscale and mature, with cult and gore details. Color is information: red for blood and danger, gold for light and the bearer, teal for the dead and magic. |
+| Visual tone | Greyscale and mature, with the Church's blood rites and gore. Color is information: red for blood and danger, gold for light and the bearer, teal for the dead and magic. |
 | Pixel art | Drawn at 384×216, snapped to the palette, scaled up 3×. The lantern lights hard rings. |
 | Rendering | Canvas 2D. |
 | Item stats | Randomized per copy, in the style of Diablo 2. |
