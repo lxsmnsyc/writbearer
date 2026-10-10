@@ -1,0 +1,85 @@
+// The world is grey. Color is information: red for blood and danger, gold for
+// light and the bearer, teal for the Hollow's dead and magic.
+export const C = {
+  void: '#0a0a0a',
+  stoneA: '#3e3e3e',
+  stoneB: '#373737',
+  stoneLine: '#1a1a1a',
+  ink: '#0c0c0c',
+  merc: '#e4e4e4',
+  bearer: '#7a7a7a',
+  monster: '#1c1c1c',
+  penitent: '#2a2a2a',
+  wood: '#2e2e2e',
+  skin: '#b8b8b8',
+  bone: '#d6d6d6',
+  cloth: '#9a9a9a',
+  blood: '#8e1414',
+  bloodDark: '#560b0b',
+  gold: '#c9973a',
+  flame: '#f2c25a',
+  teal: '#5fd4c0',
+} as const;
+
+type RGB = [number, number, number];
+
+const hex = (h: string): RGB => [
+  parseInt(h.slice(1, 3), 16),
+  parseInt(h.slice(3, 5), 16),
+  parseInt(h.slice(5, 7), 16),
+];
+
+// A 16-step grey ramp plus the information colors and their dark steps.
+const PALETTE: RGB[] = [
+  ...Array.from({ length: 16 }, (_, i): RGB => {
+    const g = Math.round(8 + i * 15.5);
+    return [g, g, g];
+  }),
+  ...[C.blood, C.bloodDark, '#3a0808', C.gold, '#7a5a22', C.flame, C.teal, '#2f6a60'].map(hex),
+];
+
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const nearestCache = new Map<number, number>();
+
+function nearest(r: number, g: number, b: number): number {
+  const key = ((r >> 2) << 12) | ((g >> 2) << 6) | (b >> 2);
+  const hit = nearestCache.get(key);
+  if (hit !== undefined) {
+    return hit;
+  }
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < PALETTE.length; i++) {
+    const c = PALETTE[i];
+    const d = (c[0] - r) ** 2 * 0.3 + (c[1] - g) ** 2 * 0.59 + (c[2] - b) ** 2 * 0.11;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  nearestCache.set(key, best);
+  return best;
+}
+
+/**
+ * Snaps every pixel to the palette, with a light ordered dither.
+ */
+export function quantize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const t = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.5) * 6;
+      const c =
+        PALETTE[
+          nearest(Math.max(0, d[i] + t), Math.max(0, d[i + 1] + t), Math.max(0, d[i + 2] + t))
+        ];
+      d[i] = c[0];
+      d[i + 1] = c[1];
+      d[i + 2] = c[2];
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}

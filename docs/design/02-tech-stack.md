@@ -6,7 +6,7 @@
 |---|---|---|
 | Language | TypeScript | Decided. |
 | Simulation | Plain TypeScript, no DOM | Runs headless in tests. Can move to a Web Worker later. |
-| Rendering | Canvas 2D | Figures are drawn from projected skeletons, so no sprite sheets are needed. The whole frame is drawn small and scaled up. See [art](#art) and `experiments/demo`. It only draws, so it does not compete with the simulation. PixiJS stays an option if performance needs it. |
+| Rendering | Canvas 2D | Figures are drawn from projected skeletons, so no sprite sheets are needed. The whole frame is drawn small and scaled up. See [art](#art) and `src/render`. It only draws, so it does not compete with the simulation. PixiJS stays an option if performance needs it. |
 | UI | SolidJS over the canvas | Inventory, toggles and sheets are dense menus, which the DOM handles better than a canvas. |
 | Build and tests | Vite, pnpm, Vitest, Playwright, oxlint, oxfmt | Same as the other repositories. |
 
@@ -54,7 +54,7 @@ Three.js with voxel models and 2D sprite sheets were both tried and dropped. Pha
 
 Claude makes the art. Claude cannot paint or generate raster images. Claude can write code that builds art. The art style follows from that.
 
-The working reference is `experiments/demo`. Its rig is in `experiments/demo/rig.ts`.
+The renderer is in `src/render`. The figure rig is `src/render/rig.ts`. `tools/rig-sheet.html` shows every figure at 8 facings, through a walk cycle and through its attack, for checking animation.
 
 ### Visual tone
 

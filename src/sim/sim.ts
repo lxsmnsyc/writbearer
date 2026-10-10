@@ -59,6 +59,12 @@ export default class Sim extends EventEngine<SimEventMap> {
   // Seconds since the stage began.
   time = 0;
 
+  // Solid round props, such as pillars. Units cannot stand inside them.
+  readonly obstacles: { x: number; z: number; r: number }[] = [];
+
+  // The floor's size, in tiles. Units stay inside. Infinite means no bounds.
+  size = Infinity;
+
   constructor(rng: RNG | number) {
     super();
     this.rng = typeof rng === 'number' ? new RNG(rng) : rng;
@@ -129,6 +135,19 @@ export default class Sim extends EventEngine<SimEventMap> {
         a.z += nz * push * share;
         b.x -= nx * push * (1 - share);
         b.z -= nz * push * (1 - share);
+      }
+    }
+    for (const u of living) {
+      for (const o of this.obstacles) {
+        const d = Math.hypot(u.x - o.x, u.z - o.z);
+        if (d < o.r && d > 0) {
+          u.x = o.x + ((u.x - o.x) / d) * o.r;
+          u.z = o.z + ((u.z - o.z) / d) * o.r;
+        }
+      }
+      if (Number.isFinite(this.size)) {
+        u.x = Math.min(this.size - 0.5, Math.max(0.5, u.x));
+        u.z = Math.min(this.size - 0.5, Math.max(0.5, u.z));
       }
     }
   }

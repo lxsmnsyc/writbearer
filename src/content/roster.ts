@@ -119,6 +119,7 @@ export type MonsterKind = keyof typeof MONSTERS;
 
 function spawn(
   sim: Sim,
+  kind: string,
   t: Template,
   side: Side,
   level: number,
@@ -128,6 +129,7 @@ function spawn(
 ): Unit {
   return sim.add(
     new Unit(sim, {
+      kind,
       name: t.job.name,
       side,
       job: t.job,
@@ -149,7 +151,7 @@ function spawn(
 }
 
 export function spawnBearer(sim: Sim, x: number, z: number): Unit {
-  const unit = spawn(sim, MERCS.bearer, Side.Party, 1, x, z);
+  const unit = spawn(sim, 'bearer', MERCS.bearer, Side.Party, 1, x, z);
   sim.bearer = unit;
   return unit;
 }
@@ -162,7 +164,7 @@ export function spawnMerc(
   z: number,
   toggles?: Toggles,
 ): Unit {
-  return spawn(sim, MERCS[kind], Side.Party, level, x, z, toggles);
+  return spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles);
 }
 
 export function spawnMonster(
@@ -172,5 +174,5 @@ export function spawnMonster(
   x: number,
   z: number,
 ): Unit {
-  return spawn(sim, MONSTERS[kind], Side.Monster, level, x, z);
+  return spawn(sim, kind, MONSTERS[kind], Side.Monster, level, x, z);
 }

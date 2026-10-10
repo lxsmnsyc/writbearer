@@ -30,6 +30,8 @@ export interface Kit {
 const DEFAULT_KIT: Kit = { reach: 1, interval: 1, hitAt: 0.5, moveSpeed: 2.5, sight: 7 };
 
 export interface UnitSpec {
+  // The content entry the unit was made from, such as 'vanguard'
+  kind?: string;
   name: string;
   side: Side;
   job: Job;
@@ -68,6 +70,7 @@ export interface HitOptions {
  * veto each change.
  */
 export default class Unit {
+  readonly kind: string;
   readonly name: string;
   readonly side: Side;
   readonly job: Job;
@@ -113,6 +116,7 @@ export default class Unit {
     spec: UnitSpec,
   ) {
     this.name = spec.name;
+    this.kind = spec.kind ?? spec.name;
     this.side = spec.side;
     this.job = spec.job;
     this.level = spec.level;
