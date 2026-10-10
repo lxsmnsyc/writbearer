@@ -27,11 +27,11 @@ The mercs act on their own, so the player cannot aim element combos directly. El
 | Venom | Poison | Poison: damage over time that ignores armor. Also cuts healing received. |
 | Radiant | Holy | Sear: bonus damage against Occult and Undead. |
 | Occult | Shadow | Dread: drains morale and Ward. Causes fear. |
-| Spectral | Ghost | Defense only for most units. Neutral attacks deal little or no damage to it. |
+| Spectral | Ghost | Defense only for most units. Neutral attacks deal 90% to 50% against it, by level. |
 
 - The four natural elements form a cycle, as in rAthena: Frost beats Fire, Fire beats Earth, Earth beats Storm, Storm beats Frost.
 - Radiant and Occult oppose each other.
-- Spectral forces the party to carry at least one elemental weapon or card. Spectral attacks exist but are rare, as in rAthena.
+- Spectral makes an elemental weapon or card worth carrying, since Neutral loses up to half its damage. Spectral attacks exist but are rare, as in rAthena.
 
 ## Element levels
 
@@ -39,24 +39,27 @@ The mercs act on their own, so the player cannot aim element combos directly. El
 - The level changes the percent. A Fire 3 monster resists Fire more and takes more from Frost than a Fire 1 monster.
 - Mercs are Neutral 1 by default. Armor, cloaks, cards and buffs can change their defense element.
 
-Example rows of the table (attack element against a Fire target):
+The values are rAthena renewal's (`db/re/attr_fix.yml`, levels 1 to 3), with Water as Frost, Wind as Storm, Poison as Venom, Holy as Radiant, Dark as Occult and Ghost as Spectral. The full table is in `src/sim/elements.ts`.
+
+Example rows (attack element against a Fire target):
 
 | Attack | Fire 1 | Fire 2 | Fire 3 |
 |---|---|---|---|
 | Neutral | 100% | 100% | 100% |
-| Fire | 25% | 0% | -25% (heals) |
+| Fire | 25% | 0% | 0% |
 | Frost | 150% | 175% | 200% |
-| Earth | 50% | 25% | 0% |
+| Earth | 90% | 80% | 70% |
 
 Example rows against a Spectral target:
 
 | Attack | Spectral 1 | Spectral 2 | Spectral 3 |
 |---|---|---|---|
-| Neutral | 25% | 0% | 0% |
-| Fire, Frost, Storm, Earth | 100% | 75% | 50% |
-| Occult, Spectral | 175% | 200% | 200% |
+| Neutral | 90% | 70% | 50% |
+| Fire, Frost, Storm, Earth | 100% | 100% | 100% |
+| Venom | 75% | 75% | 50% |
+| Spectral | 125% | 150% | 175% |
 
-Values above 100% are weak points. Values below 0% heal the target. Final numbers need tuning.
+Values above 100% are weak points. Renewal is gentler on Neutral against Spectral than pre-renewal was, so Spectral targets are a cost, not a wall.
 
 ## Buildup
 

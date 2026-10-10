@@ -81,7 +81,7 @@ Enemies are designed to make the player change toggles and gear.
 | Fear caster | Occult aura that triggers Cowardly. | WIL, Devout and Brave mercs. |
 | Thief | Steals from the citizen's pack and runs. | Ranged mercs, caltrops. |
 | Stripper | Strips a merc's item for the stage. | Kill it fast, hand the item back. |
-| Spectral | Neutral attacks barely hurt it. | Elemental weapons. |
+| Spectral | Neutral attacks lose up to half their damage. | Elemental weapons. |
 
 ### Monster data
 

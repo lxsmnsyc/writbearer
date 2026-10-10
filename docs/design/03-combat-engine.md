@@ -133,7 +133,7 @@ export const enum DamagePriority {
   SkillFlat,      // skill flat bonus
   Amplify,        // attacker's bonus categories
   Defense,        // hard and soft defense
-  Element,        // element against target element
+  Affinity,       // element against target element
   Critical,       // crit multiplier
   Reduce,         // target's reduction categories
   Block,          // shield block, physical only
@@ -193,7 +193,7 @@ magical:  damage * (1000 + resistance) / (1000 + resistance * 10) - softMdef
 - `Pierce` and armor-break effects lower or skip hard defense.
 - `True` damage skips this step.
 
-### Element
+### Affinity
 
 - A table of attack element against defense element and defense level gives a percent.
 - See [elements](04-elements.md).
