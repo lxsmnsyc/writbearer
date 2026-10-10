@@ -355,6 +355,31 @@ setup({ sim, unit }) {
   - Blind is resisted by DEX.
 - After a status ends, the target is briefly immune to it. This prevents permanent lock.
 
+### In the game so far
+
+- A status has a duration, an immunity time after it ends, and optionally a buildup threshold, a slow, a "cannot act" flag, a per-tick effect and listeners that last while it is active. `CheckStatusDuration` and `CheckBuildup` can change both numbers.
+- The threshold is 100, raised 3% per point of the resist stat, plus 2 per level.
+- Buildup holds for 2 seconds after the last hit, then fades at 15 per second.
+- A status that stops the unit acting also breaks the blow or skill it was winding up.
+- Damage over time skips defense, is credited to whoever caused it, and adds no buildup.
+
+| Status | From | Effect | Resist |
+|---|---|---|---|
+| Taunted | Challenge | Must fight the taunter. Ends if the taunter dies. | None |
+| Stun | Shield Bash | Cannot act for 1.5 s. | VIT |
+| Burn | Fire hits | 3% of max health per second for 4 s. | VIT |
+| Chill | Frost hits | Move speed ×0.6 for 4 s. Chilled again, it becomes Freeze. | VIT |
+| Freeze | Chill | Cannot act for 2 s, and counts as Frost 1. | |
+| Shock | Storm hits | Cannot act for 0.6 s. | DEX |
+| Petrify | Earth hits | Cannot act for 2.5 s, and counts as Earth 1. | WIL |
+| Poison | Venom hits | 2% of max health per second for 6 s. Healing received is halved. | VIT |
+
+Crawler bites are Venom, so they poison. Radiant, Occult and Spectral have no status yet.
+
+### Shield Bash
+
+The Vanguard's second skill: 8 mana, 5 s cooldown, 0.3 s windup. A shield shove for 120% that adds 70 stun buildup and breaks off any skill the target is winding up. On Auto it is used to break a skill, against an enemy going for the bearer, or to finish a stun that is already building.
+
 ## Threat and targeting
 
 - Monsters pick targets through `CheckMonsterTarget`.

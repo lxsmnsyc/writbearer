@@ -31,7 +31,7 @@
       const CELL_W = 44;
       const CELL_H = 50;
       const COLS = 8;
-      const SECTIONS = ['facing', 'walk', 'attack', 'skill'];
+      const SECTIONS = ['facing', 'walk', 'attack', 'skill', 'death'];
       const SCALE = 4;
       const canvas = document.getElementById('sheet');
       canvas.width = CELL_W * COLS * SCALE;
@@ -59,6 +59,7 @@
               stride: section === 'walk' ? 1 : 0,
               atk: section === 'attack' ? col / 7.001 : -1,
               shout: section === 'skill' && kind === 'vanguard' ? col / 7.001 : -1,
+              fall: section === 'death' ? col / 7.001 : -1,
               hurt: 9,
               alert: section === 'attack' || section === 'skill',
             };

@@ -1,4 +1,5 @@
 import type Sim from '../sim';
+import setupBuildupMechanics from './buildup';
 import setupDamageMechanics from './damage';
 import setupDeathMechanics from './death';
 import setupHealMechanics from './heal';
@@ -12,6 +13,7 @@ import setupSkillMechanics from './skill';
 export default function setupMechanics(sim: Sim): void {
   setupHitMechanics(sim);
   setupDamageMechanics(sim);
+  setupBuildupMechanics(sim);
   setupHealMechanics(sim);
   setupDeathMechanics(sim);
   setupSkillMechanics(sim);

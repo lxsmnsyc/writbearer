@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { EventPriority } from '../../src/core/event-emitter';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CHALLENGE, PIERCING_ARROW } from '../../src/content/skills';
-import { DEFAULT_TOGGLES, TAUNTED, type Toggles } from '../../src/sim/ai';
+import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim, { ARROW_SPEED } from '../../src/sim/sim';
 import { SkillMode } from '../../src/sim/skill';
+import { TAUNTED } from '../../src/sim/statuses';
 import { DamageFlags, DamagePriority, Side, ValuePriority } from '../../src/sim/types';
 
 const withSkills = (skills: Toggles['skills']): Toggles => ({ ...DEFAULT_TOGGLES, skills });
@@ -54,9 +55,9 @@ describe('Challenge', () => {
     penitent.aware = true;
     expect(vanguard.startCast(CHALLENGE, null)).toBe(true);
     sim.tick();
-    expect(penitent.statuses.has(TAUNTED)).toBe(false);
+    expect(penitent.statuses.has(TAUNTED.id)).toBe(false);
     sim.run(CHALLENGE.windup);
-    expect(penitent.statuses.get(TAUNTED)?.source).toBe(vanguard);
+    expect(penitent.statuses.get(TAUNTED.id)?.source).toBe(vanguard);
     sim.run(1);
     expect(penitent.target).toBe(vanguard);
     expect(bearer.hp).toBe(bearer.derived.maxHp);
@@ -74,8 +75,10 @@ describe('Challenge', () => {
         spawnMonster(sim, 'penitent', 4, x, z).aware = true;
       }
       let casts = 0;
-      sim.on(SimEvents.UnitSkillRelease, EventPriority.Post, () => {
-        casts++;
+      sim.on(SimEvents.UnitSkillRelease, EventPriority.Post, (event) => {
+        if (event.skill === CHALLENGE) {
+          casts++;
+        }
       });
       sim.run(30, () => !bearer.alive || sim.living(Side.Monster).length === 0);
       return casts;

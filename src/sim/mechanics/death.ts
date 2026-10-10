@@ -15,6 +15,6 @@ export default function setupDeathMechanics(sim: Sim): void {
     event.source.ward = 0;
     event.source.cast = null;
     event.source.swing = -1;
-    event.source.statuses.clear();
+    event.source.clearStatuses();
   });
 }

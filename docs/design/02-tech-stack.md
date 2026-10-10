@@ -109,6 +109,8 @@ The game is mature: the Church's blood rites, gore and corruption are part of th
 - Each figure is a 3D skeleton of joints, turned to face any angle and projected into the isometric view. Paper pieces are drawn between the projected joints and sorted back to front. A body narrows when seen from the side.
 - Legs use two-bone IK. Feet step and lift, and the walk cycle advances with distance walked, so feet do not slide.
 - Attacks have a windup, a strike and a recovery. Damage lands on the strike frame.
+- The dead fall back over their heels and lie where they fell, in a pool of their blood. A killing blow of 30% of max health or more, or a critical one, tears the body into paper pieces instead.
+- Statuses show as marks in their element's color: motes circling the head for Stun and the like, frost at the feet for Chill, embers or bubbles rising for Burn and Poison, a red notch for Taunted. A thin bar under the health bar fills as a status builds up.
 - Equipment is a shape attached to a joint, so loot changes how a merc looks. Signature items have thickness, so they still read edge-on.
 
 ### Other art

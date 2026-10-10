@@ -5,7 +5,7 @@ import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
 import type { Rank } from '../sim/types';
 import { Element, Race, Range, Side } from '../sim/types';
 import Unit, { type Kit } from '../sim/unit';
-import { CHALLENGE, PIERCING_ARROW } from './skills';
+import { CHALLENGE, PIERCING_ARROW, SHIELD_BASH } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
 // starting point for balance, not final values.
@@ -20,6 +20,7 @@ interface Template {
   rank?: Rank;
   element?: Element;
   elementLevel?: number;
+  attackElement?: Element;
   hunt?: Hunt;
   skills?: Skill[];
 }
@@ -73,7 +74,7 @@ export const MERCS = {
       { stat: 'blockChance', add: 35 },
       { stat: 'blockAmount', add: 60 },
     ],
-    skills: [CHALLENGE],
+    skills: [CHALLENGE, SHIELD_BASH],
   },
   ranger: {
     job: job('Ranger', 180, 18, 60, Range.Ranged),
@@ -115,6 +116,8 @@ export const MONSTERS = {
     kit: { reach: 1.0, interval: 0.8, hitAt: 0.5, moveSpeed: 2.6 },
     race: Race.Beast,
     element: Element.Venom,
+    // Its bite builds up poison.
+    attackElement: Element.Venom,
     hunt: Hunt.Nearest,
   },
 } satisfies Record<string, Template>;
@@ -147,6 +150,7 @@ function spawn(
       rank: t.rank,
       element: t.element,
       elementLevel: t.elementLevel,
+      attackElement: t.attackElement,
       hunt: t.hunt,
       skills: t.skills,
       toggles,

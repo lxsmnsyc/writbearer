@@ -4,6 +4,8 @@ import { HIT_FRACTION, type Kind, type RigUnit, isKind } from './rig';
 
 // Matches the simulation's recovery after a blow.
 const RECOVERY = 0.2;
+// Seconds a body takes to fall when it dies.
+const FALL_TIME = 0.7;
 // Skills drawn as a shout: the Vanguard bangs its shield.
 const SHOUTS = new Set(['challenge']);
 
@@ -26,6 +28,8 @@ export interface View {
   // A drawn push back from the last hit, in tiles. It eases out.
   kx: number;
   kz: number;
+  // Seconds since death, or -1 while alive
+  dead: number;
 }
 
 export class Views {
@@ -46,6 +50,7 @@ export class Views {
         hurt: 9,
         kx: 0,
         kz: 0,
+        dead: -1,
       };
       this.views.set(u, v);
     }
@@ -72,6 +77,12 @@ export class Views {
     for (const u of sim.units) {
       const v = this.get(u);
       v.hurt += dt;
+      if (!u.alive) {
+        v.dead = Math.max(0, v.dead) + dt;
+        v.stride = 0;
+        continue;
+      }
+      v.dead = -1;
       let d = u.angle - v.angle;
       d = Math.atan2(Math.sin(d), Math.cos(d));
       v.angle += Math.sign(d) * Math.min(Math.abs(d), 10 * dt);
@@ -106,10 +117,11 @@ export class Views {
       angle: v.angle,
       walk: v.walk,
       stride: v.stride,
-      atk: attackProgress(u, kind),
-      shout: shoutProgress(u),
+      atk: u.alive ? attackProgress(u, kind) : -1,
+      shout: u.alive ? shoutProgress(u) : -1,
+      fall: v.dead < 0 ? -1 : Math.min(1, v.dead / FALL_TIME),
       hurt: v.hurt,
-      alert: u.target?.alive === true,
+      alert: u.alive && u.target?.alive === true,
     };
   }
 }

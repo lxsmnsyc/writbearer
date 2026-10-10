@@ -1,6 +1,6 @@
-import { TAUNTED } from '../sim/ai';
-import { ARROW_SPEED } from '../sim/sim';
+import { ARROW_SPEED, strike } from '../sim/sim';
 import { type Skill, Targeting } from '../sim/skill';
+import { STUN, TAUNTED } from '../sim/statuses';
 import { DamageFlags, Range, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 
@@ -31,7 +31,7 @@ export const CHALLENGE: Skill = {
   targeting: Targeting.Self,
   wants(u, _target, sim) {
     // Worth it when something near goes for the bearer, or two go for anyone else.
-    const near = challenged(u).filter((e) => e.statuses.get(TAUNTED)?.source !== u);
+    const near = challenged(u).filter((e) => e.statuses.get(TAUNTED.id)?.source !== u);
     return (
       near.some((e) => e.target === sim.bearer) || near.filter((e) => e.target !== u).length >= 2
     );
@@ -43,9 +43,55 @@ export const CHALLENGE: Skill = {
     for (const e of u.sim.living(Side.Monster)) {
       if (u.distanceTo(e) <= CHALLENGE_RADIUS) {
         e.aware = true;
-        e.statuses.set(TAUNTED, { source: u, remaining: CHALLENGE_DURATION });
-        e.target = u;
+        if (e.addStatus(TAUNTED, u, CHALLENGE_DURATION)) {
+          e.target = u;
+        }
       }
+    }
+  },
+};
+
+const BASH_RATIO = 120;
+const BASH_STUN = 70;
+
+/**
+ * Vanguard, Bulwark tier 3. A shove with the shield's face: a blow that
+ * builds up stun and breaks off any skill the target is winding up.
+ */
+export const SHIELD_BASH: Skill = {
+  id: 'shieldBash',
+  name: 'Shield Bash',
+  description: `A shove with the shield for ${BASH_RATIO}% damage. Builds up stun and interrupts skills.`,
+  cost: 8,
+  cooldown: 5,
+  windup: 0.3,
+  recovery: 0.35,
+  targeting: Targeting.Enemy,
+  wants(u, target, sim) {
+    if (!target || u.distanceTo(target) > u.kit.reach) {
+      return false;
+    }
+    // Worth it to break a skill, to stop something after the bearer, or to
+    // finish a stun already building.
+    return (
+      target.cast !== null || target.target === sim.bearer || (target.buildup.get(STUN.id) ?? 0) > 0
+    );
+  },
+  elite(_u, target) {
+    return target !== null && isElite(target);
+  },
+  release(u, target) {
+    // A target that stepped away during the windup is missed.
+    if (!target?.alive || u.distanceTo(target) > u.kit.reach + 0.5) {
+      return;
+    }
+    const hit = strike(u, target, {
+      ratio: BASH_RATIO,
+      flags: DamageFlags.Skill,
+      buildup: [{ status: STUN, amount: BASH_STUN }],
+    });
+    if (hit) {
+      target.cast = null;
     }
   },
 };

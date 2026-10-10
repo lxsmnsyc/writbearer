@@ -77,9 +77,11 @@ function advanceCast(u: Unit, dt: number): void {
   }
 }
 
-// A blow that lands now: wakes the target and marks hits from behind.
-// Returns the damage event, or null on a miss.
-function strike(source: Unit, target: Unit, options: HitOptions): ReturnType<Unit['hit']> {
+/**
+ * A blow that lands now: wakes the target and marks hits from behind.
+ * Returns the damage event, or null on a miss.
+ */
+export function strike(source: Unit, target: Unit, options: HitOptions): ReturnType<Unit['hit']> {
   let flags = options.flags ?? 0;
   if (target.isFlankedBy(source)) {
     flags |= DamageFlags.Flank;
@@ -239,12 +241,7 @@ export default class Sim extends EventEngine<SimEventMap> {
       for (const [id, left] of u.skillCooldowns) {
         u.skillCooldowns.set(id, Math.max(0, left - dt));
       }
-      for (const [id, status] of u.statuses) {
-        status.remaining -= dt;
-        if (status.remaining <= 0 || !status.source.alive) {
-          u.statuses.delete(id);
-        }
-      }
+      u.tickStatuses(dt);
       // Mana comes back slowly, and twice as fast out of a fight.
       const rate = u.target?.alive ? 1 : REST_REGEN;
       u.mana = Math.min(u.derived.maxMana, u.mana + u.derived.manaRegen * rate * dt);

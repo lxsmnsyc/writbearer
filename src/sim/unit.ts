@@ -1,13 +1,17 @@
 import type { Hunt, Toggles } from './ai';
 import {
+  type Buildup,
+  type CheckBuildupEvent,
   type CheckHitEvent,
   type CheckSkillCostEvent,
+  type CheckStatusDurationEvent,
   SimEvents,
   type UnitDamageEvent,
   type UnitHealEvent,
 } from './events';
 import type Sim from './sim';
 import type { Cast, Skill } from './skill';
+import type { ActiveStatus, StatusDef } from './status';
 import {
   type BaseStats,
   type Derived,
@@ -62,12 +66,9 @@ export interface UnitSpec {
   skills?: Skill[];
 }
 
-/** A timed effect on a unit, such as being taunted. */
-export interface Status {
-  source: Unit;
-  // Seconds left
-  remaining: number;
-}
+// Buildup starts to fade this long after the last hit, then fades this fast.
+const BUILDUP_HOLD = 2;
+const BUILDUP_DECAY = 15;
 
 export interface HitOptions {
   kind?: DamageKind;
@@ -77,6 +78,7 @@ export interface HitOptions {
   flat?: number;
   fixed?: number;
   flags?: number;
+  buildup?: Buildup[];
 }
 
 /**
@@ -132,7 +134,12 @@ export default class Unit {
   // The skill being used, or null
   cast: Cast | null = null;
   // Timed effects, by status id
-  readonly statuses = new Map<string, Status>();
+  readonly statuses = new Map<string, ActiveStatus>();
+  // Buildup toward each status, by status id, and when it last rose
+  readonly buildup = new Map<string, number>();
+  private readonly buildupAt = new Map<string, number>();
+  // Seconds left before each status can be gained again, by status id
+  readonly immunity = new Map<string, number>();
 
   constructor(
     readonly sim: Sim,
@@ -195,11 +202,30 @@ export default class Unit {
     if (d <= stop) {
       return true;
     }
-    const step = Math.min(d - stop, this.kit.moveSpeed * dt);
+    const step = Math.min(d - stop, this.speed * dt);
     this.x += (dx / d) * step;
     this.z += (dz / d) * step;
     this.angle = Math.atan2(dz, dx);
     return d - step <= stop;
+  }
+
+  /** Whether a status stops the unit from acting, such as Stun. */
+  get disabled(): boolean {
+    for (const s of this.statuses.values()) {
+      if (s.def.disables) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Move speed after slows. */
+  get speed(): number {
+    let speed = this.kit.moveSpeed;
+    for (const s of this.statuses.values()) {
+      speed *= s.def.slow ?? 1;
+    }
+    return speed;
   }
 
   /** Whether the unit is in the middle of an attack or a skill. */
@@ -256,6 +282,147 @@ export default class Unit {
     };
     this.sim.emit(SimEvents.UnitSkillWindup, event);
     return !event.disabled;
+  }
+
+  /**
+   * Gives the unit a status, or refreshes it. Returns null if the unit is
+   * immune or dead.
+   */
+  addStatus(def: StatusDef, source: Unit, duration = def.duration): ActiveStatus | null {
+    if (!this.alive || (this.immunity.get(def.id) ?? 0) > 0) {
+      return null;
+    }
+    const check: CheckStatusDurationEvent = {
+      id: 'CheckStatusDuration',
+      disabled: false,
+      source,
+      target: this,
+      status: def,
+      value: duration,
+    };
+    this.sim.emit(SimEvents.CheckStatusDuration, check);
+    if (check.disabled || check.value <= 0) {
+      return null;
+    }
+    const current = this.statuses.get(def.id);
+    if (current) {
+      current.remaining = Math.max(current.remaining, check.value);
+      current.source = source;
+      return current;
+    }
+    const status: ActiveStatus = {
+      def,
+      unit: this,
+      source,
+      remaining: check.value,
+      elapsed: 0,
+      lifecycle: null,
+    };
+    this.statuses.set(def.id, status);
+    status.lifecycle = def.setup?.(status) ?? null;
+    status.lifecycle?.start();
+    if (def.disables) {
+      // A stunned unit loses the blow or skill it was winding up.
+      this.swing = -1;
+      this.swingTarget = null;
+      this.cast = null;
+    }
+    this.sim.emit(SimEvents.StatusApplied, { id: 'StatusApplied', disabled: false, status });
+    return status;
+  }
+
+  /** Ends a status early or on time. The unit is then immune to it for a while. */
+  removeStatus(id: string): void {
+    const status = this.statuses.get(id);
+    if (!status) {
+      return;
+    }
+    this.statuses.delete(id);
+    status.lifecycle?.stop();
+    if (status.def.immunity > 0) {
+      this.immunity.set(id, status.def.immunity);
+    }
+    this.sim.emit(SimEvents.StatusRemoved, { id: 'StatusRemoved', disabled: false, status });
+  }
+
+  /**
+   * Adds buildup toward a status. When it reaches the unit's threshold the
+   * status triggers and the buildup resets.
+   */
+  buildUp(def: StatusDef, source: Unit, amount: number): void {
+    const limit = def.threshold?.(this);
+    if (!this.alive || limit === undefined || (this.immunity.get(def.id) ?? 0) > 0) {
+      return;
+    }
+    // A status in effect cannot build up again, unless it escalates.
+    if (this.statuses.has(def.id) && !def.escalate) {
+      return;
+    }
+    const check: CheckBuildupEvent = {
+      id: 'CheckBuildup',
+      disabled: false,
+      source,
+      target: this,
+      status: def,
+      value: amount,
+    };
+    this.sim.emit(SimEvents.CheckBuildup, check);
+    if (check.disabled || check.value <= 0) {
+      return;
+    }
+    const total = (this.buildup.get(def.id) ?? 0) + check.value;
+    this.buildupAt.set(def.id, this.sim.time);
+    if (total < limit) {
+      this.buildup.set(def.id, total);
+      return;
+    }
+    this.buildup.delete(def.id);
+    if (def.escalate && this.statuses.has(def.id)) {
+      this.removeStatus(def.id);
+      this.addStatus(def.escalate, source);
+    } else {
+      this.addStatus(def, source);
+    }
+  }
+
+  /** Runs statuses, immunity and buildup decay for one tick. */
+  tickStatuses(dt: number): void {
+    for (const [id, s] of this.statuses) {
+      s.elapsed += dt;
+      s.def.tick?.(s, dt);
+      s.remaining -= dt;
+      if (s.remaining <= 0 || (s.def.endsWithSource && !s.source.alive)) {
+        this.removeStatus(id);
+      }
+    }
+    for (const [id, left] of this.immunity) {
+      if (left <= dt) {
+        this.immunity.delete(id);
+      } else {
+        this.immunity.set(id, left - dt);
+      }
+    }
+    for (const [id, value] of this.buildup) {
+      if (this.sim.time - (this.buildupAt.get(id) ?? 0) < BUILDUP_HOLD) {
+        continue;
+      }
+      const next = value - BUILDUP_DECAY * dt;
+      if (next <= 0) {
+        this.buildup.delete(id);
+      } else {
+        this.buildup.set(id, next);
+      }
+    }
+  }
+
+  /** Ends every status, as on death. No immunity follows. */
+  clearStatuses(): void {
+    for (const s of this.statuses.values()) {
+      s.lifecycle?.stop();
+    }
+    this.statuses.clear();
+    this.buildup.clear();
+    this.immunity.clear();
   }
 
   /**
@@ -324,6 +491,7 @@ export default class Unit {
       flat: options.flat ?? 0,
       fixed: options.fixed,
       flags,
+      buildup: options.buildup ?? [],
       value: 0,
     };
     this.sim.emit(SimEvents.UnitDamage, event);

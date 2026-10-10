@@ -1,5 +1,6 @@
 // The world is grey. Color is information: red for blood and danger, gold for
-// light and the bearer, teal for the Hollow's dead and magic.
+// light and the bearer, teal for the Hollow's dead and magic. Element colors
+// show only briefly, on statuses and their buildup.
 export const C = {
   void: '#0a0a0a',
   stoneA: '#3e3e3e',
@@ -19,6 +20,10 @@ export const C = {
   gold: '#c9973a',
   flame: '#f2c25a',
   teal: '#5fd4c0',
+  venom: '#86a83c',
+  frost: '#a4c8e4',
+  storm: '#ece4a4',
+  earth: '#9a7a4a',
 } as const;
 
 type RGB = [number, number, number];
@@ -45,7 +50,20 @@ const PALETTE: RGB[] = [
   ...ramp(16, 1, 1, 1),
   ...ramp(12, 1.08, 0.97, 0.8),
   ...ramp(8, 0.9, 0.94, 1.08),
-  ...[C.blood, C.bloodDark, '#3a0808', C.gold, '#7a5a22', C.flame, C.teal, '#2f6a60'].map(hex),
+  ...[
+    C.blood,
+    C.bloodDark,
+    '#3a0808',
+    C.gold,
+    '#7a5a22',
+    C.flame,
+    C.teal,
+    '#2f6a60',
+    C.venom,
+    C.frost,
+    C.storm,
+    C.earth,
+  ].map(hex),
 ];
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];

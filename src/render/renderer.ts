@@ -1,5 +1,5 @@
 import type { Prop, Stage } from '../game/stage';
-import { TAUNTED } from '../sim/ai';
+import { BURN, CHILL, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -25,6 +25,23 @@ const th = (): number => TH * look.zoom;
 // How far the party sees: the bearer by the lantern, mercs by their own light.
 const BEARER_SIGHT = 7;
 const MERC_SIGHT = 4.5;
+
+// Each status's color: its element's, or bone for plain ones like Stun.
+const STATUS_COLOR: Record<string, string> = {
+  [TAUNTED.id]: C.blood,
+  [STUN.id]: C.bone,
+  [BURN.id]: C.flame,
+  [CHILL.id]: C.frost,
+  [FREEZE.id]: C.frost,
+  [SHOCK.id]: C.storm,
+  [PETRIFY.id]: C.earth,
+  [POISON.id]: C.venom,
+};
+
+// Statuses that build up, by id, to read their thresholds.
+const BUILDUP_STATUS = new Map(
+  [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON].map((def) => [def.id, def]),
+);
 
 export interface Frame {
   sim: Sim;
@@ -160,7 +177,8 @@ export default class Renderer {
       });
     }
     for (const u of f.sim.units) {
-      if (u.alive) {
+      // The dead stay where they fell, unless they were torn apart.
+      if (u.alive || !f.effects.gibbed.has(u)) {
         const r = f.views.rig(u, f.alpha);
         const shown = seen(fog, u, r.x, r.z);
         if (shown <= 0.05) {
@@ -326,14 +344,7 @@ export default class Renderer {
       if (seen(fog, u, r.x, r.z) < 0.5) {
         continue;
       }
-      if (u.statuses.has(TAUNTED)) {
-        // A red notch over the head: this one has turned on the Vanguard.
-        const b = this.iso(r.x, r.z);
-        const y = b.y - Math.round((barHeight(u) + 5) * look.zoom);
-        ctx.fillStyle = C.blood;
-        ctx.fillRect(b.x - 1, y - 3, 2, 3);
-        ctx.fillRect(b.x - 1, y + 1, 2, 1);
-      }
+      this.drawStatuses(u, r.x, r.z, f.time);
       for (const e of emissives(r, this.iso, f.time)) {
         if (e.color === 'teal') {
           ctx.fillStyle = C.teal;
@@ -355,11 +366,71 @@ export default class Renderer {
     }
   }
 
+  // Marks for each status, in its element's color. They shine through the dark.
+  private drawStatuses(u: Unit, x: number, z: number, time: number): void {
+    const { ctx } = this;
+    const b = this.iso(x, z);
+    const top = b.y - Math.round((barHeight(u) + 5) * look.zoom);
+    for (const s of u.statuses.values()) {
+      const color = STATUS_COLOR[s.def.id] ?? C.bone;
+      ctx.fillStyle = color;
+      if (s.def.id === TAUNTED.id) {
+        // A red notch over the head: this one has turned on the Vanguard.
+        ctx.fillRect(b.x - 1, top - 3, 2, 3);
+        ctx.fillRect(b.x - 1, top + 1, 2, 1);
+      } else if (s.def.disables) {
+        // Three motes circling the head.
+        for (let i = 0; i < 3; i++) {
+          const a = time * 5 + (i * Math.PI * 2) / 3;
+          ctx.fillRect(
+            Math.round(b.x + Math.cos(a) * 5),
+            Math.round(top + 4 + Math.sin(a) * 2),
+            1,
+            1,
+          );
+        }
+      } else if (s.def.slow) {
+        // Frost settles at the feet.
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(b.x - 5 + i * 3, b.y + (i % 2), 1, 1);
+        }
+      } else {
+        // Embers or bubbles rise off the body.
+        for (let i = 0; i < 3; i++) {
+          const t = (time * 0.9 + i / 3) % 1;
+          const px = b.x + Math.round(Math.sin(i * 2.3 + time) * 4);
+          const py = Math.round(b.y - (8 + t * (barHeight(u) - 6)) * look.zoom);
+          ctx.fillRect(px, py, 1, 1);
+        }
+      }
+    }
+  }
+
+  // Health bars: gold for the party, red for monsters. Under them, a thin
+  // bar in an element's color fills as a status builds up.
+  private drawBuildup(u: Unit, bx: number, y: number): void {
+    let best: { id: string; share: number } | null = null;
+    for (const [id, value] of u.buildup) {
+      const def = BUILDUP_STATUS.get(id);
+      const limit = def?.threshold?.(u) ?? 0;
+      if (limit > 0 && (!best || value / limit > best.share)) {
+        best = { id, share: value / limit };
+      }
+    }
+    if (!best) {
+      return;
+    }
+    this.ctx.fillStyle = C.ink;
+    this.ctx.fillRect(bx - 7, y + 2, 14, 1);
+    this.ctx.fillStyle = STATUS_COLOR[best.id] ?? C.bone;
+    this.ctx.fillRect(bx - 7, y + 2, Math.max(1, Math.round(14 * best.share)), 1);
+  }
+
   // Health bars: gold for the party, red for monsters.
   private drawHealth(f: Frame, fog: Fog): void {
     const { ctx } = this;
     for (const u of f.sim.living()) {
-      if (u.side === Side.Party && u.hp >= u.derived.maxHp) {
+      if (u.side === Side.Party && u.hp >= u.derived.maxHp && u.buildup.size === 0) {
         continue;
       }
       if (u.side === Side.Monster && !u.aware) {
@@ -375,6 +446,7 @@ export default class Renderer {
       ctx.fillRect(b.x - 7, y, 14, 2);
       ctx.fillStyle = u.side === Side.Party ? C.gold : C.blood;
       ctx.fillRect(b.x - 7, y, Math.max(0, Math.round((14 * u.hp) / u.derived.maxHp)), 2);
+      this.drawBuildup(u, b.x, y);
     }
   }
 

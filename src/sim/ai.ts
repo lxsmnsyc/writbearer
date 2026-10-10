@@ -1,5 +1,6 @@
 import type Sim from './sim';
 import { SkillMode } from './skill';
+import { TAUNTED } from './statuses';
 import { Rank, Side } from './types';
 import type Unit from './unit';
 
@@ -57,9 +58,6 @@ export const enum Hunt {
   Bearer = 0,
   Nearest = 1,
 }
-
-/** The status a taunt puts on a monster. Its source is whom it must fight. */
-export const TAUNTED = 'taunted';
 
 // A monster that notices the party wakes every monster this close to it.
 const PACK_RADIUS = 4;
@@ -181,7 +179,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   }
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A taunted monster goes for whoever taunted it.
-  const taunt = u.statuses.get(TAUNTED);
+  const taunt = u.statuses.get(TAUNTED.id);
   let target: Unit | null;
   if (taunt?.source.alive) {
     target = taunt.source;
@@ -211,7 +209,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
 
 /** One unit's decision for this tick. Units mid-swing are committed to it. */
 export function think(sim: Sim, u: Unit, dt: number): void {
-  if (!u.alive || u.busy) {
+  if (!u.alive || u.busy || u.disabled) {
     return;
   }
   if (u === sim.bearer) {

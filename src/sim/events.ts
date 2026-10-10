@@ -9,6 +9,7 @@ import type {
   ValuePriority,
 } from './types';
 import type { Skill } from './skill';
+import type { ActiveStatus, StatusDef } from './status';
 import type Unit from './unit';
 
 export const enum SimEvents {
@@ -20,6 +21,10 @@ export const enum SimEvents {
   CheckSkillCost = 'CheckSkillCost',
   UnitSkillWindup = 'UnitSkillWindup',
   UnitSkillRelease = 'UnitSkillRelease',
+  CheckBuildup = 'CheckBuildup',
+  CheckStatusDuration = 'CheckStatusDuration',
+  StatusApplied = 'StatusApplied',
+  StatusRemoved = 'StatusRemoved',
 }
 
 /**
@@ -59,7 +64,14 @@ export interface UnitDamageEvent extends BaseEvent {
   // A set amount instead of a roll, such as a damage over time tick.
   fixed?: number;
   flags: number;
+  // Buildup the hit adds on top of its element's, such as a Shield Bash's stun
+  buildup: Buildup[];
   value: number;
+}
+
+export interface Buildup {
+  status: StatusDef;
+  amount: number;
 }
 
 export interface UnitHealEvent extends BaseEvent {
@@ -95,6 +107,26 @@ export interface UnitSkillReleaseEvent extends BaseEvent {
   target: Unit | null;
 }
 
+/** Asks how much buildup a hit adds. `value` starts at the base amount. */
+export interface CheckBuildupEvent extends BaseEvent {
+  source: Unit;
+  target: Unit;
+  status: StatusDef;
+  value: number;
+}
+
+/** Asks how long a status lasts on this target, in seconds. */
+export interface CheckStatusDurationEvent extends BaseEvent {
+  source: Unit;
+  target: Unit;
+  status: StatusDef;
+  value: number;
+}
+
+export interface StatusEvent extends BaseEvent {
+  status: ActiveStatus;
+}
+
 /** Which event carries which shape, on which priority scale. */
 export interface SimEventMap extends EventMap {
   [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
@@ -105,4 +137,8 @@ export interface SimEventMap extends EventMap {
   [SimEvents.CheckSkillCost]: [CheckSkillCostEvent, ValuePriority];
   [SimEvents.UnitSkillWindup]: [UnitSkillWindupEvent, EventPriority];
   [SimEvents.UnitSkillRelease]: [UnitSkillReleaseEvent, EventPriority];
+  [SimEvents.CheckBuildup]: [CheckBuildupEvent, ValuePriority];
+  [SimEvents.CheckStatusDuration]: [CheckStatusDurationEvent, ValuePriority];
+  [SimEvents.StatusApplied]: [StatusEvent, EventPriority];
+  [SimEvents.StatusRemoved]: [StatusEvent, EventPriority];
 }

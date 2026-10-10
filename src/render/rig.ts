@@ -50,6 +50,8 @@ export interface RigUnit {
   atk: number;
   // Shout progress from 0 to 1, landing at 0.5, or -1. The Vanguard's Challenge.
   shout: number;
+  // How far through falling dead, 0 to 1, or -1 while alive.
+  fall: number;
   // Time since the last hit taken, for the flinch.
   hurt: number;
   // True while the unit has an enemy to face. Rangers raise the bow.
@@ -106,13 +108,39 @@ function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
   const size = u.kind === 'bearer' ? 0.82 : 1;
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
-  return (p) => {
+  const fallen = topple(u);
+  return (raw) => {
+    const p = fallen(raw);
     const f = p[0] * size;
     const r = p[1] * size;
     const X = u.x + (f * c - r * s) * FLOOR_K;
     const Z = u.z + (f * s + r * c) * FLOOR_K;
     const o = iso(X, Z);
     return { x: o.x, y: o.y - p[2] * size * HEIGHT_K * look.zoom, depth: X + Z };
+  };
+}
+
+// Turns a dying figure's points as it falls. A body tips back over its heels
+// and lands flat. A crawler's legs fold under it and it sinks.
+function topple(u: RigUnit): (p: V3) => V3 {
+  if (u.fall < 0) {
+    return (p) => p;
+  }
+  const t = ease(clamp01(u.fall));
+  if (u.kind === 'crawler') {
+    return (p) => v(p[0], p[1] * (1 - t * 0.3), p[2] * (1 - t * 0.7));
+  }
+  // The knees give first, then the body goes over.
+  const sink = Math.min(1, t * 2) * 10;
+  const a = ease(clamp01((u.fall - 0.15) / 0.85)) * Math.PI * 0.48;
+  const ca = Math.cos(a);
+  const sa = Math.sin(a);
+  // Whatever was held out in front would swing up as the body tips back.
+  // A ceiling that lowers with the fall lays it down with the body.
+  const ceiling = 100 * (1 - t) + 6;
+  return (p) => {
+    const h = Math.max(0, p[2] - sink * (p[2] / 100));
+    return v(p[0] * ca - h * sa, p[1], Math.min(ceiling, Math.max(1, p[0] * sa + h * ca)));
   };
 }
 
