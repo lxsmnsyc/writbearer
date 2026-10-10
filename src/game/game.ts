@@ -15,6 +15,11 @@ const MAX_FRAME = 0.25;
 const WAVE_EVERY = 16;
 const MAX_MONSTERS = 9;
 
+export interface GameHooks {
+  // Called when the player selects a merc, or clears the selection with null.
+  onSelect?: (unit: Unit | null) => void;
+}
+
 /**
  * One playable stage: the simulation at a fixed 20 ticks per second, drawn
  * every frame between ticks.
@@ -35,10 +40,52 @@ export default class Game {
   private waveTimer = 0;
   private frameId = 0;
   private last = 0;
+  private selected: Unit | null = null;
 
-  constructor(private readonly canvas: HTMLCanvasElement) {
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    private readonly hooks: GameHooks = {},
+  ) {
     this.renderer = new Renderer(canvas);
     this.reset();
+  }
+
+  /** The game pauses while a merc's orders are open. */
+  get paused(): boolean {
+    return this.selected !== null;
+  }
+
+  /** The mercs, alive or dead, in the order they joined. */
+  mercs(): Unit[] {
+    return [...this.sim.units].filter((u) => u.side === Side.Party && u !== this.bearer);
+  }
+
+  select(unit: Unit | null): void {
+    this.selected = unit;
+    // Held keys would walk the bearer the moment the game resumes.
+    this.keys.clear();
+    this.hooks.onSelect?.(unit);
+  }
+
+  // The merc drawn under a point on the screen, if any.
+  private pickMerc(clientX: number, clientY: number): Unit | null {
+    const s = this.renderer.toSmall(clientX, clientY);
+    let best: Unit | null = null;
+    let bestD = Infinity;
+    for (const u of this.mercs()) {
+      if (!u.alive) {
+        continue;
+      }
+      const r = this.views.rig(u, 1);
+      const b = this.renderer.iso(r.x, r.z);
+      const inside = Math.abs(s.x - b.x) <= 8 && s.y >= b.y - 36 && s.y <= b.y + 4;
+      const d = Math.hypot(s.x - b.x, s.y - (b.y - 16));
+      if (inside && d < bestD) {
+        best = u;
+        bestD = d;
+      }
+    }
+    return best;
   }
 
   reset(): void {
@@ -62,6 +109,7 @@ export default class Game {
     });
     this.slain = 0;
     this.over = false;
+    this.select(null);
     this.acc = 0;
     this.waveTimer = 14;
   }
@@ -83,6 +131,20 @@ export default class Game {
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     const key = e.key.toLowerCase();
+    if (key === 'escape') {
+      this.select(null);
+      return;
+    }
+    // Number keys open a merc's orders.
+    const index = Number(key) - 1;
+    const merc = Number.isInteger(index) && index >= 0 ? this.mercs().at(index) : undefined;
+    if (merc?.alive) {
+      this.select(merc);
+      return;
+    }
+    if (this.paused) {
+      return;
+    }
     this.keys.add(key);
     if (key === 'r') {
       this.reset();
@@ -95,6 +157,17 @@ export default class Game {
 
   private readonly onMouseDown = (e: MouseEvent): void => {
     if (this.over) {
+      return;
+    }
+    // Clicking a merc opens its orders. Clicking anywhere else closes them,
+    // or walks the bearer there.
+    const merc = this.pickMerc(e.clientX, e.clientY);
+    if (merc) {
+      this.select(merc);
+      return;
+    }
+    if (this.paused) {
+      this.select(null);
       return;
     }
     const spot = this.renderer.unproject(e.clientX, e.clientY);
@@ -133,6 +206,12 @@ export default class Game {
   private readonly frame = (now: number): void => {
     const dt = Math.min(MAX_FRAME, (now - this.last) / 1000);
     this.last = now;
+    if (this.paused) {
+      // Everything stops, including blood in the air.
+      this.render(0);
+      this.frameId = requestAnimationFrame(this.frame);
+      return;
+    }
     this.time += dt;
     if (!this.over) {
       this.acc += dt;
@@ -146,20 +225,26 @@ export default class Game {
     }
     this.views.frame(this.sim, dt);
     this.effects.update(dt);
+    this.render(this.over ? 1 : this.acc / TICK);
+    this.frameId = requestAnimationFrame(this.frame);
+  };
+
+  private render(alpha: number): void {
     this.renderer.render({
       sim: this.sim,
       stage: this.stage,
       views: this.views,
       effects: this.effects,
-      alpha: this.over ? 1 : this.acc / TICK,
+      alpha,
       time: this.time,
       slain: this.slain,
       over: this.over,
+      paused: this.paused,
+      selected: this.selected,
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;
-    this.frameId = requestAnimationFrame(this.frame);
-  };
+  }
 
   private waves(): void {
     this.waveTimer -= TICK;

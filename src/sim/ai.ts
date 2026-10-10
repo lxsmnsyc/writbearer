@@ -33,6 +33,11 @@ export const DEFAULT_TOGGLES: Toggles = {
   chase: 7,
 };
 
+/** Gives a merc new standing orders. The merc keeps its own copy. */
+export function setToggles(unit: Unit, toggles: Toggles): void {
+  unit.toggles = { ...toggles, priorities: [...toggles.priorities] };
+}
+
 /** What a monster goes for. */
 export const enum Hunt {
   Bearer = 0,

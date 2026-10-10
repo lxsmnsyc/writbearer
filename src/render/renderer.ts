@@ -26,6 +26,9 @@ export interface Frame {
   time: number;
   slain: number;
   over: boolean;
+  paused: boolean;
+  // The merc whose orders are open
+  selected: Unit | null;
 }
 
 export default class Renderer {
@@ -55,11 +58,17 @@ export default class Renderer {
   readonly iso = (x: number, z: number): Pt =>
     pt(Math.round((x - z) * (TW / 2) - this.cam.x), Math.round((x + z) * (TH / 2) - this.cam.y));
 
+  /** A point on the screen element, in the small frame's pixels. */
+  toSmall(clientX: number, clientY: number): Pt {
+    const r = this.screen.getBoundingClientRect();
+    return pt(((clientX - r.left) / r.width) * W, ((clientY - r.top) / r.height) * H);
+  }
+
   /** The floor point under a spot on the screen element, in tiles. */
   unproject(clientX: number, clientY: number): { x: number; z: number } {
-    const r = this.screen.getBoundingClientRect();
-    const X = ((clientX - r.left) / r.width) * W + this.cam.x;
-    const Y = ((clientY - r.top) / r.height) * H + this.cam.y;
+    const s = this.toSmall(clientX, clientY);
+    const X = s.x + this.cam.x;
+    const Y = s.y + this.cam.y;
     const a = (2 * X) / TW;
     const b = (2 * Y) / TH;
     return { x: (a + b) / 2, z: (b - a) / 2 };
@@ -88,6 +97,17 @@ export default class Renderer {
       if (p.h === 0) {
         drawPiece(ctx, iso, p);
       }
+    }
+
+    // A gold ring marks the merc whose orders are open.
+    if (f.selected?.alive) {
+      const r = f.views.rig(f.selected, f.alpha);
+      const b = iso(r.x, r.z);
+      ctx.strokeStyle = C.gold;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(b.x, b.y, 10, 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     // Everything that stands, sorted back to front.
@@ -409,7 +429,11 @@ export default class Renderer {
     out.font = '16px ui-monospace, monospace';
     out.fillStyle = '#9a9a9a';
     out.textAlign = 'start';
-    out.fillText('WASD or click to move the bearer.  R to restart.', 16, 26);
+    out.fillText(
+      'WASD or click to move.  Click a merc, or 1 and 2, for orders.  R to restart.',
+      16,
+      26,
+    );
     out.fillText(`Slain: ${f.slain}`, W * SCALE - 120, 26);
     if (f.over) {
       out.fillStyle = 'rgba(0,0,0,0.6)';
