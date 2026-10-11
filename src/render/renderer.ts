@@ -1,4 +1,4 @@
-import type { Prop, Stage } from '../gen/stage';
+import type { Ahead, Prop, Stage } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import type { Offer } from '../content/recruits';
@@ -34,6 +34,15 @@ import type { Views } from './view';
 export const W = 384;
 export const H = 216;
 export const SCALE = 3;
+
+// What lies beyond a road on, as its signpost reads.
+const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
+  combat: 'Fight',
+  elite: 'Elite: a strong pack, better spoils',
+  camp: 'Camp: rest by a fire',
+  boss: 'The walled ring',
+};
+
 // A tile is 32 by 16 pixels on screen, times the zoom.
 const TW = 32;
 const TH = 16;
@@ -654,6 +663,21 @@ export default class Renderer {
       }
       out.fillText(name, x, y);
     }
+    // Each road on names what lies ahead, on its signpost.
+    for (const e of f.stage.exits) {
+      if (e.ahead === 'down' || !fog.known(e.x - 2.2, e.z - 2.2)) {
+        continue;
+      }
+      const b = this.iso(e.x - 2.2, e.z - 2.2);
+      const text = AHEAD_NAME[e.ahead];
+      const x = b.x * SCALE - this.sub.x;
+      const y = (b.y - 40 * look.zoom) * SCALE - this.sub.y;
+      const width = out.measureText(text).width + 8;
+      out.fillStyle = 'rgba(0,0,0,0.65)';
+      out.fillRect(x - width / 2, y - 14, width, 18);
+      out.fillStyle = e.ahead === 'elite' || e.ahead === 'boss' ? '#d47a6a' : '#d6d0c4';
+      out.fillText(text, x, y);
+    }
     const w = f.wanderer;
     if (w && fog.visible(w.x, w.z) > 0.5) {
       const b = this.iso(w.x, w.z);
@@ -762,13 +786,13 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click to move.  1 to 4 for a merc.  I for the pack and gear.  Q to drink.  R to restart.',
+      'WASD or click: move.  1–4: mercs.  I: pack and gear.  M: map.  Q: drink.  R: restart.',
       16,
       26,
     );
     out.textAlign = 'right';
     out.fillText(
-      `${layerOf(f.stage.index).name} · ${f.stage.station ? 'Waystation' : `Area ${areaOf(f.stage.index)}`} · Slain: ${f.slain}`,
+      `${layerOf(f.stage.index).name} · ${place(f.stage)} · Slain: ${f.slain}`,
       W * SCALE - 16,
       26,
     );
@@ -807,10 +831,25 @@ export default class Renderer {
   }
 }
 
+// Where the party is, for the HUD.
+function place(stage: Stage): string {
+  if (stage.kind === 'waystation') {
+    return 'Waystation';
+  }
+  const area = `Area ${areaOf(stage.index)}`;
+  if (stage.kind === 'elite') {
+    return `${area}, Elite`;
+  }
+  if (stage.kind === 'camp') {
+    return `${area}, Camp`;
+  }
+  return area;
+}
+
 // What the player is to do in this area, under the controls.
 function hint(f: Frame): string {
   if (f.stage.station) {
-    return 'The Guild’s Waystation. Pay your mercs and use the vault at the post, then take the road east.';
+    return 'The Guild’s Waystation. Pay your mercs and use the vault at the post, then take a road east.';
   }
   if (f.boss) {
     if (f.boss.alive) {
@@ -820,9 +859,13 @@ function hint(f: Frame): string {
     }
     return 'The way down is open, to the east.';
   }
-  return f.stage.down
-    ? 'Find the way down into the Hollow, to the east.'
-    : 'Follow the road east, to the next area.';
+  if (f.stage.rest) {
+    return 'A Camp. Walk to the fire to rest, then take a road on. M for the map.';
+  }
+  if (f.stage.exits.length > 1) {
+    return 'The road forks to the east. Each signpost says what lies ahead. M for the map.';
+  }
+  return 'Follow the road east, to the next area. M for the map.';
 }
 
 // Whether a floor point's screen spot is near enough the frame to draw what stands there.

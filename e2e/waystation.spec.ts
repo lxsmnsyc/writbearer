@@ -24,9 +24,15 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
   const vault = panel.getByRole('list', { name: 'Vault' });
   await expect(vault.getByRole('button', { name: /^Take Healing Draught/ })).toBeVisible();
 
-  // Taking the road on, the unpaid Ranger leaves the party.
+  // Taking the north road on, the unpaid Ranger leaves the party. D walks
+  // north-east on the floor, then D and S together walk east.
   await panel.getByRole('button', { name: 'Close' }).click();
   await page.keyboard.down('d');
+  await expect
+    .poll(async () => Number((await canvas.getAttribute('data-bearer'))?.split(',')[1]), {
+      timeout: 10000,
+    })
+    .toBeLessThan(7.2);
   await page.keyboard.down('s');
   const party = page.getByRole('navigation', { name: 'Party' });
   await expect(party.getByRole('button')).toHaveCount(1, { timeout: 15000 });

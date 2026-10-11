@@ -5,6 +5,7 @@ import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
 import Station from './station';
+import LayerMapPanel from './map';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
 
@@ -49,6 +50,7 @@ export default function App(): JSX.Element {
   const [offers, setOffers] = createSignal<Offer[] | null>(null);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
   const [station, setStation] = createSignal(false);
+  const [map, setMap] = createSignal(false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -76,6 +78,9 @@ export default function App(): JSX.Element {
         },
         onStation: (open) => {
           setStation(open);
+        },
+        onMap: (open) => {
+          setMap(open);
         },
       },
       runOptions(),
@@ -191,6 +196,16 @@ export default function App(): JSX.Element {
             version={items()}
             onClose={() => {
               g.openInventory(false);
+            }}
+          />
+        )}
+      </Show>
+      <Show when={map() && game()} keyed>
+        {(g) => (
+          <LayerMapPanel
+            game={g}
+            onClose={() => {
+              g.openMap(false);
             }}
           />
         )}

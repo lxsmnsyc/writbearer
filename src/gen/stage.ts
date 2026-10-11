@@ -1,6 +1,7 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Spot } from '../sim/nav';
+import type { NodeKind } from './graph';
 import { layerOf, leadsDown } from './layers';
 
 export type PropKind =
@@ -44,27 +45,44 @@ export interface Pack {
   elite: number;
 }
 
+/** Where an area's exit leads: an area of the layer's map, or down. */
+export type Ahead = NodeKind | 'down';
+
+/** A way out of an area on its east edge, and what lies beyond it. */
+export interface Exit extends Spot {
+  ahead: Ahead;
+}
+
+/** What an area is, and where each of its exits leads, north first. */
+export interface AreaPlan {
+  kind: NodeKind | 'waystation';
+  ahead: Ahead[];
+}
+
 /**
  * One generated stage: an open field the bearer crosses from the entrance
- * on the west edge to the exit on the east edge. The exit is the road on to
- * the next area of the layer, or, in a layer's last area, the way down.
+ * on the west edge to an exit on the east edge. An exit is a road on to an
+ * area of the layer's map, or, in a layer's last area, the way down.
  */
 export interface Stage {
   // 0 for the first stage of a run, counting up
   index: number;
+  kind: AreaPlan['kind'];
   width: number;
   depth: number;
   entrance: Spot;
+  // The first of `exits`
   exit: Spot;
+  exits: Exit[];
   props: Prop[];
   // Blood sigils painted on the floor
   sigils: Spot[];
   // Old blood already on the floor
   stains: { x: number; z: number; r: number }[];
   packs: Pack[];
-  // The road from the entrance, through the wall's breach, to the exit and
-  // off the east edge
-  road: Spot[];
+  // The roads from the entrance, through the wall's breach, to each exit
+  // and off the east edge
+  roads: Spot[][];
   // Whether the exit goes down to the next layer
   down: boolean;
   // A layer's last area: the walled arena its boss waits in, and whether
@@ -76,7 +94,46 @@ export interface Stage {
   station?: Spot;
   // Where a wandering merc waits by its fire, on stages that have one
   recruit?: Spot;
+  // A Camp's fire, where the party rests
+  rest?: Spot;
 }
+
+// The plan of an area with one road on to a Combat area, as tests use.
+const PLAIN: AreaPlan = { kind: 'combat', ahead: ['combat'] };
+
+type Add = (kind: PropKind, x: number, z: number) => Prop;
+
+/**
+ * Lays out an area's exits on its east edge. One exit sits at `z`; two or
+ * more spread along the edge. Each road on is marked by the Guild's signpost
+ * and two torches; the way down by a stair between two braziers.
+ */
+function placeExits(stage: Stage, add: Add, ahead: Ahead[], z: number): void {
+  const x = stage.width - 3;
+  stage.exits = ahead.map((a, k) => ({
+    x,
+    z: ahead.length === 1 ? z : stage.depth * (0.28 + (0.44 * k) / (ahead.length - 1)),
+    ahead: a,
+  }));
+  stage.exit = stage.exits[0];
+  for (const e of stage.exits) {
+    if (e.ahead === 'down') {
+      add('stair', e.x, e.z);
+      add('brazier', e.x - 1.2, e.z - 1.6);
+      add('brazier', e.x - 1.2, e.z + 1.6);
+    } else {
+      add('torch', e.x - 1.2, e.z - 1.6);
+      add('torch', e.x - 1.2, e.z + 1.6);
+      add('signpost', e.x - 2.2, e.z - 2.2);
+    }
+  }
+}
+
+// Whether a point is on any of the roads.
+const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
+  stage.roads.some((road) =>
+    road.slice(1).some((b, i) => distanceToSegment({ x, z }, road[i], b) < reach),
+  );
 
 // Solid radius of each prop that blocks, in tiles.
 const SOLID: Partial<Record<PropKind, number>> = {
@@ -95,7 +152,7 @@ const SOLID: Partial<Record<PropKind, number>> = {
 };
 
 // Threat each monster costs from a stage's budget. An elite costs more.
-const THREAT: Record<MonsterKind, number> = {
+export const THREAT: Record<MonsterKind, number> = {
   mite: 1,
   husk: 1,
   crawler: 2,
@@ -124,44 +181,39 @@ const PACK_DISTANCE = 13;
  * design: size, entrance and exit, places, terrain from noise, a check that
  * everything can be reached, then packs from a threat budget.
  */
-export function generateStage(rng: RNG, index: number): Stage {
-  if (leadsDown(index)) {
+export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): Stage {
+  if (leadsDown(index) || plan.kind === 'boss') {
     return generateArena(rng, index);
+  }
+  if (plan.kind === 'camp') {
+    return generateCamp(rng, index, plan.ahead);
   }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
   const entrance = { x: 2.5, z: depth / 2 + rng.range(-depth / 5, depth / 5) };
-  const exit = { x: width - 3, z: depth / 2 + rng.range(-depth / 4, depth / 4) };
+  const exitZ = depth / 2 + rng.range(-depth / 4, depth / 4);
   const stage: Stage = {
     index,
+    kind: plan.kind,
     width,
     depth,
     entrance,
-    exit,
+    exit: entrance,
+    exits: [],
     props: [],
     sigils: [],
     stains: [],
     packs: [],
-    road: [],
-    down: leadsDown(index),
+    roads: [],
+    down: false,
   };
-  const add = (kind: PropKind, x: number, z: number): Prop => {
+  const add: Add = (kind, x, z) => {
     const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
     stage.props.push(prop);
     return prop;
   };
-
-  if (stage.down) {
-    // The way down to the next layer, between two braziers.
-    add('stair', exit.x, exit.z);
-    add('brazier', exit.x - 1.2, exit.z - 1.6);
-    add('brazier', exit.x - 1.2, exit.z + 1.6);
-  } else {
-    // The road on to the next area, marked by the Guild's signpost and torches.
-    add('torch', exit.x - 1.2, exit.z - 1.6);
-    add('torch', exit.x - 1.2, exit.z + 1.6);
-    add('signpost', exit.x - 2.2, exit.z - 2.2);
-  }
+  placeExits(stage, add, plan.ahead, exitZ);
+  stage.down = stage.exits.some((e) => e.ahead === 'down');
 
   // A ruined wall across the whole field, broken in one or two places: the
   // choke point the design asks for on every main route.
@@ -173,15 +225,13 @@ export function generateStage(rng: RNG, index: number): Stage {
       breaches.push(second);
     }
   }
-  stage.road = [
+  stage.roads = stage.exits.map((e) => [
     entrance,
     { x: wallX - 3, z: breaches[0] },
     { x: wallX + 3, z: breaches[0] },
-    exit,
-    { x: width + 1, z: exit.z },
-  ];
-  const onRoad = (x: number, z: number): boolean =>
-    stage.road.slice(1).some((b, i) => distanceToSegment({ x, z }, stage.road[i], b) < 1.6);
+    e,
+    { x: width + 1, z: e.z },
+  ]);
   const wall: Spot[] = [];
   for (let z = 0.5; z < depth; z += 0.9) {
     if (breaches.some((b) => Math.abs(z - b) < 1.6)) {
@@ -195,7 +245,7 @@ export function generateStage(rng: RNG, index: number): Stage {
   // Places: the Church's sealing site, a lair, a cache.
   const keep: { x: number; z: number; r: number }[] = [
     { ...entrance, r: KEEP_ENTRANCE },
-    { ...exit, r: KEEP_EXIT },
+    ...stage.exits.map((e) => ({ ...e, r: KEEP_EXIT })),
   ];
   const away = (x: number, z: number, gap: number): boolean =>
     keep.every((k) => Math.hypot(k.x - x, k.z - z) >= k.r + gap) &&
@@ -251,7 +301,11 @@ export function generateStage(rng: RNG, index: number): Stage {
     const x = rng.range(1.5, width - 1.5);
     const z = rng.range(1.5, depth - 1.5);
     const n = noise(x, z);
-    if (!away(x, z, 0) || onRoad(x, z) || solids.some((s) => Math.hypot(s.x - x, s.z - z) < 2.2)) {
+    if (
+      !away(x, z, 0) ||
+      onRoads(stage, x, z) ||
+      solids.some((s) => Math.hypot(s.x - x, s.z - z) < 2.2)
+    ) {
       continue;
     }
     if (n > 0.68) {
@@ -269,7 +323,7 @@ export function generateStage(rng: RNG, index: number): Stage {
     add(rng.chance(0.6) ? 'pike' : 'gibbet', s.x, s.z);
   }
 
-  ensureReachable(stage, [exit, site, lair, cache]);
+  ensureReachable(stage, [...stage.exits, site, lair, cache]);
 
   for (let i = 0; i < 10; i++) {
     stage.stains.push({
@@ -279,56 +333,94 @@ export function generateStage(rng: RNG, index: number): Stage {
     });
   }
 
-  placePacks(stage, rng, { site, lair, breach: { x: wallX, z: breaches[0] } });
+  placePacks(
+    stage,
+    rng,
+    { site, lair, breach: { x: wallX, z: breaches[0] } },
+    plan.kind === 'elite',
+  );
   return stage;
 }
 
-/**
- * The Guild's Waystation at the top of a layer, before its first area: a
- * small safe field with the paymaster's post and the vault's strongbox, and
- * the road on to the east. No monsters come here. `index` is the index of
- * the layer's first area.
- */
-export function generateWaystation(rng: RNG, index: number): Stage {
-  const width = 26;
-  const depth = 20;
+// A small safe field: the entrance on the west, the exits on the east and
+// a place between the roads, with trees or pillars round the edge.
+function smallField(
+  rng: RNG,
+  index: number,
+  kind: AreaPlan['kind'],
+  ahead: Ahead[],
+): { stage: Stage; add: Add } {
+  const width = 28;
+  const depth = 24;
   const entrance = { x: 2.5, z: depth / 2 };
-  const exit = { x: width - 3, z: depth / 2 };
-  const post = { x: width / 2, z: depth / 2 - 3.5 };
   const stage: Stage = {
     index,
+    kind,
     width,
     depth,
     entrance,
-    exit,
+    exit: entrance,
+    exits: [],
     props: [],
     sigils: [],
     stains: [],
     packs: [],
-    road: [entrance, exit, { x: width + 1, z: exit.z }],
+    roads: [],
     down: false,
-    station: { x: post.x, z: post.z + 2 },
   };
-  const add = (kind: PropKind, x: number, z: number): Prop => {
-    const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
+  const add: Add = (k, x, z) => {
+    const prop: Prop = { kind: k, x, z, r: SOLID[k], seed: rng.random() };
     stage.props.push(prop);
     return prop;
   };
-  add('post', post.x, post.z);
-  add('strongbox', post.x + 2, post.z + 0.6);
-  add('torch', post.x - 1.6, post.z + 1.4);
-  add('torch', exit.x - 1.2, exit.z - 1.6);
-  add('torch', exit.x - 1.2, exit.z + 1.6);
-  add('signpost', exit.x - 2.2, exit.z - 2.2);
-  // Trees or pillars round the edge, off the road and the post.
-  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
-  for (let i = 0; i < 14; i++) {
-    const x = rng.range(1.5, width - 1.5);
-    const z = rng.chance(0.5) ? rng.range(1, 3.5) : rng.range(depth - 3.5, depth - 1);
-    if (Math.hypot(x - post.x, z - post.z) > 3.5) {
+  placeExits(stage, add, ahead, depth / 2);
+  stage.roads = stage.exits.map((e) => [entrance, e, { x: width + 1, z: e.z }]);
+  return { stage, add };
+}
+
+// Trees or pillars round a small field's edge, off the roads and its place.
+function edgeTrees(stage: Stage, add: Add, rng: RNG, place: Spot): void {
+  const tall = layerOf(stage.index).ground === 'earth' ? 'tree' : 'pillar';
+  for (let i = 0; i < 16; i++) {
+    const x = rng.range(1.5, stage.width - 1.5);
+    const z = rng.chance(0.5) ? rng.range(1, 3.5) : rng.range(stage.depth - 3.5, stage.depth - 1);
+    if (Math.hypot(x - place.x, z - place.z) > 4 && !onRoads(stage, x, z)) {
       add(tall, x, z);
     }
   }
+}
+
+/**
+ * The Guild's Waystation at the top of a layer, before its first area: a
+ * small safe field with the paymaster's post and the vault's strongbox
+ * between the roads on. No monsters come here. `index` is the index of the
+ * layer's first area.
+ */
+export function generateWaystation(rng: RNG, index: number, ahead: Ahead[] = ['combat']): Stage {
+  const { stage, add } = smallField(rng, index, 'waystation', ahead);
+  const post = { x: stage.width / 2, z: stage.depth / 2 };
+  stage.station = { x: post.x - 1.8, z: post.z };
+  add('post', post.x, post.z);
+  add('strongbox', post.x + 1.6, post.z + 1.4);
+  add('torch', post.x - 1.6, post.z - 1.4);
+  edgeTrees(stage, add, rng, post);
+  return stage;
+}
+
+/**
+ * A Camp: a small safe field with a fire between the roads on. The party
+ * rests there once, back to full health and mana. While anyone is left to
+ * hire, a wandering merc always waits by it.
+ */
+function generateCamp(rng: RNG, index: number, ahead: Ahead[]): Stage {
+  const { stage, add } = smallField(rng, index, 'camp', ahead);
+  const fire = { x: stage.width / 2, z: stage.depth / 2 };
+  add('campfire', fire.x, fire.z);
+  stage.rest = fire;
+  if (index < RECRUIT_STAGES) {
+    stage.recruit = { x: fire.x + 1, z: fire.z + 0.6 };
+  }
+  edgeTrees(stage, add, rng, fire);
   return stage;
 }
 
@@ -352,15 +444,17 @@ function generateArena(rng: RNG, index: number): Stage {
   const gate = { x: arena.x - ARENA_R, z: arena.z };
   const stage: Stage = {
     index,
+    kind: 'boss',
     width,
     depth,
     entrance,
     exit,
+    exits: [{ ...exit, ahead: 'down' }],
     props: [],
     sigils: [],
     stains: [],
     packs: [],
-    road: [entrance, gate, { x: arena.x, z: arena.z }],
+    roads: [[entrance, gate, { x: arena.x, z: arena.z }]],
     down: true,
     arena,
     boss: { x: arena.x + 1.5, z: arena.z },
@@ -514,13 +608,16 @@ function lairPack(index: number): MonsterKind[] {
 
 // An elite leads the lair's pack from this stage on.
 const ELITE_FROM = 4;
+const ELITE_BUDGET = 1.4;
 
 function placePacks(
   stage: Stage,
   rng: RNG,
   places: { site: Spot; lair: Spot; breach: Spot },
+  eliteArea = false,
 ): void {
-  let budget = 9 + stage.index * 5;
+  // An Elite area holds more, and its lair always has an elite.
+  let budget = (9 + stage.index * 5) * (eliteArea ? ELITE_BUDGET : 1);
   const pool = FACTIONS.filter((f) => f.from <= stage.index).map((f) => f.kinds);
   const cost = (kinds: MonsterKind[], elite: number): number =>
     kinds.reduce((sum, k) => sum + THREAT[k], 0) + (elite >= 0 ? ELITE_THREAT : 0);
@@ -541,7 +638,7 @@ function placePacks(
     kinds: lairPack(stage.index),
     x: places.lair.x,
     z: places.lair.z,
-    elite: stage.index >= ELITE_FROM ? 0 : -1,
+    elite: stage.index >= ELITE_FROM || eliteArea ? 0 : -1,
   });
   // A pack watches the first breach in the wall, from the far side.
   const breach = places.breach;

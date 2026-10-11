@@ -85,6 +85,11 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 
 - **Layers:** `src/gen/layers.ts` splits the run into the four layers of the lore, 8 areas each, one per layer of a phase's stage graph. The Marches, on the surface, have bare earth with dead grass and dead trees. The Rift Road has bare rock and stone pillars. The two layers under the city keep the flagstone plazas. The HUD names the layer and the area.
 - **Exits:** inside a layer, an area's exit is the road on to the next area, off the east edge, marked by the Guild's signpost and two torches. Only the last area of a layer has a way down, a stair between two braziers, to the next layer. The phase boss will stand before it.
+- **Layer map:** `src/gen/graph.ts` rolls each layer's map from the `map` stream, as Slay the Spire's: 8 columns, one per area. The first column has 2 areas below a Waystation and 1 where the run begins; columns 2 to 7 have 2 or 3; the last is the boss's arena. Each area leads to 1 or 2 areas of the next column, and no roads cross. M opens the map: the areas crossed, the one the party is in and the ones it can go to next.
+- **Area kinds:** Fight, Elite from the third column (25%), and Camp from the fourth (18%). No road joins two Camps or two Elites. The column before the boss always has a Camp and never an Elite, so the party can rest before the fight.
+  - **Elite:** 40% more threat, and its lair always holds an elite, even in the first layer's early areas.
+  - **Camp:** a small safe field with a fire. Walking up to it rests the living back to full health and mana, once. While anyone is left to hire, a wandering merc waits by it.
+- **Forks:** an area that leads to two others has two exits on its east edge, each with a road, a signpost and two torches. The signpost names what lies ahead: Fight, Elite, Camp or the walled ring. Taking one road closes the other; there is no way back.
 - **Waystation:** the way down from a layer's last area leads to the Guild's Waystation at the top of the next layer. It is a small safe field, 26 by 20 tiles, with the paymaster's post, the vault's strongbox and the road on to the east. No monsters come there. Leaving by the road begins the layer's first area. See [wages](05-mercenaries.md#wages-and-contracts).
 - **Arena:** a layer's last area is an approach from the west and a walled ring, 9 tiles across its radius, with one gate. The boss waits inside, before the way down, a level above the layer's last packs. Two packs of mites stray on the approach. The gate shuts once the bearer is 2 tiles inside: mercs still outside, living or dead, are pulled in, and the boss wakes. The way down opens when the boss dies. Her name and health show across the top of the screen. Only the Marches have a boss so far, the Brood Mother; the other layers' last areas use her for now.
 - **Road:** outside the city, a road runs from the entrance through the wall's first breach to the exit. Trees, pillars and rubble keep off it.
@@ -102,7 +107,7 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
 - **Crossing:** when the bearer reaches the exit, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
 
-Not yet: water, ledges, grass, alarms, patrols, forks and the map screen.
+Not yet: water, ledges, grass, alarms, patrols, Treasure, Event, Shrine and Town areas, and seamless crossing between areas.
 
 ### Map
 

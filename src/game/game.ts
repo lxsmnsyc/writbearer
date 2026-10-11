@@ -8,7 +8,9 @@ import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
-import { type Stage, generateStage, generateWaystation } from '../gen/stage';
+import { type Ahead, type Stage, generateStage, generateWaystation } from '../gen/stage';
+import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
+import { AREAS_PER_LAYER } from '../gen/layers';
 import { type EquipSlot, type Item, isPotion } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
 import { potionStack, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
@@ -59,6 +61,8 @@ export interface GameHooks {
   onRecruit?: (offer: Offer | null) => void;
   // Called when the bearer reaches a Waystation's post, and when it closes.
   onStation?: (open: boolean) => void;
+  // Called when the layer's map opens or closes.
+  onMap?: (open: boolean) => void;
 }
 
 export interface GameOptions {
@@ -84,6 +88,9 @@ export const START_GOLD = 3 * wageFor(START_LEVEL + 1);
 const MEET_REACH = 1.8;
 // Each Waystation lays out from its own stream, apart from the areas'.
 const WAYSTATION_STREAM = 1000;
+const AREA_ROW_STREAM = 100;
+// How near the fire the bearer must come for the party to rest at a Camp
+const REST_REACH = 2.2;
 // Seconds a notice stays on screen
 const NOTICE_TIME = 6;
 const LEAVE_REACH = 4;
@@ -130,6 +137,14 @@ export default class Game {
   private stationMet = false;
   // A line shown under the hint for a while, such as who left unpaid
   private notice: { text: string; until: number } | null = null;
+  // This layer's map, the area the party is in (null at a Waystation) and
+  // the areas it has crossed
+  private map: LayerMap = { columns: [] };
+  private node: { column: number; row: number } | null = null;
+  private path: { column: number; row: number }[] = [];
+  private mapOpen = false;
+  // Whether the party has rested at this area's Camp
+  private rested = false;
   private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
@@ -151,7 +166,8 @@ export default class Game {
       this.inventory ||
       this.offers !== null ||
       this.recruiting !== null ||
-      this.stationOpen
+      this.stationOpen ||
+      this.mapOpen
     );
   }
 
@@ -336,7 +352,16 @@ export default class Game {
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
     this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
-    this.stage = this.options.station ? this.buildWaystation() : this.buildStage();
+    this.mapOpen = false;
+    this.rollMap();
+    if (this.options.station) {
+      this.stageIndex -= this.stageIndex % AREAS_PER_LAYER;
+      this.node = null;
+      this.stage = this.buildWaystation();
+    } else {
+      this.goTo(this.stageIndex % AREAS_PER_LAYER, 0);
+      this.stage = this.buildStage();
+    }
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
     this.bearer = spawnParty(this.sim, this.stage, this.options.party ?? []);
@@ -468,8 +493,48 @@ export default class Game {
     return best;
   }
 
+  // The area the party is in on the layer's map.
+  private here(): MapNode | null {
+    return this.node ? (this.map.columns[this.node.column]?.[this.node.row] ?? null) : null;
+  }
+
+  // What lies beyond each of this area's exits.
+  private aheadOf(node: MapNode | null): Ahead[] {
+    if (!node) {
+      return this.map.columns[0].map((n) => n.kind);
+    }
+    if (node.kind === 'boss') {
+      return ['down'];
+    }
+    const next = this.map.columns[(this.node?.column ?? 0) + 1];
+    return node.next.map((row) => next[row].kind);
+  }
+
+  // Rolls the map of the layer the current area is in.
+  private rollMap(): void {
+    const layer = Math.floor(this.stageIndex / AREAS_PER_LAYER);
+    this.map = generateLayerMap(this.streams.area(1, Stream.Map, layer), layer === 0 ? 1 : 2);
+    this.path = [];
+  }
+
+  // Enters an area of the layer's map, by its column and row.
+  private goTo(column: number, row: number): void {
+    this.node = { column, row };
+    this.path.push({ column, row });
+    this.stageIndex = Math.floor(this.stageIndex / AREAS_PER_LAYER) * AREAS_PER_LAYER + column;
+  }
+
   private buildStage(): Stage {
-    return generateStage(this.streams.area(1, Stream.Layout, this.stageIndex), this.stageIndex);
+    const node = this.here();
+    const row = this.node?.row ?? 0;
+    this.rested = false;
+    // Each area of a column lays out from its own stream; the first keeps
+    // the stream areas had before the map.
+    return generateStage(
+      this.streams.area(1, Stream.Layout, this.stageIndex + AREA_ROW_STREAM * row),
+      this.stageIndex,
+      { kind: node?.kind ?? 'combat', ahead: this.aheadOf(node) },
+    );
   }
 
   // Lays out the current stage around the party.
@@ -494,7 +559,7 @@ export default class Game {
   // The bearer left by the exit: on to the next area, down to the next
   // layer's Waystation, or from the Waystation into the layer's first area.
   // Party and all.
-  private descend(): void {
+  private descend(exit: number): void {
     if (this.stage.station) {
       // The unpaid walk away as the party takes the road on.
       const gone = this.payroll?.settle(this.sim) ?? [];
@@ -504,14 +569,18 @@ export default class Game {
         this.hooks.onChange?.();
       }
       this.payroll = null;
+      this.goTo(0, exit);
       this.stage = this.buildStage();
-    } else {
+    } else if (this.stage.exits[exit]?.ahead === 'down') {
       this.stageIndex++;
-      if (this.stage.down) {
-        this.stage = this.buildWaystation();
-      } else {
-        this.stage = this.buildStage();
-      }
+      this.rollMap();
+      this.node = null;
+      this.stage = this.buildWaystation();
+    } else {
+      // The other roads on collapse behind the party.
+      const node = this.here();
+      this.goTo((this.node?.column ?? -1) + 1, node?.next[exit] ?? 0);
+      this.stage = this.buildStage();
     }
     carryParty(this.sim, this.stage);
     this.effects.clear();
@@ -530,7 +599,49 @@ export default class Game {
     return generateWaystation(
       this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
       this.stageIndex,
+      this.aheadOf(null),
     );
+  }
+
+  // At a Camp, the party rests by the fire once: the living back to full
+  // health and mana. The dead stay dead.
+  private rest(): void {
+    const fire = this.stage.rest;
+    if (
+      !fire ||
+      this.rested ||
+      Math.hypot(this.bearer.x - fire.x, this.bearer.z - fire.z) > REST_REACH
+    ) {
+      return;
+    }
+    this.rested = true;
+    for (const u of this.sim.living(Side.Party)) {
+      u.hp = u.derived.maxHp;
+      u.mana = u.derived.maxMana;
+    }
+    this.say('The party rests by the fire, and rises whole.');
+  }
+
+  /** Opens or closes the layer's map. The game pauses while it is open. */
+  openMap(open: boolean): void {
+    this.mapOpen = open;
+    this.keys.clear();
+    this.hooks.onMap?.(open);
+  }
+
+  /** This layer's map, the areas crossed, and where the party is now. */
+  layerMap(): {
+    map: LayerMap;
+    path: { column: number; row: number }[];
+    at: { column: number; row: number } | null;
+    layer: number;
+  } {
+    return {
+      map: this.map,
+      path: [...this.path],
+      at: this.node,
+      layer: Math.floor(this.stageIndex / AREAS_PER_LAYER),
+    };
   }
 
   private say(text: string): void {
@@ -614,10 +725,17 @@ export default class Game {
       if (this.stationOpen) {
         this.closeStation();
       }
+      if (this.mapOpen) {
+        this.openMap(false);
+      }
       return;
     }
     if (key === 'q' && !this.over && !this.paused) {
       this.drinkHealing();
+      return;
+    }
+    if (key === 'm' && !this.over && this.offers === null) {
+      this.openMap(!this.mapOpen);
       return;
     }
     if (key === 'i' && !this.over) {
@@ -742,13 +860,14 @@ export default class Game {
           // The gate slams shut behind the party.
           this.shake = Math.max(this.shake, 4);
         }
+        this.rest();
         // The way down opens only once the boss is dead.
-        if (
-          this.bearer.alive &&
-          !this.boss?.alive &&
-          this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH
-        ) {
-          this.descend();
+        const exit = this.stage.exits.findIndex(
+          (e) =>
+            this.bearer.distanceTo(e) <= EXIT_REACH && !(e.ahead === 'down' && this.boss?.alive),
+        );
+        if (this.bearer.alive && exit >= 0) {
+          this.descend(exit);
           this.acc = 0;
         }
       }

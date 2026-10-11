@@ -73,7 +73,7 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
   } else {
     poly(outline, SOIL[ground].base);
     soil(ctx, at, rng, stage, zoom, ground);
-    road(ctx, at, rng, stage, zoom);
+    drawRoads(ctx, at, rng, stage, zoom);
   }
 
   // Dark grime where feet and blood have worn the stone.
@@ -162,9 +162,9 @@ function soil(
   }
 }
 
-// The road across the area: packed earth with wheel ruts and loose stones,
+// The roads across the area: packed earth with wheel ruts and loose stones,
 // with ragged edges.
-function road(
+function drawRoads(
   ctx: CanvasRenderingContext2D,
   at: (x: number, z: number) => Pt,
   rng: RNG,
@@ -172,12 +172,14 @@ function road(
   zoom: number,
 ): void {
   const points: { x: number; z: number }[] = [];
-  for (let i = 1; i < stage.road.length; i++) {
-    const a = stage.road[i - 1];
-    const b = stage.road[i];
-    const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.3);
-    for (let k = 0; k < n; k++) {
-      points.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+  for (const road of stage.roads) {
+    for (let i = 1; i < road.length; i++) {
+      const a = road[i - 1];
+      const b = road[i];
+      const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.3);
+      for (let k = 0; k < n; k++) {
+        points.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+      }
     }
   }
   // A world circle of radius r is an ellipse on the floor image.
