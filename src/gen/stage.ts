@@ -1,9 +1,11 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Spot } from '../sim/nav';
+import { layerOf, leadsDown } from './layers';
 
 export type PropKind =
   | 'pillar'
+  | 'tree'
   | 'wall'
   | 'rubble'
   | 'gibbet'
@@ -14,6 +16,8 @@ export type PropKind =
   | 'chest'
   | 'stair'
   | 'brazier'
+  | 'torch'
+  | 'signpost'
   | 'campfire';
 
 export interface Prop {
@@ -39,7 +43,8 @@ export interface Pack {
 
 /**
  * One generated stage: an open field the bearer crosses from the entrance
- * on the west edge to the stair down on the east edge.
+ * on the west edge to the exit on the east edge. The exit is the road on to
+ * the next area of the layer, or, in a layer's last area, the way down.
  */
 export interface Stage {
   // 0 for the first stage of a run, counting up
@@ -54,6 +59,11 @@ export interface Stage {
   // Old blood already on the floor
   stains: { x: number; z: number; r: number }[];
   packs: Pack[];
+  // The road from the entrance, through the wall's breach, to the exit and
+  // off the east edge
+  road: Spot[];
+  // Whether the exit goes down to the next layer
+  down: boolean;
   // Where a wandering merc waits by its fire, on stages that have one
   recruit?: Spot;
 }
@@ -61,6 +71,8 @@ export interface Stage {
 // Solid radius of each prop that blocks, in tiles.
 const SOLID: Partial<Record<PropKind, number>> = {
   pillar: 0.45,
+  tree: 0.4,
+  signpost: 0.15,
   wall: 0.5,
   altar: 0.8,
   gibbet: 0.3,
@@ -113,6 +125,8 @@ export function generateStage(rng: RNG, index: number): Stage {
     sigils: [],
     stains: [],
     packs: [],
+    road: [],
+    down: leadsDown(index),
   };
   const add = (kind: PropKind, x: number, z: number): Prop => {
     const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
@@ -120,10 +134,17 @@ export function generateStage(rng: RNG, index: number): Stage {
     return prop;
   };
 
-  // The stair down, between two braziers.
-  add('stair', exit.x, exit.z);
-  add('brazier', exit.x - 1.2, exit.z - 1.6);
-  add('brazier', exit.x - 1.2, exit.z + 1.6);
+  if (stage.down) {
+    // The way down to the next layer, between two braziers.
+    add('stair', exit.x, exit.z);
+    add('brazier', exit.x - 1.2, exit.z - 1.6);
+    add('brazier', exit.x - 1.2, exit.z + 1.6);
+  } else {
+    // The road on to the next area, marked by the Guild's signpost and torches.
+    add('torch', exit.x - 1.2, exit.z - 1.6);
+    add('torch', exit.x - 1.2, exit.z + 1.6);
+    add('signpost', exit.x - 2.2, exit.z - 2.2);
+  }
 
   // A ruined wall across the whole field, broken in one or two places: the
   // choke point the design asks for on every main route.
@@ -135,6 +156,15 @@ export function generateStage(rng: RNG, index: number): Stage {
       breaches.push(second);
     }
   }
+  stage.road = [
+    entrance,
+    { x: wallX - 3, z: breaches[0] },
+    { x: wallX + 3, z: breaches[0] },
+    exit,
+    { x: width + 1, z: exit.z },
+  ];
+  const onRoad = (x: number, z: number): boolean =>
+    stage.road.slice(1).some((b, i) => distanceToSegment({ x, z }, stage.road[i], b) < 1.6);
   const wall: Spot[] = [];
   for (let z = 0.5; z < depth; z += 0.9) {
     if (breaches.some((b) => Math.abs(z - b) < 1.6)) {
@@ -195,18 +225,20 @@ export function generateStage(rng: RNG, index: number): Stage {
     stage.recruit = { x: camp.x + 1, z: camp.z };
   }
 
-  // Terrain from noise: pillars where it runs high, rubble where it runs low.
+  // Terrain from noise: trees or pillars where it runs high, rubble where it
+  // runs low. The road stays clear.
+  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
   const noise = valueNoise(rng, width, depth, 7);
   const solids: Spot[] = [];
   for (let i = 0; i < width * depth * 0.06; i++) {
     const x = rng.range(1.5, width - 1.5);
     const z = rng.range(1.5, depth - 1.5);
     const n = noise(x, z);
-    if (!away(x, z, 0) || solids.some((s) => Math.hypot(s.x - x, s.z - z) < 2.2)) {
+    if (!away(x, z, 0) || onRoad(x, z) || solids.some((s) => Math.hypot(s.x - x, s.z - z) < 2.2)) {
       continue;
     }
     if (n > 0.68) {
-      add('pillar', x, z);
+      add(tall, x, z);
       solids.push({ x, z });
     } else if (n < 0.3) {
       const r = rng.range(0.35, 0.6);

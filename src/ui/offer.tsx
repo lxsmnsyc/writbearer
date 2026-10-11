@@ -66,6 +66,7 @@ export function OfferCard(props: CardProps): JSX.Element {
 
 interface StartProps {
   seed: string;
+  gold: number;
   offers: Offer[];
   onPick: (index: number) => void;
 }
@@ -82,8 +83,9 @@ export function StartPicker(props: StartProps): JSX.Element {
         Choose your first merc
       </h2>
       <p data-part="note" class="mb-4 text-xs text-zinc-500">
-        The Writ goes down into the Hollow with one sword at its side. More can be hired on the way,
-        by the fires of wandering mercs. Seed {props.seed}.
+        The Writ sets out for the Hollow with one sword at its side. The Guild's purse holds{' '}
+        {props.gold} gold, enough to hire three more by the fires of wandering mercs on the way.
+        Seed {props.seed}.
       </p>
       <div class="flex gap-3">
         <For each={props.offers}>

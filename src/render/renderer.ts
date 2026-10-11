@@ -22,6 +22,7 @@ import type Unit from '../sim/unit';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import Atmosphere, { drawVignette } from './atmosphere';
 import { type Effects, drawPiece } from './effects';
+import { areaOf, layerOf } from '../gen/layers';
 import { type FloorImage, buildFloor } from './floor';
 import Fog from './fog';
 import { type Light, Lighting } from './light';
@@ -89,8 +90,6 @@ export interface Frame {
   alpha: number;
   time: number;
   slain: number;
-  // Which stage of the descent this is, from 1
-  depth: number;
   // Items lying on the floor
   ground: GroundItem[];
   // A merc for hire waiting by its fire, if the stage has one
@@ -459,8 +458,8 @@ export default class Renderer {
           color: [255, 160, 80],
           strength: 0.75,
         });
-      } else if (p.kind === 'brazier') {
-        // The braziers by the stair burn bright, so the way down shows once found.
+      } else if (p.kind === 'brazier' || p.kind === 'torch') {
+        // The fires at the exit burn bright, so the way on shows once found.
         lights.push({
           x: p.x,
           z: p.z,
@@ -552,6 +551,11 @@ export default class Renderer {
         const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9) * 1.5);
         ctx.fillRect(b.x - 2, b.y - Math.round(16 * look.zoom), 4, 2);
         ctx.fillRect(b.x - 1 + lick, b.y - Math.round(19 * look.zoom), 2, 3);
+      } else if (p.kind === 'torch' && fog.known(p.x, p.z)) {
+        const b = this.iso(p.x, p.z);
+        const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9));
+        ctx.fillRect(b.x - 1, b.y - Math.round(30 * look.zoom), 3, 2);
+        ctx.fillRect(b.x + lick, b.y - Math.round(33 * look.zoom), 1, 3);
       }
     }
   }
@@ -754,13 +758,25 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click to move.  1 to 4 for a merc.  I for the pack.  Q to drink.  R to restart.',
+      'WASD or click to move.  1 to 4 for a merc.  I for the pack and gear.  Q to drink.  R to restart.',
       16,
       26,
     );
-    out.fillText(`Depth ${f.depth} · Slain: ${f.slain}`, W * SCALE - 210, 26);
+    out.textAlign = 'right';
+    out.fillText(
+      `${layerOf(f.stage.index).name} · Area ${areaOf(f.stage.index)} · Slain: ${f.slain}`,
+      W * SCALE - 16,
+      26,
+    );
+    out.textAlign = 'start';
     out.fillStyle = '#8a8274';
-    out.fillText('Find the stair down, to the east.', 16, 52);
+    out.fillText(
+      f.stage.down
+        ? 'Find the way down into the Hollow, to the east.'
+        : 'Follow the road east, to the next area.',
+      16,
+      52,
+    );
     if (f.over) {
       out.fillStyle = 'rgba(0,0,0,0.6)';
       out.fillRect(0, 0, W * SCALE, H * SCALE);
@@ -807,7 +823,59 @@ function seen(fog: Fog, u: Unit, x: number, z: number): number {
 }
 
 function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number): void {
-  if (p.kind === 'pillar') {
+  if (p.kind === 'tree') {
+    // A dead tree of the burned Marches: a bare, leaning trunk and a few
+    // crooked limbs.
+    const lean = (p.seed - 0.5) * 8;
+    const top = pt(base.x + lean, base.y - 42 - p.seed * 16);
+    for (let i = 0; i < 4; i++) {
+      const t = 0.4 + i * 0.15;
+      const from = pt(base.x + (top.x - base.x) * t, base.y + (top.y - base.y) * t);
+      const side = (i + Math.round(p.seed * 3)) % 2 ? 1 : -1;
+      const to = pt(from.x + side * (9 + ((p.seed * 13 + i * 5) % 7)), from.y - 9 - i * 2);
+      fillPoly(ctx, quad(from, to, 1.4, 0.5), C.wood);
+    }
+    fillPoly(ctx, quad(base, top, 4, 1), C.wood);
+    fillPoly(ctx, quad(base, pt(base.x - 7, base.y + 2), 1.5, 0.5), C.wood);
+    fillPoly(ctx, quad(base, pt(base.x + 6, base.y + 3), 1.5, 0.5), C.wood);
+  } else if (p.kind === 'torch') {
+    // A torch on a post, lighting the road on.
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 1, base.y),
+        pt(base.x + 1, base.y),
+        pt(base.x + 1, base.y - 28),
+        pt(base.x - 1, base.y - 28),
+      ],
+      C.wood,
+    );
+  } else if (p.kind === 'signpost') {
+    // The Guild's waymark: a post with a board pointing east, down the road.
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 1, base.y),
+        pt(base.x + 1, base.y),
+        pt(base.x + 1, base.y - 34),
+        pt(base.x - 1, base.y - 34),
+      ],
+      C.wood,
+    );
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 4, base.y - 33),
+        pt(base.x + 10, base.y - 26),
+        pt(base.x + 13, base.y - 23),
+        pt(base.x + 10, base.y - 21),
+        pt(base.x - 4, base.y - 28),
+      ],
+      C.cloth,
+    );
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(base.x + 2, base.y - 28, 4, 1);
+  } else if (p.kind === 'pillar') {
     fillPoly(
       ctx,
       [

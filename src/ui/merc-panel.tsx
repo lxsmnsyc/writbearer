@@ -60,6 +60,8 @@ const TABS: { value: Tab; name: string }[] = [
 interface Props {
   unit: Unit;
   onClose: () => void;
+  // Opens the pack on this merc, to hand it gear
+  onGear: () => void;
   // Called after a skill or stat point is spent
   onChange: () => void;
 }
@@ -154,15 +156,26 @@ export default function MercPanel(props: Props): JSX.Element {
             </p>
           </Show>
         </div>
-        <button
-          type="button"
-          class="text-zinc-500 hover:text-zinc-200"
-          onClick={() => {
-            props.onClose();
-          }}
-        >
-          Close
-        </button>
+        <div class="flex gap-3">
+          <button
+            type="button"
+            class="text-zinc-400 hover:text-zinc-100"
+            onClick={() => {
+              props.onGear();
+            }}
+          >
+            Gear
+          </button>
+          <button
+            type="button"
+            class="text-zinc-500 hover:text-zinc-200"
+            onClick={() => {
+              props.onClose();
+            }}
+          >
+            Close
+          </button>
+        </div>
       </header>
 
       <div class="mb-4 grid grid-cols-3 gap-1" role="tablist" aria-label="Sheet">

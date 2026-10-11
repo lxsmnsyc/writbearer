@@ -15,6 +15,12 @@ export interface Offer {
 /** The jobs offered so far. */
 export const HIREABLE: readonly Offer['kind'][] = ['vanguard', 'ranger', 'cleric'];
 
+/**
+ * The jobs that can fight alone. The first merc is one of them: a Cleric
+ * alone cannot kill what attacks the bearer.
+ */
+export const FIGHTERS: readonly Offer['kind'][] = ['vanguard', 'ranger'];
+
 const NAMES = [
   'Odo',
   'Maren',
@@ -41,6 +47,9 @@ const NAMES = [
 const BASE_WAGE = 40;
 const WAGE_PER_LEVEL = 10;
 
+/** What a merc without wage traits asks at a level. */
+export const wageFor = (level: number): number => BASE_WAGE + WAGE_PER_LEVEL * level;
+
 /** Rolls a recruit: a job, a name, its traits and its wage. */
 export function rollOffer(
   rng: RNG,
@@ -55,16 +64,16 @@ export function rollOffer(
     name: rng.pick(NAMES),
     level,
     traits,
-    wage: Math.round((BASE_WAGE + WAGE_PER_LEVEL * level) * scale),
+    wage: Math.round(wageFor(level) * scale),
   };
 }
 
-/** Three offers with three different jobs, as at the start of a run. */
+/**
+ * Three offers at the start of a run, all fighters, with every fighting job
+ * among them.
+ */
 export function rollStartingOffers(rng: RNG, level: number): Offer[] {
-  const jobs = [...HIREABLE];
-  return [0, 1, 2].map(() => {
-    const offer = rollOffer(rng, level, jobs);
-    jobs.splice(jobs.indexOf(offer.kind), 1);
-    return offer;
-  });
+  const jobs = [...FIGHTERS, rng.pick(FIGHTERS)];
+  rng.shuffle(jobs);
+  return jobs.map((kind) => rollOffer(rng, level, [kind]));
 }

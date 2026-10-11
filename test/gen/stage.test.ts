@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer } from '../../src/content/roster';
+import { AREAS_PER_LAYER, layerOf } from '../../src/gen/layers';
 import RNG from '../../src/core/rng';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { type Stage, generateStage, navFor } from '../../src/gen/stage';
@@ -75,8 +76,12 @@ describe('stage generation', () => {
     for (const seed of SEEDS) {
       const s = stageFor(seed);
       const nav = navFor(s);
-      expect(nav.clear(s.entrance.x, s.entrance.z, s.exit.x, s.exit.z)).toBe(false);
-      expect(s.props.filter((p) => p.kind === 'wall').length).toBeGreaterThan(20);
+      const wall = s.props.filter((p) => p.kind === 'wall');
+      expect(wall.length).toBeGreaterThan(20);
+      // No one walks straight across the wall, except through a breach.
+      for (const w of wall) {
+        expect(nav.clear(w.x - 1.5, w.z, w.x + 1.5, w.z)).toBe(false);
+      }
     }
   });
 
@@ -108,6 +113,18 @@ describe('stage generation', () => {
     expect(count(4)).toBeGreaterThan(count(0));
   });
 
+  it('leads on by road inside a layer, and down only from its last area', () => {
+    for (let index = 0; index < AREAS_PER_LAYER * 2; index++) {
+      const s = stageFor('ASHEN', index);
+      const down = index % AREAS_PER_LAYER === AREAS_PER_LAYER - 1;
+      expect(s.down).toBe(down);
+      expect(s.props.some((p) => p.kind === 'stair')).toBe(down);
+      expect(s.props.some((p) => p.kind === 'signpost')).toBe(!down);
+    }
+    expect(layerOf(0).name).toBe('The Marches');
+    expect(layerOf(AREAS_PER_LAYER).name).toBe('The Rift Road');
+  });
+
   it('builds from its own stream only', () => {
     const a = generateStage(new RNG(5), 0);
     const b = generateStage(new RNG(5), 0);
@@ -116,7 +133,7 @@ describe('stage generation', () => {
 });
 
 describe('crossing to the next stage', () => {
-  it('walks the bearer to the stair, then brings the party, dead and alive, to the next entrance', () => {
+  it('walks the bearer to the exit, then brings the party, dead and alive, to the next entrance', () => {
     const first = stageFor('ASHEN', 0);
     const sim = new Sim(1);
     const bearer = spawnParty(sim, first);

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { rollOffer, rollStartingOffers } from '../../src/content/recruits';
+import { FIGHTERS, rollOffer, rollStartingOffers, wageFor } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CLEANSE, HEAL, RENEW, RESURRECTION, SMITE } from '../../src/content/skills';
 import { TRAIT_BY_ID, rollTraits } from '../../src/content/traits';
 import RNG from '../../src/core/rng';
+import { START_GOLD } from '../../src/game/game';
+import { START_LEVEL } from '../../src/game/stage';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { RECRUIT_STAGES, generateStage } from '../../src/gen/stage';
 import { DEFAULT_TOGGLES, Priority } from '../../src/sim/ai';
@@ -13,14 +15,23 @@ import { DREAD, POISON, STUN } from '../../src/sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority } from '../../src/sim/types';
 
 describe('offers', () => {
-  it('start a run with three different jobs, the same for the same seed', () => {
-    const roll = (): string[] =>
-      rollStartingOffers(new RunStreams('ASHEN').get(1, Stream.Recruits), 5).map(
-        (o) => `${o.kind}:${o.name}:${o.traits.join('+')}`,
-      );
-    const offers = roll();
-    expect(new Set(offers.map((o) => o.split(':')[0])).size).toBe(3);
-    expect(roll()).toEqual(offers);
+  it('start a run with fighters only, every fighting job among them, the same for the same seed', () => {
+    for (const seed of ['ASHEN', 'BRINE', 'COAL', 'DUSK', 'EMBER']) {
+      const roll = (): string[] =>
+        rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5).map(
+          (o) => `${o.kind}:${o.name}:${o.traits.join('+')}`,
+        );
+      const offers = roll();
+      const kinds = offers.map((o) => o.split(':')[0]);
+      expect(offers).toHaveLength(3);
+      expect(kinds).not.toContain('cleric');
+      expect(new Set(kinds)).toEqual(new Set(FIGHTERS));
+      expect(roll()).toEqual(offers);
+    }
+  });
+
+  it('start with gold enough to hire three mercs by the fires', () => {
+    expect(START_GOLD).toBeGreaterThanOrEqual(3 * wageFor(START_LEVEL));
   });
 
   it('never roll traits that exclude each other', () => {

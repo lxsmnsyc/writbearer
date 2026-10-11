@@ -26,9 +26,10 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 
 ### In the game so far
 
-- A run begins with a pick of 1 merc from 3 offers of different jobs, rolled from the `recruits` stream. The same seed gives the same offers.
+- A run begins with a pick of 1 merc from 3 offers, rolled from the `recruits` stream. The same seed gives the same offers. All three are fighters, Vanguards or Rangers, with both jobs among them: a Cleric alone cannot kill what attacks the bearer. Clerics are offered by the fires.
+- The Guild's purse starts the run with 300 gold: three wages of a level 6 merc without wage traits, so three more mercs can be hired by the fires. A Greedy one costs half again.
 - The jobs offered so far are the Vanguard, the Ranger and the Cleric. Each offer has a name, 1 or 2 traits and a wage.
-- On stages 2 to 16 (phases 1 and 2), a stage may hold a wandering merc by a campfire, 60% of the time. Walking up to it opens its offer. Hiring costs its wage in gold, once for now. The party holds 4 mercs at most, living or dead.
+- In areas 2 to 16 (the Marches and the Rift Road, the two layers nearest the surface), an area may hold a wandering merc by a campfire, 60% of the time. Walking up to it opens its offer. Hiring costs its wage in gold, once for now. The party holds 4 mercs at most, living or dead.
 - Traits in the game: Brave (dread never takes hold), Cowardly (runs from the nearest enemy below 25% health), Greedy (×1.5 wage), Loyal (stays closer, chases 2 tiles less, ×0.9 wage), Glory-seeker (goes for elites first), Veteran (one more target priority, ×1.2 wage), Bloodthirsty (chases 3 tiles further) and Devout (dread builds up at half the rate). Drunkard and Hates a job wait for morale.
 - The Cleric's Mercy branch is in the game up to Resurrection, and Smite opens Inquisition. Sanctuary waits for Ward to have magical damage to absorb.
 - A killing blow of 30% of max health or more, or a critical one, tears the body apart. A torn merc cannot be resurrected.

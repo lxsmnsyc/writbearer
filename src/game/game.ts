@@ -21,14 +21,14 @@ import {
   packToBelt,
   unequipToPack,
 } from './inventory';
-import { type Offer, rollOffer, rollStartingOffers } from '../content/recruits';
+import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { spawnMerc } from '../content/roster';
 import { START_LEVEL, carryParty, enterStage, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
 const MAX_FRAME = 0.25;
-// The bearer takes the stair down once this close to it.
+// The bearer leaves by the exit once this close to it.
 const EXIT_REACH = 1.2;
 // The bearer picks up an item, or opens a chest, from this close.
 const PICK_REACH = 0.8;
@@ -64,6 +64,12 @@ export interface GameOptions {
 
 // The most mercs in the party, living or dead.
 export const PARTY_SIZE = 4;
+
+/**
+ * The Guild's purse at the start of a run: enough to hire three more mercs
+ * of the first stages' levels by the fires, unless they are greedy.
+ */
+export const START_GOLD = 3 * wageFor(START_LEVEL + 1);
 // The bearer meets a wandering merc from this close, and leaves it from this far.
 const MEET_REACH = 1.8;
 const LEAVE_REACH = 4;
@@ -91,6 +97,7 @@ export default class Game {
   private last = 0;
   private selected: Unit | null = null;
   private inventory = false;
+  private gearMerc: Unit | null = null;
   // What the bearer carries, and what lies on the floor
   pack = new Pack();
   private ground: GroundItem[] = [];
@@ -191,14 +198,23 @@ export default class Game {
     }
   }
 
-  /** Opens or closes the inventory. The game pauses while it is open. */
-  openInventory(open: boolean): void {
+  /**
+   * Opens or closes the inventory. The game pauses while it is open. A merc
+   * passed in is the one it opens on, to hand gear to.
+   */
+  openInventory(open: boolean, merc: Unit | null = null): void {
     this.inventory = open;
+    this.gearMerc = open ? merc : null;
     this.keys.clear();
     if (open) {
       this.select(null);
     }
     this.hooks.onInventory?.(open);
+  }
+
+  /** The merc the inventory was opened for, if any. */
+  get gearFor(): Unit | null {
+    return this.gearMerc;
   }
 
   get inventoryOpen(): boolean {
@@ -326,6 +342,7 @@ export default class Game {
     this.slain = 0;
     this.over = false;
     this.pack = new Pack();
+    this.pack.gold = START_GOLD;
     for (const [id, count] of STARTER_PACK) {
       const base = BASE_BY_ID.get(id);
       if (base) {
@@ -442,7 +459,8 @@ export default class Game {
     }
   }
 
-  // The bearer took the stair down: on to the next stage, party and all.
+  // The bearer left by the exit: on to the next area, or down to the next
+  // layer, party and all.
   private descend(): void {
     this.stageIndex++;
     this.stage = this.buildStage();
@@ -620,7 +638,6 @@ export default class Game {
       alpha,
       time: this.time,
       slain: this.slain,
-      depth: this.stageIndex + 1,
       ground: this.ground,
       wanderer: this.wanderer,
       over: this.over,

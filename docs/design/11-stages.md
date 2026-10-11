@@ -81,9 +81,12 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 
 ### In the game so far
 
-`src/gen/stage.ts` builds a stage from the `layout` stream with the stage's index, so a seed always gives the same descent. It follows the steps above, for one kind of field: ruined flagstone plazas.
+`src/gen/stage.ts` builds an area from the `layout` stream with its index, so a seed always gives the same journey. It follows the steps above, for one kind of field.
 
-- **Size:** 54 to 62 tiles wide and 34 to 42 deep. The entrance is on the west edge and the stair down on the east edge, between two burning braziers.
+- **Layers:** `src/gen/layers.ts` splits the run into the four layers of the lore, 8 areas each, one per layer of a phase's stage graph. The Marches, on the surface, have bare earth with dead grass and dead trees. The Rift Road has bare rock and stone pillars. The two layers under the city keep the flagstone plazas. The HUD names the layer and the area.
+- **Exits:** inside a layer, an area's exit is the road on to the next area, off the east edge, marked by the Guild's signpost and two torches. Only the last area of a layer has a way down, a stair between two braziers, to the next layer. The phase boss will stand before it.
+- **Road:** outside the city, a road runs from the entrance through the wall's first breach to the exit. Trees, pillars and rubble keep off it.
+- **Size:** 54 to 62 tiles wide and 34 to 42 deep. The entrance is on the west edge and the exit on the east edge.
 - **Choke point:** a ruined wall runs across the whole field, about halfway. It has one breach, and sometimes a second. A pack watches the first one from the far side.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
@@ -93,9 +96,9 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.
 - **Packs:** a threat budget of 9, plus 5 per stage deeper. Mites and Husks cost 1, other monsters 2 or 3, and an elite 6 more. Monster level is 2, plus 1 per stage. No pack stands within 13 tiles of the entrance.
 - **Depth:** the first two stages field only Mites and Husks, with one Penitent at the Church's site and Husks in the lair. Crawlers and Hollow soldiers join from the third stage, Penitent packs from the fifth, elites and the Cantor from the fifth, and the Hollowed from the sixth.
-- **Balance check:** a test plays the first stages with a lone merc of each job. The bearer walks to the stair, steps behind its merc when monsters near it wake, and drinks when hurt. Every job must clear the first two stages on 11 of 12 seeds. Measured on 40 seeds, all three jobs clear four stages alone every time. From the fifth stage on, a lone merc starts to fall: by the eighth, 38% to 60% of runs survive, so a second merc and gear matter.
+- **Balance check:** a test plays the first stages with a lone merc of each job. The bearer walks to the exit, steps behind its merc when monsters near it wake, and drinks when hurt. Every job must clear the first two stages on 11 of 12 seeds. Measured on 40 seeds, all three jobs clear four stages alone every time. From the fifth stage on, a lone merc starts to fall: by the eighth, 38% to 60% of runs survive, so a second merc and gear matter.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
-- **Descending:** when the bearer reaches the stair, the next stage is built. The party, living and dead, arrives at its entrance. The old stage's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
+- **Crossing:** when the bearer reaches the exit, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
 
 Not yet: water, ledges, grass, alarms, patrols, forks and the map screen.
 

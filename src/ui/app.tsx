@@ -163,6 +163,9 @@ export default function App(): JSX.Element {
               onClose={() => {
                 g.select(null);
               }}
+              onGear={() => {
+                g.openInventory(true, unit);
+              }}
               onChange={() => {
                 g.changed();
               }}
@@ -185,6 +188,7 @@ export default function App(): JSX.Element {
         {(g) => (
           <StartPicker
             seed={g.seed}
+            gold={g.pack.gold}
             offers={offers() ?? []}
             onPick={(index) => {
               g.choose(index);

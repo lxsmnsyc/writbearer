@@ -1,4 +1,5 @@
 import RNG from '../core/rng';
+import { type Ground, layerOf } from '../gen/layers';
 import type { Stage } from '../gen/stage';
 import { type Pt, pt } from './draw';
 
@@ -13,10 +14,23 @@ const MORTAR = '#202020';
 const STONES = ['#3c3c3c', '#383838', '#414141', '#3a3938', '#353535', '#444343'];
 const PAD = 4;
 
+// Bare ground for the layers outside the city: earth on the surface, raw
+// rock on the chasm walls.
+const SOIL: Record<Exclude<Ground, 'flagstone'>, { base: string; patches: string[] }> = {
+  earth: { base: '#2a2824', patches: ['#2f2c27', '#33302a', '#282622', '#36332c'] },
+  rock: { base: '#2c2c2c', patches: ['#363636', '#313131', '#3b3a39', '#2a2a2a'] },
+};
+const GRASS = ['#4a493f', '#55544a', '#3f3e36'];
+const ROAD = '#3f3b34';
+const RUT = '#2b2824';
+// Half the road's width, in tiles
+const ROAD_HALF = 1.1;
+
 /**
- * Draws a stage's floor once: worn flagstones of uneven size with mortar
- * between them, cracks, grit, rubble, bones and puddles. There is no grid:
- * a tile may hold one stone, two or four.
+ * Draws a stage's floor once, by its layer's ground. In the city it is worn
+ * flagstones of uneven size with mortar between them; there is no grid, a
+ * tile may hold one stone, two or four. Outside it, bare earth or rock with
+ * a road across. Then cracks, grit, rubble, bones and puddles.
  */
 export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage {
   const tw = 32 * zoom;
@@ -45,14 +59,21 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     ctx.fill();
   };
 
-  poly([at(0, 0), at(width, 0), at(width, depth), at(0, depth)], MORTAR);
-
-  for (let x = 0; x < width; x++) {
-    for (let z = 0; z < depth; z++) {
-      for (const s of splitTile(x, z, rng)) {
-        stone(ctx, at, rng, s, zoom, poly);
+  const ground = layerOf(stage.index).ground;
+  const outline = [at(0, 0), at(width, 0), at(width, depth), at(0, depth)];
+  if (ground === 'flagstone') {
+    poly(outline, MORTAR);
+    for (let x = 0; x < width; x++) {
+      for (let z = 0; z < depth; z++) {
+        for (const s of splitTile(x, z, rng)) {
+          stone(ctx, at, rng, s, zoom, poly);
+        }
       }
     }
+  } else {
+    poly(outline, SOIL[ground].base);
+    soil(ctx, at, rng, stage, zoom, ground);
+    road(ctx, at, rng, stage, zoom);
   }
 
   // Dark grime where feet and blood have worn the stone.
@@ -107,6 +128,82 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
   }
 
   return { canvas, ox, oy };
+}
+
+// Patches of earth or rock, and on the surface, tufts of dead grass.
+function soil(
+  ctx: CanvasRenderingContext2D,
+  at: (x: number, z: number) => Pt,
+  rng: RNG,
+  stage: Stage,
+  zoom: number,
+  ground: Exclude<Ground, 'flagstone'>,
+): void {
+  const { patches } = SOIL[ground];
+  for (let i = 0; i < stage.width * stage.depth * 1.5; i++) {
+    const c = at(rng.range(0, stage.width), rng.range(0, stage.depth));
+    const rx = rng.range(6, 16) * zoom;
+    ctx.fillStyle = rng.pick(patches);
+    ctx.beginPath();
+    ctx.ellipse(Math.round(c.x), Math.round(c.y), rx, rx * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (ground !== 'earth') {
+    return;
+  }
+  for (let i = 0; i < stage.width * stage.depth * 2.5; i++) {
+    const c = at(rng.range(0.3, stage.width - 0.3), rng.range(0.3, stage.depth - 0.3));
+    ctx.fillStyle = rng.pick(GRASS);
+    const x = Math.round(c.x);
+    const y = Math.round(c.y);
+    const h = Math.round(rng.range(1, 3) * zoom);
+    ctx.fillRect(x, y - h, 1, h);
+    ctx.fillRect(x + 2, y - h + 1, 1, h - 1 || 1);
+  }
+}
+
+// The road across the area: packed earth with wheel ruts and loose stones,
+// with ragged edges.
+function road(
+  ctx: CanvasRenderingContext2D,
+  at: (x: number, z: number) => Pt,
+  rng: RNG,
+  stage: Stage,
+  zoom: number,
+): void {
+  const points: { x: number; z: number }[] = [];
+  for (let i = 1; i < stage.road.length; i++) {
+    const a = stage.road[i - 1];
+    const b = stage.road[i];
+    const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.3);
+    for (let k = 0; k < n; k++) {
+      points.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+    }
+  }
+  // A world circle of radius r is an ellipse on the floor image.
+  const sx = (tile: number): number => tile * 16 * Math.SQRT2 * zoom;
+  ctx.fillStyle = ROAD;
+  for (const p of points) {
+    const c = at(p.x, p.z);
+    const r = sx(ROAD_HALF * rng.range(0.85, 1.1));
+    ctx.beginPath();
+    ctx.ellipse(Math.round(c.x), Math.round(c.y), r, r / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = RUT;
+  for (const p of points) {
+    for (const side of [-0.45, 0.45]) {
+      const c = at(p.x, p.z + side);
+      ctx.fillRect(Math.round(c.x), Math.round(c.y), Math.ceil(2 * zoom), 1);
+    }
+  }
+  for (const p of points) {
+    if (rng.chance(0.5)) {
+      const c = at(p.x + rng.range(-0.9, 0.9), p.z + rng.range(-0.9, 0.9));
+      ctx.fillStyle = rng.pick(STONES);
+      ctx.fillRect(Math.round(c.x), Math.round(c.y), Math.ceil(2 * zoom), 1);
+    }
+  }
 }
 
 interface Rect {

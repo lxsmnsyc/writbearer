@@ -31,8 +31,8 @@ function spend(merc: Unit, job: Offer['kind']): void {
   }
 }
 
-// The bearer walks to the stair, steps behind its merc while monsters near
-// it are awake, and drinks when hurt. Returns whether it reached the stair.
+// The bearer walks to the exit, steps behind its merc while monsters near
+// it are awake, and drinks when hurt. Returns whether it reached the exit.
 function cross(sim: Sim, bearer: Unit, merc: Unit, pack: Pack, stage: Stage): boolean {
   for (let t = 0; t < 240 && bearer.alive; t += 0.05) {
     if (bearer.distanceTo(stage.exit) <= 1.2) {

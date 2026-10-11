@@ -1,7 +1,7 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
 import type Game from '../game/game';
 import { itemLines, itemName } from '../gen/loot';
-import { EQUIP_SLOTS, EquipSlot, type Item, usableBy } from '../sim/item';
+import { EQUIP_SLOTS, EquipSlot, type Item, isPotion, usableBy } from '../sim/item';
 import type Unit from '../sim/unit';
 
 const SLOT_NAMES: Record<EquipSlot, string> = {
@@ -28,7 +28,13 @@ interface Props {
  * item to take it back.
  */
 export default function Inventory(props: Props): JSX.Element {
-  const [mercIndex, setMercIndex] = createSignal(0);
+  // Opens on the merc whose sheet asked for it, or the first.
+  const [mercIndex, setMercIndex] = createSignal(
+    Math.max(
+      0,
+      props.game.mercs().findIndex((m) => m === props.game.gearFor),
+    ),
+  );
   const [message, setMessage] = createSignal<string | null>(null);
   const [hovered, setHovered] = createSignal<Item | null>(null);
 
@@ -106,6 +112,19 @@ export default function Inventory(props: Props): JSX.Element {
                 >
                   {name(item)}
                 </button>
+                <Show when={fits(item)}>
+                  <button
+                    type="button"
+                    aria-label={`Give ${name(item)} to ${merc()?.name ?? ''}`}
+                    data-part="choice"
+                    class="border border-zinc-700 px-1.5 text-xs text-zinc-400 hover:border-zinc-300 hover:text-zinc-100"
+                    onClick={() => {
+                      equip(item);
+                    }}
+                  >
+                    {isPotion(item) ? 'Belt' : 'Give'}
+                  </button>
+                </Show>
                 <button
                   type="button"
                   aria-label={`Drop ${name(item)}`}
@@ -175,6 +194,10 @@ export default function Inventory(props: Props): JSX.Element {
             Close
           </button>
         </header>
+        <p data-part="note" class="mb-2 text-xs text-zinc-400">
+          Choose a merc above, then Give it gear from the pack. It wears it at once, and what it
+          wore goes back in the pack.
+        </p>
         <ul class="space-y-1" aria-label="Equipment">
           <For each={EQUIP_SLOTS}>
             {(slot) => {
@@ -266,8 +289,8 @@ export default function Inventory(props: Props): JSX.Element {
           </p>
         </Show>
         <p data-part="note" class="mt-3 text-xs text-zinc-600">
-          Click an item in the pack to hand it over: gear is worn, potions go on the belt. Click a
-          worn item or a belt slot to take it back. I or Esc to close.
+          Click an item's name in the pack to hand it over too: gear is worn, potions go on the
+          belt. Click a worn item or a belt slot to take it back. I or Esc to close.
         </p>
       </section>
     </aside>
