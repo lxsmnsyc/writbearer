@@ -189,6 +189,46 @@ export const DREAD: StatusDef = {
   }),
 };
 
+// Seconds a potion takes to work, and how often it ticks.
+const POTION_TIME = 3;
+
+// Restores a share of max health or mana over the status's duration. The
+// share is the status's power.
+// It restores in pulses, so small amounts are not lost to rounding.
+const POTION_PULSE = 0.5;
+
+function restore(kind: 'health' | 'mana'): (s: ActiveStatus, dt: number) => void {
+  return (s, dt) => {
+    if (Math.floor(s.elapsed / POTION_PULSE) === Math.floor((s.elapsed - dt) / POTION_PULSE)) {
+      return;
+    }
+    const share = (s.power * POTION_PULSE) / POTION_TIME;
+    if (kind === 'health') {
+      s.unit.heal(s.unit, s.unit.derived.maxHp * share);
+    } else {
+      s.unit.mana = Math.min(s.unit.derived.maxMana, s.unit.mana + s.unit.derived.maxMana * share);
+    }
+  };
+}
+
+/** A healing draught at work. */
+export const MENDING: StatusDef = {
+  id: 'mending',
+  name: 'Mending',
+  duration: POTION_TIME,
+  immunity: 0,
+  tick: restore('health'),
+};
+
+/** A mana tincture at work. */
+export const REFRESHING: StatusDef = {
+  id: 'refreshing',
+  name: 'Refreshing',
+  duration: POTION_TIME,
+  immunity: 0,
+  tick: restore('mana'),
+};
+
 /** The status each element builds up. Radiant and Spectral have none yet. */
 export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Fire]: BURN,

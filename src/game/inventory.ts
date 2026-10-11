@@ -1,4 +1,5 @@
-import { EquipSlot, type Item, ItemType, slotFor, usableBy } from '../sim/item';
+import { potionStack } from '../gen/loot';
+import { EquipSlot, type Item, ItemType, isPotion, slotFor, stacks, usableBy } from '../sim/item';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -26,7 +27,7 @@ export class Pack {
   gold = 0;
 
   get weight(): number {
-    return this.items.reduce((sum, i) => sum + i.base.weight, 0);
+    return this.items.reduce((sum, i) => sum + i.base.weight * i.quantity, 0);
   }
 
   readonly maxWeight = PACK_WEIGHT;
@@ -42,10 +43,10 @@ export class Pack {
     if (item.base.type === ItemType.Gold) {
       return null;
     }
-    if (this.items.length >= PACK_SLOTS) {
+    if (this.items.length >= PACK_SLOTS && !this.stackFor(item)) {
       return 'The pack is full.';
     }
-    if (this.weight + item.base.weight > PACK_WEIGHT) {
+    if (this.weight + item.base.weight * item.quantity > PACK_WEIGHT) {
       return 'The pack is too heavy for that.';
     }
     return null;
@@ -58,10 +59,43 @@ export class Pack {
     }
     if (item.base.type === ItemType.Gold) {
       this.gold += item.quantity;
-    } else {
+      return true;
+    }
+    // Potions join a stack of their kind while it has room.
+    let left = item.quantity;
+    for (const stack of this.items) {
+      if (left > 0 && stacks(stack, item)) {
+        const moved = Math.min(left, (stack.base.stackMax ?? 1) - stack.quantity);
+        stack.quantity += moved;
+        left -= moved;
+      }
+    }
+    if (left > 0) {
+      item.quantity = left;
       this.items.push(item);
     }
     return true;
+  }
+
+  // A stack an item could join, if any.
+  private stackFor(item: Item): Item | undefined {
+    return this.items.find(
+      (s) => stacks(s, item) && s.quantity + item.quantity <= (s.base.stackMax ?? 1),
+    );
+  }
+
+  /** The first potion in the pack that restores health. */
+  healingPotion(): Item | undefined {
+    return this.items.find((i) => (i.base.potion?.health ?? 0) > 0);
+  }
+
+  /** Drops empty stacks, after the bearer drank the last of one. */
+  tidy(): void {
+    for (let i = this.items.length - 1; i >= 0; i--) {
+      if (this.items[i].quantity <= 0) {
+        this.items.splice(i, 1);
+      }
+    }
   }
 
   take(uid: number): Item | null {
@@ -124,6 +158,69 @@ export function equipFromPack(
   if (before) {
     pack.items.push(before);
   }
+  return null;
+}
+
+// Potions a belt slot holds.
+export const BELT_STACK = 5;
+
+/**
+ * Moves potions from a pack stack onto a merc's belt: onto a slot of the
+ * same kind with room, or an empty one. Returns why it failed, or null.
+ */
+export function packToBelt(
+  sim: Sim,
+  bearer: Unit,
+  pack: Pack,
+  merc: Unit,
+  uid: number,
+): string | null {
+  const stack = pack.items.find((x) => x.uid === uid);
+  if (!stack || !isPotion(stack)) {
+    return 'Only potions go on the belt.';
+  }
+  const blocked = cannotHand(sim, bearer, merc);
+  if (blocked) {
+    return blocked;
+  }
+  let slot = merc.belt.findIndex((b) => b !== null && stacks(b, stack) && b.quantity < BELT_STACK);
+  if (slot < 0) {
+    slot = merc.belt.indexOf(null);
+  }
+  if (slot < 0) {
+    return `The ${merc.name}'s belt is full.`;
+  }
+  const current = merc.belt[slot];
+  const room = BELT_STACK - (current?.quantity ?? 0);
+  const moved = Math.min(room, stack.quantity);
+  if (current) {
+    current.quantity += moved;
+  } else {
+    merc.belt[slot] = potionStack(stack.base, moved);
+  }
+  stack.quantity -= moved;
+  pack.tidy();
+  return null;
+}
+
+/** Moves a belt slot's potions back into the pack. Returns why it failed, or null. */
+export function beltToPack(
+  sim: Sim,
+  bearer: Unit,
+  pack: Pack,
+  merc: Unit,
+  slot: number,
+): string | null {
+  const stack = merc.belt[slot];
+  if (!stack) {
+    return null;
+  }
+  const blocked = cannotHand(sim, bearer, merc) ?? pack.refuses(stack);
+  if (blocked) {
+    return blocked;
+  }
+  merc.belt[slot] = null;
+  pack.add(stack);
   return null;
 }
 

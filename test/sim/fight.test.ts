@@ -96,7 +96,7 @@ describe('a fight with no rendering', () => {
       let total = 0;
       for (const seed of [1, 2, 3, 4, 5, 6]) {
         const f = fight(seed, AMBUSH, {
-          toggles: { stance: Stance.Guard, priorities, chase: 9, skills: {} },
+          toggles: { stance: Stance.Guard, priorities, chase: 9, skills: {}, drinkAt: 0.3 },
         });
         // An ambush is sprung, not noticed: every monster starts awake.
         for (const m of f.monsters) {

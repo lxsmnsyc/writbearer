@@ -39,6 +39,8 @@ export default function Inventory(props: Props): JSX.Element {
   const gold = (): number => (props.version >= 0 ? props.game.pack.gold : 0);
   const weight = (): number => (props.version >= 0 ? props.game.pack.weight : 0);
 
+  // Stacks change in place, so names are read again on every change.
+  const name = (item: Item): string => (props.version >= 0 ? itemName(item) : '');
   const fits = (item: Item): boolean => {
     const m = merc();
     return m !== undefined && usableBy(item, m.job.name);
@@ -102,11 +104,11 @@ export default function Inventory(props: Props): JSX.Element {
                     equip(item);
                   }}
                 >
-                  {itemName(item)}
+                  {name(item)}
                 </button>
                 <button
                   type="button"
-                  aria-label={`Drop ${itemName(item)}`}
+                  aria-label={`Drop ${name(item)}`}
                   data-part="danger"
                   class="px-1 text-zinc-500 hover:text-red-400"
                   onClick={() => {
@@ -128,7 +130,7 @@ export default function Inventory(props: Props): JSX.Element {
           {(item) => (
             <div data-part="row" class="mt-3 border border-zinc-800 p-2 text-xs">
               <p data-quality={item.quality} class="mb-1">
-                {itemName(item)}
+                {name(item)}
               </p>
               <For each={itemLines(item)}>{(line) => <p data-part="note">{line}</p>}</For>
               <Show when={nobody(item)}>
@@ -210,7 +212,43 @@ export default function Inventory(props: Props): JSX.Element {
                           unequip(slot);
                         }}
                       >
-                        {itemName(worn)}
+                        {name(worn)}
+                      </button>
+                    )}
+                  </Show>
+                </li>
+              );
+            }}
+          </For>
+        </ul>
+        <ul class="mt-2 grid grid-cols-3 gap-1" aria-label="Belt">
+          <For each={[0, 1, 2]}>
+            {(slot) => {
+              const potion = (): Item | null =>
+                props.version >= 0 ? (merc()?.belt[slot] ?? null) : null;
+              return (
+                <li data-part="row" class="border border-zinc-800 px-1 py-1 text-center text-xs">
+                  <Show
+                    when={potion()}
+                    keyed
+                    fallback={
+                      <span data-part="note" class="text-zinc-600">
+                        Belt
+                      </span>
+                    }
+                  >
+                    {(p) => (
+                      <button
+                        type="button"
+                        aria-label={`Take back ${name(p)}`}
+                        onClick={() => {
+                          const m = merc();
+                          if (m) {
+                            setMessage(props.game.unbelt(m, slot));
+                          }
+                        }}
+                      >
+                        {name(p)}
                       </button>
                     )}
                   </Show>
@@ -228,8 +266,8 @@ export default function Inventory(props: Props): JSX.Element {
           </p>
         </Show>
         <p data-part="note" class="mt-3 text-xs text-zinc-600">
-          Click an item in the pack to hand it over, and a worn one to take it back. I or Esc to
-          close.
+          Click an item in the pack to hand it over: gear is worn, potions go on the belt. Click a
+          worn item or a belt slot to take it back. I or Esc to close.
         </p>
       </section>
     </aside>

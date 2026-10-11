@@ -268,6 +268,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     const living = this.living();
     for (const u of living) {
       u.cooldown = Math.max(0, u.cooldown - dt);
+      u.potionCooldown = Math.max(0, u.potionCooldown - dt);
       for (const [id, left] of u.skillCooldowns) {
         u.skillCooldowns.set(id, Math.max(0, left - dt));
       }

@@ -10,6 +10,7 @@ import {
   type UnitHealEvent,
 } from './events';
 import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
+import { MENDING, REFRESHING } from './statuses';
 import type { Lifecycle } from '../core/lifecycle';
 import type { Spot } from './nav';
 import type Sim from './sim';
@@ -69,6 +70,11 @@ export interface UnitSpec {
   skills?: Skill[];
 }
 
+/** Belt slots each merc has. */
+export const BELT_SLOTS = 3;
+// Seconds between two potions.
+const POTION_COOLDOWN = 1;
+
 // A route is found again when its goal moves this far, or after this long.
 const ROUTE_DRIFT = 0.75;
 const ROUTE_AGE = 1;
@@ -104,6 +110,10 @@ export default class Unit {
   weapon: Weapon;
   // Worn items, by slot
   readonly equipment = new Map<EquipSlot, Item>();
+  // Potions on the belt, one stack per slot, drunk by the merc's own rules
+  readonly belt: (Item | null)[] = Array.from({ length: BELT_SLOTS }, () => null);
+  // Seconds before another potion can be drunk
+  potionCooldown = 0;
   // Bonuses from passives and auras, by the id of what gives them
   readonly bonuses = new Map<string, Modifier[]>();
   race: Race;
@@ -526,6 +536,36 @@ export default class Unit {
     this.base[stat]++;
     this.recalc();
     return true;
+  }
+
+  /**
+   * Drinks a potion: from a belt slot, or a given one such as the bearer's
+   * from the pack. Returns false if it cannot drink now.
+   */
+  drink(potion: Item): boolean {
+    const effect = potion.base.potion;
+    if (!this.alive || !effect || this.potionCooldown > 0 || potion.quantity <= 0) {
+      return false;
+    }
+    potion.quantity--;
+    this.potionCooldown = POTION_COOLDOWN;
+    if (effect.health) {
+      this.addStatus(MENDING, this, undefined, effect.health);
+    }
+    if (effect.mana) {
+      this.addStatus(REFRESHING, this, undefined, effect.mana);
+    }
+    // An empty stack leaves its belt slot.
+    const slot = this.belt.indexOf(potion);
+    if (slot >= 0 && potion.quantity <= 0) {
+      this.belt[slot] = null;
+    }
+    return true;
+  }
+
+  /** The first potion on the belt that restores health, or mana. */
+  beltPotion(kind: 'health' | 'mana'): Item | null {
+    return this.belt.find((p) => p !== null && (p.base.potion?.[kind] ?? 0) > 0) ?? null;
   }
 
   /** Sets or clears a bonus from a passive or aura. The stats follow at once. */

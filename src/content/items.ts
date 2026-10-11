@@ -170,6 +170,40 @@ export const BASES: readonly ItemBase[] = [
   },
 ];
 
+/** Potions, from weakest to strongest. */
+export const POTIONS: readonly ItemBase[] = [
+  {
+    id: 'healingDraught',
+    name: 'Healing Draught',
+    type: ItemType.Potion,
+    level: 1,
+    weight: 2,
+    maxSockets: 0,
+    stackMax: 10,
+    potion: { health: 0.35 },
+  },
+  {
+    id: 'manaTincture',
+    name: 'Mana Tincture',
+    type: ItemType.Potion,
+    level: 1,
+    weight: 2,
+    maxSockets: 0,
+    stackMax: 10,
+    potion: { mana: 0.4 },
+  },
+  {
+    id: 'greaterDraught',
+    name: 'Greater Healing Draught',
+    type: ItemType.Potion,
+    level: 7,
+    weight: 3,
+    maxSockets: 0,
+    stackMax: 10,
+    potion: { health: 0.6 },
+  },
+];
+
 export const GOLD: ItemBase = {
   id: 'gold',
   name: 'Gold',
@@ -179,7 +213,7 @@ export const GOLD: ItemBase = {
   maxSockets: 0,
 };
 
-export const BASE_BY_ID = new Map(BASES.map((b) => [b.id, b]));
+export const BASE_BY_ID = new Map([...BASES, ...POTIONS].map((b) => [b.id, b]));
 
 const ARMOR_TYPES = [ItemType.Shield, ItemType.Head, ItemType.Body, ItemType.Cloak, ItemType.Boots];
 const ANY = [ItemType.Weapon, ...ARMOR_TYPES, ItemType.Accessory];
@@ -376,6 +410,19 @@ export const RARE_SECOND = [
   'Mark',
   'Brand',
   'Keeper',
+];
+
+/** Potions each merc arrives with on its belt, and the bearer in its pack. */
+export const STARTER_BELT: Record<string, [string, number][]> = {
+  vanguard: [['healingDraught', 2]],
+  ranger: [
+    ['healingDraught', 2],
+    ['manaTincture', 1],
+  ],
+};
+export const STARTER_PACK: [string, number][] = [
+  ['healingDraught', 4],
+  ['manaTincture', 2],
 ];
 
 /** The gear each merc arrives with. Plain, middle-of-the-range copies. */

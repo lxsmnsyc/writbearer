@@ -1,6 +1,7 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
 import {
   DEFAULT_TOGGLES,
+  DRINK_AT,
   Priority,
   Stance,
   type Toggles,
@@ -9,6 +10,7 @@ import {
   skillMode,
 } from '../sim/ai';
 import { SkillMode } from '../sim/skill';
+import { itemName } from '../gen/loot';
 import type Unit from '../sim/unit';
 import SkillTree from './skill-tree';
 import StatSheet from './stat-sheet';
@@ -36,6 +38,12 @@ const SKILL_MODES: { value: SkillMode; name: string }[] = [
   { value: SkillMode.Auto, name: 'Auto' },
   { value: SkillMode.Elites, name: 'Elites' },
   { value: SkillMode.Off, name: 'Off' },
+];
+
+const DRINK_RULES: { value: number; name: string }[] = [
+  { value: DRINK_AT.half, name: 'At 50%' },
+  { value: DRINK_AT.low, name: 'At 30%' },
+  { value: DRINK_AT.emergency, name: 'Emergency' },
 ];
 
 const priorityName = (p: Priority): string => PRIORITIES.find((x) => x.value === p)?.name ?? '';
@@ -66,6 +74,10 @@ export default function MercPanel(props: Props): JSX.Element {
   const spent = (): void => {
     setVersion((v) => v + 1);
     props.onChange();
+  };
+  const belt = (): string => {
+    const potions = props.unit.belt.filter((p) => p !== null).map((p) => itemName(p));
+    return potions.length > 0 ? potions.join(', ') : 'nothing';
   };
   const level = (): number => (version() >= 0 ? props.unit.level : 0);
   // Points left to spend on a tab: skill points on Skills, stat points on Stats.
@@ -329,6 +341,39 @@ export default function MercPanel(props: Props): JSX.Element {
             </ul>
           </section>
         </Show>
+
+        <section class="mb-4">
+          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
+            Belt
+          </h3>
+          <div class="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Drink potions">
+            <For each={DRINK_RULES}>
+              {(r) => (
+                <button
+                  type="button"
+                  role="radio"
+                  data-part="choice"
+                  aria-checked={toggles().drinkAt === r.value}
+                  class="border px-2 py-0.5 text-xs"
+                  classList={{
+                    'border-amber-500 text-amber-400': toggles().drinkAt === r.value,
+                    'border-zinc-700 text-zinc-400 hover:border-zinc-500':
+                      toggles().drinkAt !== r.value,
+                  }}
+                  onClick={() => {
+                    update({ ...toggles(), drinkAt: r.value });
+                  }}
+                >
+                  {r.name}
+                </button>
+              )}
+            </For>
+          </div>
+          <p data-part="note" class="mt-1 text-xs text-zinc-500">
+            Drinks a healing potion below {Math.round(toggles().drinkAt * 100)}% health. On the
+            belt: {belt()}.
+          </p>
+        </section>
 
         <section>
           <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">

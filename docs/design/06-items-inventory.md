@@ -73,7 +73,11 @@ Equipment weight:
 - **The pack:** 30 slots and 400 weight. Past half the weight, the bearer walks 25% slower. Past the limit, nothing more goes in.
 - **Handing gear over:** press I. Click a pack item to hand it to the chosen merc, and a worn item to take it back. In a fight, meaning an awake monster within 8 tiles, the bearer must stand within 2 tiles of the merc. A merc's figure shows its weapon and shield.
 
-Not yet: identification, cursed items, uniques, sets, sockets with cards, refining, belts, requirements and the vault. Rares drop identified for now.
+- **Potions:** the Healing Draught (35% of health) and the Mana Tincture (40% of mana) restore over 3 seconds, in half-second pulses. The Greater Healing Draught (60%) drops from item level 7. Potions stack 10 to a pack slot and weigh 2 each. Monsters drop one 25% of the time, and a chest holds two. The bearer starts with 4 Healing Draughts and 2 Mana Tinctures.
+- **The belt:** each merc has 3 belt slots of up to 5 potions. The Vanguard starts with 2 Healing Draughts, the Ranger with 2 and a Mana Tincture. Clicking a potion in the inventory puts it on the chosen merc's belt, under the same fight rule as gear. A merc drinks on its own: healing below its belt threshold, set in its orders at 50%, 30% or emergencies (15%), and mana below 25% in a fight if it has skills. One potion per second at most.
+- **The bearer drinks** a Healing Draught from the pack with Q.
+
+Not yet: identification, cursed items, uniques, sets, sockets with cards, refining, requirements and the vault. Rares drop identified for now.
 
 ## Item data
 

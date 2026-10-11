@@ -4,7 +4,7 @@ import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import RNG from '../../src/core/rng';
 import { Pack, cannotHand, equipFromPack, unequipToPack } from '../../src/game/inventory';
 import { itemName, plainItem, rollDrops, rollItem } from '../../src/gen/loot';
-import { EquipSlot, type Item, Quality } from '../../src/sim/item';
+import { EquipSlot, type Item, ItemType, Quality } from '../../src/sim/item';
 import Sim from '../../src/sim/sim';
 import { Rank } from '../../src/sim/types';
 
@@ -67,7 +67,9 @@ describe('rolling items', () => {
   it('always drops equipment from an elite', () => {
     const rng = new RNG(5);
     for (let i = 0; i < 50; i++) {
-      expect(rollDrops(rng, 4, Rank.Elite).filter((x) => x.base.id !== 'gold').length).toBe(2);
+      expect(rollDrops(rng, 4, Rank.Elite).filter((x) => x.base.type < ItemType.Gold).length).toBe(
+        2,
+      );
     }
   });
 

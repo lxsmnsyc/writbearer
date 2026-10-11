@@ -9,10 +9,18 @@ import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
 import { type Stage, generateStage } from '../gen/stage';
-import type { EquipSlot, Item } from '../sim/item';
-import { rollDrops, rollGold, rollItem } from '../gen/loot';
+import { type EquipSlot, type Item, isPotion } from '../sim/item';
+import { BASE_BY_ID, STARTER_PACK } from '../content/items';
+import { potionStack, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
 import { gainXp, killXp } from '../sim/progress';
-import { type GroundItem, Pack, equipFromPack, unequipToPack } from './inventory';
+import {
+  type GroundItem,
+  Pack,
+  beltToPack,
+  equipFromPack,
+  packToBelt,
+  unequipToPack,
+} from './inventory';
 import { carryParty, enterStage, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -102,7 +110,12 @@ export default class Game {
 
   /** Hands an item from the pack to a merc. Returns why it failed, or null. */
   equip(merc: Unit, uid: number): string | null {
-    const error = equipFromPack(this.sim, this.bearer, this.pack, merc, uid);
+    const item = this.pack.items.find((i) => i.uid === uid);
+    // Potions go on the belt, everything else is worn.
+    const error =
+      item && isPotion(item)
+        ? packToBelt(this.sim, this.bearer, this.pack, merc, uid)
+        : equipFromPack(this.sim, this.bearer, this.pack, merc, uid);
     this.itemsChanged();
     return error;
   }
@@ -112,6 +125,22 @@ export default class Game {
     const error = unequipToPack(this.sim, this.bearer, this.pack, merc, slot);
     this.itemsChanged();
     return error;
+  }
+
+  /** Takes a belt slot's potions back into the pack. Returns why it failed, or null. */
+  unbelt(merc: Unit, slot: number): string | null {
+    const error = beltToPack(this.sim, this.bearer, this.pack, merc, slot);
+    this.itemsChanged();
+    return error;
+  }
+
+  /** The bearer drinks a healing potion from the pack. */
+  drinkHealing(): void {
+    const potion = this.pack.healingPotion();
+    if (potion && this.bearer.drink(potion)) {
+      this.pack.tidy();
+      this.itemsChanged();
+    }
   }
 
   /** Drops an item from the pack at the bearer's feet. */
@@ -194,6 +223,12 @@ export default class Game {
     this.slain = 0;
     this.over = false;
     this.pack = new Pack();
+    for (const [id, count] of STARTER_PACK) {
+      const base = BASE_BY_ID.get(id);
+      if (base) {
+        this.pack.add(potionStack(base, count));
+      }
+    }
     this.ground = [];
     this.fetching = null;
     this.inventory = false;
@@ -250,7 +285,7 @@ export default class Game {
         const rng = this.streams.get(1, Stream.Loot);
         const level = 4 + this.stageIndex;
         const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
-        this.scatter([...items, rollGold(rng, level)], p);
+        this.scatter([...items, rollGold(rng, level), rollPotion(rng, level, 2)], p);
       }
     }
   }
@@ -327,6 +362,10 @@ export default class Game {
     if (key === 'escape') {
       this.select(null);
       this.openInventory(false);
+      return;
+    }
+    if (key === 'q' && !this.over && !this.paused) {
+      this.drinkHealing();
       return;
     }
     if (key === 'i' && !this.over) {

@@ -29,3 +29,20 @@ test('I opens the inventory, and gear moves between a merc and the pack', async 
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
 });
+
+test('potions go from the pack onto a belt, and Q drinks one', async ({ page }) => {
+  await page.keyboard.press('i');
+  const panel = page.getByRole('complementary', { name: 'Inventory' });
+  const pack = panel.getByRole('list', { name: 'Pack' });
+  const belt = panel.getByRole('list', { name: 'Belt' });
+  await panel.getByRole('tab', { name: 'Vanguard' }).click();
+  await expect(belt).toContainText('Healing Draught ×2');
+  await pack.getByRole('button', { name: 'Healing Draught ×4', exact: true }).click();
+  await expect(belt).toContainText('Healing Draught ×5');
+  await expect(pack.getByRole('button', { name: 'Healing Draught', exact: true })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('q');
+  await page.keyboard.press('i');
+  await expect(pack.getByRole('button', { name: /^Healing Draught/ })).toHaveCount(0);
+});

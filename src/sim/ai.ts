@@ -1,6 +1,6 @@
 import type Sim from './sim';
 import { SkillMode } from './skill';
-import { TAUNTED } from './statuses';
+import { MENDING, REFRESHING, TAUNTED } from './statuses';
 import { Rank, Side } from './types';
 import type Unit from './unit';
 
@@ -31,13 +31,21 @@ export interface Toggles {
   chase: number;
   // How each skill may be used, by skill id. A missing skill is Auto.
   skills: Record<string, SkillMode>;
+  // Drinks a healing potion from the belt below this share of health
+  drinkAt: number;
 }
+
+/** The belt rules a player can pick, from the mercenaries design. */
+export const DRINK_AT = { half: 0.5, low: 0.3, emergency: 0.15 } as const;
+// A merc with skills drinks for mana below this share, but only in a fight.
+const MANA_AT = 0.25;
 
 export const DEFAULT_TOGGLES: Toggles = {
   stance: Stance.Guard,
   priorities: [Priority.AttackingBearer, Priority.Nearest],
   chase: 7,
   skills: {},
+  drinkAt: DRINK_AT.low,
 };
 
 /** A copy of a merc's orders, so changing one never changes another. */
@@ -266,8 +274,33 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   u.target = intended;
 }
 
+// Drinks from the belt by the merc's rules. Drinking takes no time.
+function drinkFromBelt(u: Unit, toggles: Toggles): void {
+  if (u.potionCooldown > 0) {
+    return;
+  }
+  const heal = u.beltPotion('health');
+  if (heal && u.hp < u.derived.maxHp * toggles.drinkAt && !u.statuses.has(MENDING.id)) {
+    u.drink(heal);
+    return;
+  }
+  const mana = u.beltPotion('mana');
+  if (
+    mana &&
+    u.skills.length > 0 &&
+    u.target?.alive === true &&
+    u.mana < u.derived.maxMana * MANA_AT &&
+    !u.statuses.has(REFRESHING.id)
+  ) {
+    u.drink(mana);
+  }
+}
+
 /** One unit's decision for this tick. Units mid-swing are committed to it. */
 export function think(sim: Sim, u: Unit, dt: number): void {
+  if (u.alive && u.side === Side.Party && u !== sim.bearer && !u.disabled) {
+    drinkFromBelt(u, u.toggles ?? DEFAULT_TOGGLES);
+  }
   if (!u.alive || u.busy || u.disabled) {
     return;
   }

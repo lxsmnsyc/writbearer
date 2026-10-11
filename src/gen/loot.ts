@@ -1,4 +1,4 @@
-import { AFFIXES, BASES, GOLD, RARE_FIRST, RARE_SECOND } from '../content/items';
+import { AFFIXES, BASES, GOLD, POTIONS, RARE_FIRST, RARE_SECOND } from '../content/items';
 import type RNG from '../core/rng';
 import { type Affix, type Item, type ItemBase, ItemType, Quality, type Span } from '../sim/item';
 import type { Modifier } from '../sim/stats';
@@ -186,6 +186,21 @@ export function rollGold(rng: RNG, itemLevel: number): Item {
   };
 }
 
+// Chance a monster drops a potion, apart from equipment and gold.
+export const POTION_CHANCE = 0.25;
+
+/** A stack of potions, the strongest kind the item level allows half the time. */
+export function rollPotion(rng: RNG, itemLevel: number, quantity = 1): Item {
+  const kinds = POTIONS.filter((p) => p.level <= itemLevel);
+  const base = rng.chance(0.6) ? kinds[0] : rng.pick(kinds);
+  return potionStack(base, quantity);
+}
+
+/** A stack of one kind of potion. */
+export function potionStack(base: ItemBase, quantity: number): Item {
+  return { ...plainItem(base), quantity };
+}
+
 /** What a monster of this rank and level drops, if anything. */
 export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
   const out: Item[] = [];
@@ -197,6 +212,9 @@ export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
   if (rng.chance(GOLD_CHANCE)) {
     out.push(rollGold(rng, itemLevel));
   }
+  if (rng.chance(POTION_CHANCE)) {
+    out.push(rollPotion(rng, itemLevel));
+  }
   return out;
 }
 
@@ -204,6 +222,9 @@ export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
 export function itemName(item: Item): string {
   if (item.base.type === ItemType.Gold) {
     return `${item.quantity} Gold`;
+  }
+  if (item.base.type === ItemType.Potion) {
+    return item.quantity > 1 ? `${item.base.name} ×${item.quantity}` : item.base.name;
   }
   if (item.quality === Quality.Rare && item.name) {
     return item.name;
@@ -275,6 +296,13 @@ function describe(m: Modifier): string | null {
 /** The lines an item's tooltip shows: base values, then affixes. */
 export function itemLines(item: Item): string[] {
   const lines: string[] = [];
+  const potion = item.base.potion;
+  if (potion?.health) {
+    lines.push(`Restores ${potion.health * 100}% of health over 3 seconds`);
+  }
+  if (potion?.mana) {
+    lines.push(`Restores ${potion.mana * 100}% of mana over 3 seconds`);
+  }
   if (item.rolls.min !== undefined) {
     lines.push(`Damage ${item.rolls.min} to ${item.rolls.max}`);
   }

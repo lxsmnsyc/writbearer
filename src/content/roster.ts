@@ -4,9 +4,9 @@ import type { Skill } from '../sim/skill';
 import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
 import { Element, Race, Range, Rank, Side } from '../sim/types';
 import Unit, { type Kit } from '../sim/unit';
-import { plainItem } from '../gen/loot';
+import { plainItem, potionStack } from '../gen/loot';
 import { slotFor } from '../sim/item';
-import { BASE_BY_ID, STARTER_GEAR } from './items';
+import { BASE_BY_ID, STARTER_BELT, STARTER_GEAR } from './items';
 import { HYMN } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
@@ -204,6 +204,12 @@ export function spawnMerc(
       unit.equip(slot, item);
     }
   }
+  STARTER_BELT[kind]?.forEach(([id, count], i) => {
+    const base = BASE_BY_ID.get(id);
+    if (base) {
+      unit.belt[i] = potionStack(base, count);
+    }
+  });
   // Recruits arrive with their skill points unspent, one per level past the first.
   unit.skillPoints = level - 1;
   unit.hp = unit.derived.maxHp;

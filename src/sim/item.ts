@@ -32,6 +32,8 @@ export const enum ItemType {
   Boots = 5,
   Accessory = 6,
   Gold = 7,
+  // Drunk from the belt or by the bearer. Stacks.
+  Potion = 8,
 }
 
 /** From Diablo 2. Fewer affixes leave room for more sockets. */
@@ -68,6 +70,10 @@ export interface ItemBase {
   damage?: { min: Span; max: Span };
   armor?: Span;
   block?: { chance: number; amount: number };
+  // What a potion restores over a few seconds, as shares of max health and mana
+  potion?: { health?: number; mana?: number };
+  // How many fit in one pack slot or belt slot. Absent means one.
+  stackMax?: number;
 }
 
 /** One rolled affix: which, and its rolled values. */
@@ -137,6 +143,13 @@ export function slotFor(item: Item, second = false): EquipSlot | null {
 export function usableBy(item: Item, job: string): boolean {
   return item.base.type !== ItemType.Gold && (!item.base.jobs || item.base.jobs.includes(job));
 }
+
+/** Whether an item is a potion, for the belt. */
+export const isPotion = (item: Item): boolean => item.base.type === ItemType.Potion;
+
+/** Whether two items stack: same base, and the base stacks at all. */
+export const stacks = (a: Item, b: Item): boolean =>
+  a.base === b.base && (a.base.stackMax ?? 1) > 1;
 
 /** The weapon damage a weapon gives, or null for anything else. */
 export function weaponOf(item: Item): Weapon | null {

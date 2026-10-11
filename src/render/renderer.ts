@@ -484,6 +484,16 @@ export default class Renderer {
         ctx.fillRect(b.x + 1, b.y - 1, 1, 1);
         continue;
       }
+      if (type === ItemType.Potion) {
+        // A small flask: red for healing, teal for mana.
+        ctx.fillStyle = C.ink;
+        ctx.fillRect(b.x - 1, b.y - 4, 3, 4);
+        ctx.fillStyle = g.item.base.potion?.health ? C.blood : C.teal;
+        ctx.fillRect(b.x - 1, b.y - 2, 3, 2);
+        ctx.fillStyle = C.bone;
+        ctx.fillRect(b.x, b.y - 5, 1, 1);
+        continue;
+      }
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.fillRect(b.x - 3, b.y, 7, 2);
       ctx.fillStyle = type === ItemType.Weapon || type === ItemType.Accessory ? C.bone : C.cloth;
@@ -621,7 +631,7 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click to move.  Click a merc, or 1 and 2, for orders.  R to restart.',
+      'WASD or click to move.  1 and 2 for a merc.  I for the pack.  Q to drink.  R to restart.',
       16,
       26,
     );
