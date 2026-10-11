@@ -107,7 +107,13 @@ export default class Renderer {
   private readonly out: CanvasRenderingContext2D;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly small: HTMLCanvasElement;
+  // The camera in frame pixels: `cam` is the whole part the frame is drawn
+  // at, and `sub` the rest, in screen pixels, applied when the frame is
+  // scaled up. So the view glides a third of a frame pixel at a time instead
+  // of stepping a whole one, with a stall every few frames.
   private readonly cam = { x: 0, y: 0 };
+  private readonly sub = { x: 0, y: 0 };
+  private readonly glide = { x: 0, y: 0 };
   private readonly jolt = { x: 0, y: 0 };
   private camReady = false;
   // Where each item's floor label was drawn this frame, in screen pixels
@@ -159,7 +165,10 @@ export default class Renderer {
   /** A point on the screen element, in the small frame's pixels. */
   toSmall(clientX: number, clientY: number): Pt {
     const r = this.screen.getBoundingClientRect();
-    return pt(((clientX - r.left) / r.width) * W, ((clientY - r.top) / r.height) * H);
+    return pt(
+      ((clientX - r.left) / r.width) * W + this.sub.x / SCALE,
+      ((clientY - r.top) / r.height) * H + this.sub.y / SCALE,
+    );
   }
 
   /** The floor point under a spot on the screen element, in tiles. */
@@ -177,14 +186,20 @@ export default class Renderer {
     const z = look.zoom;
     const bearer = f.sim.bearer;
     if (bearer) {
-      // The camera follows the bearer, snapped to whole pixels.
+      // The camera follows the bearer, snapped to whole screen pixels.
       const b = f.views.rig(bearer, f.alpha);
       const tx = (b.x - b.z) * (tw() / 2) - W / 2;
       const ty = (b.x + b.z) * (th() / 2) - H / 2;
       const k = this.camReady ? 0.12 : 1;
       this.camReady = true;
-      this.cam.x = Math.round(this.cam.x + (tx - this.cam.x) * k);
-      this.cam.y = Math.round(this.cam.y + (ty - this.cam.y) * k);
+      this.glide.x += (tx - this.glide.x) * k;
+      this.glide.y += (ty - this.glide.y) * k;
+      const sx = Math.round(this.glide.x * SCALE);
+      const sy = Math.round(this.glide.y * SCALE);
+      this.cam.x = Math.floor(sx / SCALE);
+      this.cam.y = Math.floor(sy / SCALE);
+      this.sub.x = sx - this.cam.x * SCALE;
+      this.sub.y = sy - this.cam.y * SCALE;
     }
     this.jolt.x = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
     this.jolt.y = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
@@ -312,16 +327,19 @@ export default class Renderer {
     if (bearer) {
       const b = f.views.rig(bearer, f.alpha);
       this.atmosphere.update(f.paused ? 0 : 1 / 60, b.x, b.z);
-      this.atmosphere.drawLit(ctx, iso, f.time, z, this.cam);
+      this.atmosphere.drawLit(ctx, iso, z, this.cam);
     }
     this.drawLight(f);
     this.drawGlow(f, fog);
-    this.atmosphere.drawAfter(ctx, this.cam);
     this.drawHealth(f, fog);
     // The light has hard steps of its own, so it needs little dither.
     quantize(ctx, W, H, 3, this.cam.x + this.jolt.x, this.cam.y + this.jolt.y);
 
-    this.out.drawImage(this.small, 0, 0, W * SCALE, H * SCALE);
+    // The frame is shifted by the camera's leftover screen pixels, so up to
+    // two columns at the right and bottom edge show the void.
+    this.out.fillStyle = C.void;
+    this.out.fillRect(0, 0, W * SCALE, H * SCALE);
+    this.out.drawImage(this.small, -this.sub.x, -this.sub.y, W * SCALE, H * SCALE);
     drawVignette(this.out);
     this.drawLabels(f, fog);
     this.drawHud(f);
@@ -340,9 +358,12 @@ export default class Renderer {
     return this.fog.fog;
   }
 
-  /** The camera's offset in frame pixels, for browser tests. */
+  /** The camera's offset in screen pixels, for browser tests. */
   get camera(): Pt {
-    return pt(this.cam.x + this.jolt.x, this.cam.y + this.jolt.y);
+    return pt(
+      (this.cam.x + this.jolt.x) * SCALE + this.sub.x,
+      (this.cam.y + this.jolt.y) * SCALE + this.sub.y,
+    );
   }
 
   /** The camera jumps to the bearer on the next frame instead of gliding. */
@@ -604,8 +625,8 @@ export default class Renderer {
         continue;
       }
       const b = this.iso(g.x, g.z);
-      const x = b.x * SCALE;
-      let y = (b.y - 4) * SCALE;
+      const x = b.x * SCALE - this.sub.x;
+      let y = (b.y - 4) * SCALE - this.sub.y;
       const name = itemName(g.item);
       const w = out.measureText(name).width + 8;
       // Labels that would overlap stack upward, as Diablo 2's do.
@@ -629,8 +650,8 @@ export default class Renderer {
     if (w && fog.visible(w.x, w.z) > 0.5) {
       const b = this.iso(w.x, w.z);
       const text = `${w.offer.name}, for hire`;
-      const x = b.x * SCALE;
-      const y = (b.y - 52 * look.zoom) * SCALE;
+      const x = b.x * SCALE - this.sub.x;
+      const y = (b.y - 52 * look.zoom) * SCALE - this.sub.y;
       const width = out.measureText(text).width + 8;
       out.fillStyle = 'rgba(0,0,0,0.65)';
       out.fillRect(x - width / 2, y - 14, width, 18);

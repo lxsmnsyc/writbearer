@@ -11,16 +11,14 @@ interface Mote {
 }
 
 const MOTES = 110;
-// Pixels per second the fog drifts.
-const FOG_DRIFT = 2;
 
 /**
- * Low fog, drifting ash and film grain. Fog and ash are drawn before the
- * light, so they only show where light reaches. Grain is drawn after.
+ * Low fog and drifting ash, drawn before the light, so they only show where
+ * light reaches. There is no film grain: noise laid over the frame before the
+ * palette snap flips pixels across the whole floor whenever it moves.
  */
 export default class Atmosphere {
   private readonly fog: HTMLCanvasElement;
-  private readonly grain: HTMLCanvasElement;
   private readonly motes: Mote[] = [];
   private readonly rng = new RNG(4242);
 
@@ -29,7 +27,6 @@ export default class Atmosphere {
     private readonly h: number,
   ) {
     this.fog = cloud(w * 2, h * 2, this.rng);
-    this.grain = noise(w, h, this.rng);
   }
 
   update(dt: number, cx: number, cz: number): void {
@@ -64,22 +61,20 @@ export default class Atmosphere {
   drawLit(
     ctx: CanvasRenderingContext2D,
     iso: (x: number, z: number) => Pt,
-    time: number,
     zoom: number,
     cam: Pt,
   ): void {
-    // The fog sits in the world, not on the screen, and drifts in whole
-    // pixels a few times a second. A screen-fixed layer sliding by fractions
-    // of a pixel would shift colors across the whole frame every frame.
+    // The fog sits still in the world. Any move of its own, even a pixel
+    // every half second, shifts the colors of the whole floor at once.
     const span = this.w * 2;
-    const drift = Math.floor(time * FOG_DRIFT);
-    const x = -(((cam.x + drift) % span) + span) % span;
-    const y = -(((cam.y % this.h) + this.h) % this.h) - this.h * 0.3;
+    const tall = this.h * 2;
+    const x = -(((cam.x % span) + span) % span);
+    const y = -(((cam.y % tall) + tall) % tall);
     ctx.save();
     ctx.globalAlpha = 0.18;
     ctx.globalCompositeOperation = 'screen';
     for (const dx of [0, span]) {
-      for (const dy of [0, this.h * 2]) {
+      for (const dy of [0, tall]) {
         ctx.drawImage(this.fog, x + dx, y + dy);
       }
     }
@@ -89,16 +84,6 @@ export default class Atmosphere {
       const p = iso(m.x, m.z);
       ctx.fillRect(Math.round(p.x), Math.round(p.y - m.h * 16 * zoom), 1, 1);
     }
-  }
-
-  /** Grain, after the light. It stays put in the world. */
-  drawAfter(ctx: CanvasRenderingContext2D, cam: Pt): void {
-    ctx.save();
-    ctx.globalAlpha = 0.035;
-    const gx = -(((cam.x % 8) + 8) % 8);
-    const gy = -(((cam.y % 8) + 8) % 8);
-    ctx.drawImage(this.grain, gx, gy);
-    ctx.restore();
   }
 }
 
@@ -118,23 +103,6 @@ function cloud(w: number, h: number, rng: RNG): HTMLCanvasElement {
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   }
-  return c;
-}
-
-function noise(w: number, h: number, rng: RNG): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = w + 8;
-  c.height = h + 8;
-  const ctx = c.getContext('2d')!;
-  const img = ctx.createImageData(c.width, c.height);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = rng.chance(0.5) ? 255 : 0;
-    img.data[i] = v;
-    img.data[i + 1] = v;
-    img.data[i + 2] = v;
-    img.data[i + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
   return c;
 }
 

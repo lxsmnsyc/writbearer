@@ -18,6 +18,8 @@ const RES = 4;
 // How dark remembered ground is, and how fast cells fade in and out, per second.
 const MEMORY = 0.62;
 const FADE = 6;
+// How many shades a cell passes through as it fades
+const FOG_STEPS = 3;
 
 /**
  * Fog of war on a grid of quarter tiles. The party sees around itself, and
@@ -142,7 +144,9 @@ export default class Fog {
           continue;
         }
         if (seen[k]) {
-          ctx.fillStyle = `rgba(0,0,0,${(1 - v) * MEMORY})`;
+          // A few even steps, so a fading cell changes color a few times
+          // instead of speckling through every shade on its way.
+          ctx.fillStyle = `rgba(0,0,0,${(Math.round((1 - v) * FOG_STEPS) / FOG_STEPS) * MEMORY})`;
         } else {
           ctx.fillStyle = void_;
         }
