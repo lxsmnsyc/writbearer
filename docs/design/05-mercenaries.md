@@ -47,8 +47,33 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 - Wages are paid at the Guild's Waystation at the top of each layer, after the first. The first layer's wages are the hiring price.
 - A merc asks its level's wage, 40 gold plus 10 per level, scaled by its traits: Greedy ×1.5, Veteran ×1.2, Loyal ×0.9. Dead mercs ask nothing.
 - Walking up to the paymaster's post opens the ledger. Each wage is paid once per Waystation.
-- A living merc left unpaid when the party takes the road on leaves the party, with what it wears.
-- Not yet: morale, Discipline and contracts that last several phases. Until morale exists, leaving is the only cost of an unpaid wage.
+- Being paid lifts a merc's morale by 10. A living merc left unpaid when the party takes the road on loses 40 morale and 10 Discipline.
+- Not yet: contracts that last several phases, and betrayal.
+
+### Morale
+
+Morale is how a merc feels about the job, from 0 to 100. Every merc starts at 60; a Loyal one at 75.
+
+| Morale | From | Discipline kept in a fight |
+|---|---|---|
+| High | 75 | 100% |
+| Normal | 40 | 90% |
+| Low | 15 | 70% |
+| Broken | 0 | 50% |
+
+| Event | Morale |
+|---|---|
+| Wage paid | +10 |
+| Wage unpaid | -40 |
+| Rest at a Camp | +10 |
+| An elite slain | +4 |
+| A boss slain | +15 |
+| A fellow merc dies | -10 |
+| Dread takes hold | -8 |
+
+- A Loyal merc loses half as much.
+- A merc whose morale is Broken deserts as the party takes a road on, with what it wears. One unpaid wage leaves a merc Low; a second, or a bad fight on top, breaks it.
+- The party bar shows Low and Broken morale under a merc's name. The merc sheet shows its morale and Discipline.
 
 ## Stats
 
@@ -116,6 +141,7 @@ Occult Dread lowers morale, so it also lowers effective Discipline for a while.
 | 80 to 100 | 3 | All | Yes |
 
 - Toggles beyond the limit show as greyed out in the UI. The player picks which ones stay active.
+- **In the game so far:** target priorities and "Save for elites" follow this table: 1 priority below 20 effective Discipline, 2 below 60 and 3 from 60, one more for a Veteran. Behavior flags wait for the toggles that use them. Priorities past the limit show greyed out as "ignored". A merc starts with its job's Discipline (Vanguard 40, Ranger 35, Cleric 45), plus its level, plus its traits: Veteran +10, Loyal and Devout +5, Greedy -5, Cowardly and Bloodthirsty -10. It gains 1 per level. Effects 2 and 3 wait for shouts and more trait conflicts.
 
 #### Effect 2: traits against toggles
 

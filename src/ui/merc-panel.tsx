@@ -12,6 +12,7 @@ import {
 import { SkillMode } from '../sim/skill';
 import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
+import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '../sim/morale';
 import type Unit from '../sim/unit';
 import SkillTree from './skill-tree';
 import StatSheet from './stat-sheet';
@@ -86,6 +87,12 @@ export default function MercPanel(props: Props): JSX.Element {
   const maxPriorities = (): number =>
     MAX_PRIORITIES + (props.unit.traits.includes('veteran') ? 1 : 0);
   const level = (): number => (version() >= 0 ? props.unit.level : 0);
+  // Morale and Discipline, and how many target priorities they let it follow
+  const moraleName = (): string =>
+    version() >= 0 ? `${MORALE_NAME[moraleOf(props.unit)]} (${Math.round(props.unit.morale)})` : '';
+  const discipline = (): string =>
+    version() >= 0 ? `${props.unit.discipline}, ${effectiveDiscipline(props.unit)} in a fight` : '';
+  const followed = (): number => (version() >= 0 ? prioritiesFollowed(props.unit) : 0);
   // Points left to spend on a tab: skill points on Skills, stat points on Stats.
   const points = (t: Tab): number => {
     if (version() < 0) {
@@ -149,6 +156,9 @@ export default function MercPanel(props: Props): JSX.Element {
           <p data-part="note" class="text-xs text-zinc-500">
             {props.unit.job.name === props.unit.name ? '' : `${props.unit.job.name} · `}Level{' '}
             {level()} · {hp()} health · {mana()} mana
+          </p>
+          <p data-part="note" class="text-xs text-zinc-500">
+            Morale {moraleName()} · Discipline {discipline()}
           </p>
           <Show when={props.unit.traits.length > 0}>
             <p data-part="note" class="text-xs text-zinc-500">
@@ -251,7 +261,15 @@ export default function MercPanel(props: Props): JSX.Element {
                   class="flex items-center gap-2 border border-zinc-800 px-2 py-1"
                 >
                   <span class="w-4 text-zinc-600">{i() + 1}</span>
-                  <span class="flex-1">{priorityName(p)}</span>
+                  <span class="flex-1" classList={{ 'opacity-40': i() >= followed() }}>
+                    {priorityName(p)}
+                    <Show when={i() >= followed()}>
+                      <span data-part="note" class="text-xs text-zinc-500">
+                        {' '}
+                        · ignored
+                      </span>
+                    </Show>
+                  </span>
                   <button
                     type="button"
                     aria-label="Move up"
@@ -287,6 +305,12 @@ export default function MercPanel(props: Props): JSX.Element {
               )}
             </For>
           </ol>
+          <Show when={toggles().priorities.length > followed()}>
+            <p data-part="note" class="mt-1 text-xs text-zinc-500">
+              {props.unit.name} follows only its first {followed()}: its Discipline is too low for
+              more. Pay it, rest it and level it to raise it.
+            </p>
+          </Show>
           <Show when={toggles().priorities.length === 0}>
             <p data-part="note" class="text-xs text-zinc-500">
               No priorities: the merc fights whatever is nearest.

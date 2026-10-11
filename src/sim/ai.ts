@@ -1,3 +1,4 @@
+import { honoursElites, prioritiesFollowed } from './morale';
 import type Sim from './sim';
 import { SkillMode } from './skill';
 import { MENDING, REFRESHING, TAUNTED } from './statuses';
@@ -168,8 +169,25 @@ function withTraits(u: Unit, toggles: Toggles): Toggles {
   return { ...toggles, chase, priorities };
 }
 
+// A merc's orders as far as its Discipline keeps them: only its first few
+// target priorities, and skills saved for elites spent on anything once it
+// is too unruly to hold them.
+function obeyed(u: Unit, toggles: Toggles): Toggles {
+  const priorities = toggles.priorities.slice(0, prioritiesFollowed(u));
+  if (honoursElites(u)) {
+    return { ...toggles, priorities };
+  }
+  const skills = Object.fromEntries(
+    Object.entries(toggles.skills).map(([id, mode]) => [
+      id,
+      mode === SkillMode.Elites ? SkillMode.Auto : mode,
+    ]),
+  );
+  return { ...toggles, priorities, skills };
+}
+
 function thinkMerc(sim: Sim, u: Unit, dt: number): void {
-  const toggles = withTraits(u, u.toggles ?? DEFAULT_TOGGLES);
+  const toggles = withTraits(u, obeyed(u, u.toggles ?? DEFAULT_TOGGLES));
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A coward near death runs from the nearest enemy.
   if (u.traits.includes('cowardly') && u.hp < u.derived.maxHp * COWARD_AT) {

@@ -4,7 +4,16 @@ import { spawnMerc, spawnMonster } from '../../src/content/roster';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { Pack, Vault, storeInVault, takeFromVault } from '../../src/game/inventory';
 import { spawnParty } from '../../src/game/stage';
-import { Payroll } from '../../src/game/wages';
+import { Payroll, desert } from '../../src/game/wages';
+import {
+  MORALE_START,
+  Morale,
+  PAID,
+  UNPAID,
+  UNPAID_DISCIPLINE,
+  moraleOf,
+  shiftMorale,
+} from '../../src/sim/morale';
 import { plainItem } from '../../src/gen/loot';
 import { generateWaystation, navFor } from '../../src/gen/stage';
 import { BASE_BY_ID } from '../../src/content/items';
@@ -21,7 +30,7 @@ describe('wages', () => {
     expect(wageOf({ level: 12, traits: [] })).toBeGreaterThan(wageOf({ level: 10, traits: [] }));
   });
 
-  it('are asked by living mercs only, paid once, and the unpaid leave', () => {
+  it('are asked by living mercs only, paid once, and the unpaid lose heart', () => {
     const sim = new Sim(1);
     const stage = station();
     spawnParty(sim, stage, []);
@@ -29,17 +38,30 @@ describe('wages', () => {
     const maren = spawnMerc(sim, 'ranger', 10, 3, 11, undefined, { name: 'Maren' });
     const dead = spawnMerc(sim, 'cleric', 10, 4, 10, undefined, { name: 'Hask' });
     spawnMonster(sim, 'mite', 1, 20, 20).hit(dead, { kind: DamageKind.True, fixed: 99999 });
+    // Hask's death cost the others heart; start them level.
+    odo.morale = MORALE_START;
+    maren.morale = MORALE_START;
     const payroll = new Payroll();
     expect(payroll.dues(sim).map((d) => d.merc)).toEqual([odo, maren]);
 
     const pack = new Pack();
     pack.gold = wageOf(odo) + 10;
+    const before = { odo: odo.morale, maren: maren.morale, discipline: maren.discipline };
     expect(payroll.pay(pack, odo)).toBeNull();
     expect(pack.gold).toBe(10);
+    expect(odo.morale).toBe(before.odo + PAID);
     expect(payroll.pay(pack, odo)).toMatch(/is paid/);
     expect(payroll.pay(pack, maren)).toMatch(/wants/);
 
     expect(payroll.settle(sim)).toEqual([maren]);
+    expect(maren.morale).toBe(before.maren + UNPAID);
+    expect(maren.discipline).toBe(before.discipline + UNPAID_DISCIPLINE);
+    expect(moraleOf(maren)).toBe(Morale.Low);
+    // Low, not broken: it stays, sullen.
+    expect(desert(sim)).toEqual([]);
+    // A second unpaid wage breaks it, and it deserts.
+    shiftMorale(maren, UNPAID);
+    expect(desert(sim)).toEqual([maren]);
     const party = [...sim.units].filter((u) => u.side === Side.Party);
     expect(party).toContain(odo);
     expect(party).toContain(dead);

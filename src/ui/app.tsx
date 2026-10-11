@@ -1,6 +1,7 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game, { type GameOptions } from '../game/game';
 import { HIREABLE } from '../content/recruits';
+import { MORALE_NAME, Morale, moraleOf } from '../sim/morale';
 import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
@@ -19,6 +20,7 @@ interface PartyEntry {
   level: number;
   // Skill and stat points not yet spent
   points: number;
+  morale: Morale;
 }
 
 // How often the party bar reads health and mana from the game, in milliseconds.
@@ -98,6 +100,7 @@ export default function App(): JSX.Element {
           alive: unit.alive,
           level: unit.level,
           points: unit.skillPoints + unit.statPoints,
+          morale: moraleOf(unit),
         })),
       );
     }, PARTY_REFRESH);
@@ -164,6 +167,11 @@ export default function App(): JSX.Element {
               </div>
               <Show when={!m.alive}>
                 <div class="mt-1 text-red-500">Dead</div>
+              </Show>
+              <Show when={m.alive && m.morale <= Morale.Low}>
+                <div data-part="danger" class="mt-1 text-red-500">
+                  {MORALE_NAME[m.morale]} morale
+                </div>
               </Show>
             </button>
           )}

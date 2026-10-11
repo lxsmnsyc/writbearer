@@ -17,6 +17,9 @@ export interface Trait {
   excludes?: readonly string[];
   // Wage multiplier
   wage?: number;
+  // Discipline it adds or takes away, and morale it starts with above the rest
+  discipline?: number;
+  morale?: number;
   setup?: (unit: Unit) => Lifecycle;
 }
 
@@ -48,22 +51,27 @@ export const TRAITS: readonly Trait[] = [
   {
     id: 'cowardly',
     name: 'Cowardly',
-    description: 'Runs from the nearest enemy below 25% health.',
+    description: 'Runs from the nearest enemy below 25% health. Less disciplined.',
     excludes: ['brave', 'bloodthirsty'],
+    discipline: -10,
   },
   {
     id: 'greedy',
     name: 'Greedy',
-    description: 'Asks for half again the wage.',
+    description: 'Asks for half again the wage. Less disciplined.',
     excludes: ['loyal'],
     wage: 1.5,
+    discipline: -5,
   },
   {
     id: 'loyal',
     name: 'Loyal',
-    description: 'Stays closer to the bearer and chases less far from it.',
+    description:
+      'Stays closer to the bearer and chases less far. Keeps heart: loses half the morale.',
     excludes: ['greedy'],
     wage: 0.9,
+    discipline: 5,
+    morale: 15,
   },
   {
     id: 'gloryseeker',
@@ -73,19 +81,22 @@ export const TRAITS: readonly Trait[] = [
   {
     id: 'veteran',
     name: 'Veteran',
-    description: 'Follows one more target priority.',
+    description: 'Follows one more target priority. More disciplined.',
     wage: 1.2,
+    discipline: 10,
   },
   {
     id: 'bloodthirsty',
     name: 'Bloodthirsty',
-    description: 'Chases three tiles further.',
+    description: 'Chases three tiles further. Less disciplined.',
     excludes: ['cowardly'],
+    discipline: -10,
   },
   {
     id: 'devout',
     name: 'Devout',
-    description: 'Dread builds up in it at half the rate.',
+    description: 'Dread builds up in it at half the rate. More disciplined.',
+    discipline: 5,
     setup: (unit) => {
       const listener = (event: CheckBuildupEvent): void => {
         if (event.target === unit && event.status === DREAD) {
@@ -124,6 +135,9 @@ export function rollTraits(rng: RNG): string[] {
 export function applyTraits(unit: Unit, traits: readonly string[]): void {
   unit.traits = [...traits];
   for (const id of traits) {
+    const trait = TRAIT_BY_ID.get(id);
+    unit.discipline += trait?.discipline ?? 0;
+    unit.morale += trait?.morale ?? 0;
     const life = TRAIT_BY_ID.get(id)?.setup?.(unit);
     if (life) {
       unit.passives.set(`trait:${id}`, life);

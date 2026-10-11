@@ -188,6 +188,14 @@ export const MONSTERS = {
 } satisfies Record<string, Template>;
 
 export type MercKind = keyof typeof MERCS;
+
+// Each job's Discipline before levels and traits. Soldiers drill; priests
+// keep their vows; hunters go their own way.
+const DISCIPLINE: Record<Exclude<MercKind, 'bearer'>, number> = {
+  vanguard: 40,
+  ranger: 35,
+  cleric: 45,
+};
 export type MonsterKind = keyof typeof MONSTERS;
 
 function spawn(
@@ -242,6 +250,8 @@ export function spawnMerc(
   profile: { name?: string; traits?: readonly string[] } = {},
 ): Unit {
   const unit = spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles, profile.name);
+  // Discipline starts from the job, one more per level, then the traits.
+  unit.discipline = DISCIPLINE[kind] + level;
   applyTraits(unit, profile.traits ?? []);
   for (const id of STARTER_GEAR[kind] ?? []) {
     const base = BASE_BY_ID.get(id);

@@ -1,4 +1,5 @@
 import { Rank } from './types';
+import { shiftDiscipline } from './morale';
 import type Unit from './unit';
 
 // First numbers for leveling. A run ends near level 25, as the skill-tree
@@ -35,6 +36,8 @@ export function gainXp(unit: Unit, xp: number): number {
     unit.level++;
     unit.skillPoints++;
     unit.statPoints += STAT_POINTS;
+    // Each level makes a merc a little more disciplined.
+    shiftDiscipline(unit, 1);
     gained++;
   }
   if (gained > 0) {

@@ -1,4 +1,13 @@
 import { wageOf } from '../content/recruits';
+import {
+  Morale,
+  PAID,
+  UNPAID,
+  UNPAID_DISCIPLINE,
+  moraleOf,
+  shiftDiscipline,
+  shiftMorale,
+} from '../sim/morale';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -13,8 +22,8 @@ export interface Due {
 
 /**
  * The wages owed at one Waystation. Each living merc asks its wage once.
- * Dead mercs draw none. A merc left unpaid when the party takes the road on
- * leaves the party.
+ * Dead mercs draw none. Being paid lifts a merc's morale; being left unpaid
+ * when the party takes the road on sinks it, and its Discipline.
  */
 export class Payroll {
   private readonly paid = new Set<Unit>();
@@ -38,20 +47,36 @@ export class Payroll {
     }
     pack.gold -= wage;
     this.paid.add(merc);
+    shiftMorale(merc, PAID);
     return null;
   }
 
   /**
-   * The party takes the road on: every living merc left unpaid walks away,
-   * with what it wears. Returns those who left.
+   * The party takes the road on: every living merc left unpaid loses heart
+   * and Discipline. Returns those left unpaid.
    */
   settle(sim: Sim): Unit[] {
-    const gone = this.dues(sim)
+    const unpaid = this.dues(sim)
       .filter((d) => !d.paid)
       .map((d) => d.merc);
-    for (const merc of gone) {
-      sim.units.delete(merc);
+    for (const merc of unpaid) {
+      shiftMorale(merc, UNPAID);
+      shiftDiscipline(merc, UNPAID_DISCIPLINE);
     }
-    return gone;
+    return unpaid;
   }
+}
+
+/**
+ * Mercs whose morale is broken desert as the party takes a road on, with
+ * what they wear. Returns those who left.
+ */
+export function desert(sim: Sim): Unit[] {
+  const gone = sim
+    .living(Side.Party)
+    .filter((u) => u !== sim.bearer && moraleOf(u) === Morale.Broken);
+  for (const merc of gone) {
+    sim.units.delete(merc);
+  }
+  return gone;
 }

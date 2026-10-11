@@ -5,6 +5,7 @@ import setupDeathMechanics from './death';
 import setupHealMechanics from './heal';
 import setupHitMechanics from './hit';
 import setupSkillMechanics from './skill';
+import setupMorale from '../morale';
 
 /**
  * Registers the base mechanics. They come before any skill or item, so they
@@ -17,4 +18,5 @@ export default function setupMechanics(sim: Sim): void {
   setupHealMechanics(sim);
   setupDeathMechanics(sim);
   setupSkillMechanics(sim);
+  setupMorale(sim);
 }

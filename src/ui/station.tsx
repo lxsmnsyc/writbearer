@@ -3,6 +3,7 @@ import type Game from '../game/game';
 import type { Due } from '../game/wages';
 import { itemName } from '../gen/loot';
 import type { Item } from '../sim/item';
+import { MORALE_NAME, moraleOf } from '../sim/morale';
 
 interface Props {
   game: Game;
@@ -58,7 +59,8 @@ export default function Station(props: Props): JSX.Element {
                   {due.merc.name}
                   <span data-part="note" class="text-xs text-zinc-500">
                     {' '}
-                    · {due.merc.job.name} · level {due.merc.level}
+                    · {due.merc.job.name} · level {due.merc.level} · morale{' '}
+                    {MORALE_NAME[moraleOf(due.merc)].toLowerCase()}
                   </span>
                 </span>
                 <span class="w-20 text-right">{due.wage} gold</span>
@@ -93,7 +95,8 @@ export default function Station(props: Props): JSX.Element {
         </Show>
         <Show when={unpaid().length > 0}>
           <p data-part="danger" class="mt-2 text-xs text-red-400">
-            Unpaid mercs leave the party when you take the road on:{' '}
+            Unpaid mercs lose heart and Discipline when you take the road on, and a merc whose
+            morale breaks deserts:{' '}
             {unpaid()
               .map((d) => d.merc.name)
               .join(', ')}

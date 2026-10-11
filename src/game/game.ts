@@ -26,7 +26,8 @@ import {
   takeFromVault,
   unequipToPack,
 } from './inventory';
-import { type Due, Payroll } from './wages';
+import { type Due, Payroll, desert } from './wages';
+import { RESTED, shiftMorale } from '../sim/morale';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { spawnMerc } from '../content/roster';
 import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
@@ -91,6 +92,8 @@ const WAYSTATION_STREAM = 1000;
 const AREA_ROW_STREAM = 100;
 // How near the fire the bearer must come for the party to rest at a Camp
 const REST_REACH = 2.2;
+// Names joined for a notice: "Odo", "Odo and Maren".
+const names = (units: Unit[]): string => units.map((u) => u.name).join(' and ');
 // Seconds a notice stays on screen
 const NOTICE_TIME = 6;
 const LEAVE_REACH = 4;
@@ -560,13 +563,17 @@ export default class Game {
   // layer's Waystation, or from the Waystation into the layer's first area.
   // Party and all.
   private descend(exit: number): void {
+    // Mercs whose morale broke stay behind.
+    const gone = desert(this.sim);
+    if (gone.length > 0) {
+      this.say(`${names(gone)} ${gone.length > 1 ? 'desert' : 'deserts'} the party.`);
+      this.hooks.onChange?.();
+    }
     if (this.stage.station) {
-      // The unpaid walk away as the party takes the road on.
-      const gone = this.payroll?.settle(this.sim) ?? [];
-      if (gone.length > 0) {
-        const names = gone.map((m) => m.name).join(' and ');
-        this.say(`${names} ${gone.length > 1 ? 'leave' : 'leaves'} the party, unpaid.`);
-        this.hooks.onChange?.();
+      // The unpaid lose heart as the party takes the road on.
+      const unpaid = this.payroll?.settle(this.sim) ?? [];
+      if (unpaid.length > 0) {
+        this.say(`${names(unpaid)} ${unpaid.length > 1 ? 'go' : 'goes'} on unpaid, and sullen.`);
       }
       this.payroll = null;
       this.goTo(0, exit);
@@ -618,6 +625,9 @@ export default class Game {
     for (const u of this.sim.living(Side.Party)) {
       u.hp = u.derived.maxHp;
       u.mana = u.derived.maxMana;
+      if (u !== this.bearer) {
+        shiftMorale(u, RESTED);
+      }
     }
     this.say('The party rests by the fire, and rises whole.');
   }

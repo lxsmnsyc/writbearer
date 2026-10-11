@@ -15,7 +15,7 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
 
   const wages = panel.getByRole('region', { name: 'Wages' });
   await expect(wages.getByRole('button', { name: /^Pay / })).toHaveCount(2);
-  await expect(wages).toContainText('Unpaid mercs leave the party');
+  await expect(wages).toContainText('Unpaid mercs lose heart');
   await wages.getByRole('button', { name: 'Pay Vanguard' }).click();
   await expect(wages.getByRole('button', { name: /^Pay / })).toHaveCount(1);
 
@@ -24,9 +24,11 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
   const vault = panel.getByRole('list', { name: 'Vault' });
   await expect(vault.getByRole('button', { name: /^Take Healing Draught/ })).toBeVisible();
 
-  // Taking the north road on, the unpaid Ranger leaves the party. D walks
-  // north-east on the floor, then D and S together walk east.
+  // Taking the north road on, the unpaid Ranger goes on with low morale.
+  // D walks north-east on the floor, then D and S together walk east.
   await panel.getByRole('button', { name: 'Close' }).click();
+  const party = page.getByRole('navigation', { name: 'Party' });
+  await expect(party).not.toContainText('Low morale');
   await page.keyboard.down('d');
   await expect
     .poll(async () => Number((await canvas.getAttribute('data-bearer'))?.split(',')[1]), {
@@ -34,9 +36,8 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
     })
     .toBeLessThan(7.2);
   await page.keyboard.down('s');
-  const party = page.getByRole('navigation', { name: 'Party' });
-  await expect(party.getByRole('button')).toHaveCount(1, { timeout: 15000 });
+  await expect(party).toContainText('Low morale', { timeout: 15000 });
   await page.keyboard.up('d');
   await page.keyboard.up('s');
-  await expect(party.getByRole('button').first()).toContainText('Vanguard');
+  await expect(party.getByRole('button')).toHaveCount(2);
 });
