@@ -6,6 +6,7 @@ import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
 import Station from './station';
+import ShoutBar, { type ShoutEntry } from './shouts';
 import LayerMapPanel from './map';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
@@ -48,6 +49,7 @@ export default function App(): JSX.Element {
   const [game, setGame] = createSignal<Game | null>(null);
   const [selected, setSelected] = createSignal<Unit | null>(null);
   const [party, setParty] = createSignal<PartyEntry[]>([]);
+  const [shouts, setShouts] = createSignal<ShoutEntry[]>([]);
   const [inventory, setInventory] = createSignal(false);
   const [offers, setOffers] = createSignal<Offer[] | null>(null);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
@@ -103,6 +105,7 @@ export default function App(): JSX.Element {
           morale: moraleOf(unit),
         })),
       );
+      setShouts(g.shoutBar());
     }, PARTY_REFRESH);
     onCleanup(() => {
       clearInterval(timer);
@@ -119,6 +122,16 @@ export default function App(): JSX.Element {
         class="max-h-full max-w-full cursor-crosshair [image-rendering:pixelated]"
       />
 
+      <Show when={game()} keyed>
+        {(g) => (
+          <ShoutBar
+            shouts={shouts()}
+            onShout={(shout) => {
+              g.shout(shout);
+            }}
+          />
+        )}
+      </Show>
       <nav class="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2" aria-label="Party">
         <For each={party()}>
           {(m, i) => (

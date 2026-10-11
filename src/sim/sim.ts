@@ -181,6 +181,8 @@ export default class Sim extends EventEngine<SimEventMap> {
 
   // Seconds since the stage began.
   time = 0;
+  // When each of the bearer's shouts can be given again, by shout
+  readonly shoutReady: Partial<Record<number, number>> = {};
 
   // Solid round props, such as pillars. Units cannot stand inside them.
   readonly obstacles: { x: number; z: number; r: number }[] = [];

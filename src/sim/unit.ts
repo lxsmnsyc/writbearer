@@ -12,6 +12,7 @@ import {
 import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
 import { MENDING, REFRESHING } from './statuses';
 import { MORALE_START } from './morale';
+import type { Heard } from './shout';
 import type { Lifecycle } from '../core/lifecycle';
 import type { Spot } from './nav';
 import type Sim from './sim';
@@ -148,6 +149,8 @@ export default class Unit {
   // How a merc feels about the job, and how well it follows orders, 0 to 100
   morale = MORALE_START;
   discipline = 0;
+  // The bearer's last shout as this merc heard it
+  heard: Heard | null = null;
 
   // Position on the floor, in tiles, and facing in radians. 0 faces +x.
   x: number;

@@ -1,4 +1,5 @@
 import { honoursElites, prioritiesFollowed } from './morale';
+import { Shout, acting } from './shout';
 import type Sim from './sim';
 import { SkillMode } from './skill';
 import { MENDING, REFRESHING, TAUNTED } from './statuses';
@@ -85,6 +86,10 @@ const COWARD_AT = 0.25;
 
 // How close Hold mercs let enemies come before fighting.
 const HOLD_RADIUS = 2;
+// How far from the bearer rallied mercs fight, and how far behind it they
+// fall back, in tiles.
+const RALLY_CHASE = 2;
+const FALL_BACK = 1.6;
 
 function nearest(from: Unit, units: Unit[]): Unit | null {
   let best: Unit | null = null;
@@ -186,8 +191,44 @@ function obeyed(u: Unit, toggles: Toggles): Toggles {
   return { ...toggles, priorities, skills };
 }
 
+// Runs to the bearer's far side from the nearest threat, out of the fight.
+function fallBack(sim: Sim, u: Unit, bearer: Unit, dt: number): void {
+  u.target = null;
+  const threat = nearest(
+    bearer,
+    sim.living(Side.Monster).filter((e) => e.aware),
+  );
+  const mercs = sim.living(Side.Party).filter((m) => m !== bearer);
+  const spread = (mercs.indexOf(u) - (mercs.length - 1) / 2) * 0.9;
+  let dx = -Math.cos(bearer.angle);
+  let dz = -Math.sin(bearer.angle);
+  if (threat) {
+    const d = bearer.distanceTo(threat) || 1;
+    dx = (bearer.x - threat.x) / d;
+    dz = (bearer.z - threat.z) / d;
+  }
+  // A merc still on the threat's side goes round the bearer, not through it.
+  const behind = (u.x - bearer.x) * dx + (u.z - bearer.z) * dz;
+  if (behind < FALL_BACK / 2) {
+    const side = spread >= 0 ? 1 : -1;
+    u.travel(
+      bearer.x + (dx - dz * side) * FALL_BACK,
+      bearer.z + (dz + dx * side) * FALL_BACK,
+      dt,
+      0.3,
+    );
+    return;
+  }
+  u.travel(
+    bearer.x + dx * FALL_BACK - dz * spread,
+    bearer.z + dz * FALL_BACK + dx * spread,
+    dt,
+    0.3,
+  );
+}
+
 function thinkMerc(sim: Sim, u: Unit, dt: number): void {
-  const toggles = withTraits(u, obeyed(u, u.toggles ?? DEFAULT_TOGGLES));
+  let toggles = withTraits(u, obeyed(u, u.toggles ?? DEFAULT_TOGGLES));
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A coward near death runs from the nearest enemy.
   if (u.traits.includes('cowardly') && u.hp < u.derived.maxHp * COWARD_AT) {
@@ -199,6 +240,25 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
       flee(u, threat, dt);
       return;
     }
+  }
+  // The bearer's shout overrides the merc's orders while it lasts.
+  const heard = acting(sim, u);
+  if (heard?.shout === Shout.FallBack && bearer) {
+    fallBack(sim, u, bearer, dt);
+    return;
+  }
+  if (heard?.shout === Shout.Focus && heard.target) {
+    if (useSkill(sim, u, toggles, heard.target)) {
+      u.target = heard.target;
+    } else {
+      engage(u, heard.target, dt);
+    }
+    return;
+  }
+  if (heard?.shout === Shout.Rally) {
+    toggles = { ...toggles, stance: Stance.Guard, chase: Math.min(toggles.chase, RALLY_CHASE) };
+  } else if (heard?.shout === Shout.Hold) {
+    toggles = { ...toggles, stance: Stance.Hold };
   }
   const enemies = sim.living(Side.Monster).filter((e) => {
     if (bearer && e.distanceTo(bearer) > toggles.chase) {

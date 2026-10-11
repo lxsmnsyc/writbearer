@@ -28,6 +28,7 @@ import {
 } from './inventory';
 import { type Due, Payroll, desert } from './wages';
 import { RESTED, shiftMorale } from '../sim/morale';
+import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { spawnMerc } from '../content/roster';
 import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
@@ -94,6 +95,16 @@ const AREA_ROW_STREAM = 100;
 const REST_REACH = 2.2;
 // Names joined for a notice: "Odo", "Odo and Maren".
 const names = (units: Unit[]): string => units.map((u) => u.name).join(' and ');
+// The key for each shout, and how near the mouse an enemy must be to Focus it
+const SHOUT_KEY: Record<Shout, string> = {
+  [Shout.Rally]: 'z',
+  [Shout.FallBack]: 'x',
+  [Shout.Hold]: 'c',
+  [Shout.Focus]: 'f',
+};
+const FOCUS_REACH = 1.5;
+// Seconds a shout shows over the bearer's head
+const CALLOUT_TIME = 1.2;
 // Seconds a notice stays on screen
 const NOTICE_TIME = 6;
 const LEAVE_REACH = 4;
@@ -148,6 +159,10 @@ export default class Game {
   private mapOpen = false;
   // Whether the party has rested at this area's Camp
   private rested = false;
+  // Where the mouse is over the canvas, for Focus, and the bearer's last
+  // shout as it shows over its head
+  private pointer: { x: number; y: number } | null = null;
+  private callout: { text: string; until: number } | null = null;
   private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
@@ -716,6 +731,7 @@ export default class Game {
     addEventListener('keydown', this.onKeyDown);
     addEventListener('keyup', this.onKeyUp);
     this.canvas.addEventListener('mousedown', this.onMouseDown);
+    this.canvas.addEventListener('mousemove', this.onMouseMove);
     this.last = performance.now();
     this.frameId = requestAnimationFrame(this.frame);
   }
@@ -724,6 +740,7 @@ export default class Game {
     removeEventListener('keydown', this.onKeyDown);
     removeEventListener('keyup', this.onKeyUp);
     this.canvas.removeEventListener('mousedown', this.onMouseDown);
+    this.canvas.removeEventListener('mousemove', this.onMouseMove);
     cancelAnimationFrame(this.frameId);
   }
 
@@ -742,6 +759,11 @@ export default class Game {
     }
     if (key === 'q' && !this.over && !this.paused) {
       this.drinkHealing();
+      return;
+    }
+    const shout = ALL_SHOUTS.find((s) => SHOUT_KEY[s] === key);
+    if (shout !== undefined) {
+      this.shout(shout);
       return;
     }
     if (key === 'm' && !this.over && this.offers === null) {
@@ -771,6 +793,57 @@ export default class Game {
   private readonly onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.key.toLowerCase());
   };
+
+  private readonly onMouseMove = (e: MouseEvent): void => {
+    this.pointer = { x: e.clientX, y: e.clientY };
+  };
+
+  // The enemy in sight nearest the mouse, within a tile and a half of it.
+  private enemyAtPointer(): Unit | null {
+    if (!this.pointer) {
+      return null;
+    }
+    const p = this.renderer.unproject(this.pointer.x, this.pointer.y);
+    let best: Unit | null = null;
+    let bestD = FOCUS_REACH;
+    for (const m of this.sim.living(Side.Monster)) {
+      const d = Math.hypot(m.x - p.x, m.z - p.z);
+      if (d < bestD && this.renderer.sees(m.x, m.z)) {
+        best = m;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * The bearer shouts. Focus marks the enemy under the mouse. Returns why it
+   * could not, or null.
+   */
+  shout(shout: Shout): string | null {
+    if (this.over || this.paused) {
+      return null;
+    }
+    const why = cry(this.sim, shout, shout === Shout.Focus ? this.enemyAtPointer() : null);
+    if (why) {
+      this.say(why);
+      return why;
+    }
+    this.callout = { text: `${SHOUTS[shout].name}!`, until: this.time + CALLOUT_TIME };
+    this.effects.shout(this.bearer);
+    return null;
+  }
+
+  /** Each shout's key, name and seconds until it is ready again. */
+  shoutBar(): { shout: Shout; key: string; name: string; left: number; cooldown: number }[] {
+    return ALL_SHOUTS.map((shout) => ({
+      shout,
+      key: SHOUT_KEY[shout],
+      name: SHOUTS[shout].name,
+      left: cooldownLeft(this.sim, shout),
+      cooldown: SHOUTS[shout].cooldown,
+    }));
+  }
 
   private readonly onMouseDown = (e: MouseEvent): void => {
     if (this.over) {
@@ -905,6 +978,7 @@ export default class Game {
       shake: this.shake,
       boss: this.boss,
       notice: this.notice && this.notice.until > this.time ? this.notice.text : null,
+      callout: this.callout && this.callout.until > this.time ? this.callout.text : null,
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;

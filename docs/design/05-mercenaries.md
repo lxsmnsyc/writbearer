@@ -141,7 +141,7 @@ Occult Dread lowers morale, so it also lowers effective Discipline for a while.
 | 80 to 100 | 3 | All | Yes |
 
 - Toggles beyond the limit show as greyed out in the UI. The player picks which ones stay active.
-- **In the game so far:** target priorities and "Save for elites" follow this table: 1 priority below 20 effective Discipline, 2 below 60 and 3 from 60, one more for a Veteran. Behavior flags wait for the toggles that use them. Priorities past the limit show greyed out as "ignored". A merc starts with its job's Discipline (Vanguard 40, Ranger 35, Cleric 45), plus its level, plus its traits: Veteran +10, Loyal and Devout +5, Greedy -5, Cowardly and Bloodthirsty -10. It gains 1 per level. Effects 2 and 3 wait for shouts and more trait conflicts.
+- **In the game so far:** target priorities and "Save for elites" follow this table: 1 priority below 20 effective Discipline, 2 below 60 and 3 from 60, one more for a Veteran. Behavior flags wait for the toggles that use them. Priorities past the limit show greyed out as "ignored". A merc starts with its job's Discipline (Vanguard 40, Ranger 35, Cleric 45), plus its level, plus its traits: Veteran +10, Loyal and Devout +5, Greedy -5, Cowardly and Bloodthirsty -10. It gains 1 per level. Effect 3, the shout response delay, is in the game. Effect 2 waits for more trait conflicts.
 
 #### Effect 2: traits against toggles
 

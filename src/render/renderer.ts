@@ -23,6 +23,7 @@ import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import Atmosphere, { drawVignette } from './atmosphere';
 import { type Effects, drawPiece } from './effects';
 import { areaOf, layerOf } from '../gen/layers';
+import { Shout } from '../sim/shout';
 import { type FloorImage, buildFloor } from './floor';
 import Fog from './fog';
 import { type Light, Lighting } from './light';
@@ -113,6 +114,8 @@ export interface Frame {
   boss: Unit | null;
   // A line shown under the hint for a while, such as who left unpaid
   notice: string | null;
+  // The bearer's shout, shown over its head for a moment
+  callout: string | null;
 }
 
 export default class Renderer {
@@ -234,6 +237,25 @@ export default class Renderer {
     this.drawGround(f, fog);
     f.effects.drawRings(ctx, iso);
     this.drawTraps(f);
+
+    // A red ring marks the enemy the bearer told the party to focus on.
+    const focused = new Set(
+      f.sim
+        .living(Side.Party)
+        .map((m) => (m.heard?.shout === Shout.Focus ? m.heard.target : null))
+        .filter((t) => t?.alive),
+    );
+    for (const t of focused) {
+      if (t) {
+        const r = f.views.rig(t, f.alpha);
+        const b = iso(r.x, r.z);
+        ctx.strokeStyle = C.blood;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(b.x, b.y, 12 * z, 5 * z, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
 
     // A gold ring marks the merc whose orders are open.
     if (f.selected?.alive) {
@@ -368,6 +390,11 @@ export default class Renderer {
     });
     this.fog.fog.update(f.paused ? 0 : 1 / 60, viewers, f.sim.obstacles);
     return this.fog.fog;
+  }
+
+  /** Whether the party sees a floor point now. */
+  sees(x: number, z: number): boolean {
+    return (this.fog?.fog.visible(x, z) ?? 0) > 0.5;
   }
 
   /** The camera's offset in screen pixels, for browser tests. */
@@ -678,6 +705,18 @@ export default class Renderer {
       out.fillStyle = e.ahead === 'elite' || e.ahead === 'boss' ? '#d47a6a' : '#d6d0c4';
       out.fillText(text, x, y);
     }
+    if (f.callout && f.sim.bearer) {
+      const r = f.views.rig(f.sim.bearer, f.alpha);
+      const b = this.iso(r.x, r.z);
+      out.font = '20px "IM Fell English", Georgia, serif';
+      out.fillStyle = C.gold;
+      out.fillText(
+        f.callout,
+        b.x * SCALE - this.sub.x,
+        (b.y - 46 * look.zoom) * SCALE - this.sub.y,
+      );
+      out.font = '15px "IM Fell English", Georgia, serif';
+    }
     const w = f.wanderer;
     if (w && fog.visible(w.x, w.z) > 0.5) {
       const b = this.iso(w.x, w.z);
@@ -786,7 +825,7 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click: move.  1–4: mercs.  I: pack and gear.  M: map.  Q: drink.  R: restart.',
+      'WASD or click: move.  1–4: mercs.  Z X C F: shouts.  I: pack.  M: map.  Q: drink.  R: restart.',
       16,
       26,
     );

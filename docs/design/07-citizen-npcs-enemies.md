@@ -18,6 +18,19 @@ The citizen never deals damage. The player controls the citizen directly.
 - Hide in tall grass or shadows. Most monsters lose track of the citizen.
 - Sprint for a short time.
 
+#### Shouts in the game so far
+
+| Key | Shout | Lasts | Cooldown | What the mercs do |
+|---|---|---|---|---|
+| Z | Rally | 5 s | 12 s | Gather on the bearer in Guard, and fight only what comes within 2 tiles of it. |
+| F | Focus | 6 s | 10 s | Go for the enemy under the mouse, marked with a red ring, until it dies. |
+| X | Fall back | 3 s | 12 s | Break off, stop attacking, and run round the bearer to its far side from the nearest threat. |
+| C | Hold | 6 s | 10 s | Stand where they are, in Hold. |
+
+- Each merc acts on a shout after its response delay: `0.2 + (100 - effective Discipline) × 0.01` seconds. See [Discipline](05-mercenaries.md#discipline).
+- The bar at the bottom left shows each shout's key and cooldown. Its buttons shout too, except Focus, which needs the mouse on an enemy.
+- Focus stands in for Mark for now. Sprint, hiding and using items on corpses wait.
+
 ### Utility items
 
 - Smoke bomb: blocks vision on an area.

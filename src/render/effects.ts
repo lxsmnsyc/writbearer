@@ -169,6 +169,11 @@ export class Effects {
     });
   }
 
+  /** A wide gold ring from the bearer as it shouts. */
+  shout(u: Unit): void {
+    this.rings.push({ x: u.x, z: u.z, radius: 2.6, age: 0, life: RING_LIFE, color: C.gold });
+  }
+
   /** A gold ring and rising light around a merc who just gained a level. */
   levelUp(u: Unit): void {
     this.rings.push({ x: u.x, z: u.z, radius: 1.4, age: 0, life: RING_LIFE * 2, color: C.gold });
