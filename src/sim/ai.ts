@@ -267,9 +267,12 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
     if (toggles.stance === Stance.Hold) {
       return u.distanceTo(e) <= HOLD_RADIUS + u.kit.reach;
     }
-    return (
-      u.distanceTo(e) <= u.kit.sight || (bearer !== null && e.distanceTo(bearer) <= u.kit.sight)
-    );
+    // With no bearer left to keep to, a merc goes after every enemy that is
+    // up, as at the end, in the Creditor's tomb.
+    if (!bearer) {
+      return e.aware;
+    }
+    return u.distanceTo(e) <= u.kit.sight || e.distanceTo(bearer) <= u.kit.sight;
   });
   const target = pick(u, toggles, bearer, enemies);
   if (useSkill(sim, u, toggles, target)) {

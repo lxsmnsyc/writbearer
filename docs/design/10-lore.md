@@ -157,6 +157,18 @@ His regalia lies scattered across the Hollow:
 - **The mercs lose.** The Creditor rises. The run is lost, and this is the dark ending.
 - The compendium records which ending each run reached.
 
+### In the game so far
+
+- Below the Hollowed Saint's arena, the way down leads to the tomb: a closed chamber with a sarcophagus, the Church's banners and candles, and no way out.
+- When the bearer comes within a few steps of the sarcophagus, the seal breaks. The bearer becomes the Creditor, a giant of the bearer's own figure, run by the AI.
+- The player can no longer move, shout, drink or open the pack. Number keys still open a merc's sheet, and R starts a new run.
+- Every merc that died over the run is a soul: each adds 6% to the Creditor's health and damage. Mercs that lie dead at the reveal, and were not torn apart, rise on its side. A Cowardly merc with Low or Broken morale runs. Shrines, curses, corruption and the Old King's regalia wait for their systems.
+- The Creditor's Collect blasts every merc within 3 tiles for 160% Occult damage with Dread. Below 40% health it drinks the healing potions left in the bearer's pack.
+- With no bearer, orders that guard it do nothing, and every merc goes after every enemy that is up.
+- The run ends when the Creditor falls ("The Creditor is sealed again. The bearer dies with it.") or when the last merc does ("The Creditor rises.").
+- Balance, measured with four level 32 mercs against the level 36 Creditor: a clean run wins every time in under a minute; 4 souls take two to three minutes; 8 souls mostly lose; two raised mercs always lose. A test holds the clean win and the loss with two raised.
+- For tests, `?tomb` starts the run in the tomb.
+
 ### First run and later runs
 
 - On the first run the twist is a surprise. The player has prepared for the wrong fight.

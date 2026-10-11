@@ -8,9 +8,17 @@ import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
-import { type Ahead, type Stage, generateStage, generateWaystation } from '../gen/stage';
+import {
+  type Ahead,
+  type Stage,
+  generateStage,
+  generateTomb,
+  generateWaystation,
+  monsterLevel,
+} from '../gen/stage';
+import { reveal } from '../content/creditor';
 import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
-import { AREAS_PER_LAYER } from '../gen/layers';
+import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
 import { type EquipSlot, type Item, isPotion } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
 import { potionStack, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
@@ -76,6 +84,8 @@ export interface GameOptions {
   area?: number;
   // Starts at the Waystation before that area instead
   station?: boolean;
+  // Starts in the Creditor's tomb, at the end of the run
+  tomb?: boolean;
 }
 
 // The most mercs in the party, living or dead.
@@ -91,6 +101,13 @@ const MEET_REACH = 1.8;
 // Each Waystation lays out from its own stream, apart from the areas'.
 const WAYSTATION_STREAM = 1000;
 const AREA_ROW_STREAM = 100;
+const TOMB_STREAM = 2000;
+// The keys left to the player once the seal breaks: a merc's sheet, and restart
+const FINALE_KEYS = new Set(['1', '2', '3', '4', 'escape', 'r']);
+// How near the sarcophagus the bearer comes before the seal breaks, and
+// below what share of health the Creditor drinks from the bearer's pack
+const TOMB_REACH = 2.4;
+const CREDITOR_DRINKS = 0.4;
 // How near the fire the bearer must come for the party to rest at a Camp
 const REST_REACH = 2.2;
 // Names joined for a notice: "Odo", "Odo and Maren".
@@ -162,6 +179,10 @@ export default class Game {
   // Where the mouse is over the canvas, for Focus, and the bearer's last
   // shout as it shows over its head
   private pointer: { x: number; y: number } | null = null;
+  // Mercs that died over the run: souls fed to the Creditor
+  private souls = 0;
+  // The end of the run: the Creditor, once the seal breaks, and how it ended
+  private finale: { creditor: Unit; ending: 'sealed' | 'risen' | null } | null = null;
   private callout: { text: string; until: number } | null = null;
   private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
@@ -371,8 +392,14 @@ export default class Game {
     this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
     this.mapOpen = false;
+    this.souls = 0;
+    this.finale = null;
     this.rollMap();
-    if (this.options.station) {
+    if (this.options.tomb) {
+      this.stageIndex = LAYERS.length * AREAS_PER_LAYER;
+      this.node = null;
+      this.stage = generateTomb(this.streams.area(1, Stream.Layout, TOMB_STREAM), this.stageIndex);
+    } else if (this.options.station) {
       this.stageIndex -= this.stageIndex % AREAS_PER_LAYER;
       this.node = null;
       this.stage = this.buildWaystation();
@@ -408,6 +435,8 @@ export default class Game {
       }
       if (event.source === this.bearer) {
         this.over = true;
+      } else if (event.source.side === Side.Party) {
+        this.souls++;
       }
     });
     this.slain = 0;
@@ -593,6 +622,14 @@ export default class Game {
       this.payroll = null;
       this.goTo(0, exit);
       this.stage = this.buildStage();
+    } else if (
+      this.stage.exits[exit]?.ahead === 'down' &&
+      layerIndexOf(this.stageIndex) === LAYERS.length - 1
+    ) {
+      // Below the Sunken Crown lies only the tomb.
+      this.stageIndex++;
+      this.node = null;
+      this.stage = generateTomb(this.streams.area(1, Stream.Layout, TOMB_STREAM), this.stageIndex);
     } else if (this.stage.exits[exit]?.ahead === 'down') {
       this.stageIndex++;
       this.rollMap();
@@ -667,6 +704,62 @@ export default class Game {
       at: this.node,
       layer: Math.floor(this.stageIndex / AREAS_PER_LAYER),
     };
+  }
+
+  // At the tomb the seal breaks, and the bearer becomes the Creditor.
+  private breakSeal(): void {
+    const tomb = this.stage.tomb;
+    if (
+      !tomb ||
+      this.finale ||
+      !this.bearer.alive ||
+      Math.hypot(this.bearer.x - tomb.x, this.bearer.z - tomb.z) > TOMB_REACH
+    ) {
+      return;
+    }
+    const level = monsterLevel(this.stageIndex) + 2;
+    const r = reveal(this.sim, this.bearer, level, this.souls);
+    this.finale = { creditor: r.creditor, ending: null };
+    this.boss = r.creditor;
+    this.select(null);
+    this.openInventory(false);
+    this.keys.clear();
+    this.shake = Math.max(this.shake, 6);
+    const lines = ['The seal breaks. The Writ was never a letter.'];
+    if (r.raised.length > 0) {
+      lines.push(`${names(r.raised)} ${r.raised.length > 1 ? 'rise' : 'rises'} for it.`);
+    }
+    if (r.fled.length > 0) {
+      lines.push(`${names(r.fled)} ${r.fled.length > 1 ? 'run' : 'runs'}.`);
+    }
+    this.say(lines.join(' '));
+    this.views.snap(this.sim);
+    this.hooks.onChange?.();
+  }
+
+  // The Creditor drinks what the bearer carried, and the fight ends when it
+  // or the last merc falls.
+  private endFinale(): void {
+    const f = this.finale;
+    if (!f || f.ending) {
+      return;
+    }
+    const c = f.creditor;
+    if (c.alive && c.hp < c.derived.maxHp * CREDITOR_DRINKS) {
+      const potion = this.pack.healingPotion();
+      if (potion && c.drink(potion)) {
+        this.pack.tidy();
+        this.itemsChanged();
+      }
+    }
+    if (!c.alive) {
+      f.ending = 'sealed';
+    } else if (this.sim.living(Side.Party).length === 0) {
+      f.ending = 'risen';
+    }
+    if (f.ending) {
+      this.over = true;
+    }
   }
 
   private say(text: string): void {
@@ -755,6 +848,11 @@ export default class Game {
       if (this.mapOpen) {
         this.openMap(false);
       }
+      return;
+    }
+    // Once the seal breaks, the player can only look at the mercs, or start
+    // another run.
+    if (this.finale && !FINALE_KEYS.has(key)) {
       return;
     }
     if (key === 'q' && !this.over && !this.paused) {
@@ -849,6 +947,10 @@ export default class Game {
     if (this.over) {
       return;
     }
+    if (this.finale) {
+      this.select(this.pickMerc(e.clientX, e.clientY));
+      return;
+    }
     // Clicking a merc opens its orders. Clicking anywhere else closes them,
     // or walks the bearer there.
     if (this.inventory) {
@@ -887,6 +989,10 @@ export default class Game {
 
   // WASD moves along the screen: right is +x -z, down is +x +z.
   private steer(): void {
+    // Once the seal breaks, the player no longer moves anyone.
+    if (this.finale) {
+      return;
+    }
     let mx = 0;
     let my = 0;
     if (this.keys.has('w') || this.keys.has('arrowup')) {
@@ -944,6 +1050,8 @@ export default class Game {
           this.shake = Math.max(this.shake, 4);
         }
         this.rest();
+        this.breakSeal();
+        this.endFinale();
         // The way down opens only once the boss is dead.
         const exit = this.stage.exits.findIndex(
           (e) =>
@@ -973,6 +1081,7 @@ export default class Game {
       ground: this.ground,
       wanderer: this.wanderer,
       over: this.over,
+      ending: this.finale?.ending ?? null,
       paused: this.paused,
       selected: this.selected,
       shake: this.shake,
@@ -984,6 +1093,8 @@ export default class Game {
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;
     const cam = this.renderer.camera;
     this.canvas.dataset.camera = `${cam.x},${cam.y}`;
+    // How the final fight stands: not begun, under way, or how it ended.
+    this.canvas.dataset.finale = this.finale ? (this.finale.ending ?? 'fighting') : 'none';
     // Each merc's feet, as shares of the canvas, so tests can click them.
     this.canvas.dataset.mercs = this.mercs()
       .map((m) => {

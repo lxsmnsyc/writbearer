@@ -39,6 +39,8 @@ const FIGURE: Partial<Record<string, { kind: Kind; size: number }>> = {
   gatekeeper: { kind: 'hollowSoldier', size: 1.8 },
   abbess: { kind: 'cantor', size: 1.5 },
   hollowedSaint: { kind: 'hollowed', size: 1.6 },
+  // The bearer, grown into what it carried
+  creditor: { kind: 'bearer', size: 1.9 },
 };
 
 export class Views {

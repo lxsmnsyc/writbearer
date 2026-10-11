@@ -36,6 +36,13 @@ export const W = 384;
 export const H = 216;
 export const SCALE = 3;
 
+// How a run ends, as the last screen says it.
+const ENDING: Record<'fallen' | 'sealed' | 'risen', [string, string]> = {
+  fallen: ['The bearer has fallen.', 'The Writ lies where it fell, for the Guild to send again.'],
+  sealed: ['The Creditor is sealed again.', 'The bearer dies with it. The run is cleared.'],
+  risen: ['The Creditor rises.', 'Every merc is dead. The run is lost.'],
+};
+
 // What lies beyond a road on, as its signpost reads.
 const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
   combat: 'Fight',
@@ -116,7 +123,13 @@ export interface Frame {
   notice: string | null;
   // The bearer's shout, shown over its head for a moment
   callout: string | null;
+  // How the final fight ended: the Creditor sealed again, or risen
+  ending: 'sealed' | 'risen' | null;
 }
+
+// What the camera and the lantern follow: the bearer, or once the seal
+// breaks, the Creditor in its body.
+const focusOf = (f: Frame): Unit | null => f.sim.bearer ?? (f.stage.tomb ? f.boss : null);
 
 export default class Renderer {
   private readonly out: CanvasRenderingContext2D;
@@ -199,7 +212,8 @@ export default class Renderer {
   render(f: Frame): void {
     const { ctx, iso } = this;
     const z = look.zoom;
-    const bearer = f.sim.bearer;
+    // The camera follows the bearer, or what it became.
+    const bearer = focusOf(f);
     if (bearer) {
       // The camera follows the bearer, snapped to whole screen pixels.
       const b = f.views.rig(bearer, f.alpha);
@@ -388,6 +402,11 @@ export default class Renderer {
       const r = f.views.rig(u, f.alpha);
       return { x: r.x, z: r.z, radius: u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT };
     });
+    // Once the seal breaks, the lantern burns on in the Creditor's hand.
+    const focus = focusOf(f);
+    if (focus && focus !== f.sim.bearer) {
+      viewers.push({ x: focus.x, z: focus.z, radius: BEARER_SIGHT });
+    }
     this.fog.fog.update(f.paused ? 0 : 1 / 60, viewers, f.sim.obstacles);
     return this.fog.fog;
   }
@@ -476,7 +495,7 @@ export default class Renderer {
   // Warm lantern light in hard steps.
   private drawLight(f: Frame): void {
     const lights: Light[] = [];
-    const bearer = f.sim.bearer;
+    const bearer = focusOf(f);
     // Flames flicker in their own pixels, not in the reach of their light:
     // a light whose edge moves every frame makes the whole floor crawl.
     const flicker = 0;
@@ -851,7 +870,7 @@ export default class Renderer {
       out.fillStyle = C.gold;
       out.fillText(f.notice, 16, 76);
     }
-    if (f.boss?.alive && f.stage.arena?.closed) {
+    if (f.boss?.alive && (f.stage.arena?.closed || f.stage.tomb)) {
       // The boss's name and health across the top, as Diablo 2 shows them.
       const w = 360;
       const x = (W * SCALE - w) / 2;
@@ -865,15 +884,19 @@ export default class Renderer {
       out.fillRect(x + 1, 101, Math.round(((w - 2) * f.boss.hp) / f.boss.derived.maxHp), 6);
     }
     if (f.over) {
+      const [title, line] = ENDING[f.ending ?? 'fallen'];
       out.fillStyle = 'rgba(0,0,0,0.6)';
       out.fillRect(0, 0, W * SCALE, H * SCALE);
-      out.fillStyle = C.blood;
+      out.fillStyle = f.ending === 'sealed' ? C.gold : C.blood;
       out.font = '44px "IM Fell English SC", Georgia, serif';
       out.textAlign = 'center';
-      out.fillText('The bearer has fallen.', (W * SCALE) / 2, (H * SCALE) / 2);
+      out.fillText(title, (W * SCALE) / 2, (H * SCALE) / 2);
+      out.font = '18px "IM Fell English", Georgia, serif';
+      out.fillStyle = '#c8c2b6';
+      out.fillText(line, (W * SCALE) / 2, (H * SCALE) / 2 + 36);
       out.font = '16px ui-monospace, monospace';
       out.fillStyle = '#9a9a9a';
-      out.fillText('Press R to draw another lot.', (W * SCALE) / 2, (H * SCALE) / 2 + 36);
+      out.fillText('Press R to draw another lot.', (W * SCALE) / 2, (H * SCALE) / 2 + 70);
       out.textAlign = 'start';
     }
   }
@@ -883,6 +906,9 @@ export default class Renderer {
 function place(stage: Stage): string {
   if (stage.kind === 'waystation') {
     return 'Waystation';
+  }
+  if (stage.kind === 'tomb') {
+    return 'The Tomb';
   }
   const area = `Area ${areaOf(stage.index)}`;
   if (stage.kind === 'elite') {
@@ -896,6 +922,11 @@ function place(stage: Stage): string {
 
 // What the player is to do in this area, under the controls.
 function hint(f: Frame): string {
+  if (f.stage.tomb) {
+    return f.boss
+      ? 'The Creditor wakes in the bearer’s body. The mercs fight on alone. 1–4 to look at them.'
+      : 'The tomb at the bottom of the Hollow. Bring the Writ to it.';
+  }
   if (f.stage.station) {
     return 'The Guild’s Waystation. Pay your mercs and use the vault at the post, then take a road east.';
   }
@@ -1048,6 +1079,21 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     ctx.fillRect(base.x - 12, base.y - 7, 24, 1);
     ctx.fillStyle = C.gold;
     ctx.fillRect(base.x - 1, base.y - 6, 3, 3);
+  } else if (p.kind === 'sarcophagus') {
+    // The Creditor's sarcophagus: long, low and black, its lid sealed with
+    // the Church's blood.
+    block(ctx, base, 0.9, 12, p.seed, C.monster);
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 26, base.y - 12),
+        pt(base.x, base.y - 25),
+        pt(base.x + 26, base.y - 12),
+        pt(base.x, base.y + 1),
+      ],
+      C.stoneB,
+    );
+    fillPoly(ctx, blob(pt(base.x, base.y - 12), 6, 3, 9, p.seed), C.blood, null);
   } else if (p.kind === 'gate') {
     // Stakes of the arena's gate: a stump while open, a sharpened post once shut.
     if (p.r === undefined) {

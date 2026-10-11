@@ -41,6 +41,7 @@ function runOptions(): GameOptions {
     party,
     area: Number.isInteger(area) && area > 0 ? area : undefined,
     station: params.has('station'),
+    tomb: params.has('tomb'),
   };
 }
 

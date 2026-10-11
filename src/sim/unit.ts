@@ -114,7 +114,8 @@ export interface HitOptions {
 export default class Unit {
   readonly kind: string;
   readonly name: string;
-  readonly side: Side;
+  // Changes only at the end: the Creditor raises the unresurrected dead.
+  side: Side;
   readonly job: Job;
   level: number;
   base: BaseStats;
