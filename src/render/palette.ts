@@ -90,15 +90,24 @@ function nearest(r: number, g: number, b: number): number {
 }
 
 /**
- * Snaps every pixel to the palette, with a light ordered dither.
+ * Snaps every pixel to the palette, with a light ordered dither. The dither
+ * pattern is fixed to the world through the camera offset, so it does not
+ * crawl over the floor as the camera moves.
  */
-export function quantize(ctx: CanvasRenderingContext2D, w: number, h: number, dither = 6): void {
+export function quantize(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  dither = 6,
+  ox = 0,
+  oy = 0,
+): void {
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const t = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.5) * dither;
+      const t = (BAYER[((y + oy) & 3) * 4 + ((x + ox) & 3)] / 16 - 0.5) * dither;
       const c =
         PALETTE[
           nearest(Math.max(0, d[i] + t), Math.max(0, d[i + 1] + t), Math.max(0, d[i + 2] + t))

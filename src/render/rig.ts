@@ -336,14 +336,18 @@ interface Part {
   draw: (ctx: CanvasRenderingContext2D) => void;
 }
 
+// Corners snap to whole pixels, so a moving figure's edges step cleanly
+// instead of shimmering through half-covered pixels every frame.
 function trace(ctx: CanvasRenderingContext2D, pts: Pt[], dx: number, dy: number): void {
   ctx.beginPath();
   pts.forEach((p, i) => {
     const cut = CUT[i % CUT.length] * look.zoom;
+    const x = Math.round(p.x + dx + cut);
+    const y = Math.round(p.y + dy - cut);
     if (i) {
-      ctx.lineTo(p.x + dx + cut, p.y + dy - cut);
+      ctx.lineTo(x, y);
     } else {
-      ctx.moveTo(p.x + dx + cut, p.y + dy - cut);
+      ctx.moveTo(x, y);
     }
   });
   ctx.closePath();

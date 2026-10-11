@@ -11,6 +11,8 @@ interface Mote {
 }
 
 const MOTES = 110;
+// Pixels per second the fog drifts.
+const FOG_DRIFT = 2;
 
 /**
  * Low fog, drifting ash and film grain. Fog and ash are drawn before the
@@ -64,13 +66,23 @@ export default class Atmosphere {
     iso: (x: number, z: number) => Pt,
     time: number,
     zoom: number,
+    cam: Pt,
   ): void {
-    const drift = (time * 4) % this.w;
+    // The fog sits in the world, not on the screen, and drifts in whole
+    // pixels a few times a second. A screen-fixed layer sliding by fractions
+    // of a pixel would shift colors across the whole frame every frame.
+    const span = this.w * 2;
+    const drift = Math.floor(time * FOG_DRIFT);
+    const x = -(((cam.x + drift) % span) + span) % span;
+    const y = -(((cam.y % this.h) + this.h) % this.h) - this.h * 0.3;
     ctx.save();
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.18;
     ctx.globalCompositeOperation = 'screen';
-    ctx.drawImage(this.fog, -drift, -this.h * 0.3 + Math.sin(time * 0.2) * 6);
-    ctx.drawImage(this.fog, this.w * 2 - drift, -this.h * 0.3 + Math.sin(time * 0.2) * 6);
+    for (const dx of [0, span]) {
+      for (const dy of [0, this.h * 2]) {
+        ctx.drawImage(this.fog, x + dx, y + dy);
+      }
+    }
     ctx.restore();
     ctx.fillStyle = '#b4b0a8';
     for (const m of this.motes) {
@@ -79,24 +91,14 @@ export default class Atmosphere {
     }
   }
 
-  /** Grain and the vignette, after the light. */
-  drawAfter(ctx: CanvasRenderingContext2D): void {
+  /** Grain, after the light. It stays put in the world. */
+  drawAfter(ctx: CanvasRenderingContext2D, cam: Pt): void {
     ctx.save();
     ctx.globalAlpha = 0.035;
-    ctx.drawImage(this.grain, -this.rng.int(0, 7), -this.rng.int(0, 7));
+    const gx = -(((cam.x % 8) + 8) % 8);
+    const gy = -(((cam.y % 8) + 8) % 8);
+    ctx.drawImage(this.grain, gx, gy);
     ctx.restore();
-    const g = ctx.createRadialGradient(
-      this.w / 2,
-      this.h / 2,
-      this.h * 0.35,
-      this.w / 2,
-      this.h / 2,
-      this.w * 0.62,
-    );
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.6)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, this.w, this.h);
   }
 }
 
@@ -134,4 +136,20 @@ function noise(w: number, h: number, rng: RNG): HTMLCanvasElement {
   }
   ctx.putImageData(img, 0, 0);
   return c;
+}
+
+/**
+ * The vignette, on the full-size frame after the palette snap. Drawn
+ * before the snap, its bands stay fixed on the screen while the world
+ * slides under them, and every pixel near a band changes as the camera
+ * moves.
+ */
+export function drawVignette(out: CanvasRenderingContext2D): void {
+  const w = out.canvas.width;
+  const h = out.canvas.height;
+  const g = out.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, w * 0.62);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,0,0,0.6)');
+  out.fillStyle = g;
+  out.fillRect(0, 0, w, h);
 }

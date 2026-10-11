@@ -20,7 +20,7 @@ import type Sim from '../sim/sim';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
-import Atmosphere from './atmosphere';
+import Atmosphere, { drawVignette } from './atmosphere';
 import { type Effects, drawPiece } from './effects';
 import { type FloorImage, buildFloor } from './floor';
 import Fog from './fog';
@@ -77,6 +77,9 @@ export const LABEL_COLOR: Record<Quality, string> = {
   [Quality.Rare]: '#d9a845',
 };
 
+// The height of an item's floor label, in screen pixels.
+const LABEL_HEIGHT = 18;
+
 export interface Frame {
   sim: Sim;
   stage: Stage;
@@ -107,6 +110,8 @@ export default class Renderer {
   private readonly cam = { x: 0, y: 0 };
   private readonly jolt = { x: 0, y: 0 };
   private camReady = false;
+  // Where each item's floor label was drawn this frame, in screen pixels
+  private readonly labels: { item: GroundItem; x: number; y: number; w: number }[] = [];
   private readonly lighting = new Lighting(W, H);
   private readonly atmosphere = new Atmosphere(W, H);
   private floor: { stage: Stage; zoom: number; image: FloorImage } | null = null;
@@ -133,6 +138,23 @@ export default class Renderer {
       Math.round((x - z) * (tw() / 2) - this.cam.x - this.jolt.x),
       Math.round((x + z) * (th() / 2) - this.cam.y - this.jolt.y),
     );
+
+  /**
+   * The item whose floor label is under a point on the screen element, if
+   * any. Labels are what the player clicks to pick something up.
+   */
+  labelAt(clientX: number, clientY: number): GroundItem | null {
+    const r = this.screen.getBoundingClientRect();
+    const px = ((clientX - r.left) / r.width) * W * SCALE;
+    const py = ((clientY - r.top) / r.height) * H * SCALE;
+    for (let i = this.labels.length - 1; i >= 0; i--) {
+      const l = this.labels[i];
+      if (Math.abs(px - l.x) <= l.w / 2 && py >= l.y - 14 && py <= l.y - 14 + LABEL_HEIGHT) {
+        return l.item;
+      }
+    }
+    return null;
+  }
 
   /** A point on the screen element, in the small frame's pixels. */
   toSmall(clientX: number, clientY: number): Pt {
@@ -290,16 +312,17 @@ export default class Renderer {
     if (bearer) {
       const b = f.views.rig(bearer, f.alpha);
       this.atmosphere.update(f.paused ? 0 : 1 / 60, b.x, b.z);
-      this.atmosphere.drawLit(ctx, iso, f.time, z);
+      this.atmosphere.drawLit(ctx, iso, f.time, z, this.cam);
     }
     this.drawLight(f);
     this.drawGlow(f, fog);
-    this.atmosphere.drawAfter(ctx);
+    this.atmosphere.drawAfter(ctx, this.cam);
     this.drawHealth(f, fog);
     // The light has hard steps of its own, so it needs little dither.
-    quantize(ctx, W, H, 3);
+    quantize(ctx, W, H, 3, this.cam.x + this.jolt.x, this.cam.y + this.jolt.y);
 
     this.out.drawImage(this.small, 0, 0, W * SCALE, H * SCALE);
+    drawVignette(this.out);
     this.drawLabels(f, fog);
     this.drawHud(f);
   }
@@ -315,6 +338,11 @@ export default class Renderer {
     });
     this.fog.fog.update(f.paused ? 0 : 1 / 60, viewers, f.sim.obstacles);
     return this.fog.fog;
+  }
+
+  /** The camera's offset in frame pixels, for browser tests. */
+  get camera(): Pt {
+    return pt(this.cam.x + this.jolt.x, this.cam.y + this.jolt.y);
   }
 
   /** The camera jumps to the bearer on the next frame instead of gliding. */
@@ -380,7 +408,9 @@ export default class Renderer {
   private drawLight(f: Frame): void {
     const lights: Light[] = [];
     const bearer = f.sim.bearer;
-    const flicker = Math.sin(f.time * 9) * 0.08 + Math.sin(f.time * 23) * 0.04;
+    // Flames flicker in their own pixels, not in the reach of their light:
+    // a light whose edge moves every frame makes the whole floor crawl.
+    const flicker = 0;
     if (bearer?.alive) {
       const b = f.views.rig(bearer, f.alpha);
       lights.push({
@@ -568,17 +598,27 @@ export default class Renderer {
     const { out } = this;
     out.font = '15px "IM Fell English", Georgia, serif';
     out.textAlign = 'center';
+    this.labels.length = 0;
     for (const g of f.ground) {
       if (fog.visible(g.x, g.z) < 0.5) {
         continue;
       }
       const b = this.iso(g.x, g.z);
       const x = b.x * SCALE;
-      const y = (b.y - 4) * SCALE;
+      let y = (b.y - 4) * SCALE;
       const name = itemName(g.item);
       const w = out.measureText(name).width + 8;
+      // Labels that would overlap stack upward, as Diablo 2's do.
+      const overlaps = (ty: number): boolean =>
+        this.labels.some(
+          (l) => Math.abs(l.x - x) < (l.w + w) / 2 && Math.abs(l.y - ty) < LABEL_HEIGHT,
+        );
+      while (overlaps(y)) {
+        y -= LABEL_HEIGHT;
+      }
+      this.labels.push({ item: g, x, y, w });
       out.fillStyle = 'rgba(0,0,0,0.65)';
-      out.fillRect(x - w / 2, y - 14, w, 18);
+      out.fillRect(x - w / 2, y - 14, w, LABEL_HEIGHT);
       out.fillStyle = LABEL_COLOR[g.item.quality];
       if (g.item.base.type === ItemType.Gold) {
         out.fillStyle = C.gold;

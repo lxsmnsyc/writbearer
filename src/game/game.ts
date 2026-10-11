@@ -515,6 +515,13 @@ export default class Game {
     if (this.inventory) {
       return;
     }
+    // An item's label comes first: it may sit right over a merc.
+    const labelled = this.paused ? null : this.renderer.labelAt(e.clientX, e.clientY);
+    if (labelled) {
+      this.fetching = labelled;
+      this.bearer.order = { x: labelled.x, z: labelled.z };
+      return;
+    }
     const merc = this.pickMerc(e.clientX, e.clientY);
     if (merc) {
       this.select(merc);
@@ -623,5 +630,7 @@ export default class Game {
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;
+    const cam = this.renderer.camera;
+    this.canvas.dataset.camera = `${cam.x},${cam.y}`;
   }
 }
