@@ -123,3 +123,24 @@ describe('elites', () => {
     expect(elite.derived.maxHp).toBeGreaterThanOrEqual(plain.derived.maxHp * 2.4);
   });
 });
+
+describe('noticing the party', () => {
+  it('sees the lantern-bearer from further than an unlit merc', () => {
+    const sim = new Sim(7);
+    const bearer = spawnBearer(sim, 0, 0);
+    spawnMerc(sim, 'ranger', 5, 20, 0, {
+      ...DEFAULT_TOGGLES,
+      stance: Stance.Hold,
+    });
+    // Crawlers notice at 5: the bearer at 4.5, but a merc only at 3.75.
+    const byBearer = spawnMonster(sim, 'crawler', 4, 4.5, 0);
+    const byMerc = spawnMonster(sim, 'crawler', 4, 24.5, 0);
+    for (const m of [byBearer, byMerc]) {
+      m.kit.moveSpeed = 0;
+    }
+    bearer.kit.moveSpeed = 0;
+    sim.tick();
+    expect(byBearer.aware).toBe(true);
+    expect(byMerc.aware).toBe(false);
+  });
+});

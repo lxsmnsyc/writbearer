@@ -72,6 +72,8 @@ const SOLID: Partial<Record<PropKind, number>> = {
 
 // Threat each monster costs from a stage's budget. An elite costs more.
 const THREAT: Record<MonsterKind, number> = {
+  mite: 1,
+  husk: 1,
   crawler: 2,
   penitent: 2,
   hollowSoldier: 3,
@@ -276,20 +278,53 @@ function distanceToSegment(p: Spot, a: Spot, b: Spot): number {
   return Math.hypot(a.x + dx * t - p.x, a.z + dz * t - p.z);
 }
 
-// The factions a pack can come from, and what each fields.
-const FACTIONS: MonsterKind[][] = [
-  ['crawler', 'crawler', 'crawler'],
-  ['hollowSoldier', 'hollowSoldier'],
-  ['penitent', 'penitent', 'hollowed'],
-  ['hollowed', 'hollowed'],
+// The packs a stage can field, by how deep it is: weak things near the
+// surface, the Church's mad and the Old King's guard further down.
+const FACTIONS: { from: number; kinds: MonsterKind[] }[] = [
+  { from: 0, kinds: ['mite', 'mite', 'mite'] },
+  { from: 0, kinds: ['husk', 'husk', 'husk'] },
+  { from: 0, kinds: ['husk', 'mite', 'mite'] },
+  { from: 2, kinds: ['crawler', 'mite', 'mite'] },
+  { from: 2, kinds: ['hollowSoldier', 'husk', 'husk'] },
+  { from: 4, kinds: ['penitent', 'penitent', 'husk'] },
+  { from: 4, kinds: ['crawler', 'crawler', 'crawler'] },
+  { from: 4, kinds: ['hollowSoldier', 'hollowSoldier'] },
+  { from: 5, kinds: ['penitent', 'penitent', 'hollowed'] },
+  { from: 6, kinds: ['hollowed', 'hollowed'] },
 ];
+
+/** The level of a stage's monsters: low near the surface, one more each stage. */
+export const monsterLevel = (index: number): number => 2 + index;
+
+// What keeps the Church's site, by depth: one Penitent near the surface,
+// then more, then a Cantor to sing for them.
+function siteKeepers(index: number): MonsterKind[] {
+  if (index < 2) {
+    return ['penitent'];
+  }
+  return index < 4 ? ['penitent', 'penitent'] : ['penitent', 'penitent', 'cantor'];
+}
+
+// What holds the lair, by depth.
+function lairPack(index: number): MonsterKind[] {
+  if (index < 2) {
+    return ['husk', 'husk', 'husk'];
+  }
+  return index < 4
+    ? ['hollowSoldier', 'husk', 'husk']
+    : ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'];
+}
+
+// An elite leads the lair's pack from this stage on.
+const ELITE_FROM = 4;
 
 function placePacks(
   stage: Stage,
   rng: RNG,
   places: { site: Spot; lair: Spot; breach: Spot },
 ): void {
-  let budget = 24 + stage.index * 5;
+  let budget = 9 + stage.index * 5;
+  const pool = FACTIONS.filter((f) => f.from <= stage.index).map((f) => f.kinds);
   const cost = (kinds: MonsterKind[], elite: number): number =>
     kinds.reduce((sum, k) => sum + THREAT[k], 0) + (elite >= 0 ? ELITE_THREAT : 0);
   const push = (pack: Pack): void => {
@@ -297,29 +332,29 @@ function placePacks(
     budget -= cost(pack.kinds, pack.elite);
   };
 
-  // The Church keeps its site: Penitents and the Cantor who sings for them.
+  // The Church keeps its site.
   push({
-    kinds: ['penitent', 'penitent', 'cantor'],
+    kinds: siteKeepers(stage.index),
     x: places.site.x,
     z: places.site.z,
     elite: -1,
   });
-  // The lair holds the strongest pack, led by an elite.
+  // The lair holds the strongest pack, led by an elite once deep enough.
   push({
-    kinds: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'],
+    kinds: lairPack(stage.index),
     x: places.lair.x,
     z: places.lair.z,
-    elite: 0,
+    elite: stage.index >= ELITE_FROM ? 0 : -1,
   });
   // A pack watches the first breach in the wall, from the far side.
   const breach = places.breach;
-  push({ kinds: [...rng.pick(FACTIONS)].slice(0, 2), x: breach.x + 2.5, z: breach.z, elite: -1 });
+  push({ kinds: [...rng.pick(pool)].slice(0, 2), x: breach.x + 2.5, z: breach.z, elite: -1 });
   const nav = navFor(stage);
   for (let i = 0; i < 40; i++) {
     if (budget <= 0) {
       break;
     }
-    const kinds = [...rng.pick(FACTIONS)].slice(0, rng.int(2, 3));
+    const kinds = [...rng.pick(pool)].slice(0, rng.int(2, 3));
     if (cost(kinds, -1) > budget) {
       break;
     }

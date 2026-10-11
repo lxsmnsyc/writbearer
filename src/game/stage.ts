@@ -1,5 +1,5 @@
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
-import { type Stage, solidsOf } from '../gen/stage';
+import { type Stage, monsterLevel, solidsOf } from '../gen/stage';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -16,7 +16,7 @@ export function enterStage(sim: Sim, stage: Stage): void {
       spawnMonster(
         sim,
         kind,
-        4 + Math.floor(stage.index / 2),
+        monsterLevel(stage.index),
         pack.x + Math.cos(a) * r,
         pack.z + Math.sin(a) * r,
         {

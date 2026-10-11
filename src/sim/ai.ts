@@ -74,7 +74,9 @@ export const enum Hunt {
 }
 
 // A monster that notices the party wakes every monster this close to it.
-const PACK_RADIUS = 4;
+const PACK_RADIUS = 3;
+// Mercs carry no lantern, so monsters notice them from closer.
+const UNLIT_NOTICE = 0.75;
 // How traits bend a merc's orders.
 const BLOODTHIRSTY_CHASE = 3;
 const LOYAL_CHASE = 2;
@@ -267,7 +269,10 @@ function flee(u: Unit, from: Unit, dt: number): void {
 function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const party = sim.living(Side.Party);
   if (!u.aware) {
-    if (!party.some((p) => u.distanceTo(p) <= u.kit.sight)) {
+    const noticed = party.some(
+      (p) => u.distanceTo(p) <= u.kit.notice * (p === sim.bearer ? 1 : UNLIT_NOTICE),
+    );
+    if (!noticed) {
       return;
     }
     for (const m of sim.living(Side.Monster)) {

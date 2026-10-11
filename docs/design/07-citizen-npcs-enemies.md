@@ -92,7 +92,10 @@ Enemies are designed to make the player change toggles and gear.
 | Penitent Cantor | The Church | Healer | Keeps behind the others, out of the party's reach. Sings a long hymn that heals every ally within 4 tiles for 20%. A stun or a Shield Bash breaks it. | Radiant |
 | The Hollowed | The Church, gone mad | Assassin | Runs past mercs in its way to claw at the bearer. Its Occult hits build up Dread. | Occult |
 | Crawler | Blight | Plain | Bites whoever is closest. Its bites build up Poison. | Venom |
+| Husk | The Old King's drowned townsfolk | Weak | Slow. Shambles at whoever is nearest. | Neutral |
+| Mite | Blight | Weak | A crawler not yet grown: quick, frail, in threes. | Venom |
 
+- **Noticing:** a monster notices the lantern-bearer within its notice range, and an unlit merc within three quarters of it: Mites and Husks 4 tiles, Crawlers, Hollow soldiers and Cantors 5, Penitents 6, the Hollowed 7. The bearer sees 7, so most packs are seen before they wake. A monster that notices wakes every monster within 3 tiles.
 - **Dread** (Occult, resisted by WIL): the merc drops its Ward and runs from the source for 2.5 seconds. The bearer never gets it, since the Writ drives it on.
 - **Elites**: any monster can spawn as an elite. An elite has +150% health, +30% attack and +25 armor, and is drawn a quarter larger.
 - **Casters and healers**: a new target priority. It picks monsters that have skills of their own, such as the Cantor.

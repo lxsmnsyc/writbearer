@@ -13,6 +13,8 @@ export type Kind =
   | 'penitent'
   | 'cantor'
   | 'hollowed'
+  | 'husk'
+  | 'mite'
   | 'crawler';
 
 // Where in each drawn attack (0 to 1) the blow lands or the arrow leaves.
@@ -26,6 +28,8 @@ const KINDS = new Set<string>([
   'penitent',
   'cantor',
   'hollowed',
+  'husk',
+  'mite',
   'crawler',
 ]);
 
@@ -42,6 +46,8 @@ export const HIT_FRACTION: Record<Kind, number> = {
   penitent: 0.6,
   cantor: 0.8,
   hollowed: 0.5,
+  husk: 0.6,
+  mite: 0.5,
   crawler: 0.5,
 };
 
@@ -117,6 +123,22 @@ export const look = { zoom: 1 };
 // Small fixed offsets per corner, so cut edges look hand cut.
 const CUT = [0.3, -0.4, 0.5, -0.2, 0.1, -0.5, 0.4, -0.3, 0.2, -0.1];
 
+// How big each figure is drawn. The bearer is small; a mite is a crawler not
+// yet grown.
+const KIND_SIZE: Record<Kind, number> = {
+  bearer: 0.82,
+  vanguard: 1,
+  ranger: 1,
+  cleric: 1,
+  hollowSoldier: 1,
+  penitent: 1,
+  cantor: 1,
+  hollowed: 1,
+  husk: 0.95,
+  mite: 0.55,
+  crawler: 1,
+};
+
 // ---------- projection ----------
 export type Iso = (x: number, z: number) => Pt;
 
@@ -125,7 +147,7 @@ interface Projected extends Pt {
 }
 
 function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
-  const size = (u.kind === 'bearer' ? 0.82 : 1) * (u.elite ? 1.25 : 1);
+  const size = KIND_SIZE[u.kind] * (u.elite ? 1.25 : 1);
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
   const fallen = topple(u);
@@ -147,7 +169,7 @@ function topple(u: RigUnit): (p: V3) => V3 {
     return (p) => p;
   }
   const t = ease(clamp01(u.fall));
-  if (u.kind === 'crawler') {
+  if (u.kind === 'crawler' || u.kind === 'mite') {
     return (p) => v(p[0], p[1] * (1 - t * 0.3), p[2] * (1 - t * 0.7));
   }
   // The knees give first, then the body goes over.
@@ -227,6 +249,7 @@ function skeleton(u: RigUnit, time: number): Skeleton {
     roar +
     (u.kind === 'hollowSoldier' ? 4 : 0) +
     (u.kind === 'hollowed' ? 30 : 0) +
+    (u.kind === 'husk' ? 12 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
 
   const pelvis = v(0, 0, 46 + bob);
@@ -543,6 +566,19 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'R', hand, v(-1, 1, 0));
     g.staff = { hand: sk.handR };
   }
+  if (u.kind === 'husk') {
+    // Arms hang forward, reaching, as the drowned dead shamble. The blow
+    // is both arms brought down at once.
+    for (const side of ['L', 'R'] as const) {
+      const k = side === 'L' ? -1 : 1;
+      let hand = add(sk.chest, v(32, k * 6, 2 + Math.sin(time * 1.3 + k) * 2));
+      if (a >= 0) {
+        const ph = phases(a, 0.5, 0.65);
+        hand = handPath(ph, hand, add(sk.head, v(8, k * 8, 6)), add(sk.chest, v(26, k * 5, -26)));
+      }
+      reach(sk, side, hand, v(-1, k, 0));
+    }
+  }
   if (u.kind === 'hollowed') {
     // Long arms hang forward, claws out. The rake comes down from above.
     for (const side of ['L', 'R'] as const) {
@@ -583,15 +619,15 @@ export function drawUnit(
   ctx.ellipse(
     base.x,
     base.y,
-    (u.kind === 'crawler' ? 10 : 7) * look.zoom,
-    (u.kind === 'crawler' ? 4 : 2.5) * look.zoom,
+    (u.kind === 'crawler' ? 10 : 7) * KIND_SIZE[u.kind] * look.zoom,
+    (u.kind === 'crawler' ? 4 : 2.5) * KIND_SIZE[u.kind] * look.zoom,
     0,
     0,
     Math.PI * 2,
   );
   ctx.fill();
 
-  if (u.kind === 'crawler') {
+  if (u.kind === 'crawler' || u.kind === 'mite') {
     drawCrawler(ctx, u, proj, C, flash);
     return;
   }
@@ -996,7 +1032,7 @@ export function emissives(
   const out: { p: Pt; color: 'teal' | 'blood' | 'flame' }[] = [];
   // Eyes only show when the face turns toward the camera.
   const toCamera = Math.cos(u.angle) + Math.sin(u.angle) > -0.4;
-  if (u.kind === 'crawler') {
+  if (u.kind === 'crawler' || u.kind === 'mite') {
     const lunge = u.atk >= 0 ? Math.sin(clamp01(u.atk) * Math.PI) * 12 : 0;
     for (const f of [-10, 0, 10]) {
       out.push({ p: proj(v(f, 0, 36)), color: 'teal' });
@@ -1017,11 +1053,12 @@ export function emissives(
     }
     return out;
   }
-  const eyed = ['hollowSoldier', 'penitent', 'cantor', 'hollowed'];
+  const eyed = ['hollowSoldier', 'penitent', 'cantor', 'hollowed', 'husk'];
   if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
     // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
-    const color = u.kind === 'hollowSoldier' || u.kind === 'hollowed' ? 'teal' : 'blood';
+    const color =
+      u.kind === 'hollowSoldier' || u.kind === 'hollowed' || u.kind === 'husk' ? 'teal' : 'blood';
     out.push({ p: proj(add(sk.head, v(3, -1.5, 1))), color });
     out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }

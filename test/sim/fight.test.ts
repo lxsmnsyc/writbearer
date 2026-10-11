@@ -56,7 +56,7 @@ describe('a fight with no rendering', () => {
   it('ends with the pack dead and the bearer alive when mercs guard it', () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       const f = fight(seed, PACK);
-      f.bearer.order = { x: 8, z: 0 };
+      f.bearer.order = { x: 10, z: 0 };
       f.sim.run(90, settled(f));
       expect(f.bearer.alive).toBe(true);
       expect(f.sim.living(Side.Monster)).toHaveLength(0);
@@ -65,7 +65,7 @@ describe('a fight with no rendering', () => {
 
   it('kills the bearer when nobody guards it, so the pack is a real threat', () => {
     const f = fight(1, PACK, { mercs: false });
-    f.bearer.order = { x: 8, z: 0 };
+    f.bearer.order = { x: 10, z: 0 };
     f.sim.run(90, settled(f));
     expect(f.bearer.alive).toBe(false);
   });
@@ -74,7 +74,7 @@ describe('a fight with no rendering', () => {
     const f = fight(1, PACK);
     f.sim.run(2);
     expect(f.monsters.every((m) => !m.aware)).toBe(true);
-    f.bearer.order = { x: 8, z: 0 };
+    f.bearer.order = { x: 10, z: 0 };
     f.sim.run(4);
     expect(f.monsters.every((m) => m.aware)).toBe(true);
   });
@@ -82,7 +82,7 @@ describe('a fight with no rendering', () => {
   it('plays out the same way for the same seed', () => {
     const replay = (): string => {
       const f = fight(42, PACK);
-      f.bearer.order = { x: 8, z: 0 };
+      f.bearer.order = { x: 10, z: 0 };
       f.sim.run(90, settled(f));
       return [...f.sim.units]
         .map((u) => `${u.name}:${u.hp}:${u.x.toFixed(3)},${u.z.toFixed(3)}`)

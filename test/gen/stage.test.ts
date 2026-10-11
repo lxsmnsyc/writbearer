@@ -80,14 +80,24 @@ describe('stage generation', () => {
     }
   });
 
-  it('places a Church site, a lair with an elite, and keeps packs off the entrance', () => {
+  it('places a Church site, a lair with an elite deeper in, and keeps packs off the entrance', () => {
     for (const seed of SEEDS) {
-      const s = stageFor(seed);
+      const s = stageFor(seed, 4);
       expect(s.props.some((p) => p.kind === 'altar')).toBe(true);
       expect(s.packs.some((p) => p.kinds.includes('cantor'))).toBe(true);
       expect(s.packs.some((p) => p.elite >= 0)).toBe(true);
       for (const p of s.packs) {
         expect(Math.hypot(p.x - s.entrance.x, p.z - s.entrance.z)).toBeGreaterThan(10);
+      }
+    }
+  });
+
+  it('fields only weak monsters on the first stages', () => {
+    for (const seed of SEEDS) {
+      for (const index of [0, 1]) {
+        const kinds = stageFor(seed, index).packs.flatMap((p) => p.kinds);
+        expect(kinds.every((k) => ['mite', 'husk', 'penitent'].includes(k))).toBe(true);
+        expect(stageFor(seed, index).packs.every((p) => p.elite < 0)).toBe(true);
       }
     }
   });

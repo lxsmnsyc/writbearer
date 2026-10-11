@@ -40,9 +40,19 @@ export interface Kit {
   moveSpeed: number;
   // How far the unit notices enemies
   sight: number;
+  // How far a monster notices the bearer and its lantern. Mercs, unlit, are
+  // noticed from three quarters of it.
+  notice: number;
 }
 
-const DEFAULT_KIT: Kit = { reach: 1, interval: 1, hitAt: 0.5, moveSpeed: 2.5, sight: 7 };
+const DEFAULT_KIT: Kit = {
+  reach: 1,
+  interval: 1,
+  hitAt: 0.5,
+  moveSpeed: 2.5,
+  sight: 7,
+  notice: 5,
+};
 
 export interface UnitSpec {
   // The content entry the unit was made from, such as 'vanguard'

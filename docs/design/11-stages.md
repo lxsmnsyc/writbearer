@@ -91,7 +91,9 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
   - A cache, a chest for now.
 - **Terrain from noise:** pillars where the noise runs high, rubble where it runs low, plus pikes and gibbets along the way. Every place keeps clear ground around it.
 - **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.
-- **Packs:** a threat budget of 24, plus 5 per stage deeper. Each monster costs 2 or 3, and an elite costs 6 more. Packs of 2 or 3 come from one faction: Blight crawlers, the Old King's dead, Penitents with the Hollowed, or the Hollowed alone. No pack stands within 13 tiles of the entrance.
+- **Packs:** a threat budget of 9, plus 5 per stage deeper. Mites and Husks cost 1, other monsters 2 or 3, and an elite 6 more. Monster level is 2, plus 1 per stage. No pack stands within 13 tiles of the entrance.
+- **Depth:** the first two stages field only Mites and Husks, with one Penitent at the Church's site and Husks in the lair. Crawlers and Hollow soldiers join from the third stage, Penitent packs from the fifth, elites and the Cantor from the fifth, and the Hollowed from the sixth.
+- **Balance check:** a test plays the first stages with a lone merc of each job. The bearer walks to the stair, steps behind its merc when monsters near it wake, and drinks when hurt. Every job must clear the first two stages on 11 of 12 seeds. Measured on 40 seeds, all three jobs clear four stages alone every time. From the fifth stage on, a lone merc starts to fall: by the eighth, 38% to 60% of runs survive, so a second merc and gear matter.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
 - **Descending:** when the bearer reaches the stair, the next stage is built. The party, living and dead, arrives at its entrance. The old stage's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
 

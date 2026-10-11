@@ -768,6 +768,9 @@ function barHeight(u: Unit): number {
   if (u.kind === 'crawler') {
     return 16 * elite;
   }
+  if (u.kind === 'mite') {
+    return 10 * elite;
+  }
   if (u.kind === 'hollowed') {
     return 38 * elite;
   }
