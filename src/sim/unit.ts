@@ -9,6 +9,7 @@ import {
   type UnitDamageEvent,
   type UnitHealEvent,
 } from './events';
+import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
 import type { Spot } from './nav';
 import type Sim from './sim';
 import type { Cast, Skill } from './skill';
@@ -98,7 +99,10 @@ export default class Unit {
   readonly job: Job;
   level: number;
   base: BaseStats;
+  // The bare-handed weapon, used when nothing is in the weapon slot
   weapon: Weapon;
+  // Worn items, by slot
+  readonly equipment = new Map<EquipSlot, Item>();
   race: Race;
   rank: Rank;
   element: Element;
@@ -130,6 +134,8 @@ export default class Unit {
   aware = false;
   toggles: Toggles | undefined;
   hunt: Hunt | undefined;
+  // Move speed multiplier from what the unit carries, such as the bearer's pack
+  burden = 1;
   // Where the bearer was told to walk.
   order: { x: number; z: number } | null = null;
   // The path being followed around obstacles, and the goal it was found for
@@ -236,9 +242,9 @@ export default class Unit {
     return null;
   }
 
-  /** Move speed after slows. */
+  /** Move speed after slows and the load carried. */
   get speed(): number {
-    let speed = this.kit.moveSpeed;
+    let speed = this.kit.moveSpeed * this.burden;
     for (const s of this.statuses.values()) {
       speed *= s.def.slow ?? 1;
     }
@@ -480,16 +486,36 @@ export default class Unit {
   }
 
   /**
+   * Puts an item on, and returns what it replaced. The stats follow at once.
+   */
+  equip(slot: EquipSlot, item: Item): Item | null {
+    const before = this.equipment.get(slot) ?? null;
+    this.equipment.set(slot, item);
+    this.recalc();
+    return before;
+  }
+
+  /** Takes an item off, and returns it. */
+  unequip(slot: EquipSlot): Item | null {
+    const item = this.equipment.get(slot) ?? null;
+    this.equipment.delete(slot);
+    this.recalc();
+    return item;
+  }
+
+  /**
    * Computes the stats again from their inputs. Call it after any input
    * changes: level, raised stats, gear or a bonus starting or ending.
    */
   recalc(): void {
+    const held = this.equipment.get(EquipSlot.Weapon);
+    const fromItems = [...this.equipment.values()].flatMap(itemModifiers);
     this.stats = deriveStats({
       job: this.job,
       level: this.level,
       base: this.base,
-      weapon: this.weapon,
-      modifiers: this.modifiers,
+      weapon: (held && weaponOf(held)) ?? this.weapon,
+      modifiers: [...this.modifiers, ...fromItems],
     });
     this.hp = Math.min(this.hp, this.derived.maxHp);
     this.mana = Math.min(this.mana, this.derived.maxMana);

@@ -1,6 +1,7 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game from '../game/game';
 import type Unit from '../sim/unit';
+import Inventory from './inventory';
 import MercPanel from './merc-panel';
 
 interface PartyEntry {
@@ -20,6 +21,9 @@ export default function App(): JSX.Element {
   const [game, setGame] = createSignal<Game | null>(null);
   const [selected, setSelected] = createSignal<Unit | null>(null);
   const [party, setParty] = createSignal<PartyEntry[]>([]);
+  const [inventory, setInventory] = createSignal(false);
+  // Bumped whenever the pack or gear changes, so panels read it again.
+  const [items, setItems] = createSignal(0);
 
   onMount(() => {
     if (!canvas) {
@@ -28,6 +32,12 @@ export default function App(): JSX.Element {
     const g = new Game(canvas, {
       onSelect: (unit) => {
         setSelected(unit);
+      },
+      onInventory: (open) => {
+        setInventory(open);
+      },
+      onItems: () => {
+        setItems((v) => v + 1);
       },
     });
     g.start();
@@ -113,6 +123,17 @@ export default function App(): JSX.Element {
             />
           ) : null;
         }}
+      </Show>
+      <Show when={inventory() && game()} keyed>
+        {(g) => (
+          <Inventory
+            game={g}
+            version={items()}
+            onClose={() => {
+              g.openInventory(false);
+            }}
+          />
+        )}
       </Show>
     </main>
   );

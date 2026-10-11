@@ -137,3 +137,24 @@
 [data-ui='paper'] [data-part='card'] * {
   color: #1d1914;
 }
+
+/* Item names in the quality's color, as on the floor labels. */
+[data-quality='0'] {
+  color: #6a6a6a;
+}
+
+[data-quality='3'] {
+  color: #2f6a60;
+}
+
+[data-quality='4'] {
+  color: #8a6420;
+}
+
+[data-ui='paper'] [data-quality='3'] {
+  color: #2f6a60;
+}
+
+[data-ui='paper'] [data-quality='4'] {
+  color: #7a5a22;
+}

@@ -61,6 +61,20 @@ Equipment weight:
 - It is emptied when the run ends. Nothing carries over to the next run.
 - Opening it only at phase starts makes the player decide what to carry into the phase and what to leave behind.
 
+## In the game so far
+
+- **Bases:** 16 bases across the 8 slots, in `src/content/items.ts`. Each has an item level, weight, socket cap, jobs that can use it, and ranges for damage, armor and block. Some fit jobs not in the game yet, such as the Ash Staff, since about half of all drops should fit someone in the party.
+- **Qualities:** Inferior, Normal, Superior, Magic and Rare, with the affix and socket limits from the table below. Inferior bases roll 20% lower, Superior 15% higher.
+- **Affixes:** 15 prefixes and suffixes in tiers that share a group, gated by item level. Each item stores the bonuses its affixes rolled.
+- **Starter gear:** mercs arrive in plain middle-roll gear: the Vanguard with an Arming Sword, a Tower Shield and a Mail Hauberk, the Ranger with a Hunting Bow and a Leather Jerkin. Their old built-in stats became this gear.
+- **Drops:** from the `loot` stream. A normal monster drops equipment 30% of the time. An elite always drops 2 pieces, a boss 4. Gold drops 40% of the time. Elites and bosses roll better qualities.
+- **The cache:** the chest on each stage opens when the bearer reaches it, for 3 pieces rolled as an elite's drop, plus gold.
+- **Picking up:** click an item to walk over and take it. Gold is taken by walking over it. Labels show each item's name in its quality's color: grey for Crude, white for plain and Fine, teal for Magic, gold for Rare. What is left on a stage is lost when the party descends.
+- **The pack:** 30 slots and 400 weight. Past half the weight, the bearer walks 25% slower. Past the limit, nothing more goes in.
+- **Handing gear over:** press I. Click a pack item to hand it to the chosen merc, and a worn item to take it back. In a fight, meaning an awake monster within 8 tiles, the bearer must stand within 2 tiles of the merc. A merc's figure shows its weapon and shield.
+
+Not yet: identification, cursed items, uniques, sets, sockets with cards, refining, belts, requirements and the vault. Rares drop identified for now.
+
 ## Item data
 
 ### Item base

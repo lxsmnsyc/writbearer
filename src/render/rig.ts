@@ -66,6 +66,9 @@ export interface RigUnit {
   fall: number;
   // Elites are drawn a quarter larger.
   elite?: boolean;
+  // What a merc wears that shows: its weapon and whether it has a shield.
+  // Absent for monsters, whose gear never changes.
+  held?: { weapon: 'sword' | 'mace' | 'bow' | 'dagger' | 'staff' | null; shield: boolean };
   // Time since the last hit taken, for the flinch.
   hurt: number;
   // True while the unit has an enemy to face. Rangers raise the bow.
@@ -412,7 +415,7 @@ interface Gear {
   bowGrip?: V3;
   stringHand?: V3;
   drawn?: number;
-  sword?: { hand: V3; dir: V3 };
+  sword?: { hand: V3; dir: V3; mace?: boolean };
   spear?: { back: V3; tip: V3 };
   knife?: { hand: V3; dir: V3 };
   lantern?: V3;
@@ -426,13 +429,17 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
   const a = u.atk;
   if (u.kind === 'vanguard') {
     // The shield arm holds the shield out in front.
-    reach(sk, 'L', add(sk.chest, v(16, -6, -6)), v(-1, -1, 0));
-    g.shield = { center: add(sk.handL, v(5, 2, 0)) };
+    const shield = u.held?.shield ?? true;
+    reach(sk, 'L', add(sk.chest, shield ? v(16, -6, -6) : v(6, -10, -20)), v(-1, -1, 0));
+    const center = add(sk.handL, v(5, 2, 0));
+    if (shield) {
+      g.shield = { center };
+    }
     if (u.shout >= 0) {
       // Sword raised high, then brought down flat on the shield's face.
       const ph = phases(u.shout, 0.45, 0.5);
       const up = add(sk.head, v(-6, 10, 20));
-      const bang = add(g.shield.center, v(-2, 4, 6));
+      const bang = add(center, v(-2, 4, 6));
       reach(sk, 'R', handPath(ph, v(10, 14, 56), up, bang), v(-1, 1, 0));
     } else if (a >= 0) {
       const ph = phases(a, 0.5, 0.65);
@@ -441,10 +448,14 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
       const hand = handPath(ph, v(10, 14, 56), up, down);
       reach(sk, 'R', hand, v(-1, 1, 0));
     }
-    g.sword = { hand: sk.handR, dir: norm(sub(sk.handR, sk.elbowR)) };
+    const weapon = u.held ? u.held.weapon : 'sword';
+    if (weapon) {
+      g.sword = { hand: sk.handR, dir: norm(sub(sk.handR, sk.elbowR)), mace: weapon === 'mace' };
+    }
   }
   if (u.kind === 'ranger') {
-    const ready = u.alert || a >= 0;
+    // Without a bow it only raises its fists.
+    const ready = (u.alert || a >= 0) && (u.held?.weapon ?? 'bow') === 'bow';
     if (ready) {
       // Bow arm out toward the target; the string hand pulls back to the cheek.
       const grip = add(sk.shoulderL, v(30, 6, 0));
@@ -464,7 +475,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
       g.bowGrip = sk.handL;
       g.stringHand = sk.handR;
       g.drawn = a >= 0 && a < 0.7 ? pull : 0;
-    } else {
+    } else if ((u.held?.weapon ?? 'bow') === 'bow') {
       // Bow held low while walking.
       g.bowGrip = sk.handL;
     }
@@ -728,12 +739,19 @@ export function drawUnit(
     });
   }
   if (gear.sword) {
-    const a = proj(gear.sword.hand);
-    const b = proj(add(gear.sword.hand, scale(gear.sword.dir, 30)));
+    const { hand, dir, mace } = gear.sword;
+    const a = proj(hand);
+    const b = proj(add(hand, scale(dir, mace ? 24 : 30)));
     parts.push({
       depth: avg(a, b) + 0.0003,
       draw: (c) => {
-        fill(c, taper(a, b, 0.9, 0.4), C.bone, ink);
+        if (mace) {
+          // A wooden haft and a flanged iron head.
+          fill(c, taper(a, b, 0.6, 0.6), C.wood, ink);
+          fill(c, hexAt(b, 3), C.bone, ink);
+        } else {
+          fill(c, taper(a, b, 0.9, 0.4), C.bone, ink);
+        }
       },
     });
   }

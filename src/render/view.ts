@@ -1,5 +1,6 @@
 import type Sim from '../sim/sim';
-import { Rank } from '../sim/types';
+import { EquipSlot, ItemType } from '../sim/item';
+import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { HIT_FRACTION, type Kind, type RigUnit, isKind } from './rig';
 
@@ -137,6 +138,7 @@ export class Views {
       hurt: v.hurt,
       alert: u.alive && u.target?.alive === true,
       elite: u.rank !== Rank.Normal,
+      held: u.side === Side.Party ? held(u) : undefined,
     };
   }
 }
@@ -169,4 +171,12 @@ function progress(t: number, windup: number, recovery: number, at: number): numb
     return (t / windup) * at;
   }
   return Math.min(1, at + ((t - windup) / recovery) * (1 - at));
+}
+
+// What a merc's figure shows of its gear.
+function held(u: Unit): NonNullable<RigUnit['held']> {
+  return {
+    weapon: u.equipment.get(EquipSlot.Weapon)?.base.weapon ?? null,
+    shield: u.equipment.get(EquipSlot.Offhand)?.base.type === ItemType.Shield,
+  };
 }

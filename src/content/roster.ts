@@ -4,6 +4,9 @@ import type { Skill } from '../sim/skill';
 import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
 import { Element, Race, Range, Rank, Side } from '../sim/types';
 import Unit, { type Kit } from '../sim/unit';
+import { plainItem } from '../gen/loot';
+import { slotFor } from '../sim/item';
+import { BASE_BY_ID, STARTER_GEAR } from './items';
 import { CHALLENGE, HYMN, PIERCING_ARROW, SHIELD_BASH } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
@@ -66,21 +69,17 @@ export const MERCS = {
   vanguard: {
     job: job('Vanguard', 300, 30, 40, Range.Melee),
     base: stats(14, 5, 16, 1, 8, 6),
-    weapon: { min: 28, max: 36, matk: 0 },
+    // Bare hands. Its sword, shield and mail come as starter gear.
+    weapon: { min: 6, max: 10, matk: 0 },
     kit: { reach: 1.1, interval: 1.0, hitAt: 0.55, moveSpeed: 2.6 },
-    modifiers: [
-      { stat: 'armor', add: 70 },
-      { stat: 'blockChance', add: 35 },
-      { stat: 'blockAmount', add: 60 },
-    ],
     skills: [CHALLENGE, SHIELD_BASH],
   },
   ranger: {
     job: job('Ranger', 180, 18, 60, Range.Ranged),
     base: stats(5, 10, 8, 3, 18, 6),
-    weapon: { min: 24, max: 32, matk: 0 },
+    // Bare hands. Its bow and jerkin come as starter gear.
+    weapon: { min: 4, max: 8, matk: 0 },
     kit: { reach: 5.5, interval: 1.1, hitAt: 0.7, moveSpeed: 2.7 },
-    modifiers: [{ stat: 'armor', add: 20 }],
     skills: [PIERCING_ARROW],
   },
 } satisfies Record<string, Template>;
@@ -198,7 +197,18 @@ export function spawnMerc(
   z: number,
   toggles?: Toggles,
 ): Unit {
-  return spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles);
+  const unit = spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles);
+  for (const id of STARTER_GEAR[kind] ?? []) {
+    const base = BASE_BY_ID.get(id);
+    const item = base && plainItem(base);
+    const slot = item && slotFor(item);
+    if (item && slot !== null && slot !== undefined) {
+      unit.equip(slot, item);
+    }
+  }
+  unit.hp = unit.derived.maxHp;
+  unit.mana = unit.derived.maxMana;
+  return unit;
 }
 
 // An elite has far more health, hits harder and is better armored.

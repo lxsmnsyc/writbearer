@@ -1,4 +1,7 @@
 import type { Prop, Stage } from '../gen/stage';
+import { itemName } from '../gen/loot';
+import type { GroundItem } from '../game/inventory';
+import { ItemType, Quality } from '../sim/item';
 import { BURN, CHILL, DREAD, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
 import type Sim from '../sim/sim';
 import { Rank, Side } from '../sim/types';
@@ -44,6 +47,22 @@ const BUILDUP_STATUS = new Map(
   [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON, DREAD].map((def) => [def.id, def]),
 );
 
+// The glint over an item on the floor, by quality. Plain items have none.
+const QUALITY_COLOR: Partial<Record<Quality, string>> = {
+  [Quality.Superior]: C.bone,
+  [Quality.Magic]: C.teal,
+  [Quality.Rare]: C.gold,
+};
+
+/** Label colors by quality: grey for crude, white for plain, teal for magic, gold for rare. */
+export const LABEL_COLOR: Record<Quality, string> = {
+  [Quality.Inferior]: '#7a7a7a',
+  [Quality.Normal]: '#cfcac0',
+  [Quality.Superior]: '#ffffff',
+  [Quality.Magic]: '#5fd4c0',
+  [Quality.Rare]: '#d9a845',
+};
+
 export interface Frame {
   sim: Sim;
   stage: Stage;
@@ -55,6 +74,8 @@ export interface Frame {
   slain: number;
   // Which stage of the descent this is, from 1
   depth: number;
+  // Items lying on the floor
+  ground: GroundItem[];
   over: boolean;
   paused: boolean;
   // The merc whose orders are open
@@ -145,6 +166,7 @@ export default class Renderer {
     // Fog covers the floor only. Standing things are hidden by their own cell below.
     const fog = this.updateFog(f);
     fog.draw(ctx, iso, C.void, this.floorOnScreen());
+    this.drawGround(f, fog);
     f.effects.drawRings(ctx, iso);
 
     // A gold ring marks the merc whose orders are open.
@@ -228,6 +250,7 @@ export default class Renderer {
     quantize(ctx, W, H, 3);
 
     this.out.drawImage(this.small, 0, 0, W * SCALE, H * SCALE);
+    this.drawLabels(f, fog);
     this.drawHud(f);
   }
 
@@ -416,6 +439,65 @@ export default class Renderer {
         ctx.fillRect(b.x - 1 + lick, b.y - Math.round(19 * look.zoom), 2, 3);
       }
     }
+  }
+
+  // Items on the floor: a small shape for what it is, and a glint for its quality.
+  private drawGround(f: Frame, fog: Fog): void {
+    const { ctx } = this;
+    for (const g of f.ground) {
+      if (fog.visible(g.x, g.z) < 0.5) {
+        continue;
+      }
+      const b = this.iso(g.x, g.z);
+      const { type } = g.item.base;
+      if (type === ItemType.Gold) {
+        ctx.fillStyle = C.gold;
+        ctx.fillRect(b.x - 1, b.y, 2, 1);
+        ctx.fillRect(b.x + 1, b.y - 1, 1, 1);
+        continue;
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(b.x - 3, b.y, 7, 2);
+      ctx.fillStyle = type === ItemType.Weapon || type === ItemType.Accessory ? C.bone : C.cloth;
+      if (type === ItemType.Weapon) {
+        ctx.fillRect(b.x - 3, b.y - 1, 6, 1);
+        ctx.fillRect(b.x - 4, b.y - 2, 1, 3);
+      } else if (type === ItemType.Accessory) {
+        ctx.fillRect(b.x, b.y - 1, 1, 1);
+      } else {
+        ctx.fillRect(b.x - 2, b.y - 2, 5, 3);
+      }
+      const glint = QUALITY_COLOR[g.item.quality];
+      if (glint && Math.sin(f.time * 4 + g.item.uid) > 0) {
+        ctx.fillStyle = glint;
+        ctx.fillRect(b.x + 2, b.y - 3, 1, 1);
+      }
+    }
+  }
+
+  // Item names over the floor, as Diablo 2's labels, in the quality's color.
+  private drawLabels(f: Frame, fog: Fog): void {
+    const { out } = this;
+    out.font = '15px "IM Fell English", Georgia, serif';
+    out.textAlign = 'center';
+    for (const g of f.ground) {
+      if (fog.visible(g.x, g.z) < 0.5) {
+        continue;
+      }
+      const b = this.iso(g.x, g.z);
+      const x = b.x * SCALE;
+      const y = (b.y - 4) * SCALE;
+      const name = itemName(g.item);
+      const w = out.measureText(name).width + 8;
+      out.fillStyle = 'rgba(0,0,0,0.65)';
+      out.fillRect(x - w / 2, y - 14, w, 18);
+      out.fillStyle = LABEL_COLOR[g.item.quality];
+      if (g.item.base.type === ItemType.Gold) {
+        out.fillStyle = C.gold;
+      }
+      out.fillText(name, x, y);
+    }
+    out.textAlign = 'start';
   }
 
   // Marks for each status, in its element's color. They shine through the dark.

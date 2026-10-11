@@ -3,12 +3,15 @@ import { RunStreams, Stream, randomSeed } from '../core/seed';
 import { SimEvents } from '../sim/events';
 import { look } from '../render/rig';
 import Sim, { TICK } from '../sim/sim';
-import { DamageFlags, DamagePriority, Side } from '../sim/types';
+import { DamageFlags, DamagePriority, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
 import { type Stage, generateStage } from '../gen/stage';
+import type { EquipSlot, Item } from '../sim/item';
+import { rollDrops, rollGold, rollItem } from '../gen/loot';
+import { type GroundItem, Pack, equipFromPack, unequipToPack } from './inventory';
 import { carryParty, enterStage, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -16,6 +19,13 @@ import { carryParty, enterStage, spawnParty } from './stage';
 const MAX_FRAME = 0.25;
 // The bearer takes the stair down once this close to it.
 const EXIT_REACH = 1.2;
+// The bearer picks up an item, or opens a chest, from this close.
+const PICK_REACH = 0.8;
+const CHEST_REACH = 1.3;
+// A chest holds this many pieces of equipment, rolled as an elite's drop.
+const CHEST_ITEMS = 3;
+// How near a click must land to an item, in frame pixels, to pick it up.
+const PICK_PIXELS = 8;
 // Impact: hits at least this heavy freeze the world briefly and shake it.
 const HEAVY_HIT = 14;
 const HIT_STOP = 0.06;
@@ -24,6 +34,10 @@ const MAX_SHAKE = 3;
 export interface GameHooks {
   // Called when the player selects a merc, or clears the selection with null.
   onSelect?: (unit: Unit | null) => void;
+  // Called when the inventory opens or closes.
+  onInventory?: (open: boolean) => void;
+  // Called whenever the pack or anyone's gear changes.
+  onItems?: () => void;
 }
 
 /**
@@ -48,6 +62,12 @@ export default class Game {
   private frameId = 0;
   private last = 0;
   private selected: Unit | null = null;
+  private inventory = false;
+  // What the bearer carries, and what lies on the floor
+  pack = new Pack();
+  private ground: GroundItem[] = [];
+  // The item the bearer is walking over to pick up
+  private fetching: GroundItem | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
   private shake = 0;
@@ -62,7 +82,49 @@ export default class Game {
 
   /** The game pauses while a merc's orders are open. */
   get paused(): boolean {
-    return this.selected !== null;
+    return this.selected !== null || this.inventory;
+  }
+
+  /** Opens or closes the inventory. The game pauses while it is open. */
+  openInventory(open: boolean): void {
+    this.inventory = open;
+    this.keys.clear();
+    if (open) {
+      this.select(null);
+    }
+    this.hooks.onInventory?.(open);
+  }
+
+  get inventoryOpen(): boolean {
+    return this.inventory;
+  }
+
+  /** Hands an item from the pack to a merc. Returns why it failed, or null. */
+  equip(merc: Unit, uid: number): string | null {
+    const error = equipFromPack(this.sim, this.bearer, this.pack, merc, uid);
+    this.itemsChanged();
+    return error;
+  }
+
+  /** Takes an item off a merc into the pack. Returns why it failed, or null. */
+  unequip(merc: Unit, slot: EquipSlot): string | null {
+    const error = unequipToPack(this.sim, this.bearer, this.pack, merc, slot);
+    this.itemsChanged();
+    return error;
+  }
+
+  /** Drops an item from the pack at the bearer's feet. */
+  drop(uid: number): void {
+    const item = this.pack.take(uid);
+    if (item) {
+      this.ground.push({ item, x: this.bearer.x + 0.3, z: this.bearer.z + 0.3 });
+      this.itemsChanged();
+    }
+  }
+
+  private itemsChanged(): void {
+    this.bearer.burden = this.pack.speed;
+    this.hooks.onItems?.();
   }
 
   /** The mercs, alive or dead, in the order they joined. */
@@ -118,6 +180,10 @@ export default class Game {
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       if (event.source.side === Side.Monster) {
         this.slain++;
+        this.scatter(
+          rollDrops(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+          event.source,
+        );
       }
       if (event.source === this.bearer) {
         this.over = true;
@@ -125,8 +191,75 @@ export default class Game {
     });
     this.slain = 0;
     this.over = false;
+    this.pack = new Pack();
+    this.ground = [];
+    this.fetching = null;
+    this.inventory = false;
     this.select(null);
     this.acc = 0;
+    this.hooks.onInventory?.(false);
+    this.itemsChanged();
+  }
+
+  // Throws items onto the floor around a spot, as a monster falls or a chest opens.
+  private scatter(items: Item[], at: { x: number; z: number }): void {
+    const rng = this.streams.get(1, Stream.Loot);
+    for (const item of items) {
+      const a = rng.random() * Math.PI * 2;
+      const r = rng.range(0.3, 0.9);
+      this.ground.push({ item, x: at.x + Math.cos(a) * r, z: at.z + Math.sin(a) * r });
+    }
+  }
+
+  // Picks up what the bearer reached, and opens chests it stands at.
+  private loot(): void {
+    const b = this.bearer;
+    if (!b.alive) {
+      return;
+    }
+    // Gold is picked up by walking over it. Equipment needs a click.
+    // A copy, since picking up removes from the list.
+    for (const g of this.ground.slice()) {
+      const near = Math.hypot(g.x - b.x, g.z - b.z) <= PICK_REACH;
+      if (near && (g === this.fetching || g.item.base.id === 'gold')) {
+        this.pickUp(g);
+      }
+    }
+    for (const p of this.stage.props) {
+      if (p.kind === 'chest' && !p.open && b.distanceTo(p) <= CHEST_REACH) {
+        p.open = true;
+        const rng = this.streams.get(1, Stream.Loot);
+        const level = 4 + this.stageIndex;
+        const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
+        this.scatter([...items, rollGold(rng, level)], p);
+      }
+    }
+  }
+
+  private pickUp(g: GroundItem): void {
+    if (this.fetching === g) {
+      this.fetching = null;
+    }
+    if (this.pack.add(g.item)) {
+      this.ground.splice(this.ground.indexOf(g), 1);
+      this.itemsChanged();
+    }
+  }
+
+  // The item drawn under a point on the screen, if any.
+  private pickItem(clientX: number, clientY: number): GroundItem | null {
+    const s = this.renderer.toSmall(clientX, clientY);
+    let best: GroundItem | null = null;
+    let bestD = PICK_PIXELS;
+    for (const g of this.ground) {
+      const p = this.renderer.iso(g.x, g.z);
+      const d = Math.hypot(p.x - s.x, p.y - s.y);
+      if (d < bestD) {
+        best = g;
+        bestD = d;
+      }
+    }
+    return best;
   }
 
   private buildStage(): Stage {
@@ -147,6 +280,9 @@ export default class Game {
     this.stage = this.buildStage();
     carryParty(this.sim, this.stage);
     this.effects.clear();
+    // What was left on the old stage's floor is lost.
+    this.ground = [];
+    this.fetching = null;
     this.views.snap(this.sim);
     this.renderer.snapCamera();
     this.enter();
@@ -171,6 +307,11 @@ export default class Game {
     const key = e.key.toLowerCase();
     if (key === 'escape') {
       this.select(null);
+      this.openInventory(false);
+      return;
+    }
+    if (key === 'i' && !this.over) {
+      this.openInventory(!this.inventory);
       return;
     }
     // Number keys open a merc's orders.
@@ -199,6 +340,9 @@ export default class Game {
     }
     // Clicking a merc opens its orders. Clicking anywhere else closes them,
     // or walks the bearer there.
+    if (this.inventory) {
+      return;
+    }
     const merc = this.pickMerc(e.clientX, e.clientY);
     if (merc) {
       this.select(merc);
@@ -208,6 +352,14 @@ export default class Game {
       this.select(null);
       return;
     }
+    // Clicking an item walks the bearer over to pick it up.
+    const item = this.pickItem(e.clientX, e.clientY);
+    if (item) {
+      this.fetching = item;
+      this.bearer.order = { x: item.x, z: item.z };
+      return;
+    }
+    this.fetching = null;
     const spot = this.renderer.unproject(e.clientX, e.clientY);
     this.bearer.order = {
       x: Math.min(this.stage.width - 0.5, Math.max(0.5, spot.x)),
@@ -234,6 +386,7 @@ export default class Game {
     if (mx === 0 && my === 0) {
       return;
     }
+    this.fetching = null;
     const wx = mx + my;
     const wz = my - mx;
     const l = Math.hypot(wx, wz);
@@ -264,6 +417,7 @@ export default class Game {
         this.steer();
         this.sim.tick(TICK);
         this.views.afterTick(this.sim);
+        this.loot();
         this.acc -= TICK;
         if (this.bearer.alive && this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH) {
           this.descend();
@@ -287,6 +441,7 @@ export default class Game {
       time: this.time,
       slain: this.slain,
       depth: this.stageIndex + 1,
+      ground: this.ground,
       over: this.over,
       paused: this.paused,
       selected: this.selected,
