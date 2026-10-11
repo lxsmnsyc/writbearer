@@ -1,4 +1,5 @@
-import { spawnBroodMother } from '../content/brood';
+import { spawnBoss } from '../content/bosses';
+import { layerIndexOf } from '../gen/layers';
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
 import { GATE_SOLID, type Stage, monsterLevel, solidsOf } from '../gen/stage';
 import type Sim from '../sim/sim';
@@ -31,7 +32,13 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
   }
   // A boss stands a level above the layer's last packs would.
   return stage.boss
-    ? spawnBroodMother(sim, monsterLevel(stage.index) + 1, stage.boss.x, stage.boss.z)
+    ? spawnBoss(
+        sim,
+        layerIndexOf(stage.index),
+        monsterLevel(stage.index) + 1,
+        stage.boss.x,
+        stage.boss.z,
+      )
     : null;
 }
 

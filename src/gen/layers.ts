@@ -28,6 +28,10 @@ export const AREAS_PER_LAYER = 8;
 export const layerOf = (index: number): Layer =>
   LAYERS[Math.min(LAYERS.length - 1, Math.floor(index / AREAS_PER_LAYER))];
 
+/** The index of the layer an area is in: 0 for the Marches. */
+export const layerIndexOf = (index: number): number =>
+  Math.min(LAYERS.length - 1, Math.floor(index / AREAS_PER_LAYER));
+
 /** An area's number within its layer, from 1. */
 export const areaOf = (index: number): number => (index % AREAS_PER_LAYER) + 1;
 

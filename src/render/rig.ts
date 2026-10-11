@@ -82,6 +82,8 @@ export interface RigUnit {
   fall: number;
   // Elites are drawn a quarter larger.
   elite?: boolean;
+  // Drawn at this size instead of its kind's, as a boss is
+  size?: number;
   // What a merc wears that shows: its weapon and whether it has a shield.
   // Absent for monsters, whose gear never changes.
   held?: { weapon: 'sword' | 'mace' | 'bow' | 'dagger' | 'staff' | null; shield: boolean };
@@ -147,6 +149,9 @@ const KIND_SIZE: Record<Kind, number> = {
   broodMother: 2.1,
 };
 
+// How big a figure is drawn: its own size if it has one, else its kind's.
+const sizeOf = (u: RigUnit): number => u.size ?? KIND_SIZE[u.kind] * (u.elite ? 1.25 : 1);
+
 // ---------- projection ----------
 export type Iso = (x: number, z: number) => Pt;
 
@@ -155,7 +160,7 @@ interface Projected extends Pt {
 }
 
 function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
-  const size = KIND_SIZE[u.kind] * (u.elite ? 1.25 : 1);
+  const size = sizeOf(u);
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
   const fallen = topple(u);
@@ -627,8 +632,8 @@ export function drawUnit(
   ctx.ellipse(
     base.x,
     base.y,
-    (isCrawler(u.kind) && u.kind !== 'mite' ? 10 : 7) * KIND_SIZE[u.kind] * look.zoom,
-    (isCrawler(u.kind) && u.kind !== 'mite' ? 4 : 2.5) * KIND_SIZE[u.kind] * look.zoom,
+    (isCrawler(u.kind) && u.kind !== 'mite' ? 10 : 7) * sizeOf(u) * look.zoom,
+    (isCrawler(u.kind) && u.kind !== 'mite' ? 4 : 2.5) * sizeOf(u) * look.zoom,
     0,
     0,
     Math.PI * 2,

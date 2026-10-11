@@ -34,6 +34,13 @@ export interface View {
   dead: number;
 }
 
+// Bosses drawn as a larger figure of their kind.
+const FIGURE: Partial<Record<string, { kind: Kind; size: number }>> = {
+  gatekeeper: { kind: 'hollowSoldier', size: 1.8 },
+  abbess: { kind: 'cantor', size: 1.5 },
+  hollowedSaint: { kind: 'hollowed', size: 1.6 },
+};
+
 export class Views {
   private readonly views = new Map<Unit, View>();
 
@@ -121,12 +128,14 @@ export class Views {
   /** The rig's view of a unit, `alpha` of the way from the last tick to this one. */
   rig(u: Unit, alpha: number): RigUnit {
     const v = this.get(u);
-    const { kind } = u;
+    const figure = FIGURE[u.kind];
+    const kind = figure?.kind ?? u.kind;
     if (!isKind(kind)) {
       throw new Error(`No figure for unit kind "${kind}"`);
     }
     return {
       kind,
+      size: figure?.size,
       x: v.px + (v.x - v.px) * alpha + v.kx,
       z: v.pz + (v.z - v.pz) * alpha + v.kz,
       angle: v.angle,

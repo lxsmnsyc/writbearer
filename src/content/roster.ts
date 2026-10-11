@@ -185,6 +185,44 @@ export const MONSTERS = {
     attackElement: Element.Venom,
     hunt: Hunt.Nearest,
   },
+  // The Rift Road's boss: the Old King's captain, holding the road down. Heavy
+  // armor, and a slow cleave across everything in front of him. His skills
+  // and his horn are set up in bosses.ts.
+  gatekeeper: {
+    job: job('The Gatekeeper', 2400, 200, 60, Range.Melee),
+    base: stats(18, 4, 18, 1, 10, 6),
+    weapon: { min: 26, max: 34, matk: 0 },
+    kit: { reach: 1.6, interval: 1.8, hitAt: 0.6, moveSpeed: 1.7, notice: 6 },
+    modifiers: [{ stat: 'armor', add: 70 }],
+    race: Race.Undead,
+    rank: Rank.Boss,
+    hunt: Hunt.Nearest,
+  },
+  // The Undercroft's boss: the head of the Penitents who keep the seal. She
+  // keeps back, calls her flock and sanctifies it.
+  abbess: {
+    job: job('The Abbess', 1000, 100, 240, Range.Melee),
+    base: stats(6, 8, 12, 18, 10, 18),
+    weapon: { min: 12, max: 18, matk: 40 },
+    kit: { reach: 1.0, interval: 1.4, hitAt: 0.6, moveSpeed: 2.0, notice: 6 },
+    race: Race.Human,
+    rank: Rank.Boss,
+    element: Element.Radiant,
+    hunt: Hunt.Support,
+  },
+  // The Sunken Crown's boss: a saint of the Church who listened too long.
+  // Dread gathers around her, and she leaps for the bearer.
+  hollowedSaint: {
+    job: job('The Hollowed Saint', 2000, 180, 0, Range.Melee),
+    base: stats(14, 16, 12, 1, 12, 1),
+    weapon: { min: 16, max: 22, matk: 0 },
+    kit: { reach: 1.2, interval: 1.1, hitAt: 0.45, moveSpeed: 2.8, notice: 6 },
+    race: Race.Human,
+    rank: Rank.Boss,
+    element: Element.Occult,
+    attackElement: Element.Occult,
+    hunt: Hunt.Assassin,
+  },
 } satisfies Record<string, Template>;
 
 export type MercKind = keyof typeof MERCS;

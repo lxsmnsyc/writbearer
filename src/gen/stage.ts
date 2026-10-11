@@ -2,7 +2,7 @@ import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Spot } from '../sim/nav';
 import type { NodeKind } from './graph';
-import { layerOf, leadsDown } from './layers';
+import { AREAS_PER_LAYER, layerIndexOf, layerOf, leadsDown } from './layers';
 
 export type PropKind =
   | 'pillar'
@@ -160,8 +160,11 @@ export const THREAT: Record<MonsterKind, number> = {
   hollowSoldier: 3,
   hollowed: 3,
   cantor: 3,
-  // Never rolled into a pack. She waits in her arena.
+  // Bosses are never rolled into a pack. They wait in their arenas.
   broodMother: 20,
+  gatekeeper: 20,
+  abbess: 20,
+  hollowedSaint: 20,
 };
 const ELITE_THREAT = 6;
 
@@ -519,7 +522,7 @@ function generateArena(rng: RNG, index: number): Stage {
   for (const t of [0.45, 0.75]) {
     const x = entrance.x + (gate.x - entrance.x) * t;
     const z = entrance.z + (t < 0.6 ? -1 : 1) * rng.range(3, 6);
-    stage.packs.push({ kinds: ['mite', 'mite', 'mite'], x, z, elite: -1 });
+    stage.packs.push({ kinds: approachPack(rng, index), x, z, elite: -1 });
   }
   ensureReachable(stage, [gate]);
   return stage;
@@ -571,18 +574,48 @@ function distanceToSegment(p: Spot, a: Spot, b: Spot): number {
 
 // The packs a stage can field, by how deep it is: weak things near the
 // surface, the Church's mad and the Old King's guard further down.
-const FACTIONS: { from: number; kinds: MonsterKind[] }[] = [
-  { from: 0, kinds: ['mite', 'mite', 'mite'] },
-  { from: 0, kinds: ['husk', 'husk', 'husk'] },
-  { from: 0, kinds: ['husk', 'mite', 'mite'] },
-  { from: 2, kinds: ['crawler', 'mite', 'mite'] },
-  { from: 2, kinds: ['hollowSoldier', 'husk', 'husk'] },
-  { from: 4, kinds: ['penitent', 'penitent', 'husk'] },
-  { from: 4, kinds: ['crawler', 'crawler', 'crawler'] },
-  { from: 4, kinds: ['hollowSoldier', 'hollowSoldier'] },
-  { from: 5, kinds: ['penitent', 'penitent', 'hollowed'] },
-  { from: 6, kinds: ['hollowed', 'hollowed'] },
+// Each layer's packs, as the lore lays the Hollow out. `from` is the first
+// area of the layer, from 0, a pack can appear in.
+const FACTIONS: { layer: number; from: number; kinds: MonsterKind[] }[] = [
+  // The Marches: the Blight at the rim, the drowned, and the Church's first keepers
+  { layer: 0, from: 0, kinds: ['mite', 'mite', 'mite'] },
+  { layer: 0, from: 0, kinds: ['husk', 'husk', 'husk'] },
+  { layer: 0, from: 0, kinds: ['husk', 'mite', 'mite'] },
+  { layer: 0, from: 2, kinds: ['crawler', 'mite', 'mite'] },
+  { layer: 0, from: 2, kinds: ['hollowSoldier', 'husk', 'husk'] },
+  { layer: 0, from: 4, kinds: ['penitent', 'penitent', 'husk'] },
+  { layer: 0, from: 4, kinds: ['crawler', 'crawler', 'crawler'] },
+  { layer: 0, from: 4, kinds: ['hollowSoldier', 'hollowSoldier'] },
+  { layer: 0, from: 5, kinds: ['penitent', 'penitent', 'hollowed'] },
+  { layer: 0, from: 6, kinds: ['hollowed', 'hollowed'] },
+  // The Rift Road: the Old King's guard holds the road down
+  { layer: 1, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'husk'] },
+  { layer: 1, from: 0, kinds: ['hollowSoldier', 'husk', 'husk'] },
+  { layer: 1, from: 0, kinds: ['crawler', 'crawler', 'mite'] },
+  { layer: 1, from: 2, kinds: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'] },
+  { layer: 1, from: 4, kinds: ['hollowSoldier', 'hollowSoldier', 'penitent'] },
+  // The Drowned Undercroft: the Church's keepers and the drowned
+  { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'husk'] },
+  { layer: 2, from: 0, kinds: ['husk', 'husk', 'husk'] },
+  { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'cantor'] },
+  { layer: 2, from: 3, kinds: ['penitent', 'penitent', 'penitent'] },
+  { layer: 2, from: 4, kinds: ['penitent', 'hollowed'] },
+  // The Sunken Crown: the mad, and the last of the guard
+  { layer: 3, from: 0, kinds: ['hollowed', 'hollowed'] },
+  { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'] },
+  { layer: 3, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'cantor'] },
+  { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'hollowed'] },
 ];
+
+// A pack straying on the way to a boss's arena: the Brood Mother's mites in
+// the Marches, the layer's own packs below.
+function approachPack(rng: RNG, index: number): MonsterKind[] {
+  const layer = layerIndexOf(index);
+  if (layer === 0) {
+    return ['mite', 'mite', 'mite'];
+  }
+  return [...rng.pick(FACTIONS.filter((f) => f.layer === layer && f.from === 0)).kinds];
+}
 
 /** The level of a stage's monsters: low near the surface, one more each stage. */
 export const monsterLevel = (index: number): number => 2 + index;
@@ -596,8 +629,15 @@ function siteKeepers(index: number): MonsterKind[] {
   return index < 4 ? ['penitent', 'penitent'] : ['penitent', 'penitent', 'cantor'];
 }
 
-// What holds the lair, by depth.
+// What holds the lair, by depth, and below the Marches by layer.
 function lairPack(index: number): MonsterKind[] {
+  const layer = layerIndexOf(index);
+  if (layer === 2) {
+    return ['penitent', 'penitent', 'cantor'];
+  }
+  if (layer === 3) {
+    return ['hollowed', 'hollowed', 'hollowed'];
+  }
   if (index < 2) {
     return ['husk', 'husk', 'husk'];
   }
@@ -618,7 +658,10 @@ function placePacks(
 ): void {
   // An Elite area holds more, and its lair always has an elite.
   let budget = (9 + stage.index * 5) * (eliteArea ? ELITE_BUDGET : 1);
-  const pool = FACTIONS.filter((f) => f.from <= stage.index).map((f) => f.kinds);
+  const layer = layerIndexOf(stage.index);
+  const pool = FACTIONS.filter(
+    (f) => f.layer === layer && f.from <= stage.index % AREAS_PER_LAYER,
+  ).map((f) => f.kinds);
   const cost = (kinds: MonsterKind[], elite: number): number =>
     kinds.reduce((sum, k) => sum + THREAT[k], 0) + (elite >= 0 ? ELITE_THREAT : 0);
   const push = (pack: Pack): void => {

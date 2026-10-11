@@ -912,6 +912,9 @@ function onScreen(b: Pt): boolean {
   return b.x > -64 && b.x < W + 64 && b.y > -24 && b.y < H + 120;
 }
 
+// How much higher a boss's health bar floats than its kind's.
+const BOSS_BAR = 1.7;
+
 function barHeight(u: Unit): number {
   const elite = u.rank === Rank.Normal ? 1 : 1.25;
   if (u.kind === 'bearer') {
@@ -922,6 +925,10 @@ function barHeight(u: Unit): number {
   }
   if (u.kind === 'broodMother') {
     return 34;
+  }
+  // The other bosses are drawn as their kind, larger.
+  if (u.rank === Rank.Boss) {
+    return 44 * BOSS_BAR;
   }
   if (u.kind === 'mite') {
     return 10 * elite;

@@ -107,10 +107,14 @@ Enemies are designed to make the player change toggles and gear.
 | Crawler | Blight | Plain | Bites whoever is closest. Its bites build up Poison. | Venom |
 | Husk | The Old King's drowned townsfolk | Weak | Slow. Shambles at whoever is nearest. | Neutral |
 | Mite | Blight | Weak | A crawler not yet grown: quick, frail, in threes. | Venom |
+| The Gatekeeper | The Old King's guard | Boss | The Rift Road's boss, the Old King's captain. Very heavy armor. A slow cleave, 1.4 seconds of windup, for 220% damage to everything in front of him. At half health his horn calls three Hollow soldiers. | Neutral |
+| The Abbess | The Church | Boss, healer, summoner | The Undercroft's boss. Keeps back. Calls two Penitents at a time, up to four. Her long Litany, 2.6 seconds of windup, makes every Penitent within 5 tiles take no harm for 6 seconds. Not herself: the party can go past them to her. A stun or a Shield Bash breaks it off. | Radiant |
+| The Hollowed Saint | The Church, gone mad | Boss, assassin | The Sunken Crown's boss. Dread builds up each second in every merc within 3 tiles of her, 4.5 once she is wounded to half. Every 9 seconds she lunges from the dark to the bearer's side. | Occult |
 | Brood Mother | Blight | Boss, summoner | The Marches' boss. Slow. Lays 3 mites every 9 seconds, up to 8 of hers alive. At half health she frenzies: she and her brood go for the bearer, and she lays 5 at a time. Her brood dies with her. | Venom |
 
 - **Noticing:** a monster notices the lantern-bearer within its notice range, and an unlit merc within three quarters of it: Mites and Husks 4 tiles, Crawlers, Hollow soldiers and Cantors 5, Penitents 6, the Hollowed 7. The bearer sees 7, so most packs are seen before they wake. A monster that notices wakes every monster within 3 tiles.
 - **Dread** (Occult, resisted by WIL): the merc drops its Ward and runs from the source for 2.5 seconds. The bearer never gets it, since the Writ drives it on.
+- **Each boss tests a setup.** The Gatekeeper tests armor breaking and Fall back. The Abbess tests interrupts and going past her flock. The Saint tests Brave and Devout mercs, taunts and where the bearer stands. A test fights each with a party four levels below it: three mercs win at least 5 times in 6, two at most 2 times in 6.
 - **The Brood Mother** tests the target priorities. Two level 9 mercs on their default orders lose to her most of the time, as they fight the brood. Told to take "Casters and healers" first, they go past it to her and win most of the time. Three mercs win every time; one never does. A test holds these numbers.
 - **Elites**: any monster can spawn as an elite. An elite has +150% health, +30% attack and +25 armor, and is drawn a quarter larger.
 - **Casters and healers**: a new target priority. It picks monsters that have skills of their own, such as the Cantor.
