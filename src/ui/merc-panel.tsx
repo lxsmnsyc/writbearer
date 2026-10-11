@@ -10,6 +10,7 @@ import {
   skillMode,
 } from '../sim/ai';
 import { SkillMode } from '../sim/skill';
+import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
 import type Unit from '../sim/unit';
 import SkillTree from './skill-tree';
@@ -79,6 +80,9 @@ export default function MercPanel(props: Props): JSX.Element {
     const potions = props.unit.belt.filter((p) => p !== null).map((p) => itemName(p));
     return potions.length > 0 ? potions.join(', ') : 'nothing';
   };
+  // A Veteran follows one more target priority.
+  const maxPriorities = (): number =>
+    MAX_PRIORITIES + (props.unit.traits.includes('veteran') ? 1 : 0);
   const level = (): number => (version() >= 0 ? props.unit.level : 0);
   // Points left to spend on a tab: skill points on Skills, stat points on Stats.
   const points = (t: Tab): number => {
@@ -141,8 +145,14 @@ export default function MercPanel(props: Props): JSX.Element {
             {props.unit.name}
           </h2>
           <p data-part="note" class="text-xs text-zinc-500">
-            Level {level()} · {hp()} health · {mana()} mana
+            {props.unit.job.name === props.unit.name ? '' : `${props.unit.job.name} · `}Level{' '}
+            {level()} · {hp()} health · {mana()} mana
           </p>
+          <Show when={props.unit.traits.length > 0}>
+            <p data-part="note" class="text-xs text-zinc-500">
+              {props.unit.traits.map((id) => TRAIT_BY_ID.get(id)?.name ?? id).join(', ')}
+            </p>
+          </Show>
         </div>
         <button
           type="button"
@@ -269,7 +279,7 @@ export default function MercPanel(props: Props): JSX.Element {
               No priorities: the merc fights whatever is nearest.
             </p>
           </Show>
-          <Show when={toggles().priorities.length < MAX_PRIORITIES && unused().length > 0}>
+          <Show when={toggles().priorities.length < maxPriorities() && unused().length > 0}>
             <div class="mt-2 flex flex-wrap gap-1">
               <For each={unused()}>
                 {(p) => (

@@ -14,7 +14,7 @@ test('the stage draws without errors, and WASD walks the bearer', async ({ page 
       errors.push(m.text());
     }
   });
-  await page.goto('/');
+  await page.goto('/?party=vanguard,ranger');
   const canvas = page.locator('canvas');
   await expect(canvas).toHaveAttribute('data-bearer', /\d/);
   const start = await bearerAt(canvas);
@@ -31,7 +31,7 @@ test('the stage draws without errors, and WASD walks the bearer', async ({ page 
 });
 
 test('a click on the floor walks the bearer toward it', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?party=vanguard,ranger');
   const canvas = page.locator('canvas');
   await expect(canvas).toHaveAttribute('data-bearer', /\d/);
   const start = await bearerAt(canvas);

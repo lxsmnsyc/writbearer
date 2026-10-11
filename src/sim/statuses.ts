@@ -229,6 +229,19 @@ export const REFRESHING: StatusDef = {
   tick: restore('mana'),
 };
 
+/** Healing over time from a Cleric's Renew. Its power is health per pulse. */
+export const RENEWED: StatusDef = {
+  id: 'renewed',
+  name: 'Renewed',
+  duration: 6,
+  immunity: 0,
+  tick: (s, dt) => {
+    if (Math.floor(s.elapsed) !== Math.floor(s.elapsed - dt)) {
+      s.source.heal(s.unit, s.power);
+    }
+  },
+};
+
 /** The status each element builds up. Radiant and Spectral have none yet. */
 export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Fire]: BURN,

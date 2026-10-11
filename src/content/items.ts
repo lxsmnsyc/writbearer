@@ -10,6 +10,7 @@ const RANGER = ['Ranger'];
 // half of all drops fit someone in the party.
 const ARCANIST = ['Arcanist'];
 const DUELIST = ['Duelist'];
+const CLERIC = ['Cleric'];
 
 export const BASES: readonly ItemBase[] = [
   // Weapons
@@ -79,6 +80,30 @@ export const BASES: readonly ItemBase[] = [
     jobs: ARCANIST,
     damage: { min: { min: 10, max: 14 }, max: { min: 18, max: 24 } },
   },
+  {
+    id: 'pilgrimStaff',
+    name: 'Pilgrim Staff',
+    type: ItemType.Weapon,
+    weapon: 'staff',
+    level: 1,
+    weight: 35,
+    maxSockets: 3,
+    jobs: [...CLERIC, ...ARCANIST],
+    damage: { min: { min: 8, max: 12 }, max: { min: 14, max: 18 } },
+    matk: { min: 28, max: 36 },
+  },
+  {
+    id: 'censer',
+    name: 'Iron Censer',
+    type: ItemType.Weapon,
+    weapon: 'mace',
+    level: 4,
+    weight: 45,
+    maxSockets: 2,
+    jobs: CLERIC,
+    damage: { min: { min: 14, max: 18 }, max: { min: 20, max: 26 } },
+    matk: { min: 36, max: 46 },
+  },
   // Shields
   {
     id: 'towerShield',
@@ -140,6 +165,16 @@ export const BASES: readonly ItemBase[] = [
     maxSockets: 3,
     jobs: VANGUARD,
     armor: { min: 44, max: 56 },
+  },
+  {
+    id: 'vestments',
+    name: 'Grey Vestments',
+    type: ItemType.Body,
+    level: 1,
+    weight: 25,
+    maxSockets: 3,
+    jobs: CLERIC,
+    armor: { min: 10, max: 16 },
   },
   {
     id: 'shroud',
@@ -419,6 +454,10 @@ export const STARTER_BELT: Record<string, [string, number][]> = {
     ['healingDraught', 2],
     ['manaTincture', 1],
   ],
+  cleric: [
+    ['healingDraught', 1],
+    ['manaTincture', 2],
+  ],
 };
 export const STARTER_PACK: [string, number][] = [
   ['healingDraught', 4],
@@ -429,4 +468,5 @@ export const STARTER_PACK: [string, number][] = [
 export const STARTER_GEAR: Record<string, string[]> = {
   vanguard: ['armingSword', 'towerShield', 'hauberk'],
   ranger: ['huntingBow', 'jerkin'],
+  cleric: ['pilgrimStaff', 'vestments'],
 };

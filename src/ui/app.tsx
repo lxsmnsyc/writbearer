@@ -1,8 +1,11 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
-import Game from '../game/game';
+import Game, { type GameOptions } from '../game/game';
+import { HIREABLE } from '../content/recruits';
 import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
+import { RecruitDialog, StartPicker } from './offer';
+import type { Offer } from '../content/recruits';
 
 interface PartyEntry {
   unit: Unit;
@@ -19,12 +22,25 @@ interface PartyEntry {
 // How often the party bar reads health and mana from the game, in milliseconds.
 const PARTY_REFRESH = 200;
 
+// Run options from the address: `?seed=ASHEN` fixes the run, and
+// `?party=vanguard,ranger` skips the first pick, as browser tests do.
+function runOptions(): GameOptions {
+  const params = new URLSearchParams(location.search);
+  const party = params
+    .get('party')
+    ?.split(',')
+    .filter((k): k is Offer['kind'] => (HIREABLE as readonly string[]).includes(k));
+  return { seed: params.get('seed') ?? undefined, party };
+}
+
 export default function App(): JSX.Element {
   let canvas: HTMLCanvasElement | undefined;
   const [game, setGame] = createSignal<Game | null>(null);
   const [selected, setSelected] = createSignal<Unit | null>(null);
   const [party, setParty] = createSignal<PartyEntry[]>([]);
   const [inventory, setInventory] = createSignal(false);
+  const [offers, setOffers] = createSignal<Offer[] | null>(null);
+  const [recruit, setRecruit] = createSignal<Offer | null>(null);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -32,17 +48,27 @@ export default function App(): JSX.Element {
     if (!canvas) {
       return;
     }
-    const g = new Game(canvas, {
-      onSelect: (unit) => {
-        setSelected(unit);
+    const g = new Game(
+      canvas,
+      {
+        onSelect: (unit) => {
+          setSelected(unit);
+        },
+        onInventory: (open) => {
+          setInventory(open);
+        },
+        onChange: () => {
+          setItems((v) => v + 1);
+        },
+        onOffers: (o) => {
+          setOffers(o);
+        },
+        onRecruit: (o) => {
+          setRecruit(o);
+        },
       },
-      onInventory: (open) => {
-        setInventory(open);
-      },
-      onChange: () => {
-        setItems((v) => v + 1);
-      },
-    });
+      runOptions(),
+    );
     g.start();
     setGame(g);
     const timer = setInterval(() => {
@@ -92,7 +118,11 @@ export default function App(): JSX.Element {
             >
               <div class="flex justify-between text-zinc-300">
                 <span>
-                  {m.unit.name} <span class="text-zinc-500">{m.level}</span>
+                  {m.unit.name}{' '}
+                  <span class="text-zinc-500">
+                    {m.unit.name === m.unit.job.name ? '' : `${m.unit.job.name} `}
+                    {m.level}
+                  </span>
                   <Show when={m.points > 0}>
                     <span data-part="danger" class="text-amber-400" title="Points to spend">
                       {' '}
@@ -147,6 +177,30 @@ export default function App(): JSX.Element {
             version={items()}
             onClose={() => {
               g.openInventory(false);
+            }}
+          />
+        )}
+      </Show>
+      <Show when={offers() && game()} keyed>
+        {(g) => (
+          <StartPicker
+            seed={g.seed}
+            offers={offers() ?? []}
+            onPick={(index) => {
+              g.choose(index);
+            }}
+          />
+        )}
+      </Show>
+
+      <Show when={recruit() && game()} keyed>
+        {(g) => (
+          <RecruitDialog
+            offer={recruit()!}
+            gold={items() >= 0 ? g.pack.gold : 0}
+            onHire={() => g.hire()}
+            onLeave={() => {
+              g.endTalk();
             }}
           />
         )}

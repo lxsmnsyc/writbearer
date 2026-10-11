@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?party=vanguard,ranger');
   await expect(page.locator('canvas')).toHaveAttribute('data-bearer', /\d/);
 });
 

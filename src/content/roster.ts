@@ -8,6 +8,7 @@ import { plainItem, potionStack } from '../gen/loot';
 import { slotFor } from '../sim/item';
 import { BASE_BY_ID, STARTER_BELT, STARTER_GEAR } from './items';
 import { HYMN } from './skills';
+import { applyTraits } from './traits';
 
 // First numbers for the starting jobs and the first monsters. They are a
 // starting point for balance, not final values.
@@ -79,6 +80,15 @@ export const MERCS = {
     // Bare hands. Its bow and jerkin come as starter gear.
     weapon: { min: 4, max: 8, matk: 0 },
     kit: { reach: 5.5, interval: 1.1, hitAt: 0.7, moveSpeed: 2.7 },
+  },
+  // A priest of the old faith, before the Church went under. It mends the
+  // party and raises its dead. Its holy fire burns the Undead and the mad.
+  cleric: {
+    job: job('Cleric', 220, 20, 90, Range.Melee),
+    base: stats(6, 5, 10, 14, 8, 12),
+    // Bare hands. Its staff and vestments come as starter gear.
+    weapon: { min: 4, max: 7, matk: 0 },
+    kit: { reach: 1.0, interval: 1.2, hitAt: 0.55, moveSpeed: 2.6 },
   },
 } satisfies Record<string, Template>;
 
@@ -155,11 +165,12 @@ function spawn(
   x: number,
   z: number,
   toggles?: Toggles,
+  name?: string,
 ): Unit {
   return sim.add(
     new Unit(sim, {
       kind,
-      name: t.job.name,
+      name: name ?? t.job.name,
       side,
       job: t.job,
       level,
@@ -194,8 +205,10 @@ export function spawnMerc(
   x: number,
   z: number,
   toggles?: Toggles,
+  profile: { name?: string; traits?: readonly string[] } = {},
 ): Unit {
-  const unit = spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles);
+  const unit = spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles, profile.name);
+  applyTraits(unit, profile.traits ?? []);
   for (const id of STARTER_GEAR[kind] ?? []) {
     const base = BASE_BY_ID.get(id);
     const item = base && plainItem(base);

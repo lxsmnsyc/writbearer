@@ -129,6 +129,11 @@ export default class Unit {
   // A pool that absorbs magical damage first
   ward = 0;
   alive = true;
+  // The blow that killed it, and whether it tore the body apart
+  lastBlow: { value: number; flags: number } | null = null;
+  torn = false;
+  // Personality traits, rolled when recruited. They never change.
+  traits: string[] = [];
 
   // Position on the floor, in tiles, and facing in radians. 0 faces +x.
   x: number;
@@ -688,6 +693,22 @@ export default class Unit {
     };
     this.sim.emit(SimEvents.UnitHeal, event);
     return event;
+  }
+
+  /**
+   * Brings a dead unit back from its corpse with a share of its health.
+   * A torn body cannot come back. Returns whether it did.
+   */
+  revive(share: number): boolean {
+    if (this.alive || this.torn) {
+      return false;
+    }
+    this.alive = true;
+    this.lastBlow = null;
+    this.hp = Math.max(1, Math.floor(this.derived.maxHp * share));
+    this.target = null;
+    this.sim.emit(SimEvents.UnitRevived, { id: 'UnitRevived', disabled: false, source: this });
+    return true;
   }
 
   die(killer: Unit | null): void {

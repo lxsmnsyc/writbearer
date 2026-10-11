@@ -21,7 +21,9 @@ import {
   packToBelt,
   unequipToPack,
 } from './inventory';
-import { carryParty, enterStage, spawnParty } from './stage';
+import { type Offer, rollOffer, rollStartingOffers } from '../content/recruits';
+import { spawnMerc } from '../content/roster';
+import { START_LEVEL, carryParty, enterStage, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
@@ -47,7 +49,24 @@ export interface GameHooks {
   onInventory?: (open: boolean) => void;
   // Called whenever the pack, anyone's gear, levels or skills change.
   onChange?: () => void;
+  // Called with the offers to pick from at the start of a run, then null.
+  onOffers?: (offers: Offer[] | null) => void;
+  // Called when the bearer meets a wandering merc, then null.
+  onRecruit?: (offer: Offer | null) => void;
 }
+
+export interface GameOptions {
+  // The run seed. Random when absent.
+  seed?: string;
+  // Starts with these mercs instead of a pick from three offers, as tests do.
+  party?: Offer['kind'][];
+}
+
+// The most mercs in the party, living or dead.
+export const PARTY_SIZE = 4;
+// The bearer meets a wandering merc from this close, and leaves it from this far.
+const MEET_REACH = 1.8;
+const LEAVE_REACH = 4;
 
 /**
  * One playable stage: the simulation at a fixed 20 ticks per second, drawn
@@ -77,6 +96,11 @@ export default class Game {
   private ground: GroundItem[] = [];
   // The item the bearer is walking over to pick up
   private fetching: GroundItem | null = null;
+  // The offers to pick the first merc from, while the run has not begun
+  private offers: Offer[] | null = null;
+  // A merc waiting by its fire on this stage, and the one being talked to
+  private wanderer: { offer: Offer; x: number; z: number; met: boolean } | null = null;
+  private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
   private shake = 0;
@@ -84,6 +108,7 @@ export default class Game {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly hooks: GameHooks = {},
+    private readonly options: GameOptions = {},
   ) {
     this.renderer = new Renderer(canvas);
     this.reset();
@@ -91,7 +116,79 @@ export default class Game {
 
   /** The game pauses while a merc's orders are open. */
   get paused(): boolean {
-    return this.selected !== null || this.inventory;
+    return (
+      this.selected !== null || this.inventory || this.offers !== null || this.recruiting !== null
+    );
+  }
+
+  /** The run's seed, to show and to share. */
+  get seed(): string {
+    return this.streams.seed;
+  }
+
+  /** Takes one of the starting offers into the party, and begins the run. */
+  choose(index: number): void {
+    const offer = this.offers?.[index];
+    if (!offer) {
+      return;
+    }
+    this.join(offer, this.bearer.x + 1, this.bearer.z);
+    this.offers = null;
+    this.hooks.onOffers?.(null);
+  }
+
+  /** Hires the wandering merc being talked to. Returns why it failed, or null. */
+  hire(): string | null {
+    const offer = this.recruiting;
+    const w = this.wanderer;
+    if (!offer || !w) {
+      return null;
+    }
+    if (this.mercs().length >= PARTY_SIZE) {
+      return `The party is full: ${PARTY_SIZE} mercs at most.`;
+    }
+    if (this.pack.gold < offer.wage) {
+      return `${offer.name} wants ${offer.wage} gold. You have ${this.pack.gold}.`;
+    }
+    this.pack.gold -= offer.wage;
+    this.join(offer, w.x, w.z);
+    this.wanderer = null;
+    this.endTalk();
+    this.itemsChanged();
+    return null;
+  }
+
+  /** Leaves the wandering merc where it is. Walking back to it asks again. */
+  endTalk(): void {
+    this.recruiting = null;
+    this.hooks.onRecruit?.(null);
+  }
+
+  private join(offer: Offer, x: number, z: number): void {
+    spawnMerc(this.sim, offer.kind, offer.level, x, z, undefined, {
+      name: offer.name,
+      traits: offer.traits,
+    });
+    this.views.snap(this.sim);
+    this.hooks.onChange?.();
+  }
+
+  // Meets the wandering merc when the bearer walks up to it.
+  private meet(): void {
+    const w = this.wanderer;
+    if (!w || this.recruiting) {
+      return;
+    }
+    const d = Math.hypot(this.bearer.x - w.x, this.bearer.z - w.z);
+    if (d > LEAVE_REACH) {
+      w.met = false;
+    } else if (d <= MEET_REACH && !w.met && this.bearer.alive) {
+      w.met = true;
+      this.recruiting = w.offer;
+      this.keys.clear();
+      this.bearer.order = null;
+      this.hooks.onRecruit?.(w.offer);
+    }
   }
 
   /** Opens or closes the inventory. The game pauses while it is open. */
@@ -192,13 +289,19 @@ export default class Game {
   }
 
   reset(): void {
-    this.streams = new RunStreams(randomSeed());
+    this.streams = new RunStreams(this.options.seed ?? randomSeed());
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
     this.stageIndex = 0;
     this.stage = this.buildStage();
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
-    this.bearer = spawnParty(this.sim, this.stage);
+    this.bearer = spawnParty(this.sim, this.stage, this.options.party ?? []);
+    this.offers = this.options.party
+      ? null
+      : rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL);
+    this.recruiting = null;
+    this.hooks.onOffers?.(this.offers);
+    this.hooks.onRecruit?.(null);
     this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
       if (event.value < HEAVY_HIT || event.flags & DamageFlags.DoT) {
@@ -323,6 +426,17 @@ export default class Game {
   // Lays out the current stage around the party.
   private enter(): void {
     enterStage(this.sim, this.stage);
+    const camp = this.stage.recruit;
+    this.wanderer = camp
+      ? {
+          offer: rollOffer(
+            this.streams.area(1, Stream.Recruits, this.stageIndex),
+            START_LEVEL + Math.floor(this.stageIndex / 2),
+          ),
+          ...camp,
+          met: false,
+        }
+      : null;
     for (const s of this.stage.stains) {
       this.effects.stain(s.x, s.z, s.r, '#560b0b');
     }
@@ -476,6 +590,7 @@ export default class Game {
         this.sim.tick(TICK);
         this.views.afterTick(this.sim);
         this.loot();
+        this.meet();
         this.acc -= TICK;
         if (this.bearer.alive && this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH) {
           this.descend();
@@ -500,6 +615,7 @@ export default class Game {
       slain: this.slain,
       depth: this.stageIndex + 1,
       ground: this.ground,
+      wanderer: this.wanderer,
       over: this.over,
       paused: this.paused,
       selected: this.selected,

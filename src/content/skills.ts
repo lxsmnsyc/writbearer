@@ -1,7 +1,7 @@
 import { ARROW_SPEED, strike } from '../sim/sim';
 import { type Skill, Targeting } from '../sim/skill';
-import { PETRIFY, ROOTED, STUN, TAUNTED } from '../sim/statuses';
-import { DamageFlags, Element, Range, Rank, Side } from '../sim/types';
+import { PETRIFY, RENEWED, ROOTED, STUN, TAUNTED } from '../sim/statuses';
+import { DamageFlags, DamageKind, Element, Race, Range, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 
 // First numbers for active skills. A starting point for balance, not final
@@ -510,5 +510,170 @@ export const INTERCEPT: Skill = {
       u.z = z;
       u.face(threat);
     }
+  },
+};
+
+// ---------- Cleric ----------
+
+// How far the Cleric's prayers reach, in tiles.
+const PRAYER_REACH = 6;
+const healAmount = (u: Unit, rank: number): number => 40 + rank * 20 + u.derived.matkMax;
+// Allies below this share of health are worth a Heal.
+const HEAL_BELOW = 0.7;
+
+// The living party within reach of the Cleric, the bearer included.
+function flockOf(u: Unit): Unit[] {
+  return u.sim.living(Side.Party).filter((p) => u.distanceTo(p) <= PRAYER_REACH);
+}
+
+// The ally most in need, by share of health. The bearer comes first when
+// it is in danger at all.
+function neediest(u: Unit, below: number, skip: (p: Unit) => boolean = () => false): Unit | null {
+  const hurt = flockOf(u).filter((p) => p.hp < p.derived.maxHp * below && !skip(p));
+  const bearer = hurt.find((p) => p === u.sim.bearer);
+  if (bearer) {
+    return bearer;
+  }
+  return hurt.sort((a, b) => a.hp / a.derived.maxHp - b.hp / b.derived.maxHp).at(0) ?? null;
+}
+
+/** Cleric, Mercy tier 1. Mends one ally, or the bearer. */
+export const HEAL: Skill = {
+  id: 'heal',
+  name: 'Heal',
+  describe: (rank) =>
+    `Heals an ally or the bearer for ${40 + rank * 20}, plus the Cleric's magic attack.`,
+  cost: 10,
+  cooldown: 2.5,
+  windup: 0.6,
+  recovery: 0.3,
+  targeting: Targeting.Ally,
+  aim: (u) => neediest(u, HEAL_BELOW),
+  wants: (_u, target) => target !== null,
+  elite: () => false,
+  release(u, target) {
+    if (target?.alive) {
+      u.heal(target, healAmount(u, rankOf(u, 'heal')));
+    }
+  },
+};
+
+const renewPulse = (rank: number): number => 8 + rank * 6;
+
+/** Cleric, Mercy tier 2. Healing that keeps coming for six seconds. */
+export const RENEW: Skill = {
+  id: 'renew',
+  name: 'Renew',
+  describe: (rank) => `Heals an ally for ${renewPulse(rank)} each second for 6 seconds.`,
+  cost: 12,
+  cooldown: 5,
+  windup: 0.4,
+  recovery: 0.3,
+  targeting: Targeting.Ally,
+  aim: (u) => neediest(u, 0.85, (p) => p.statuses.has(RENEWED.id)),
+  wants: (_u, target) => target !== null,
+  elite: () => false,
+  release(u, target) {
+    target?.addStatus(RENEWED, u, undefined, renewPulse(rankOf(u, 'renew')));
+  },
+};
+
+// Whether a status on a unit is harmful: something an enemy put there.
+const harmful = (p: Unit): boolean =>
+  [...p.statuses.values()].some((s) => s.source.side !== p.side);
+
+/** Cleric, Mercy tier 3. Lifts every harmful status and clears all buildup. */
+export const CLEANSE: Skill = {
+  id: 'cleanse',
+  name: 'Cleanse',
+  describe: (rank) =>
+    `Removes every harmful status from an ally and clears its buildup. Can be prayed every ${11 - rank} seconds.`,
+  cost: 10,
+  cooldown: 8,
+  windup: 0.3,
+  recovery: 0.3,
+  targeting: Targeting.Ally,
+  aim: (u) => flockOf(u).find((p) => harmful(p) || p.buildup.size > 0) ?? null,
+  // Worth it for a status, or for buildup more than half way to one.
+  wants: (_u, target) =>
+    target !== null && (harmful(target) || [...target.buildup.entries()].some(([, v]) => v >= 50)),
+  elite: () => false,
+  release(u, target) {
+    if (!target?.alive) {
+      return;
+    }
+    for (const [id, s] of target.statuses) {
+      if (s.source.side !== target.side) {
+        target.removeStatus(id);
+      }
+    }
+    target.buildup.clear();
+    // Higher ranks shorten the wait for the next one.
+    u.skillCooldowns.set('cleanse', 11 - rankOf(u, 'cleanse'));
+  },
+};
+
+const raiseShare = (rank: number): number => 0.1 * rank;
+
+/**
+ * Cleric, Mercy tier 4. A long prayer over a dead merc's body that brings it
+ * back. A body torn apart cannot be raised.
+ */
+export const RESURRECTION: Skill = {
+  id: 'resurrection',
+  name: 'Resurrection',
+  describe: (rank) =>
+    `A long prayer over a fallen merc's body that raises it with ${raiseShare(rank) * 100}% health. Torn bodies stay dead.`,
+  cost: 30,
+  cooldown: 20,
+  windup: 3,
+  recovery: 0.5,
+  targeting: Targeting.Ally,
+  aim: (u) =>
+    [...u.sim.units].find(
+      (p) =>
+        p.side === Side.Party &&
+        !p.alive &&
+        !p.torn &&
+        p !== u.sim.bearer &&
+        u.distanceTo(p) <= PRAYER_REACH,
+    ) ?? null,
+  wants: (_u, target) => target !== null,
+  elite: () => false,
+  release(u, target) {
+    target?.revive(raiseShare(rankOf(u, 'resurrection')));
+  },
+};
+
+const SMITE_REACH = 5;
+const smiteRatio = (rank: number): number => 110 + rank * 20;
+// Smite burns the Undead and the Occult harder.
+const SMITE_BANE = 1.5;
+
+/** Cleric, Inquisition tier 1. Holy fire called down on an enemy. */
+export const SMITE: Skill = {
+  id: 'smite',
+  name: 'Smite',
+  describe: (rank) =>
+    `Radiant fire for ${smiteRatio(rank)}% magic damage, half again against the Undead and the Occult.`,
+  cost: 8,
+  cooldown: 3,
+  windup: 0.5,
+  recovery: 0.3,
+  targeting: Targeting.Enemy,
+  wants: (u, target) => target !== null && u.distanceTo(target) <= SMITE_REACH,
+  elite: (_u, target) => target !== null && isElite(target),
+  release(u, target) {
+    if (!target?.alive || u.distanceTo(target) > SMITE_REACH + 1) {
+      return;
+    }
+    const bane = target.race === Race.Undead || target.element === Element.Occult;
+    strike(u, target, {
+      kind: DamageKind.Magical,
+      element: Element.Radiant,
+      range: Range.Ranged,
+      ratio: smiteRatio(rankOf(u, 'smite')) * (bane ? SMITE_BANE : 1),
+      flags: DamageFlags.Skill,
+    });
   },
 };

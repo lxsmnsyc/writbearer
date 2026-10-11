@@ -166,6 +166,7 @@ export default function setupDamageMechanics(sim: Sim): void {
     event.value = value;
     if (target.hp <= 0) {
       target.hp = 0;
+      target.lastBlow = { value, flags: event.flags };
       target.die(event.source);
     }
   });

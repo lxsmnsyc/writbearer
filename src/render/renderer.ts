@@ -1,6 +1,7 @@
 import type { Prop, Stage } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
+import type { Offer } from '../content/recruits';
 import { ItemType, Quality } from '../sim/item';
 import {
   BURN,
@@ -25,7 +26,7 @@ import { type FloorImage, buildFloor } from './floor';
 import Fog from './fog';
 import { type Light, Lighting } from './light';
 import { C, quantize } from './palette';
-import { drawUnit, emissives, look } from './rig';
+import { drawUnit, emissives, isKind, look } from './rig';
 import type { Views } from './view';
 
 // The frame is drawn small and scaled up with no smoothing.
@@ -89,6 +90,8 @@ export interface Frame {
   depth: number;
   // Items lying on the floor
   ground: GroundItem[];
+  // A merc for hire waiting by its fire, if the stage has one
+  wanderer: { offer: Offer; x: number; z: number } | null;
   over: boolean;
   paused: boolean;
   // The merc whose orders are open
@@ -235,6 +238,39 @@ export default class Renderer {
         });
       }
     }
+    const w = f.wanderer;
+    if (w && fog.visible(w.x, w.z) > 0.05 && isKind(w.offer.kind)) {
+      const kind = w.offer.kind;
+      // It turns to watch the bearer come.
+      const angle = bearer ? Math.atan2(bearer.z - w.z, bearer.x - w.x) : Math.PI;
+      list.push({
+        depth: w.x + w.z,
+        draw: () => {
+          ctx.globalAlpha = fog.visible(w.x, w.z);
+          drawUnit(
+            ctx,
+            {
+              kind,
+              x: w.x,
+              z: w.z,
+              angle,
+              walk: 0,
+              stride: 0,
+              atk: -1,
+              shout: -1,
+              fall: -1,
+              hurt: 9,
+              alert: false,
+            },
+            iso,
+            C,
+            f.time,
+            false,
+          );
+          ctx.globalAlpha = 1;
+        },
+      });
+    }
     for (const p of f.effects.pieces) {
       if (p.h > 0 && fog.visible(p.x, p.z) > 0.5) {
         list.push({
@@ -364,6 +400,14 @@ export default class Renderer {
           color: [255, 180, 100],
           strength: 0.6,
         });
+      } else if (p.kind === 'campfire') {
+        lights.push({
+          x: p.x,
+          z: p.z,
+          radius: 2.6 + flicker,
+          color: [255, 160, 80],
+          strength: 0.75,
+        });
       } else if (p.kind === 'brazier') {
         // The braziers by the stair burn bright, so the way down shows once found.
         lights.push({
@@ -446,6 +490,12 @@ export default class Renderer {
       if (p.kind === 'candle' && fog.known(p.x, p.z)) {
         const b = this.iso(p.x, p.z);
         ctx.fillRect(b.x, b.y - Math.round(8 * look.zoom), 1, 2);
+      } else if (p.kind === 'campfire' && fog.known(p.x, p.z)) {
+        const b = this.iso(p.x, p.z);
+        for (let i = 0; i < 3; i++) {
+          const lick = Math.round(Math.sin(f.time * 9 + i * 2.1) * 1.5);
+          ctx.fillRect(b.x - 2 + i * 2 + lick, b.y - Math.round((4 + i) * look.zoom), 1, 2 + i);
+        }
       } else if (p.kind === 'brazier' && fog.known(p.x, p.z)) {
         const b = this.iso(p.x, p.z);
         const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9) * 1.5);
@@ -534,6 +584,18 @@ export default class Renderer {
         out.fillStyle = C.gold;
       }
       out.fillText(name, x, y);
+    }
+    const w = f.wanderer;
+    if (w && fog.visible(w.x, w.z) > 0.5) {
+      const b = this.iso(w.x, w.z);
+      const text = `${w.offer.name}, for hire`;
+      const x = b.x * SCALE;
+      const y = (b.y - 52 * look.zoom) * SCALE;
+      const width = out.measureText(text).width + 8;
+      out.fillStyle = 'rgba(0,0,0,0.65)';
+      out.fillRect(x - width / 2, y - 14, width, 18);
+      out.fillStyle = C.gold;
+      out.fillText(text, x, y);
     }
     out.textAlign = 'start';
   }
@@ -631,7 +693,7 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click to move.  1 and 2 for a merc.  I for the pack.  Q to drink.  R to restart.',
+      'WASD or click to move.  1 to 4 for a merc.  I for the pack.  Q to drink.  R to restart.',
       16,
       26,
     );
@@ -838,6 +900,20 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
       ],
       C.wood,
     );
+  } else if (p.kind === 'campfire') {
+    // Crossed logs in a ring of stones. The flames are drawn after the light.
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      ctx.fillStyle = C.stoneA;
+      ctx.fillRect(
+        Math.round(base.x + Math.cos(a) * 8),
+        Math.round(base.y + Math.sin(a) * 4),
+        2,
+        2,
+      );
+    }
+    fillPoly(ctx, quad(pt(base.x - 6, base.y + 1), pt(base.x + 6, base.y - 2), 1.2, 1.2), C.wood);
+    fillPoly(ctx, quad(pt(base.x - 5, base.y - 2), pt(base.x + 5, base.y + 1), 1.2, 1.2), C.wood);
   } else if (p.kind === 'altar') {
     const t = pt(base.x, base.y - 10);
     fillPoly(

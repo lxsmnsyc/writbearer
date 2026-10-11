@@ -89,6 +89,7 @@ export function plainItem(base: ItemBase, itemLevel = 1): Item {
       min: base.damage && middle(base.damage.min),
       max: base.damage && middle(base.damage.max),
       armor: base.armor && middle(base.armor),
+      matk: base.matk && middle(base.matk),
     },
     affixes: [],
     bonuses: [],
@@ -145,6 +146,7 @@ export function rollItem(rng: RNG, itemLevel: number, rank: Rank = Rank.Normal):
       min: base.damage && within(rng, base.damage.min, scale),
       max: base.damage && within(rng, base.damage.max, scale),
       armor: base.armor && within(rng, base.armor, scale),
+      matk: base.matk && within(rng, base.matk, scale),
     },
     affixes: [],
     bonuses: [],
@@ -305,6 +307,9 @@ export function itemLines(item: Item): string[] {
   }
   if (item.rolls.min !== undefined) {
     lines.push(`Damage ${item.rolls.min} to ${item.rolls.max}`);
+  }
+  if (item.rolls.matk) {
+    lines.push(`Magic attack ${item.rolls.matk}`);
   }
   if (item.rolls.armor) {
     lines.push(`Armor ${item.rolls.armor}`);

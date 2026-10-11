@@ -1,7 +1,7 @@
 import RNG from '../core/rng';
 import { SimEvents } from '../sim/events';
 import type Sim from '../sim/sim';
-import { DamageFlags, DamagePriority, HealPriority, Side } from '../sim/types';
+import { DamagePriority, HealPriority, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { EventPriority } from '../core/event-emitter';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
@@ -60,9 +60,6 @@ interface Mote {
 }
 
 const RING_LIFE = 0.45;
-// A killing blow this big, as a share of max health, or a critical one,
-// tears the body apart. Other deaths leave a corpse.
-const GIB_SHARE = 0.3;
 // How high arrows fly, in pixels
 const ARROW_HEIGHT = 22;
 
@@ -97,8 +94,6 @@ export class Effects {
   readonly motes: Mote[] = [];
   // Units torn apart. They leave pieces instead of a corpse.
   readonly gibbed = new Set<Unit>();
-  // The last blow each unit took
-  private readonly lastHit = new Map<Unit, { value: number; flags: number }>();
   private readonly rng = new RNG(99);
 
   constructor(
@@ -139,7 +134,6 @@ export class Effects {
       if (event.value <= 0) {
         return;
       }
-      this.lastHit.set(event.target, { value: event.value, flags: event.flags });
       this.views.hit(event.target);
       const dx = event.target.x - event.source.x;
       const dz = event.target.z - event.source.z;
@@ -155,13 +149,14 @@ export class Effects {
         );
       }
     });
+    // A raised body is whole again.
+    sim.on(SimEvents.UnitRevived, EventPriority.Post, (event) => {
+      this.gibbed.delete(event.source);
+      this.levelUp(event.source);
+    });
     sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       const u = event.source;
-      const last = this.lastHit.get(u);
-      this.lastHit.delete(u);
-      const heavy =
-        last !== undefined &&
-        (last.value >= u.derived.maxHp * GIB_SHARE || (last.flags & DamageFlags.Critical) !== 0);
+      const heavy = u.torn;
       if (heavy) {
         this.gibbed.add(u);
         this.dismember(u, event.killer);
@@ -198,7 +193,6 @@ export class Effects {
         this.gibbed.delete(u);
       }
     }
-    this.lastHit.clear();
   }
 
   /** Old blood already on the floor when a stage begins. */

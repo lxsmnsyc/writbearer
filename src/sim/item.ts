@@ -68,6 +68,8 @@ export interface ItemBase {
   jobs?: readonly string[];
   // Rolled per copy: weapon damage, armor, block
   damage?: { min: Span; max: Span };
+  // Magic attack, for staves and holy symbols
+  matk?: Span;
   armor?: Span;
   block?: { chance: number; amount: number };
   // What a potion restores over a few seconds, as shares of max health and mana
@@ -89,7 +91,7 @@ export interface Item {
   itemLevel: number;
   quality: Quality;
   // The rolled base values
-  rolls: { min?: number; max?: number; armor?: number };
+  rolls: { min?: number; max?: number; armor?: number; matk?: number };
   affixes: AffixRoll[];
   // What the affixes give, worked out when the item was rolled
   bonuses: Modifier[];
@@ -156,7 +158,11 @@ export function weaponOf(item: Item): Weapon | null {
   if (item.base.type !== ItemType.Weapon || item.rolls.min === undefined) {
     return null;
   }
-  return { min: item.rolls.min, max: item.rolls.max ?? item.rolls.min, matk: 0 };
+  return {
+    min: item.rolls.min,
+    max: item.rolls.max ?? item.rolls.min,
+    matk: item.rolls.matk ?? 0,
+  };
 }
 
 /** Every stat bonus an item gives its wearer, base values and affixes alike. */

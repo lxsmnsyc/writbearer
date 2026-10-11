@@ -8,6 +8,7 @@ export type Kind =
   | 'bearer'
   | 'vanguard'
   | 'ranger'
+  | 'cleric'
   | 'hollowSoldier'
   | 'penitent'
   | 'cantor'
@@ -20,6 +21,7 @@ const KINDS = new Set<string>([
   'bearer',
   'vanguard',
   'ranger',
+  'cleric',
   'hollowSoldier',
   'penitent',
   'cantor',
@@ -35,6 +37,7 @@ export const HIT_FRACTION: Record<Kind, number> = {
   bearer: 1,
   vanguard: 0.6,
   ranger: 0.7,
+  cleric: 0.7,
   hollowSoldier: 0.65,
   penitent: 0.6,
   cantor: 0.8,
@@ -305,7 +308,7 @@ function paperColor(kind: Kind, C: Palette): string {
   if (kind === 'bearer') {
     return C.bearer;
   }
-  if (kind === 'vanguard' || kind === 'ranger') {
+  if (kind === 'vanguard' || kind === 'ranger' || kind === 'cleric') {
     return C.merc;
   }
   if (kind === 'penitent' || kind === 'cantor' || kind === 'hollowed') {
@@ -420,7 +423,8 @@ interface Gear {
   knife?: { hand: V3; dir: V3 };
   lantern?: V3;
   shield?: { center: V3 };
-  staff?: { hand: V3 };
+  // `sun` tops it with the Cleric's gold sunburst instead of the Church's eye
+  staff?: { hand: V3; sun?: boolean };
   claws?: { hand: V3; dir: V3 }[];
 }
 
@@ -511,6 +515,17 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'R', hand, v(-1, 1, 0));
     const dir = a >= 0 && a < 0.5 ? v(0, 0, 1) : norm(sub(sk.handR, sk.elbowR));
     g.knife = { hand: sk.handR, dir };
+  }
+  if (u.kind === 'cleric') {
+    // The sunburst staff, held upright. A prayer lifts it high, then plants it.
+    let hand = add(sk.chest, v(10, 10, -4));
+    if (a >= 0) {
+      const ph = phases(a, HIT_FRACTION.cleric, HIT_FRACTION.cleric + 0.08);
+      hand = handPath(ph, hand, add(sk.head, v(6, 8, 18)), hand);
+      reach(sk, 'L', add(sk.head, v(10, -4, 4)), v(-1, -1, 0));
+    }
+    reach(sk, 'R', hand, v(-1, 1, 0));
+    g.staff = { hand: sk.handR, sun: true };
   }
   if (u.kind === 'cantor') {
     // The staff of the eye, held upright. The hymn lifts it high, then plants it.
@@ -619,7 +634,7 @@ export function drawUnit(
         fill(c, rags, color, ink);
       },
     });
-  } else if (u.kind === 'penitent' || u.kind === 'cantor') {
+  } else if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'cleric') {
     // A robe to the ground instead of legs.
     const hem = [
       v(14, 0, 0),
@@ -827,15 +842,32 @@ export function drawUnit(
     const h = gear.staff.hand;
     const a = proj(add(h, v(0, 0, -40)));
     const b = proj(add(h, v(0, 0, 44)));
-    // The Church's eye on top: a pale disc with a red pupil.
+    // The Church's eye on top, a pale disc with a red pupil, or the
+    // Cleric's sunburst: a gold disc ringed with rays.
     const eye = proj(add(h, v(0, 0, 50)));
+    const sun = gear.staff.sun === true;
     parts.push({
       depth: avg(a, b) + 0.0006,
       draw: (c) => {
         fill(c, taper(a, b, 0.7, 0.7), C.wood, null);
-        fill(c, hexAt(eye, 3.4), C.bone, ink);
-        c.fillStyle = C.blood;
-        c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
+        if (sun) {
+          const r = 6 * look.zoom;
+          c.fillStyle = C.gold;
+          for (let i = 0; i < 8; i++) {
+            const t = (i / 8) * Math.PI * 2;
+            c.fillRect(
+              Math.round(eye.x + Math.cos(t) * r),
+              Math.round(eye.y + Math.sin(t) * r),
+              1,
+              1,
+            );
+          }
+          fill(c, hexAt(eye, 3), C.gold, ink);
+        } else {
+          fill(c, hexAt(eye, 3.4), C.bone, ink);
+          c.fillStyle = C.blood;
+          c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
+        }
       },
     });
   }

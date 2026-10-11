@@ -115,10 +115,10 @@ export function inFight(sim: Sim, bearer: Unit): boolean {
  */
 export function cannotHand(sim: Sim, bearer: Unit, merc: Unit): string | null {
   if (!merc.alive) {
-    return `The ${merc.name} is dead.`;
+    return `${merc.name} is dead.`;
   }
   if (inFight(sim, bearer) && bearer.distanceTo(merc) > HAND_REACH) {
-    return `In a fight, stand next to the ${merc.name} to hand gear over.`;
+    return `In a fight, stand next to ${merc.name} to hand gear over.`;
   }
   return null;
 }
@@ -139,7 +139,7 @@ export function equipFromPack(
     return 'That item is gone.';
   }
   if (!usableBy(item, merc.job.name)) {
-    return `The ${merc.name} cannot use that.`;
+    return `${merc.name} cannot use that.`;
   }
   const blocked = cannotHand(sim, bearer, merc);
   if (blocked) {
@@ -188,7 +188,7 @@ export function packToBelt(
     slot = merc.belt.indexOf(null);
   }
   if (slot < 0) {
-    return `The ${merc.name}'s belt is full.`;
+    return `${merc.name}'s belt is full.`;
   }
   const current = merc.belt[slot];
   const room = BELT_STACK - (current?.quantity ?? 0);

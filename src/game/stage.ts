@@ -1,4 +1,4 @@
-import { spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
+import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
 import { type Stage, solidsOf } from '../gen/stage';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
@@ -27,12 +27,20 @@ export function enterStage(sim: Sim, stage: Stage): void {
   }
 }
 
-/** The party at the start of a run: the bearer and its first two mercs. */
-export function spawnParty(sim: Sim, stage: Stage): Unit {
+/** The level mercs start a run at. */
+export const START_LEVEL = 5;
+
+/** The bearer at a stage's entrance, with any mercs it starts with. */
+export function spawnParty(
+  sim: Sim,
+  stage: Stage,
+  mercs: readonly Exclude<MercKind, 'bearer'>[] = ['vanguard', 'ranger'],
+): Unit {
   const { x, z } = stage.entrance;
   const bearer = spawnBearer(sim, x, z);
-  spawnMerc(sim, 'vanguard', 5, x + 1, z - 1);
-  spawnMerc(sim, 'ranger', 5, x - 0.5, z + 1);
+  mercs.forEach((kind, i) => {
+    spawnMerc(sim, kind, START_LEVEL, x + 1 - i * 0.6, z - 1 + i);
+  });
   return bearer;
 }
 

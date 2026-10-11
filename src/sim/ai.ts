@@ -75,6 +75,11 @@ export const enum Hunt {
 
 // A monster that notices the party wakes every monster this close to it.
 const PACK_RADIUS = 4;
+// How traits bend a merc's orders.
+const BLOODTHIRSTY_CHASE = 3;
+const LOYAL_CHASE = 2;
+const COWARD_AT = 0.25;
+
 // How close Hold mercs let enemies come before fighting.
 const HOLD_RADIUS = 2;
 
@@ -129,22 +134,52 @@ function engage(u: Unit, target: Unit, dt: number): void {
 function useSkill(sim: Sim, u: Unit, toggles: Toggles, target: Unit | null): boolean {
   for (const skill of u.skills) {
     const mode = skillMode(toggles, skill.id);
-    if (mode === SkillMode.Off || !u.canCast(skill) || !skill.wants(u, target, sim)) {
+    if (mode === SkillMode.Off || !u.canCast(skill)) {
       continue;
     }
-    if (mode === SkillMode.Elites && !skill.elite(u, target, sim)) {
+    const aimed = skill.aim ? skill.aim(u, sim) : target;
+    if ((skill.aim && !aimed) || !skill.wants(u, aimed, sim)) {
       continue;
     }
-    if (u.startCast(skill, target)) {
+    if (mode === SkillMode.Elites && !skill.elite(u, aimed, sim)) {
+      continue;
+    }
+    if (u.startCast(skill, aimed)) {
       return true;
     }
   }
   return false;
 }
 
+// A merc's orders as its traits bend them.
+function withTraits(u: Unit, toggles: Toggles): Toggles {
+  let { chase, priorities } = toggles;
+  if (u.traits.includes('bloodthirsty')) {
+    chase += BLOODTHIRSTY_CHASE;
+  }
+  if (u.traits.includes('loyal')) {
+    chase -= LOYAL_CHASE;
+  }
+  if (u.traits.includes('gloryseeker')) {
+    priorities = [Priority.Elites, ...priorities.filter((p) => p !== Priority.Elites)];
+  }
+  return { ...toggles, chase, priorities };
+}
+
 function thinkMerc(sim: Sim, u: Unit, dt: number): void {
-  const toggles = u.toggles ?? DEFAULT_TOGGLES;
+  const toggles = withTraits(u, u.toggles ?? DEFAULT_TOGGLES);
   const bearer = sim.bearer?.alive ? sim.bearer : null;
+  // A coward near death runs from the nearest enemy.
+  if (u.traits.includes('cowardly') && u.hp < u.derived.maxHp * COWARD_AT) {
+    const threat = nearest(
+      u,
+      sim.living(Side.Monster).filter((e) => e.aware),
+    );
+    if (threat && u.distanceTo(threat) <= u.kit.sight) {
+      flee(u, threat, dt);
+      return;
+    }
+  }
   const enemies = sim.living(Side.Monster).filter((e) => {
     if (bearer && e.distanceTo(bearer) > toggles.chase) {
       return false;
@@ -172,9 +207,13 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
   // Guard spots sit to each side of the bearer. Advance spots sit ahead.
   const mercs = sim.living(Side.Party).filter((m) => m !== bearer);
   const slot = mercs.indexOf(u);
+  // Up to four mercs: the first two at the bearer's sides, the next two
+  // further back or further out.
   const side = slot % 2 === 0 ? 1 : -1;
-  const ahead = toggles.stance === Stance.Advance ? 2.5 : 0.6;
-  const spread = toggles.stance === Stance.Advance ? 0.8 : 1.1;
+  const row = Math.floor(slot / 2);
+  const advance = toggles.stance === Stance.Advance;
+  const ahead = advance ? 2.5 - row * 0.8 : 0.6 - row * 1.2;
+  const spread = (advance ? 0.8 : 1.1) * (u.traits.includes('loyal') ? 0.75 : 1) + row * 0.6;
   const a = bearer.angle;
   const gx = bearer.x + Math.cos(a) * ahead - Math.sin(a) * spread * side;
   const gz = bearer.z + Math.sin(a) * ahead + Math.cos(a) * spread * side;

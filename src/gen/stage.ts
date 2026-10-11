@@ -13,7 +13,8 @@ export type PropKind =
   | 'candle'
   | 'chest'
   | 'stair'
-  | 'brazier';
+  | 'brazier'
+  | 'campfire';
 
 export interface Prop {
   kind: PropKind;
@@ -53,6 +54,8 @@ export interface Stage {
   // Old blood already on the floor
   stains: { x: number; z: number; r: number }[];
   packs: Pack[];
+  // Where a wandering merc waits by its fire, on stages that have one
+  recruit?: Spot;
 }
 
 // Solid radius of each prop that blocks, in tiles.
@@ -64,6 +67,7 @@ const SOLID: Partial<Record<PropKind, number>> = {
   pike: 0.2,
   banner: 0.2,
   chest: 0.35,
+  campfire: 0.3,
 };
 
 // Threat each monster costs from a stage's budget. An elite costs more.
@@ -80,6 +84,10 @@ const ELITE_THREAT = 6;
 const KEEP_ENTRANCE = 5;
 const KEEP_EXIT = 3.5;
 const KEEP_PLACE = 3;
+// Recruits are offered in phases 1 and 2, the first 16 stages, as the
+// mercenaries design says. Below that, no one is left to hire.
+export const RECRUIT_STAGES = 16;
+const RECRUIT_CHANCE = 0.6;
 // Packs never stand this close to the entrance, so a stage does not open in a fight.
 const PACK_DISTANCE = 13;
 
@@ -176,6 +184,14 @@ export function generateStage(rng: RNG, index: number): Stage {
   const cache = spot(10, width - 8, 1);
   keep.push({ ...cache, r: KEEP_PLACE });
   add('chest', cache.x, cache.z);
+
+  // A wandering merc by its fire, only while there is still anyone to hire.
+  if (index >= 1 && index < RECRUIT_STAGES && rng.chance(RECRUIT_CHANCE)) {
+    const camp = spot(10, wallX - 4, 2);
+    keep.push({ ...camp, r: 5 });
+    add('campfire', camp.x, camp.z);
+    stage.recruit = { x: camp.x + 1, z: camp.z };
+  }
 
   // Terrain from noise: pillars where it runs high, rubble where it runs low.
   const noise = valueNoise(rng, width, depth, 7);
@@ -309,7 +325,10 @@ function placePacks(
     }
     const x = rng.range(PACK_DISTANCE, stage.width - 3);
     const z = rng.range(3, stage.depth - 3);
-    const tooNear = stage.packs.some((p) => Math.hypot(p.x - x, p.z - z) < 7);
+    // Packs keep apart from each other and from the wanderer's fire.
+    const tooNear =
+      stage.packs.some((p) => Math.hypot(p.x - x, p.z - z) < 7) ||
+      (stage.recruit !== undefined && Math.hypot(stage.recruit.x - x, stage.recruit.z - z) < 9);
     if (
       tooNear ||
       !nav.walkable(x, z) ||

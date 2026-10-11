@@ -27,6 +27,7 @@ export const enum SimEvents {
   StatusRemoved = 'StatusRemoved',
   // After every unit has acted in a tick
   Tick = 'Tick',
+  UnitRevived = 'UnitRevived',
 }
 
 /**
@@ -129,6 +130,10 @@ export interface StatusEvent extends BaseEvent {
   status: ActiveStatus;
 }
 
+export interface UnitRevivedEvent extends BaseEvent {
+  source: Unit;
+}
+
 export interface TickEvent extends BaseEvent {
   dt: number;
 }
@@ -148,4 +153,5 @@ export interface SimEventMap extends EventMap {
   [SimEvents.StatusApplied]: [StatusEvent, EventPriority];
   [SimEvents.StatusRemoved]: [StatusEvent, EventPriority];
   [SimEvents.Tick]: [TickEvent, EventPriority];
+  [SimEvents.UnitRevived]: [UnitRevivedEvent, EventPriority];
 }

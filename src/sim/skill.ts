@@ -17,6 +17,8 @@ export const enum Targeting {
   Enemy = 0,
   // The merc itself, such as a shout around it
   Self = 1,
+  // An ally or the bearer, picked by the skill's `aim`
+  Ally = 2,
 }
 
 /**
@@ -38,6 +40,11 @@ export interface Skill {
    * is fighting, or null. Mana and cooldown are checked elsewhere.
    */
   wants: (unit: Unit, target: Unit | null, sim: Sim) => boolean;
+  /**
+   * Picks the skill's own target, such as the ally most in need of healing,
+   * instead of whom the merc is fighting. Null means nobody needs it.
+   */
+  aim?: (unit: Unit, sim: Sim) => Unit | null;
   /** Whether a use would reach an elite or a boss, for the Elites mode. */
   elite: (unit: Unit, target: Unit | null, sim: Sim) => boolean;
   /** The effect, on the release frame. */
