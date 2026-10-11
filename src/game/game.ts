@@ -23,7 +23,7 @@ import {
 } from './inventory';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { spawnMerc } from '../content/roster';
-import { START_LEVEL, carryParty, enterStage, spawnParty } from './stage';
+import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
@@ -60,6 +60,8 @@ export interface GameOptions {
   seed?: string;
   // Starts with these mercs instead of a pick from three offers, as tests do.
   party?: Offer['kind'][];
+  // Starts in this area of the run, from 1, for tests and playtesting
+  area?: number;
 }
 
 // The most mercs in the party, living or dead.
@@ -107,6 +109,8 @@ export default class Game {
   private offers: Offer[] | null = null;
   // A merc waiting by its fire on this stage, and the one being talked to
   private wanderer: { offer: Offer; x: number; z: number; met: boolean } | null = null;
+  // The boss of a layer's last area, while the party is in it
+  private boss: Unit | null = null;
   private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
@@ -307,7 +311,7 @@ export default class Game {
   reset(): void {
     this.streams = new RunStreams(this.options.seed ?? randomSeed());
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
-    this.stageIndex = 0;
+    this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
     this.stage = this.buildStage();
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
@@ -442,7 +446,7 @@ export default class Game {
 
   // Lays out the current stage around the party.
   private enter(): void {
-    enterStage(this.sim, this.stage);
+    this.boss = enterStage(this.sim, this.stage);
     const camp = this.stage.recruit;
     this.wanderer = camp
       ? {
@@ -617,7 +621,16 @@ export default class Game {
         this.loot();
         this.meet();
         this.acc -= TICK;
-        if (this.bearer.alive && this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH) {
+        if (shutArena(this.sim, this.stage, this.boss)) {
+          // The gate slams shut behind the party.
+          this.shake = Math.max(this.shake, 4);
+        }
+        // The way down opens only once the boss is dead.
+        if (
+          this.bearer.alive &&
+          !this.boss?.alive &&
+          this.bearer.distanceTo(this.stage.exit) <= EXIT_REACH
+        ) {
           this.descend();
           this.acc = 0;
         }
@@ -644,6 +657,7 @@ export default class Game {
       paused: this.paused,
       selected: this.selected,
       shake: this.shake,
+      boss: this.boss,
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;

@@ -171,6 +171,20 @@ export const MONSTERS = {
     attackElement: Element.Venom,
     hunt: Hunt.Nearest,
   },
+  // The Marches' boss: a Blight crawler grown huge, swollen with eggs. Slow,
+  // and she lays mites. Her skill and her frenzy are set up in brood.ts.
+  broodMother: {
+    job: job('Brood Mother', 2000, 200, 120, Range.Melee),
+    base: stats(14, 6, 16, 1, 10, 8),
+    weapon: { min: 20, max: 28, matk: 0 },
+    kit: { reach: 1.8, interval: 1.5, hitAt: 0.5, moveSpeed: 1.5, notice: 6 },
+    modifiers: [{ stat: 'armor', add: 20 }],
+    race: Race.Insect,
+    rank: Rank.Boss,
+    element: Element.Venom,
+    attackElement: Element.Venom,
+    hunt: Hunt.Nearest,
+  },
 } satisfies Record<string, Template>;
 
 export type MercKind = keyof typeof MERCS;

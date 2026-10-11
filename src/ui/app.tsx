@@ -30,7 +30,12 @@ function runOptions(): GameOptions {
     .get('party')
     ?.split(',')
     .filter((k): k is Offer['kind'] => (HIREABLE as readonly string[]).includes(k));
-  return { seed: params.get('seed') ?? undefined, party };
+  const area = Number(params.get('area'));
+  return {
+    seed: params.get('seed') ?? undefined,
+    party,
+    area: Number.isInteger(area) && area > 0 ? area : undefined,
+  };
 }
 
 export default function App(): JSX.Element {

@@ -100,6 +100,8 @@ export interface Frame {
   selected: Unit | null;
   // Screen shake in pixels, from heavy hits
   shake: number;
+  // The boss of a layer's last area, if the party is there
+  boss: Unit | null;
 }
 
 export default class Renderer {
@@ -770,13 +772,20 @@ export default class Renderer {
     );
     out.textAlign = 'start';
     out.fillStyle = '#8a8274';
-    out.fillText(
-      f.stage.down
-        ? 'Find the way down into the Hollow, to the east.'
-        : 'Follow the road east, to the next area.',
-      16,
-      52,
-    );
+    out.fillText(hint(f), 16, 52);
+    if (f.boss?.alive && f.stage.arena?.closed) {
+      // The boss's name and health across the top, as Diablo 2 shows them.
+      const w = 360;
+      const x = (W * SCALE - w) / 2;
+      out.textAlign = 'center';
+      out.fillStyle = '#d6d0c4';
+      out.fillText(f.boss.name, (W * SCALE) / 2, 92);
+      out.textAlign = 'start';
+      out.fillStyle = 'rgba(0,0,0,0.7)';
+      out.fillRect(x, 100, w, 8);
+      out.fillStyle = C.blood;
+      out.fillRect(x + 1, 101, Math.round(((w - 2) * f.boss.hp) / f.boss.derived.maxHp), 6);
+    }
     if (f.over) {
       out.fillStyle = 'rgba(0,0,0,0.6)';
       out.fillRect(0, 0, W * SCALE, H * SCALE);
@@ -792,6 +801,21 @@ export default class Renderer {
   }
 }
 
+// What the player is to do in this area, under the controls.
+function hint(f: Frame): string {
+  if (f.boss) {
+    if (f.boss.alive) {
+      return f.stage.arena?.closed
+        ? `${f.boss.name} bars the way down. The gate is shut.`
+        : 'Something waits in the walled ring, before the way down.';
+    }
+    return 'The way down is open, to the east.';
+  }
+  return f.stage.down
+    ? 'Find the way down into the Hollow, to the east.'
+    : 'Follow the road east, to the next area.';
+}
+
 // Whether a floor point's screen spot is near enough the frame to draw what stands there.
 function onScreen(b: Pt): boolean {
   return b.x > -64 && b.x < W + 64 && b.y > -24 && b.y < H + 120;
@@ -804,6 +828,9 @@ function barHeight(u: Unit): number {
   }
   if (u.kind === 'crawler') {
     return 16 * elite;
+  }
+  if (u.kind === 'broodMother') {
+    return 34;
   }
   if (u.kind === 'mite') {
     return 10 * elite;
@@ -875,6 +902,18 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     );
     ctx.fillStyle = C.gold;
     ctx.fillRect(base.x + 2, base.y - 28, 4, 1);
+  } else if (p.kind === 'gate') {
+    // Stakes of the arena's gate: a stump while open, a sharpened post once shut.
+    if (p.r === undefined) {
+      fillPoly(ctx, quad(pt(base.x, base.y), pt(base.x, base.y - 5), 2, 1.5), C.wood);
+    } else {
+      block(ctx, base, 0.35, 34, p.seed, C.wood);
+      fillPoly(
+        ctx,
+        [pt(base.x - 5, base.y - 34), pt(base.x + 5, base.y - 34), pt(base.x, base.y - 41)],
+        C.wood,
+      );
+    }
   } else if (p.kind === 'pillar') {
     fillPoly(
       ctx,

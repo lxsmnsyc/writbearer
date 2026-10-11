@@ -33,7 +33,7 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 - Traits in the game: Brave (dread never takes hold), Cowardly (runs from the nearest enemy below 25% health), Greedy (×1.5 wage), Loyal (stays closer, chases 2 tiles less, ×0.9 wage), Glory-seeker (goes for elites first), Veteran (one more target priority, ×1.2 wage), Bloodthirsty (chases 3 tiles further) and Devout (dread builds up at half the rate). Drunkard and Hates a job wait for morale.
 - The Cleric's Mercy branch is in the game up to Resurrection, and Smite opens Inquisition. Sanctuary waits for Ward to have magical damage to absorb.
 - A killing blow of 30% of max health or more, or a critical one, tears the body apart. A torn merc cannot be resurrected.
-- For tests, `?party=vanguard,ranger` skips the pick and `?seed=` fixes the run.
+- For tests, `?party=vanguard,ranger` skips the pick, `?seed=` fixes the run and `?area=8` starts in that area.
 
 ## Wages and contracts
 

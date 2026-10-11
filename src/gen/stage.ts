@@ -18,6 +18,7 @@ export type PropKind =
   | 'brazier'
   | 'torch'
   | 'signpost'
+  | 'gate'
   | 'campfire';
 
 export interface Prop {
@@ -64,6 +65,11 @@ export interface Stage {
   road: Spot[];
   // Whether the exit goes down to the next layer
   down: boolean;
+  // A layer's last area: the walled arena its boss waits in, and whether
+  // its gate has shut behind the party
+  arena?: { x: number; z: number; r: number; closed: boolean };
+  // Where the boss stands
+  boss?: Spot;
   // Where a wandering merc waits by its fire, on stages that have one
   recruit?: Spot;
 }
@@ -91,6 +97,8 @@ const THREAT: Record<MonsterKind, number> = {
   hollowSoldier: 3,
   hollowed: 3,
   cantor: 3,
+  // Never rolled into a pack. She waits in her arena.
+  broodMother: 20,
 };
 const ELITE_THREAT = 6;
 
@@ -111,6 +119,9 @@ const PACK_DISTANCE = 13;
  * everything can be reached, then packs from a threat budget.
  */
 export function generateStage(rng: RNG, index: number): Stage {
+  if (leadsDown(index)) {
+    return generateArena(rng, index);
+  }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
   const entrance = { x: 2.5, z: depth / 2 + rng.range(-depth / 5, depth / 5) };
@@ -263,6 +274,105 @@ export function generateStage(rng: RNG, index: number): Stage {
   }
 
   placePacks(stage, rng, { site, lair, breach: { x: wallX, z: breaches[0] } });
+  return stage;
+}
+
+// The arena's wall, in tiles from its centre, and the gate's half width.
+const ARENA_R = 9;
+const GATE_HALF = 1.6;
+// Gate posts, solid once the gate shuts
+export const GATE_SOLID = 0.5;
+
+/**
+ * A layer's last area: an approach from the west, then a walled arena with
+ * one gate. The boss waits inside, before the way down. The gate shuts once
+ * the bearer is in.
+ */
+function generateArena(rng: RNG, index: number): Stage {
+  const width = rng.int(44, 48);
+  const depth = rng.int(30, 34);
+  const entrance = { x: 2.5, z: depth / 2 };
+  const arena = { x: width - ARENA_R - 3, z: depth / 2, r: ARENA_R, closed: false };
+  const exit = { x: arena.x + ARENA_R - 2.5, z: arena.z };
+  const gate = { x: arena.x - ARENA_R, z: arena.z };
+  const stage: Stage = {
+    index,
+    width,
+    depth,
+    entrance,
+    exit,
+    props: [],
+    sigils: [],
+    stains: [],
+    packs: [],
+    road: [entrance, gate, { x: arena.x, z: arena.z }],
+    down: true,
+    arena,
+    boss: { x: arena.x + 1.5, z: arena.z },
+  };
+  const add = (kind: PropKind, x: number, z: number): Prop => {
+    const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
+    stage.props.push(prop);
+    return prop;
+  };
+
+  add('stair', exit.x, exit.z);
+  add('brazier', exit.x - 1.2, exit.z - 1.6);
+  add('brazier', exit.x - 1.2, exit.z + 1.6);
+
+  // The ring wall stands tall all round, but for the gate on the west.
+  const steps = Math.ceil((2 * Math.PI * ARENA_R) / 0.9);
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const x = arena.x + Math.cos(a) * ARENA_R;
+    const z = arena.z + Math.sin(a) * ARENA_R;
+    if (Math.abs(z - gate.z) < GATE_HALF && x < arena.x) {
+      continue;
+    }
+    add('wall', x, z).seed = 0.55 + rng.random() * 0.45;
+  }
+  // The gate stands open until the party is in.
+  for (const dz of [-1, 0, 1]) {
+    add('gate', gate.x, gate.z + dz * GATE_HALF * 0.66);
+  }
+
+  // Old blood on the arena floor, and gibbets of what she fed on.
+  for (let i = 0; i < 8; i++) {
+    const a = rng.random() * Math.PI * 2;
+    const d = rng.range(2, ARENA_R - 2);
+    stage.stains.push({
+      x: arena.x + Math.cos(a) * d,
+      z: arena.z + Math.sin(a) * d,
+      r: rng.range(0.5, 1.1),
+    });
+  }
+
+  // The approach: dead trees and rubble off the road, and her brood astray.
+  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
+  const clearOf = (x: number, z: number): boolean =>
+    Math.hypot(x - entrance.x, z - entrance.z) > KEEP_ENTRANCE &&
+    Math.hypot(x - arena.x, z - arena.z) > ARENA_R + 2 &&
+    distanceToSegment({ x, z }, entrance, gate) > 1.6;
+  const solids: Spot[] = [];
+  for (let i = 0; i < width * depth * 0.04; i++) {
+    const x = rng.range(1.5, width - 1.5);
+    const z = rng.range(1.5, depth - 1.5);
+    if (!clearOf(x, z) || solids.some((o) => Math.hypot(o.x - x, o.z - z) < 2.2)) {
+      continue;
+    }
+    if (rng.chance(0.6)) {
+      add(tall, x, z);
+    } else {
+      add('rubble', x, z).r = rng.range(0.35, 0.6);
+    }
+    solids.push({ x, z });
+  }
+  for (const t of [0.45, 0.75]) {
+    const x = entrance.x + (gate.x - entrance.x) * t;
+    const z = entrance.z + (t < 0.6 ? -1 : 1) * rng.range(3, 6);
+    stage.packs.push({ kinds: ['mite', 'mite', 'mite'], x, z, elite: -1 });
+  }
+  ensureReachable(stage, [gate]);
   return stage;
 }
 

@@ -6,7 +6,7 @@ import type Unit from '../sim/unit';
 import { EventPriority } from '../core/event-emitter';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import { C } from './palette';
-import { look } from './rig';
+import { isCrawler, look } from './rig';
 import type { Views } from './view';
 
 interface Decal {
@@ -61,7 +61,7 @@ interface Mote {
 
 const RING_LIFE = 0.45;
 // The pool a body leaves, by kind, in tiles. Most leave half a tile.
-const POOL: Partial<Record<string, number>> = { crawler: 0.6, mite: 0.3 };
+const POOL: Partial<Record<string, number>> = { crawler: 0.6, mite: 0.3, broodMother: 1.4 };
 // How high arrows fly, in pixels
 const ARROW_HEIGHT = 22;
 
@@ -243,7 +243,7 @@ export class Effects {
         color: c,
       });
     };
-    if (u.kind === 'crawler' || u.kind === 'mite') {
+    if (isCrawler(u.kind)) {
       for (let i = 0; i < 4; i++) {
         fling('chunk');
       }

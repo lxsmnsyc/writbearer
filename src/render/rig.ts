@@ -15,7 +15,8 @@ export type Kind =
   | 'hollowed'
   | 'husk'
   | 'mite'
-  | 'crawler';
+  | 'crawler'
+  | 'broodMother';
 
 // Where in each drawn attack (0 to 1) the blow lands or the arrow leaves.
 // The view lines the simulation's hit frame up with it.
@@ -31,11 +32,16 @@ const KINDS = new Set<string>([
   'husk',
   'mite',
   'crawler',
+  'broodMother',
 ]);
 
 export function isKind(kind: string): kind is Kind {
   return KINDS.has(kind);
 }
+
+/** Kinds drawn as a Blight crawler, at their own size. */
+export const isCrawler = (kind: string): boolean =>
+  kind === 'crawler' || kind === 'mite' || kind === 'broodMother';
 
 export const HIT_FRACTION: Record<Kind, number> = {
   bearer: 1,
@@ -49,6 +55,7 @@ export const HIT_FRACTION: Record<Kind, number> = {
   husk: 0.6,
   mite: 0.5,
   crawler: 0.5,
+  broodMother: 0.5,
 };
 
 export interface Pt {
@@ -137,6 +144,7 @@ const KIND_SIZE: Record<Kind, number> = {
   husk: 0.95,
   mite: 0.55,
   crawler: 1,
+  broodMother: 2.1,
 };
 
 // ---------- projection ----------
@@ -169,7 +177,7 @@ function topple(u: RigUnit): (p: V3) => V3 {
     return (p) => p;
   }
   const t = ease(clamp01(u.fall));
-  if (u.kind === 'crawler' || u.kind === 'mite') {
+  if (isCrawler(u.kind)) {
     return (p) => v(p[0], p[1] * (1 - t * 0.3), p[2] * (1 - t * 0.7));
   }
   // The knees give first, then the body goes over.
@@ -619,15 +627,15 @@ export function drawUnit(
   ctx.ellipse(
     base.x,
     base.y,
-    (u.kind === 'crawler' ? 10 : 7) * KIND_SIZE[u.kind] * look.zoom,
-    (u.kind === 'crawler' ? 4 : 2.5) * KIND_SIZE[u.kind] * look.zoom,
+    (isCrawler(u.kind) && u.kind !== 'mite' ? 10 : 7) * KIND_SIZE[u.kind] * look.zoom,
+    (isCrawler(u.kind) && u.kind !== 'mite' ? 4 : 2.5) * KIND_SIZE[u.kind] * look.zoom,
     0,
     0,
     Math.PI * 2,
   );
   ctx.fill();
 
-  if (u.kind === 'crawler' || u.kind === 'mite') {
+  if (isCrawler(u.kind)) {
     drawCrawler(ctx, u, proj, C, flash);
     return;
   }
@@ -1015,6 +1023,25 @@ function drawCrawler(
       fill(c, hull(headPts), color, C.ink);
     },
   });
+  if (u.kind === 'broodMother') {
+    // Her egg sac: pale, swollen, dragged behind her, swelling as she breathes.
+    const swell = 1 + Math.sin(u.walk * 0.7 + u.x) * 0.04;
+    const sac = [
+      v(-20, -13 * swell, 10),
+      v(-20, 13 * swell, 10),
+      v(-44 * swell, -15 * swell, 12),
+      v(-44 * swell, 15 * swell, 12),
+      v(-52 * swell, 0, 16),
+      v(-34, 0, 30 * swell),
+      v(-30, 0, 2),
+    ].map(proj);
+    parts.push({
+      depth: avg(...sac) - 0.0001,
+      draw: (c) => {
+        fill(c, hull(sac), flash ? '#ffffff' : C.skin, C.ink);
+      },
+    });
+  }
   parts
     .sort((a, b) => a.depth - b.depth)
     .forEach((p) => {
@@ -1032,7 +1059,7 @@ export function emissives(
   const out: { p: Pt; color: 'teal' | 'blood' | 'flame' }[] = [];
   // Eyes only show when the face turns toward the camera.
   const toCamera = Math.cos(u.angle) + Math.sin(u.angle) > -0.4;
-  if (u.kind === 'crawler' || u.kind === 'mite') {
+  if (isCrawler(u.kind)) {
     const lunge = u.atk >= 0 ? Math.sin(clamp01(u.atk) * Math.PI) * 12 : 0;
     for (const f of [-10, 0, 10]) {
       out.push({ p: proj(v(f, 0, 36)), color: 'teal' });
