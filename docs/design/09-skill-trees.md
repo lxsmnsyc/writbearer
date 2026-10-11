@@ -26,6 +26,36 @@ Based on Diablo 2 and rAthena.
 
 In the lists below, **A** marks an active skill and **P** marks a passive.
 
+## In the game so far
+
+- **Experience:** each kill is worth 10 per monster level, 35 for an elite and 150 for a boss. It is shared evenly by the living mercs. A level needs `20 × level^1.5` experience: 224 from level 5, 632 from level 10.
+- **Points:** each level gives 1 skill point and 3 stat points. Recruits arrive with one skill point per level past the first, unspent, and nothing learned.
+- **Learning:** open a merc (click it, or 1 and 2), then the Skills tab. A node needs its tier's level and a rank in the node before it in its branch. Skills have 5 ranks; capstones have 1.
+- **Stats:** the Stats tab spends stat points on the six base stats and shows experience to the next level.
+- A merc with points to spend shows a + on its party card. A level up shows a gold ring and rising light.
+
+Skills in the game, with what grows by rank:
+
+| Job | Branch | Skill | Tier | Per rank |
+|---|---|---|---|---|
+| Vanguard | Bulwark | Challenge (A) | 1 | Taunt lasts 3 + 0.5 s |
+| Vanguard | Breaker | Sunder (P) | 1 | −4 armor per stack, up to 5 stacks |
+| Vanguard | Breaker | Crush (A) | 2 | 140 + 20% damage, 30 + 10 Earth buildup |
+| Vanguard | Breaker | Shield Bash (A) | 3 | 100 + 10% damage, 50 + 10 stun buildup |
+| Vanguard | Oathkeeper | Vow (P) | 1 | +10 armor within 4 tiles of the bearer |
+| Vanguard | Oathkeeper | Intercept (A) | 2 | Dashes up to 4 + 1 tiles |
+| Vanguard | Oathkeeper | Shared Burden (P) | 3 | Takes 5% of each hit on the bearer |
+| Ranger | Hawkeye | Aimed Shot (A) | 1 | 200 + 30% damage |
+| Ranger | Hawkeye | Pin Down (A) | 2 | Roots for 1 + 0.5 s |
+| Ranger | Hawkeye | Eagle Eye (P) | 3 | +0.5 tiles of reach, +3 accuracy |
+| Ranger | Hawkeye | Piercing Arrow (A) | 4 | 150 + 15% damage |
+| Ranger | Trapper | Snare (A) | 1 | Roots for 1.5 + 0.5 s |
+| Ranger | Stormcaller | Charged Arrow (A) | 1 | 90 + 15% damage, chains once |
+| Ranger | Stormcaller | Static (P) | 2 | +25% Shock buildup |
+
+- Pin Down pins any enemy for now. It will also ground flyers once flyers exist.
+- Every other node shows in the tree as "not in the game yet" and cannot be learned. A branch stops at its first such node.
+
 ## Starting jobs
 
 ### Sellsword

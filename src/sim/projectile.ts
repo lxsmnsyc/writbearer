@@ -28,4 +28,6 @@ export interface Projectile {
   // The skill that fired it, or null for a basic attack
   skill: string | null;
   done: boolean;
+  // Runs when it strikes someone, such as an arrow that chains
+  onHit?: (target: Unit) => void;
 }

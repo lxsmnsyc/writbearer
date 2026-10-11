@@ -78,6 +78,11 @@ test('clicking a merc on the canvas opens its orders', async ({ page }) => {
 test('each skill can be set to Auto, Elites or Off, and the setting stays', async ({ page }) => {
   await page.keyboard.press('1');
   const panel = page.getByRole('complementary', { name: 'Orders for Vanguard' });
+  // Recruits arrive with points unspent: learn Challenge first.
+  await panel.getByRole('tab', { name: /Skills/ }).click();
+  await panel.getByRole('button', { name: /^Challenge, rank 0/ }).click();
+  await expect(panel.getByRole('button', { name: /^Challenge, rank 1/ })).toBeVisible();
+  await panel.getByRole('tab', { name: 'Orders' }).click();
   const challenge = panel.getByRole('radiogroup', { name: 'Use Challenge' });
   await expect(challenge.getByRole('radio', { name: 'Auto' })).toHaveAttribute(
     'aria-checked',
@@ -90,4 +95,14 @@ test('each skill can be set to Auto, Elites or Off, and the setting stays', asyn
     'aria-checked',
     'true',
   );
+});
+
+test('a skill needs the one before it in its branch, and its tier level', async ({ page }) => {
+  await page.keyboard.press('1');
+  const panel = page.getByRole('complementary', { name: 'Orders for Vanguard' });
+  await panel.getByRole('tab', { name: /Skills/ }).click();
+  await panel.getByRole('button', { name: /^Crush, rank 0/ }).click();
+  await expect(panel.getByRole('alert')).toContainText('Needs Sunder first');
+  await panel.getByRole('button', { name: /^Shield Bash, rank 0/ }).click();
+  await expect(panel.getByRole('alert')).toContainText('Needs level 8');
 });

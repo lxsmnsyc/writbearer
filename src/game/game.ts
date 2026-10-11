@@ -11,6 +11,7 @@ import { Views } from '../render/view';
 import { type Stage, generateStage } from '../gen/stage';
 import type { EquipSlot, Item } from '../sim/item';
 import { rollDrops, rollGold, rollItem } from '../gen/loot';
+import { gainXp, killXp } from '../sim/progress';
 import { type GroundItem, Pack, equipFromPack, unequipToPack } from './inventory';
 import { carryParty, enterStage, spawnParty } from './stage';
 
@@ -36,8 +37,8 @@ export interface GameHooks {
   onSelect?: (unit: Unit | null) => void;
   // Called when the inventory opens or closes.
   onInventory?: (open: boolean) => void;
-  // Called whenever the pack or anyone's gear changes.
-  onItems?: () => void;
+  // Called whenever the pack, anyone's gear, levels or skills change.
+  onChange?: () => void;
 }
 
 /**
@@ -124,7 +125,7 @@ export default class Game {
 
   private itemsChanged(): void {
     this.bearer.burden = this.pack.speed;
-    this.hooks.onItems?.();
+    this.hooks.onChange?.();
   }
 
   /** The mercs, alive or dead, in the order they joined. */
@@ -180,6 +181,7 @@ export default class Game {
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       if (event.source.side === Side.Monster) {
         this.slain++;
+        this.shareXp(event.source);
         this.scatter(
           rollDrops(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
           event.source,
@@ -199,6 +201,23 @@ export default class Game {
     this.acc = 0;
     this.hooks.onInventory?.(false);
     this.itemsChanged();
+  }
+
+  // A kill's experience, shared evenly by the living mercs.
+  private shareXp(monster: Unit): void {
+    const mercs = this.mercs().filter((m) => m.alive);
+    const each = Math.round(killXp(monster) / Math.max(1, mercs.length));
+    for (const m of mercs) {
+      if (gainXp(m, each) > 0) {
+        this.effects.levelUp(m);
+        this.hooks.onChange?.();
+      }
+    }
+  }
+
+  /** Tells the interface the party changed, after a skill or stat was spent. */
+  changed(): void {
+    this.hooks.onChange?.();
   }
 
   // Throws items onto the floor around a spot, as a monster falls or a chest opens.

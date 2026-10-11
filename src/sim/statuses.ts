@@ -56,6 +56,25 @@ export const TAUNTED: StatusDef = {
   endsWithSource: true,
 };
 
+/** Armor broken by a Vanguard's Sunder. Stacks up to 5; each stack takes 4 armor per rank. */
+export const SUNDERED: StatusDef = {
+  id: 'sundered',
+  name: 'Sundered',
+  duration: 4,
+  immunity: 0,
+  maxStacks: 5,
+  modifiers: (s) => [{ stat: 'armor', add: -4 * s.power * s.stacks }],
+};
+
+/** Held fast by a snare. Can still fight what comes into reach. */
+export const ROOTED: StatusDef = {
+  id: 'rooted',
+  name: 'Rooted',
+  duration: 2.5,
+  immunity: 4,
+  slow: 0,
+};
+
 /** Cannot act. Built up by heavy blows such as Shield Bash. Resisted by VIT. */
 export const STUN: StatusDef = {
   id: 'stun',

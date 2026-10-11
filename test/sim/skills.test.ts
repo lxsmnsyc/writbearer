@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EventPriority } from '../../src/core/event-emitter';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CHALLENGE, PIERCING_ARROW } from '../../src/content/skills';
+import { findNode, learn } from '../../src/content/trees';
 import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim, { ARROW_SPEED } from '../../src/sim/sim';
@@ -67,7 +68,9 @@ describe('Challenge', () => {
     const count = (mode: SkillMode): number => {
       const sim = new Sim(2);
       const bearer = spawnBearer(sim, 0, 0);
-      spawnMerc(sim, 'vanguard', 5, 0.8, 0.6, withSkills({ challenge: mode }));
+      const vanguard = spawnMerc(sim, 'vanguard', 5, 0.8, 0.6, withSkills({ challenge: mode }));
+      const found = findNode(vanguard, 'challenge')!;
+      learn(vanguard, found.branch, found.node);
       for (const [x, z] of [
         [4, 0.5],
         [4.4, -0.5],

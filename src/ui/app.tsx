@@ -11,6 +11,9 @@ interface PartyEntry {
   mana: number;
   maxMana: number;
   alive: boolean;
+  level: number;
+  // Skill and stat points not yet spent
+  points: number;
 }
 
 // How often the party bar reads health and mana from the game, in milliseconds.
@@ -36,7 +39,7 @@ export default function App(): JSX.Element {
       onInventory: (open) => {
         setInventory(open);
       },
-      onItems: () => {
+      onChange: () => {
         setItems((v) => v + 1);
       },
     });
@@ -51,6 +54,8 @@ export default function App(): JSX.Element {
           mana: unit.mana,
           maxMana: unit.derived.maxMana,
           alive: unit.alive,
+          level: unit.level,
+          points: unit.skillPoints + unit.statPoints,
         })),
       );
     }, PARTY_REFRESH);
@@ -86,7 +91,15 @@ export default function App(): JSX.Element {
               onClick={() => game()?.select(m.unit)}
             >
               <div class="flex justify-between text-zinc-300">
-                <span>{m.unit.name}</span>
+                <span>
+                  {m.unit.name} <span class="text-zinc-500">{m.level}</span>
+                  <Show when={m.points > 0}>
+                    <span data-part="danger" class="text-amber-400" title="Points to spend">
+                      {' '}
+                      +
+                    </span>
+                  </Show>
+                </span>
                 <span class="text-zinc-600">{i() + 1}</span>
               </div>
               <div data-part="bar" class="mt-1 h-1 bg-zinc-800">
@@ -119,6 +132,9 @@ export default function App(): JSX.Element {
               unit={unit}
               onClose={() => {
                 g.select(null);
+              }}
+              onChange={() => {
+                g.changed();
               }}
             />
           ) : null;

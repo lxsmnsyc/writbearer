@@ -2,7 +2,19 @@ import type { Prop, Stage } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
-import { BURN, CHILL, DREAD, FREEZE, PETRIFY, POISON, SHOCK, STUN, TAUNTED } from '../sim/statuses';
+import {
+  BURN,
+  CHILL,
+  DREAD,
+  FREEZE,
+  PETRIFY,
+  POISON,
+  ROOTED,
+  SHOCK,
+  STUN,
+  SUNDERED,
+  TAUNTED,
+} from '../sim/statuses';
 import type Sim from '../sim/sim';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -40,6 +52,7 @@ const STATUS_COLOR: Record<string, string> = {
   [PETRIFY.id]: C.earth,
   [POISON.id]: C.venom,
   [DREAD.id]: C.teal,
+  [ROOTED.id]: C.bone,
 };
 
 // Statuses that build up, by id, to read their thresholds.
@@ -168,6 +181,7 @@ export default class Renderer {
     fog.draw(ctx, iso, C.void, this.floorOnScreen());
     this.drawGround(f, fog);
     f.effects.drawRings(ctx, iso);
+    this.drawTraps(f);
 
     // A gold ring marks the merc whose orders are open.
     if (f.selected?.alive) {
@@ -441,6 +455,20 @@ export default class Renderer {
     }
   }
 
+  // Snares set on the floor: iron jaws, open, a ring of teeth.
+  private drawTraps(f: Frame): void {
+    const { ctx } = this;
+    for (const t of f.sim.traps) {
+      const b = this.iso(t.x, t.z);
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(b.x - 4, b.y - 1, 9, 3);
+      ctx.fillStyle = C.bone;
+      for (let i = 0; i < 5; i++) {
+        ctx.fillRect(b.x - 4 + i * 2, b.y - 2 + (i % 2), 1, 1);
+      }
+    }
+  }
+
   // Items on the floor: a small shape for what it is, and a glint for its quality.
   private drawGround(f: Frame, fog: Fog): void {
     const { ctx } = this;
@@ -523,18 +551,21 @@ export default class Renderer {
             1,
           );
         }
-      } else if (s.def.slow) {
-        // Frost settles at the feet.
-        for (let i = 0; i < 4; i++) {
-          ctx.fillRect(b.x - 5 + i * 3, b.y + (i % 2), 1, 1);
-        }
-      } else {
+      } else if (s.def.id === SUNDERED.id) {
+        // Broken armor shows in the stats, not over the head.
+        continue;
+      } else if (s.def.slow === undefined) {
         // Embers or bubbles rise off the body.
         for (let i = 0; i < 3; i++) {
           const t = (time * 0.9 + i / 3) % 1;
           const px = b.x + Math.round(Math.sin(i * 2.3 + time) * 4);
           const py = Math.round(b.y - (8 + t * (barHeight(u) - 6)) * look.zoom);
           ctx.fillRect(px, py, 1, 1);
+        }
+      } else {
+        // Frost settles at the feet, or the snare's jaws close on them.
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(b.x - 5 + i * 3, b.y + (i % 2), 1, 1);
         }
       }
     }

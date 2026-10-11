@@ -1,4 +1,5 @@
 import type { Lifecycle } from '../core/lifecycle';
+import type { Modifier } from './stats';
 import type Unit from './unit';
 
 /**
@@ -25,6 +26,10 @@ export interface StatusDef {
   flees?: boolean;
   // Ends early when its source dies, as a taunt does
   endsWithSource?: boolean;
+  // Stacks build with each new application, up to this many. Absent means one.
+  maxStacks?: number;
+  // Stat changes while active, from the stacks and the power it was given with
+  modifiers?: (status: ActiveStatus) => Modifier[];
   // Runs every tick while active
   tick?: (status: ActiveStatus, dt: number) => void;
   // Listeners and changes that last while active
@@ -40,5 +45,8 @@ export interface ActiveStatus {
   remaining: number;
   // Seconds since it began
   elapsed: number;
+  stacks: number;
+  // How strong it was made, such as the rank of the skill that gave it
+  power: number;
   lifecycle: Lifecycle | null;
 }

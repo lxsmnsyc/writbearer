@@ -10,6 +10,7 @@ import {
   type UnitHealEvent,
 } from './events';
 import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
+import type { Lifecycle } from '../core/lifecycle';
 import type { Spot } from './nav';
 import type Sim from './sim';
 import type { Cast, Skill } from './skill';
@@ -103,6 +104,8 @@ export default class Unit {
   weapon: Weapon;
   // Worn items, by slot
   readonly equipment = new Map<EquipSlot, Item>();
+  // Bonuses from passives and auras, by the id of what gives them
+  readonly bonuses = new Map<string, Modifier[]>();
   race: Race;
   rank: Rank;
   element: Element;
@@ -142,6 +145,14 @@ export default class Unit {
   private route: { x: number; z: number; at: number; points: Spot[] } | null = null;
 
   readonly skills: Skill[];
+  // Ranks learned in skill-tree nodes, by node id
+  readonly skillRanks = new Map<string, number>();
+  // Passive skills in effect, by node id, so a new rank can replace the old
+  readonly passives = new Map<string, Lifecycle>();
+  // Experience toward the next level, and points not yet spent
+  xp = 0;
+  skillPoints = 0;
+  statPoints = 0;
   // Seconds until each skill may be used again, by skill id
   readonly skillCooldowns = new Map<string, number>();
   // The skill being used, or null
@@ -348,7 +359,7 @@ export default class Unit {
    * Gives the unit a status, or refreshes it. Returns null if the unit is
    * immune or dead.
    */
-  addStatus(def: StatusDef, source: Unit, duration = def.duration): ActiveStatus | null {
+  addStatus(def: StatusDef, source: Unit, duration = def.duration, power = 1): ActiveStatus | null {
     if (!this.alive || (this.immunity.get(def.id) ?? 0) > 0) {
       return null;
     }
@@ -368,6 +379,13 @@ export default class Unit {
     if (current) {
       current.remaining = Math.max(current.remaining, check.value);
       current.source = source;
+      current.power = Math.max(current.power, power);
+      if (current.stacks < (def.maxStacks ?? 1)) {
+        current.stacks++;
+        if (def.modifiers) {
+          this.recalc();
+        }
+      }
       return current;
     }
     const status: ActiveStatus = {
@@ -376,9 +394,14 @@ export default class Unit {
       source,
       remaining: check.value,
       elapsed: 0,
+      stacks: 1,
+      power,
       lifecycle: null,
     };
     this.statuses.set(def.id, status);
+    if (def.modifiers) {
+      this.recalc();
+    }
     status.lifecycle = def.setup?.(status) ?? null;
     status.lifecycle?.start();
     if (def.disables) {
@@ -398,6 +421,9 @@ export default class Unit {
       return;
     }
     this.statuses.delete(id);
+    if (status.def.modifiers) {
+      this.recalc();
+    }
     status.lifecycle?.stop();
     if (status.def.immunity > 0) {
       this.immunity.set(id, status.def.immunity);
@@ -483,6 +509,33 @@ export default class Unit {
     this.statuses.clear();
     this.buildup.clear();
     this.immunity.clear();
+    this.recalc();
+  }
+
+  /** The rank learned in a skill, or 0. Monster skills count as rank 1. */
+  skillRank(id: string): number {
+    return this.skillRanks.get(id) ?? (this.skills.some((s) => s.id === id) ? 1 : 0);
+  }
+
+  /** Spends a stat point on a base stat. Returns false if there is none to spend. */
+  raiseStat(stat: keyof BaseStats): boolean {
+    if (this.statPoints <= 0) {
+      return false;
+    }
+    this.statPoints--;
+    this.base[stat]++;
+    this.recalc();
+    return true;
+  }
+
+  /** Sets or clears a bonus from a passive or aura. The stats follow at once. */
+  setBonus(id: string, modifiers: Modifier[] | null): void {
+    if (modifiers) {
+      this.bonuses.set(id, modifiers);
+    } else if (!this.bonuses.delete(id)) {
+      return;
+    }
+    this.recalc();
   }
 
   /**
@@ -510,12 +563,18 @@ export default class Unit {
   recalc(): void {
     const held = this.equipment.get(EquipSlot.Weapon);
     const fromItems = [...this.equipment.values()].flatMap(itemModifiers);
+    const fromStatuses = [...this.statuses.values()].flatMap((st) => st.def.modifiers?.(st) ?? []);
     this.stats = deriveStats({
       job: this.job,
       level: this.level,
       base: this.base,
       weapon: (held && weaponOf(held)) ?? this.weapon,
-      modifiers: [...this.modifiers, ...fromItems],
+      modifiers: [
+        ...this.modifiers,
+        ...fromItems,
+        ...fromStatuses,
+        ...[...this.bonuses.values()].flat(),
+      ],
     });
     this.hp = Math.min(this.hp, this.derived.maxHp);
     this.mana = Math.min(this.mana, this.derived.maxMana);

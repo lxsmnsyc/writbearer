@@ -25,6 +25,8 @@ export const enum SimEvents {
   CheckStatusDuration = 'CheckStatusDuration',
   StatusApplied = 'StatusApplied',
   StatusRemoved = 'StatusRemoved',
+  // After every unit has acted in a tick
+  Tick = 'Tick',
 }
 
 /**
@@ -127,6 +129,10 @@ export interface StatusEvent extends BaseEvent {
   status: ActiveStatus;
 }
 
+export interface TickEvent extends BaseEvent {
+  dt: number;
+}
+
 /** Which event carries which shape, on which priority scale. */
 export interface SimEventMap extends EventMap {
   [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
@@ -141,4 +147,5 @@ export interface SimEventMap extends EventMap {
   [SimEvents.CheckStatusDuration]: [CheckStatusDurationEvent, ValuePriority];
   [SimEvents.StatusApplied]: [StatusEvent, EventPriority];
   [SimEvents.StatusRemoved]: [StatusEvent, EventPriority];
+  [SimEvents.Tick]: [TickEvent, EventPriority];
 }

@@ -5,6 +5,7 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import Nav from './nav';
 import type { Projectile } from './projectile';
+import type { Trap } from './trap';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
@@ -107,6 +108,7 @@ function flyHoming(p: Projectile, dt: number): void {
     p.z = t.z;
     p.done = true;
     strike(p.source, t, p.options);
+    p.onHit?.(t);
     return;
   }
   p.dx = dx / d;
@@ -129,6 +131,7 @@ function flyStraight(sim: Sim, p: Projectile, dt: number): void {
       if (u.alive && !p.hits.has(u) && Math.hypot(u.x - p.x, u.z - p.z) <= p.radius) {
         p.hits.add(u);
         strike(p.source, u, p.options);
+        p.onHit?.(u);
         if (!p.pierce) {
           p.done = true;
           break;
@@ -160,6 +163,7 @@ export interface FireOptions {
   pierce?: boolean;
   skill?: string;
   options: HitOptions;
+  onHit?: (target: Unit) => void;
 }
 
 /**
@@ -191,6 +195,9 @@ export default class Sim extends EventEngine<SimEventMap> {
 
   // Arrows and other things in flight.
   readonly projectiles: Projectile[] = [];
+
+  // Traps set on the floor.
+  readonly traps: Trap[] = [];
 
   constructor(rng: RNG | number) {
     super();
@@ -240,8 +247,18 @@ export default class Sim extends EventEngine<SimEventMap> {
       options: f.options,
       skill: f.skill ?? null,
       done: false,
+      onHit: f.onHit,
     };
     this.projectiles.push(p);
+    return p;
+  }
+
+  /** Launches a homing projectile from one unit's position on behalf of another, as a chain. */
+  chain(source: Unit, from: Unit, target: Unit, f: FireOptions): Projectile {
+    const p = this.fire(source, target, { ...f, homing: true });
+    p.x = from.x;
+    p.z = from.z;
+    p.hits.add(from);
     return p;
   }
 
@@ -274,7 +291,28 @@ export default class Sim extends EventEngine<SimEventMap> {
       }
     }
     removeDone(this.projectiles);
+    this.springTraps(dt);
     this.separate();
+    this.emit(SimEvents.Tick, { id: 'Tick', disabled: false, dt });
+  }
+
+  // An enemy stepping on a trap springs it. Old traps rust away.
+  private springTraps(dt: number): void {
+    for (const trap of this.traps) {
+      trap.life -= dt;
+      const foes = this.living(trap.owner.side === Side.Party ? Side.Monster : Side.Party);
+      const victim = foes.find((u) => Math.hypot(u.x - trap.x, u.z - trap.z) <= trap.radius);
+      if (victim) {
+        victim.aware = true;
+        victim.addStatus(trap.status, trap.owner, trap.duration);
+        trap.sprung = true;
+      }
+    }
+    for (let i = this.traps.length - 1; i >= 0; i--) {
+      if (this.traps[i].sprung || this.traps[i].life <= 0) {
+        this.traps.splice(i, 1);
+      }
+    }
   }
 
   /** Runs ticks until `done` returns true or `seconds` pass. */

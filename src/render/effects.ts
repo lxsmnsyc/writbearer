@@ -172,6 +172,19 @@ export class Effects {
     });
   }
 
+  /** A gold ring and rising light around a merc who just gained a level. */
+  levelUp(u: Unit): void {
+    this.rings.push({ x: u.x, z: u.z, radius: 1.4, age: 0, life: RING_LIFE * 2, color: C.gold });
+    for (let i = 0; i < 12; i++) {
+      this.motes.push({
+        x: u.x + this.rng.range(-0.4, 0.4),
+        z: u.z + this.rng.range(-0.4, 0.4),
+        h: this.rng.range(0, 1.2),
+        life: this.rng.range(0.8, 1.6),
+      });
+    }
+  }
+
   /** Forgets everything on the old stage's floor and in its air. */
   clear(): void {
     this.decals.length = 0;

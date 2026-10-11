@@ -7,7 +7,7 @@ import Unit, { type Kit } from '../sim/unit';
 import { plainItem } from '../gen/loot';
 import { slotFor } from '../sim/item';
 import { BASE_BY_ID, STARTER_GEAR } from './items';
-import { CHALLENGE, HYMN, PIERCING_ARROW, SHIELD_BASH } from './skills';
+import { HYMN } from './skills';
 
 // First numbers for the starting jobs and the first monsters. They are a
 // starting point for balance, not final values.
@@ -72,7 +72,6 @@ export const MERCS = {
     // Bare hands. Its sword, shield and mail come as starter gear.
     weapon: { min: 6, max: 10, matk: 0 },
     kit: { reach: 1.1, interval: 1.0, hitAt: 0.55, moveSpeed: 2.6 },
-    skills: [CHALLENGE, SHIELD_BASH],
   },
   ranger: {
     job: job('Ranger', 180, 18, 60, Range.Ranged),
@@ -80,7 +79,6 @@ export const MERCS = {
     // Bare hands. Its bow and jerkin come as starter gear.
     weapon: { min: 4, max: 8, matk: 0 },
     kit: { reach: 5.5, interval: 1.1, hitAt: 0.7, moveSpeed: 2.7 },
-    skills: [PIERCING_ARROW],
   },
 } satisfies Record<string, Template>;
 
@@ -206,6 +204,8 @@ export function spawnMerc(
       unit.equip(slot, item);
     }
   }
+  // Recruits arrive with their skill points unspent, one per level past the first.
+  unit.skillPoints = level - 1;
   unit.hp = unit.derived.maxHp;
   unit.mana = unit.derived.maxMana;
   return unit;

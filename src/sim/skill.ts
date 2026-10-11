@@ -1,3 +1,4 @@
+import type { Lifecycle } from '../core/lifecycle';
 import type Sim from './sim';
 import type Unit from './unit';
 
@@ -25,7 +26,8 @@ export const enum Targeting {
 export interface Skill {
   id: string;
   name: string;
-  description: string;
+  // What it does at a rank
+  describe: (rank: number) => string;
   cost: number;
   cooldown: number;
   windup: number;
@@ -48,4 +50,13 @@ export interface Cast {
   target: Unit | null;
   // Seconds since the windup began
   t: number;
+}
+
+/**
+ * A passive skill. Learning it, or a new rank of it, sets it up again at the
+ * new rank: its listeners and bonuses last while the merc has it.
+ */
+export interface Passive {
+  id: string;
+  setup: (unit: Unit, rank: number) => Lifecycle;
 }
