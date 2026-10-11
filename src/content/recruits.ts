@@ -50,6 +50,14 @@ const WAGE_PER_LEVEL = 10;
 /** What a merc without wage traits asks at a level. */
 export const wageFor = (level: number): number => BASE_WAGE + WAGE_PER_LEVEL * level;
 
+/** How a merc's traits scale its wage, such as Greedy's half again. */
+export const traitScale = (traits: readonly string[]): number =>
+  traits.reduce((k, id) => k * (TRAIT_BY_ID.get(id)?.wage ?? 1), 1);
+
+/** What a merc asks at a phase's start: its level's wage, scaled by its traits. */
+export const wageOf = (merc: { level: number; traits: readonly string[] }): number =>
+  Math.round(wageFor(merc.level) * traitScale(merc.traits));
+
 /** Rolls a recruit: a job, a name, its traits and its wage. */
 export function rollOffer(
   rng: RNG,
@@ -58,13 +66,12 @@ export function rollOffer(
 ): Offer {
   const kind = rng.pick(jobs);
   const traits = rollTraits(rng);
-  const scale = traits.reduce((k, id) => k * (TRAIT_BY_ID.get(id)?.wage ?? 1), 1);
   return {
     kind,
     name: rng.pick(NAMES),
     level,
     traits,
-    wage: Math.round(wageFor(level) * scale),
+    wage: wageOf({ level, traits }),
   };
 }
 

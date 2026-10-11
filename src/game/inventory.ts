@@ -104,6 +104,45 @@ export class Pack {
   }
 }
 
+// The vault holds this many stacks, with no weight limit.
+const VAULT_SLOTS = 40;
+
+/**
+ * The party's storage for the run, as rAthena's Kafra storage. It opens only
+ * at a Waystation. What is in it is safe until the run ends.
+ */
+export class Vault {
+  readonly items: Item[] = [];
+  readonly slots = VAULT_SLOTS;
+}
+
+/** Moves an item from the pack into the vault. Returns why it failed, or null. */
+export function storeInVault(pack: Pack, vault: Vault, uid: number): string | null {
+  if (vault.items.length >= vault.slots) {
+    return 'The vault is full.';
+  }
+  const item = pack.take(uid);
+  if (!item) {
+    return 'That item is gone.';
+  }
+  vault.items.push(item);
+  return null;
+}
+
+/** Moves an item from the vault into the pack. Returns why it failed, or null. */
+export function takeFromVault(pack: Pack, vault: Vault, uid: number): string | null {
+  const i = vault.items.findIndex((x) => x.uid === uid);
+  if (i < 0) {
+    return 'That item is gone.';
+  }
+  const why = pack.refuses(vault.items[i]);
+  if (why) {
+    return why;
+  }
+  pack.add(vault.items.splice(i, 1)[0]);
+  return null;
+}
+
 /** Whether a fight is on around the bearer. */
 export function inFight(sim: Sim, bearer: Unit): boolean {
   return sim.living(Side.Monster).some((m) => m.aware && m.distanceTo(bearer) <= FIGHT_RADIUS);

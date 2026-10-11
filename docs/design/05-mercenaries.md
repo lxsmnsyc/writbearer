@@ -33,7 +33,7 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 - Traits in the game: Brave (dread never takes hold), Cowardly (runs from the nearest enemy below 25% health), Greedy (×1.5 wage), Loyal (stays closer, chases 2 tiles less, ×0.9 wage), Glory-seeker (goes for elites first), Veteran (one more target priority, ×1.2 wage), Bloodthirsty (chases 3 tiles further) and Devout (dread builds up at half the rate). Drunkard and Hates a job wait for morale.
 - The Cleric's Mercy branch is in the game up to Resurrection, and Smite opens Inquisition. Sanctuary waits for Ward to have magical damage to absorb.
 - A killing blow of 30% of max health or more, or a critical one, tears the body apart. A torn merc cannot be resurrected.
-- For tests, `?party=vanguard,ranger` skips the pick, `?seed=` fixes the run and `?area=8` starts in that area.
+- For tests, `?party=vanguard,ranger` skips the pick, `?seed=` fixes the run and `?area=8` starts in that area, and `?station` starts at the Waystation before it.
 
 ## Wages and contracts
 
@@ -41,6 +41,14 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 - An unpaid merc loses morale. Low morale leads to ignoring toggles, then deserting, then betrayal.
 - Each contract lasts a number of phases. When it ends, the player renews it or the merc leaves.
 - Wages are the main brake on party size.
+
+### In the game so far
+
+- Wages are paid at the Guild's Waystation at the top of each layer, after the first. The first layer's wages are the hiring price.
+- A merc asks its level's wage, 40 gold plus 10 per level, scaled by its traits: Greedy ×1.5, Veteran ×1.2, Loyal ×0.9. Dead mercs ask nothing.
+- Walking up to the paymaster's post opens the ledger. Each wage is paid once per Waystation.
+- A living merc left unpaid when the party takes the road on leaves the party, with what it wears.
+- Not yet: morale, Discipline and contracts that last several phases. Until morale exists, leaving is the only cost of an unpaid wage.
 
 ## Stats
 

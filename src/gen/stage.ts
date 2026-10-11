@@ -19,6 +19,8 @@ export type PropKind =
   | 'torch'
   | 'signpost'
   | 'gate'
+  | 'post'
+  | 'strongbox'
   | 'campfire';
 
 export interface Prop {
@@ -70,6 +72,8 @@ export interface Stage {
   arena?: { x: number; z: number; r: number; closed: boolean };
   // Where the boss stands
   boss?: Spot;
+  // A Waystation's paymaster's post, where wages are paid and the vault opens
+  station?: Spot;
   // Where a wandering merc waits by its fire, on stages that have one
   recruit?: Spot;
 }
@@ -86,6 +90,8 @@ const SOLID: Partial<Record<PropKind, number>> = {
   banner: 0.2,
   chest: 0.35,
   campfire: 0.3,
+  post: 1.1,
+  strongbox: 0.4,
 };
 
 // Threat each monster costs from a stage's budget. An elite costs more.
@@ -274,6 +280,55 @@ export function generateStage(rng: RNG, index: number): Stage {
   }
 
   placePacks(stage, rng, { site, lair, breach: { x: wallX, z: breaches[0] } });
+  return stage;
+}
+
+/**
+ * The Guild's Waystation at the top of a layer, before its first area: a
+ * small safe field with the paymaster's post and the vault's strongbox, and
+ * the road on to the east. No monsters come here. `index` is the index of
+ * the layer's first area.
+ */
+export function generateWaystation(rng: RNG, index: number): Stage {
+  const width = 26;
+  const depth = 20;
+  const entrance = { x: 2.5, z: depth / 2 };
+  const exit = { x: width - 3, z: depth / 2 };
+  const post = { x: width / 2, z: depth / 2 - 3.5 };
+  const stage: Stage = {
+    index,
+    width,
+    depth,
+    entrance,
+    exit,
+    props: [],
+    sigils: [],
+    stains: [],
+    packs: [],
+    road: [entrance, exit, { x: width + 1, z: exit.z }],
+    down: false,
+    station: { x: post.x, z: post.z + 2 },
+  };
+  const add = (kind: PropKind, x: number, z: number): Prop => {
+    const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
+    stage.props.push(prop);
+    return prop;
+  };
+  add('post', post.x, post.z);
+  add('strongbox', post.x + 2, post.z + 0.6);
+  add('torch', post.x - 1.6, post.z + 1.4);
+  add('torch', exit.x - 1.2, exit.z - 1.6);
+  add('torch', exit.x - 1.2, exit.z + 1.6);
+  add('signpost', exit.x - 2.2, exit.z - 2.2);
+  // Trees or pillars round the edge, off the road and the post.
+  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
+  for (let i = 0; i < 14; i++) {
+    const x = rng.range(1.5, width - 1.5);
+    const z = rng.chance(0.5) ? rng.range(1, 3.5) : rng.range(depth - 3.5, depth - 1);
+    if (Math.hypot(x - post.x, z - post.z) > 3.5) {
+      add(tall, x, z);
+    }
+  }
   return stage;
 }
 

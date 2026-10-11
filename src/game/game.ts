@@ -8,7 +8,7 @@ import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
 import Renderer from '../render/renderer';
 import { Views } from '../render/view';
-import { type Stage, generateStage } from '../gen/stage';
+import { type Stage, generateStage, generateWaystation } from '../gen/stage';
 import { type EquipSlot, type Item, isPotion } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
 import { potionStack, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
@@ -16,11 +16,15 @@ import { gainXp, killXp } from '../sim/progress';
 import {
   type GroundItem,
   Pack,
+  Vault,
   beltToPack,
   equipFromPack,
   packToBelt,
+  storeInVault,
+  takeFromVault,
   unequipToPack,
 } from './inventory';
+import { type Due, Payroll } from './wages';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { spawnMerc } from '../content/roster';
 import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
@@ -53,6 +57,8 @@ export interface GameHooks {
   onOffers?: (offers: Offer[] | null) => void;
   // Called when the bearer meets a wandering merc, then null.
   onRecruit?: (offer: Offer | null) => void;
+  // Called when the bearer reaches a Waystation's post, and when it closes.
+  onStation?: (open: boolean) => void;
 }
 
 export interface GameOptions {
@@ -62,6 +68,8 @@ export interface GameOptions {
   party?: Offer['kind'][];
   // Starts in this area of the run, from 1, for tests and playtesting
   area?: number;
+  // Starts at the Waystation before that area instead
+  station?: boolean;
 }
 
 // The most mercs in the party, living or dead.
@@ -74,6 +82,10 @@ export const PARTY_SIZE = 4;
 export const START_GOLD = 3 * wageFor(START_LEVEL + 1);
 // The bearer meets a wandering merc from this close, and leaves it from this far.
 const MEET_REACH = 1.8;
+// Each Waystation lays out from its own stream, apart from the areas'.
+const WAYSTATION_STREAM = 1000;
+// Seconds a notice stays on screen
+const NOTICE_TIME = 6;
 const LEAVE_REACH = 4;
 
 /**
@@ -111,6 +123,13 @@ export default class Game {
   private wanderer: { offer: Offer; x: number; z: number; met: boolean } | null = null;
   // The boss of a layer's last area, while the party is in it
   private boss: Unit | null = null;
+  // The party's storage for the run, and the wages owed at this Waystation
+  readonly vault = new Vault();
+  private payroll: Payroll | null = null;
+  private stationOpen = false;
+  private stationMet = false;
+  // A line shown under the hint for a while, such as who left unpaid
+  private notice: { text: string; until: number } | null = null;
   private recruiting: Offer | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
@@ -128,7 +147,11 @@ export default class Game {
   /** The game pauses while a merc's orders are open. */
   get paused(): boolean {
     return (
-      this.selected !== null || this.inventory || this.offers !== null || this.recruiting !== null
+      this.selected !== null ||
+      this.inventory ||
+      this.offers !== null ||
+      this.recruiting !== null ||
+      this.stationOpen
     );
   }
 
@@ -312,7 +335,8 @@ export default class Game {
     this.streams = new RunStreams(this.options.seed ?? randomSeed());
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
     this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
-    this.stage = this.buildStage();
+    this.payroll = null;
+    this.stage = this.options.station ? this.buildWaystation() : this.buildStage();
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
     this.bearer = spawnParty(this.sim, this.stage, this.options.party ?? []);
@@ -356,6 +380,10 @@ export default class Game {
     this.ground = [];
     this.fetching = null;
     this.inventory = false;
+    this.vault.items.length = 0;
+    this.stationOpen = false;
+    this.notice = null;
+    this.hooks.onStation?.(false);
     this.select(null);
     this.acc = 0;
     this.hooks.onInventory?.(false);
@@ -463,11 +491,28 @@ export default class Game {
     }
   }
 
-  // The bearer left by the exit: on to the next area, or down to the next
-  // layer, party and all.
+  // The bearer left by the exit: on to the next area, down to the next
+  // layer's Waystation, or from the Waystation into the layer's first area.
+  // Party and all.
   private descend(): void {
-    this.stageIndex++;
-    this.stage = this.buildStage();
+    if (this.stage.station) {
+      // The unpaid walk away as the party takes the road on.
+      const gone = this.payroll?.settle(this.sim) ?? [];
+      if (gone.length > 0) {
+        const names = gone.map((m) => m.name).join(' and ');
+        this.say(`${names} ${gone.length > 1 ? 'leave' : 'leaves'} the party, unpaid.`);
+        this.hooks.onChange?.();
+      }
+      this.payroll = null;
+      this.stage = this.buildStage();
+    } else {
+      this.stageIndex++;
+      if (this.stage.down) {
+        this.stage = this.buildWaystation();
+      } else {
+        this.stage = this.buildStage();
+      }
+    }
     carryParty(this.sim, this.stage);
     this.effects.clear();
     // What was left on the old stage's floor is lost.
@@ -476,6 +521,74 @@ export default class Game {
     this.views.snap(this.sim);
     this.renderer.snapCamera();
     this.enter();
+  }
+
+  // The Waystation before the current area, with this layer's wages owed.
+  private buildWaystation(): Stage {
+    this.payroll = new Payroll();
+    this.stationMet = false;
+    return generateWaystation(
+      this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
+      this.stageIndex,
+    );
+  }
+
+  private say(text: string): void {
+    this.notice = { text, until: this.time + NOTICE_TIME };
+  }
+
+  // Opens the Waystation's post when the bearer walks up to it.
+  private visitStation(): void {
+    const post = this.stage.station;
+    if (!post || this.stationOpen) {
+      return;
+    }
+    const d = Math.hypot(this.bearer.x - post.x, this.bearer.z - post.z);
+    if (d > LEAVE_REACH) {
+      this.stationMet = false;
+    } else if (d <= MEET_REACH && !this.stationMet && this.bearer.alive) {
+      this.stationMet = true;
+      this.stationOpen = true;
+      this.keys.clear();
+      this.bearer.order = null;
+      this.hooks.onStation?.(true);
+    }
+  }
+
+  /** Closes the Waystation's post. Walking back to it opens it again. */
+  closeStation(): void {
+    this.stationOpen = false;
+    this.hooks.onStation?.(false);
+  }
+
+  /** The wages owed at this Waystation, or none elsewhere. */
+  dues(): Due[] {
+    return this.payroll?.dues(this.sim) ?? [];
+  }
+
+  /** Pays one merc's wage. Returns why it could not, or null. */
+  pay(merc: Unit): string | null {
+    const why = this.payroll?.pay(this.pack, merc) ?? 'Wages are paid only at a Waystation.';
+    this.itemsChanged();
+    return why;
+  }
+
+  /** Moves an item from the pack into the vault, at a Waystation only. */
+  store(uid: number): string | null {
+    const why = this.stage.station
+      ? storeInVault(this.pack, this.vault, uid)
+      : 'The vault opens only at a Waystation.';
+    this.itemsChanged();
+    return why;
+  }
+
+  /** Moves an item from the vault into the pack, at a Waystation only. */
+  takeOut(uid: number): string | null {
+    const why = this.stage.station
+      ? takeFromVault(this.pack, this.vault, uid)
+      : 'The vault opens only at a Waystation.';
+    this.itemsChanged();
+    return why;
   }
 
   start(): void {
@@ -498,6 +611,9 @@ export default class Game {
     if (key === 'escape') {
       this.select(null);
       this.openInventory(false);
+      if (this.stationOpen) {
+        this.closeStation();
+      }
       return;
     }
     if (key === 'q' && !this.over && !this.paused) {
@@ -620,6 +736,7 @@ export default class Game {
         this.views.afterTick(this.sim);
         this.loot();
         this.meet();
+        this.visitStation();
         this.acc -= TICK;
         if (shutArena(this.sim, this.stage, this.boss)) {
           // The gate slams shut behind the party.
@@ -658,6 +775,7 @@ export default class Game {
       selected: this.selected,
       shake: this.shake,
       boss: this.boss,
+      notice: this.notice && this.notice.until > this.time ? this.notice.text : null,
     });
     // Exposed for browser tests, which cannot see inside the canvas.
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;

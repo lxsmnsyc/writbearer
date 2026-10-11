@@ -102,6 +102,8 @@ export interface Frame {
   shake: number;
   // The boss of a layer's last area, if the party is there
   boss: Unit | null;
+  // A line shown under the hint for a while, such as who left unpaid
+  notice: string | null;
 }
 
 export default class Renderer {
@@ -766,13 +768,17 @@ export default class Renderer {
     );
     out.textAlign = 'right';
     out.fillText(
-      `${layerOf(f.stage.index).name} · Area ${areaOf(f.stage.index)} · Slain: ${f.slain}`,
+      `${layerOf(f.stage.index).name} · ${f.stage.station ? 'Waystation' : `Area ${areaOf(f.stage.index)}`} · Slain: ${f.slain}`,
       W * SCALE - 16,
       26,
     );
     out.textAlign = 'start';
     out.fillStyle = '#8a8274';
     out.fillText(hint(f), 16, 52);
+    if (f.notice) {
+      out.fillStyle = C.gold;
+      out.fillText(f.notice, 16, 76);
+    }
     if (f.boss?.alive && f.stage.arena?.closed) {
       // The boss's name and health across the top, as Diablo 2 shows them.
       const w = 360;
@@ -803,6 +809,9 @@ export default class Renderer {
 
 // What the player is to do in this area, under the controls.
 function hint(f: Frame): string {
+  if (f.stage.station) {
+    return 'The Guild’s Waystation. Pay your mercs and use the vault at the post, then take the road east.';
+  }
   if (f.boss) {
     if (f.boss.alive) {
       return f.stage.arena?.closed
@@ -902,6 +911,45 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     );
     ctx.fillStyle = C.gold;
     ctx.fillRect(base.x + 2, base.y - 28, 4, 1);
+  } else if (p.kind === 'post') {
+    // The Guild's post: a plank hut under a pitched roof, its gold pennant
+    // the only color in the field.
+    block(ctx, base, 1.05, 30, p.seed, C.wood);
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 38, base.y - 28),
+        pt(base.x, base.y - 52),
+        pt(base.x + 38, base.y - 28),
+        pt(base.x, base.y - 8),
+      ],
+      C.stoneB,
+    );
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 1, base.y - 50),
+        pt(base.x + 1, base.y - 50),
+        pt(base.x + 1, base.y - 74),
+        pt(base.x - 1, base.y - 74),
+      ],
+      C.wood,
+    );
+    fillPoly(
+      ctx,
+      [pt(base.x + 1, base.y - 74), pt(base.x + 16, base.y - 70), pt(base.x + 1, base.y - 65)],
+      C.gold,
+    );
+    // The paymaster's window, lit from inside.
+    ctx.fillStyle = C.flame;
+    ctx.fillRect(base.x + 10, base.y - 12, 8, 5);
+  } else if (p.kind === 'strongbox') {
+    // The vault: the Guild's iron-bound strongbox.
+    block(ctx, base, 0.38, 11, 0.5, C.stoneA);
+    ctx.fillStyle = C.ink;
+    ctx.fillRect(base.x - 12, base.y - 7, 24, 1);
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(base.x - 1, base.y - 6, 3, 3);
   } else if (p.kind === 'gate') {
     // Stakes of the arena's gate: a stump while open, a sharpened post once shut.
     if (p.r === undefined) {

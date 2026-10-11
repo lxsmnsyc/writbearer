@@ -4,6 +4,7 @@ import { HIREABLE } from '../content/recruits';
 import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
+import Station from './station';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
 
@@ -35,6 +36,7 @@ function runOptions(): GameOptions {
     seed: params.get('seed') ?? undefined,
     party,
     area: Number.isInteger(area) && area > 0 ? area : undefined,
+    station: params.has('station'),
   };
 }
 
@@ -46,6 +48,7 @@ export default function App(): JSX.Element {
   const [inventory, setInventory] = createSignal(false);
   const [offers, setOffers] = createSignal<Offer[] | null>(null);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
+  const [station, setStation] = createSignal(false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -70,6 +73,9 @@ export default function App(): JSX.Element {
         },
         onRecruit: (o) => {
           setRecruit(o);
+        },
+        onStation: (open) => {
+          setStation(open);
         },
       },
       runOptions(),
@@ -185,6 +191,17 @@ export default function App(): JSX.Element {
             version={items()}
             onClose={() => {
               g.openInventory(false);
+            }}
+          />
+        )}
+      </Show>
+      <Show when={station() && game()} keyed>
+        {(g) => (
+          <Station
+            game={g}
+            version={items()}
+            onClose={() => {
+              g.closeStation();
             }}
           />
         )}

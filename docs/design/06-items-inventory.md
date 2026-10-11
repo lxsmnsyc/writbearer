@@ -59,6 +59,7 @@ Equipment weight:
 - Items in the vault are safe. Items in the pack and on the caravan can be stolen or lost.
 - It has no weight limit and a fixed number of slots.
 - It is emptied when the run ends. Nothing carries over to the next run.
+- **In the game so far:** the vault opens at the paymaster's post of each Waystation, beside the wages. It holds 40 stacks with no weight limit. An item taken out must fit the pack.
 - Opening it only at phase starts makes the player decide what to carry into the phase and what to leave behind.
 
 ## In the game so far
@@ -77,7 +78,7 @@ Equipment weight:
 - **The belt:** each merc has 3 belt slots of up to 5 potions. The Vanguard starts with 2 Healing Draughts, the Ranger with 2 and a Mana Tincture. Clicking a potion in the inventory puts it on the chosen merc's belt, under the same fight rule as gear. A merc drinks on its own: healing below its belt threshold, set in its orders at 50%, 30% or emergencies (15%), and mana below 25% in a fight if it has skills. One potion per second at most.
 - **The bearer drinks** a Healing Draught from the pack with Q.
 
-Not yet: identification, cursed items, uniques, sets, sockets with cards, refining, requirements and the vault. Rares drop identified for now.
+Not yet: identification, cursed items, uniques, sets, sockets with cards, refining and requirements. Rares drop identified for now.
 
 ## Item data
 
