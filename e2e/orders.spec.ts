@@ -60,18 +60,24 @@ test('target priorities can be removed, added and reordered', async ({ page }) =
 });
 
 test('clicking a merc on the canvas opens its orders', async ({ page }) => {
-  // Pause at once, so the Vanguard is still at its starting spot: one tile
-  // right of the bearer on screen, which the camera centers on.
-  await page.keyboard.press('1');
-  await page.keyboard.press('Escape');
-  const box = await page.locator('canvas').boundingBox();
+  // Open the Ranger's sheet, which pauses the game, then click the Vanguard
+  // where the game says it stands: the sheet switches to it.
+  await page.keyboard.press('2');
+  await expect(page.getByRole('complementary', { name: 'Orders for Ranger' })).toBeVisible();
+  const canvas = page.locator('canvas');
+  const mercs = (await canvas.getAttribute('data-mercs')) ?? '';
+  const spot = mercs
+    .split(';')
+    .find((m) => m.startsWith('Vanguard:'))!
+    .split(':')[1]
+    .split(',')
+    .map(Number);
+  const box = await canvas.boundingBox();
   if (!box) {
     throw new Error('No canvas');
   }
-  await page.mouse.click(
-    box.x + box.width * (0.5 + 32 / 384),
-    box.y + box.height * (0.5 - 16 / 216),
-  );
+  // A little above the feet, on the body.
+  await page.mouse.click(box.x + box.width * spot[0], box.y + box.height * spot[1] - 20);
   await expect(page.getByRole('complementary', { name: 'Orders for Vanguard' })).toBeVisible();
 });
 

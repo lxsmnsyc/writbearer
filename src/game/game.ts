@@ -984,5 +984,12 @@ export default class Game {
     this.canvas.dataset.bearer = `${this.bearer.x.toFixed(2)},${this.bearer.z.toFixed(2)}`;
     const cam = this.renderer.camera;
     this.canvas.dataset.camera = `${cam.x},${cam.y}`;
+    // Each merc's feet, as shares of the canvas, so tests can click them.
+    this.canvas.dataset.mercs = this.mercs()
+      .map((m) => {
+        const p = this.renderer.shareOnScreen(m.x, m.z);
+        return `${m.name}:${p.x.toFixed(4)},${p.y.toFixed(4)}`;
+      })
+      .join(';');
   }
 }

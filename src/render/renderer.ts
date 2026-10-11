@@ -392,6 +392,15 @@ export default class Renderer {
     return this.fog.fog;
   }
 
+  /**
+   * Where a floor point is on the screen element, as a share of its width
+   * and height, for browser tests.
+   */
+  shareOnScreen(x: number, z: number): Pt {
+    const b = this.iso(x, z);
+    return pt((b.x * SCALE - this.sub.x) / (W * SCALE), (b.y * SCALE - this.sub.y) / (H * SCALE));
+  }
+
   /** Whether the party sees a floor point now. */
   sees(x: number, z: number): boolean {
     return (this.fog?.fog.visible(x, z) ?? 0) > 0.5;
