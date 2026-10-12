@@ -1,4 +1,5 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
+import { MATERIAL_NAME } from '../content/materials';
 import type Game from '../game/game';
 import { itemLines, itemName } from '../gen/loot';
 import { socketFor } from '../game/inventory';
@@ -53,6 +54,13 @@ export default function Inventory(props: Props): JSX.Element {
   const pack = (): Item[] => (props.version >= 0 ? [...props.game.pack.items] : []);
   const gold = (): number => (props.version >= 0 ? props.game.pack.gold : 0);
   const weight = (): number => (props.version >= 0 ? props.game.pack.weight : 0);
+  // Crafting materials, carried apart from the pack, with no weight
+  const pouch = (): string => {
+    const all = props.version >= 0 ? [...props.game.pack.materials] : [];
+    return all.length > 0
+      ? all.map(([id, n]) => `${n} ${MATERIAL_NAME.get(id) ?? id}`).join(', ')
+      : 'no materials yet';
+  };
 
   // Stacks change in place, so names are read again on every change.
   const name = (item: Item): string => (props.version >= 0 ? itemName(item) : '');
@@ -157,6 +165,9 @@ export default function Inventory(props: Props): JSX.Element {
             Empty. Click an item on the floor to pick it up.
           </p>
         </Show>
+        <p data-part="note" class="mt-2 text-xs text-zinc-500" aria-label="Pouch">
+          Pouch: {pouch()}
+        </p>
         <Show when={hovered()} keyed>
           {(item) => (
             <div data-part="row" class="mt-3 border border-zinc-800 p-2 text-xs">

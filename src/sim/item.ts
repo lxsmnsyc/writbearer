@@ -115,6 +115,8 @@ export interface Item {
   sockets: number;
   // Cards and gems set into the sockets, at most `sockets` of them
   cards: ItemBase[];
+  // Refine level, +0 to +10, raised by a Blacksmith
+  refine: number;
   // A rare's rolled name, such as "Grave Fang"
   name?: string;
   // Gold only
@@ -184,6 +186,33 @@ export function weaponOf(item: Item): Weapon | null {
   };
 }
 
+// What each refine level adds: flat attack to weapons, flat armor to armor.
+export const REFINE_ATTACK = 3;
+export const REFINE_ARMOR = 2;
+export const MAX_REFINE = 10;
+
+/** Whether a Blacksmith can refine an item at all: weapons and armor, not accessories. */
+export const refinable = (item: Item): boolean =>
+  item.base.type === ItemType.Weapon ||
+  item.base.type === ItemType.Shield ||
+  item.base.type === ItemType.Head ||
+  item.base.type === ItemType.Body ||
+  item.base.type === ItemType.Cloak ||
+  item.base.type === ItemType.Boots;
+
+function refineModifiers(item: Item): Modifier[] {
+  if (item.refine <= 0) {
+    return [];
+  }
+  if (item.base.type === ItemType.Weapon) {
+    return [
+      { stat: 'atkMin', add: item.refine * REFINE_ATTACK },
+      { stat: 'atkMax', add: item.refine * REFINE_ATTACK },
+    ];
+  }
+  return refinable(item) ? [{ stat: 'armor', add: item.refine * REFINE_ARMOR }] : [];
+}
+
 /** Whether an item is a card or a gem, for sockets. */
 export const isCard = (item: Item): boolean => item.base.type === ItemType.Card;
 
@@ -207,6 +236,7 @@ export function itemModifiers(item: Item): Modifier[] {
     out.push({ stat: 'blockChance', add: item.base.block.chance });
     out.push({ stat: 'blockAmount', add: item.base.block.amount });
   }
+  out.push(...refineModifiers(item));
   out.push(...item.bonuses);
   for (const card of item.cards) {
     out.push(...(card.socket?.modifiers ?? []));

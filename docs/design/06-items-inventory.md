@@ -95,7 +95,14 @@ Equipment weight:
 | Hollowed Saint | Weapon | Basic attacks add 25 Dread buildup. Takes 15% more Occult damage. |
 | Garnet, Topaz, Onyx, Opal | Any | +2 STR, DEX, VIT or INT. |
 
-Not yet: autocast, skill-grant and combo cards, the Card collector, adding sockets at a Blacksmith, identification, cursed items, uniques, sets, refining and requirements. Rares drop identified for now.
+- **Towns:** the Marches and the Rift Road each have one Town on their map, in the fourth or fifth column; below them no one is left. Walking to its well opens the Town, with four services, paid from the `craft` stream:
+  - **Smith:** refines a weapon or armor, in the pack or worn, from +0 to +10. Each level adds 3 attack to a weapon or 2 armor to armor, for 25 gold times the next level. To +4 it always works. Past it the chance falls from 60% at +5 to 10% at +10; a failure breaks the item with its cards, unless the player chose to spend a Smith's Blessing, which costs a level instead. The Smith also adds a socket, up to the item's limit, for 150 gold times the next socket: 75% of the time; otherwise the item breaks.
+  - **Bench:** makes recipes from the pouch and gold: Healing Draughts, Mana Tinctures, a Greater Draught, a gem, a Smith's Blessing, and a reforged Magic or better weapon or piece of armor of the area's level. Every recipe is known; recipe drops wait. It also salvages gear into Iron, and Radiant Essence from Magic and Rare gear. Cards in salvaged gear are lost.
+  - **Temple:** raises a dead merc at half health, for 80 gold plus 20 per level. Not one torn apart.
+  - **Market:** sells Healing Draughts and Mana Tinctures for 25 gold and Greater Draughts for 60, and buys anything in the pack: gear for 4 gold per item level times its quality, plus 10 per refine level; cards for 30; potions for 8.
+- **Materials:** a slain monster leaves its race's material for the pouch: Chitin from insects and beasts, Bone from the Undead, Rags from Humans; 35% of the time from a normal monster, 2 from an elite, 4 from a boss. Venom, Occult and Radiant monsters also leave their essence: 10%, 50% from an elite, 2 from a boss. The pack panel lists the pouch.
+
+Not yet: autocast, skill-grant and combo cards, the Card collector, recipe drops, crafting at Camps, identification, cursed items, uniques, sets and requirements. Rares drop identified for now.
 
 ## Item data
 

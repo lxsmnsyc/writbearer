@@ -23,6 +23,11 @@ export type PropKind =
   | 'post'
   | 'strongbox'
   | 'sarcophagus'
+  | 'well'
+  | 'anvil'
+  | 'bench'
+  | 'chapel'
+  | 'stall'
   | 'campfire';
 
 export interface Prop {
@@ -99,6 +104,8 @@ export interface Stage {
   rest?: Spot;
   // The Creditor's sarcophagus, where the seal breaks
   tomb?: Spot;
+  // A Town's well, where its smith, bench, temple and market are dealt with
+  town?: Spot;
 }
 
 // The plan of an area with one road on to a Combat area, as tests use.
@@ -152,6 +159,11 @@ const SOLID: Partial<Record<PropKind, number>> = {
   campfire: 0.3,
   post: 1.1,
   sarcophagus: 0.9,
+  well: 0.6,
+  anvil: 0.4,
+  bench: 0.5,
+  chapel: 1.1,
+  stall: 0.6,
   strongbox: 0.4,
 };
 
@@ -195,6 +207,9 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
   }
   if (plan.kind === 'camp') {
     return generateCamp(rng, index, plan.ahead);
+  }
+  if (plan.kind === 'town') {
+    return generateTown(rng, index, plan.ahead);
   }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
@@ -412,6 +427,29 @@ export function generateWaystation(rng: RNG, index: number, ahead: Ahead[] = ['c
   add('strongbox', post.x + 1.6, post.z + 1.4);
   add('torch', post.x - 1.6, post.z - 1.4);
   edgeTrees(stage, add, rng, post);
+  return stage;
+}
+
+/**
+ * A Town, in the layers where people still live: a small safe field round a
+ * well, with a smithy, a Synthesis bench, a chapel and a market stall.
+ * While anyone is left to hire, a merc waits at the tavern fire.
+ */
+function generateTown(rng: RNG, index: number, ahead: Ahead[]): Stage {
+  const { stage, add } = smallField(rng, index, 'town', ahead);
+  const well = { x: stage.width / 2, z: stage.depth / 2 };
+  add('well', well.x, well.z);
+  stage.town = { x: well.x - 1.4, z: well.z };
+  add('anvil', well.x - 2, well.z - 3.2);
+  add('bench', well.x + 2.2, well.z - 3.2);
+  add('chapel', well.x + 3.6, well.z + 0.2);
+  add('stall', well.x - 2, well.z + 3.2);
+  add('torch', well.x + 0.4, well.z - 1.8);
+  if (index < RECRUIT_STAGES) {
+    add('campfire', well.x + 2, well.z + 3.4);
+    stage.recruit = { x: well.x + 3, z: well.z + 3.8 };
+  }
+  edgeTrees(stage, add, rng, { x: well.x, z: well.z });
   return stage;
 }
 

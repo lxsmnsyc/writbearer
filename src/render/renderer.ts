@@ -48,6 +48,7 @@ const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
   combat: 'Fight',
   elite: 'Elite: a strong pack, better spoils',
   camp: 'Camp: rest by a fire',
+  town: 'Town: smith, bench, temple, market',
   boss: 'The walled ring',
 };
 
@@ -917,6 +918,9 @@ function place(stage: Stage): string {
   if (stage.kind === 'camp') {
     return `${area}, Camp`;
   }
+  if (stage.kind === 'town') {
+    return `${area}, Town`;
+  }
   return area;
 }
 
@@ -937,6 +941,9 @@ function hint(f: Frame): string {
         : 'Something waits in the walled ring, before the way down.';
     }
     return 'The way down is open, to the east.';
+  }
+  if (f.stage.town) {
+    return 'A Town. Walk to the well to deal with the smith, the bench, the temple and the market.';
   }
   if (f.stage.rest) {
     return 'A Camp. Walk to the fire to rest, then take a road on. M for the map.';
@@ -1079,6 +1086,69 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     ctx.fillRect(base.x - 12, base.y - 7, 24, 1);
     ctx.fillStyle = C.gold;
     ctx.fillRect(base.x - 1, base.y - 6, 3, 3);
+  } else if (p.kind === 'well') {
+    // A round stone well with a winch over it.
+    block(ctx, base, 0.55, 9, p.seed, C.stoneA);
+    fillPoly(ctx, quad(pt(base.x - 10, base.y - 8), pt(base.x - 10, base.y - 24), 1, 1), C.wood);
+    fillPoly(ctx, quad(pt(base.x + 10, base.y - 8), pt(base.x + 10, base.y - 24), 1, 1), C.wood);
+    fillPoly(ctx, quad(pt(base.x - 11, base.y - 24), pt(base.x + 11, base.y - 24), 1, 1), C.wood);
+  } else if (p.kind === 'anvil') {
+    // The smith's anvil on its stump, the forge glowing behind.
+    block(ctx, pt(base.x + 6, base.y - 4), 0.35, 14, p.seed, C.stoneB);
+    ctx.fillStyle = C.flame;
+    ctx.fillRect(base.x + 3, base.y - 12, 5, 2);
+    block(ctx, base, 0.2, 6, p.seed, C.wood);
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 7, base.y - 9),
+        pt(base.x + 6, base.y - 9),
+        pt(base.x + 4, base.y - 6),
+        pt(base.x - 4, base.y - 6),
+      ],
+      C.ink,
+    );
+  } else if (p.kind === 'bench') {
+    // The Synthesis bench: a table of jars and a mortar.
+    block(ctx, base, 0.45, 8, p.seed, C.wood);
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(base.x - 6, base.y - 12, 2, 4);
+    ctx.fillStyle = C.teal;
+    ctx.fillRect(base.x - 1, base.y - 13, 2, 5);
+    ctx.fillStyle = C.venom;
+    ctx.fillRect(base.x + 4, base.y - 11, 2, 3);
+  } else if (p.kind === 'chapel') {
+    // A small chapel of the old faith, before the Church went under.
+    block(ctx, base, 1, 26, p.seed, C.stoneA);
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 34, base.y - 24),
+        pt(base.x, base.y - 44),
+        pt(base.x + 34, base.y - 24),
+        pt(base.x, base.y - 6),
+      ],
+      C.stoneB,
+    );
+    fillPoly(ctx, quad(pt(base.x, base.y - 42), pt(base.x, base.y - 56), 1, 1), C.bone);
+    fillPoly(ctx, quad(pt(base.x - 4, base.y - 52), pt(base.x + 4, base.y - 52), 1, 1), C.bone);
+    ctx.fillStyle = C.flame;
+    ctx.fillRect(base.x + 10, base.y - 14, 4, 6);
+  } else if (p.kind === 'stall') {
+    // A market stall under an awning.
+    block(ctx, base, 0.5, 8, p.seed, C.wood);
+    fillPoly(ctx, quad(pt(base.x - 14, base.y - 6), pt(base.x - 14, base.y - 26), 1, 1), C.wood);
+    fillPoly(ctx, quad(pt(base.x + 14, base.y - 6), pt(base.x + 14, base.y - 26), 1, 1), C.wood);
+    fillPoly(
+      ctx,
+      [
+        pt(base.x - 18, base.y - 24),
+        pt(base.x + 18, base.y - 24),
+        pt(base.x + 14, base.y - 32),
+        pt(base.x - 14, base.y - 32),
+      ],
+      C.cloth,
+    );
   } else if (p.kind === 'sarcophagus') {
     // The Creditor's sarcophagus: long, low and black, its lid sealed with
     // the Church's blood.

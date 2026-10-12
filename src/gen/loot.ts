@@ -1,7 +1,16 @@
 import { CARD_OF, GEMS } from '../content/cards';
 import { AFFIXES, BASES, GOLD, POTIONS, RARE_FIRST, RARE_SECOND } from '../content/items';
 import type RNG from '../core/rng';
-import { type Affix, type Item, type ItemBase, ItemType, Quality, type Span } from '../sim/item';
+import {
+  type Affix,
+  type Item,
+  type ItemBase,
+  ItemType,
+  Quality,
+  REFINE_ARMOR,
+  REFINE_ATTACK,
+  type Span,
+} from '../sim/item';
 import type { Modifier } from '../sim/stats';
 import { Category } from '../sim/stats';
 import { Range, Rank } from '../sim/types';
@@ -79,6 +88,10 @@ const within = (rng: RNG, span: Span, scale: number): number =>
 
 const middle = (span: Span): number => Math.round((span.min + span.max) / 2);
 
+/** The most sockets an item can have: the lower of its base's and its quality's. */
+export const socketLimit = (item: Item): number =>
+  Math.min(item.base.maxSockets, MAX_SOCKETS[item.quality]);
+
 /** A plain copy of a base with middle rolls, such as starter gear. */
 export function plainItem(base: ItemBase, itemLevel = 1): Item {
   return {
@@ -96,6 +109,7 @@ export function plainItem(base: ItemBase, itemLevel = 1): Item {
     bonuses: [],
     sockets: 0,
     cards: [],
+    refine: 0,
     quantity: 1,
   };
 }
@@ -134,10 +148,17 @@ function pickAffixes(
  * Rolls one piece of equipment for an item level. The base must have
  * dropped by that level; quality comes from the dropper's rank.
  */
-export function rollItem(rng: RNG, itemLevel: number, rank: Rank = Rank.Normal): Item {
-  const bases = BASES.filter((b) => b.level <= itemLevel);
+export function rollItem(
+  rng: RNG,
+  itemLevel: number,
+  rank: Rank = Rank.Normal,
+  only: { types?: readonly ItemType[]; atLeast?: Quality } = {},
+): Item {
+  const bases = BASES.filter(
+    (b) => b.level <= itemLevel && (!only.types || only.types.includes(b.type)),
+  );
   const base = rng.pick(bases);
-  const quality = weighted(rng, QUALITY_WEIGHTS[rank]);
+  const quality = Math.max(weighted(rng, QUALITY_WEIGHTS[rank]), only.atLeast ?? 0) as Quality;
   const scale = BASE_SCALE[quality];
   const item: Item = {
     uid: nextUid++,
@@ -154,6 +175,7 @@ export function rollItem(rng: RNG, itemLevel: number, rank: Rank = Rank.Normal):
     bonuses: [],
     sockets: 0,
     cards: [],
+    refine: 0,
     quantity: 1,
   };
   const taken = new Set<string>();
@@ -171,7 +193,7 @@ export function rollItem(rng: RNG, itemLevel: number, rank: Rank = Rank.Normal):
     pickAffixes(rng, item, 'suffix', Math.min(3, total - prefixes), taken);
     item.name = `${rng.pick(RARE_FIRST)} ${rng.pick(RARE_SECOND)}`;
   }
-  const cap = Math.min(base.maxSockets, MAX_SOCKETS[quality]);
+  const cap = socketLimit(item);
   item.sockets = rng.chance(0.35) ? rng.int(1, Math.max(1, cap)) : 0;
   return item;
 }
@@ -188,6 +210,7 @@ export function rollGold(rng: RNG, itemLevel: number): Item {
     bonuses: [],
     sockets: 0,
     cards: [],
+    refine: 0,
     quantity: rng.int(4, 12) * itemLevel,
   };
 }
@@ -262,6 +285,11 @@ const TYPE_NAME: Partial<Record<ItemType, string>> = {
 
 /** An item's full name: "Sturdy Hood of the Bear", or a rare's own name. */
 export function itemName(item: Item): string {
+  const name = unrefinedName(item);
+  return item.refine > 0 ? `+${item.refine} ${name}` : name;
+}
+
+function unrefinedName(item: Item): string {
   if (item.base.type === ItemType.Gold) {
     return `${item.quantity} Gold`;
   }
@@ -372,6 +400,13 @@ export function itemLines(item: Item): string[] {
       socket.fits === 'any'
         ? 'Fits any socket'
         : `Fits: ${socket.fits.map((t) => TYPE_NAME[t]).join(', ')}`,
+    );
+  }
+  if (item.refine > 0) {
+    lines.push(
+      item.base.type === ItemType.Weapon
+        ? `Refined +${item.refine}: +${item.refine * REFINE_ATTACK} attack`
+        : `Refined +${item.refine}: +${item.refine * REFINE_ARMOR} armor`,
     );
   }
   if (item.sockets > 0) {

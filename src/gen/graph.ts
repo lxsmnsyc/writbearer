@@ -2,7 +2,7 @@ import type RNG from '../core/rng';
 import { AREAS_PER_LAYER } from './layers';
 
 /** What waits in an area of a layer's map. */
-export type NodeKind = 'combat' | 'elite' | 'camp' | 'boss';
+export type NodeKind = 'combat' | 'elite' | 'camp' | 'town' | 'boss';
 
 /** One area on a layer's map. */
 export interface MapNode {
@@ -28,11 +28,15 @@ const ELITE_CHANCE = 0.25;
 const CAMP_FROM = 3;
 const CAMP_CHANCE = 0.18;
 
+// The columns a layer's Town may stand in.
+const TOWN_COLUMNS = [3, 4];
+
 /**
  * Rolls a layer's map from the `map` stream. `opening` is how many areas
- * its first column has: 2 below a Waystation, 1 where the run begins.
+ * its first column has: 2 below a Waystation, 1 where the run begins. A
+ * layer with a `town` has one Town, in its fourth or fifth column.
  */
-export function generateLayerMap(rng: RNG, opening = 2): LayerMap {
+export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap {
   const last = AREAS_PER_LAYER - 1;
   const columns: MapNode[][] = [];
   for (let c = 0; c <= last; c++) {
@@ -60,6 +64,9 @@ export function generateLayerMap(rng: RNG, opening = 2): LayerMap {
         node.kind = 'combat';
       }
     }
+  }
+  if (town) {
+    rng.pick(columns[rng.pick(TOWN_COLUMNS)]).kind = 'town';
   }
   columns[last][0].kind = 'boss';
   // The party can always rest before the boss.

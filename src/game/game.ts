@@ -19,9 +19,17 @@ import {
 import { reveal } from '../content/creditor';
 import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
-import { type EquipSlot, type Item, isCard, isPotion } from '../sim/item';
+import { type EquipSlot, type Item, isCard, isPotion, refinable } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
-import { potionStack, rollCards, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
+import {
+  itemName,
+  potionStack,
+  rollCards,
+  rollDrops,
+  rollGold,
+  rollItem,
+  rollPotion,
+} from '../gen/loot';
 import { gainXp, killXp } from '../sim/progress';
 import {
   type GroundItem,
@@ -36,6 +44,20 @@ import {
   unequipToPack,
 } from './inventory';
 import { type Due, Payroll, desert } from './wages';
+import {
+  addSocket,
+  buy,
+  cannotAddSocket,
+  cannotRefine,
+  craft,
+  raise,
+  refine,
+  salvageItem,
+  sell,
+} from './town';
+import { gather, materialsFrom } from '../content/materials';
+import type { Recipe } from '../content/recipes';
+import type RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
@@ -74,6 +96,8 @@ export interface GameHooks {
   onStation?: (open: boolean) => void;
   // Called when the layer's map opens or closes.
   onMap?: (open: boolean) => void;
+  // Called when the bearer reaches a Town's well, and when its panel closes.
+  onTown?: (open: boolean) => void;
 }
 
 export interface GameOptions {
@@ -87,6 +111,8 @@ export interface GameOptions {
   station?: boolean;
   // Starts in the Creditor's tomb, at the end of the run
   tomb?: boolean;
+  // Starts in a Town, in the area given by `area`
+  town?: boolean;
 }
 
 // The most mercs in the party, living or dead.
@@ -103,6 +129,8 @@ const MEET_REACH = 1.8;
 const WAYSTATION_STREAM = 1000;
 const AREA_ROW_STREAM = 100;
 const TOMB_STREAM = 2000;
+// Towns stand in the first two layers only.
+const TOWN_LAYERS = 2;
 // The keys left to the player once the seal breaks: a merc's sheet, and restart
 const FINALE_KEYS = new Set(['1', '2', '3', '4', 'escape', 'r']);
 // How near the sarcophagus the bearer comes before the seal breaks, and
@@ -167,6 +195,8 @@ export default class Game {
   private payroll: Payroll | null = null;
   private stationOpen = false;
   private stationMet = false;
+  private townOpen = false;
+  private townMet = false;
   // A line shown under the hint for a while, such as who left unpaid
   private notice: { text: string; until: number } | null = null;
   // This layer's map, the area the party is in (null at a Waystation) and
@@ -207,7 +237,8 @@ export default class Game {
       this.offers !== null ||
       this.recruiting !== null ||
       this.stationOpen ||
-      this.mapOpen
+      this.mapOpen ||
+      this.townOpen
     );
   }
 
@@ -404,6 +435,13 @@ export default class Game {
       this.stageIndex = LAYERS.length * AREAS_PER_LAYER;
       this.node = null;
       this.stage = generateTomb(this.streams.area(1, Stream.Layout, TOMB_STREAM), this.stageIndex);
+    } else if (this.options.town) {
+      this.goTo(this.stageIndex % AREAS_PER_LAYER, 0);
+      this.stage = generateStage(
+        this.streams.area(1, Stream.Layout, this.stageIndex),
+        this.stageIndex,
+        { kind: 'town', ahead: ['combat'] },
+      );
     } else if (this.options.station) {
       this.stageIndex -= this.stageIndex % AREAS_PER_LAYER;
       this.node = null;
@@ -440,6 +478,7 @@ export default class Game {
           ],
           event.source,
         );
+        gather(this.pack.materials, materialsFrom(this.streams.get(1, Stream.Loot), event.source));
       }
       if (event.source === this.bearer) {
         this.over = true;
@@ -568,7 +607,12 @@ export default class Game {
   // Rolls the map of the layer the current area is in.
   private rollMap(): void {
     const layer = Math.floor(this.stageIndex / AREAS_PER_LAYER);
-    this.map = generateLayerMap(this.streams.area(1, Stream.Map, layer), layer === 0 ? 1 : 2);
+    // Towns stand only in the layers where people still live.
+    this.map = generateLayerMap(
+      this.streams.area(1, Stream.Map, layer),
+      layer === 0 ? 1 : 2,
+      layer < TOWN_LAYERS,
+    );
     this.path = [];
   }
 
@@ -792,6 +836,134 @@ export default class Game {
     }
   }
 
+  // Opens the Town's panel when the bearer walks up to the well.
+  private visitTown(): void {
+    const well = this.stage.town;
+    if (!well || this.townOpen) {
+      return;
+    }
+    const d = Math.hypot(this.bearer.x - well.x, this.bearer.z - well.z);
+    if (d > LEAVE_REACH) {
+      this.townMet = false;
+    } else if (d <= MEET_REACH && !this.townMet && this.bearer.alive) {
+      this.townMet = true;
+      this.townOpen = true;
+      this.keys.clear();
+      this.bearer.order = null;
+      this.hooks.onTown?.(true);
+    }
+  }
+
+  /** Closes the Town's panel. Walking back to the well opens it again. */
+  closeTown(): void {
+    this.townOpen = false;
+    this.hooks.onTown?.(false);
+  }
+
+  /** Every item the smith can work on: the pack's, then what each merc wears. */
+  smithable(): { item: Item; merc: Unit | null }[] {
+    return [
+      ...this.pack.items.filter((i) => refinable(i)).map((item) => ({ item, merc: null })),
+      ...this.mercs().flatMap((merc) =>
+        [...merc.equipment.values()].map((item) => ({ item, merc })),
+      ),
+    ];
+  }
+
+  // Where an item is, so a broken one can be taken from there.
+  private remove(item: Item): void {
+    if (this.pack.take(item.uid)) {
+      return;
+    }
+    for (const merc of this.mercs()) {
+      for (const [slot, worn] of merc.equipment) {
+        if (worn === item) {
+          merc.unequip(slot);
+        }
+      }
+    }
+  }
+
+  private get craftRng(): RNG {
+    return this.streams.get(1, Stream.Craft);
+  }
+
+  /** The smith refines an item one level. Returns what happened. */
+  refineItem(item: Item, bless: boolean): string {
+    const why = cannotRefine(this.pack, item);
+    if (why) {
+      return why;
+    }
+    const name = itemName(item);
+    const result = refine(this.craftRng, this.pack, item, bless);
+    if (result === 'broken') {
+      this.remove(item);
+    }
+    for (const merc of this.mercs()) {
+      merc.recalc();
+    }
+    this.itemsChanged();
+    if (result === 'refined') {
+      return `${name} is now +${item.refine}.`;
+    }
+    return result === 'held'
+      ? `The refine failed. The Blessing kept ${name}, at +${item.refine}.`
+      : `The refine failed. ${name} broke, with every card in it.`;
+  }
+
+  /** The smith adds a socket. Returns what happened. */
+  socketItem(item: Item): string {
+    const why = cannotAddSocket(this.pack, item);
+    if (why) {
+      return why;
+    }
+    const name = itemName(item);
+    const result = addSocket(this.craftRng, this.pack, item);
+    if (result === 'broken') {
+      this.remove(item);
+    }
+    this.itemsChanged();
+    return result === 'added'
+      ? `${name} now has ${item.sockets} sockets.`
+      : `The punch slipped. ${name} broke.`;
+  }
+
+  /** The bench makes a recipe. Returns why it could not, or null. */
+  craft(recipe: Recipe): string | null {
+    const why = craft(this.craftRng, this.pack, recipe, monsterLevel(this.stageIndex));
+    this.itemsChanged();
+    return why;
+  }
+
+  /** The bench breaks a pack item down into materials. */
+  salvage(uid: number): string | null {
+    const why = salvageItem(this.pack, uid);
+    this.itemsChanged();
+    return why;
+  }
+
+  /** The Temple raises a dead merc. */
+  raise(merc: Unit): string | null {
+    const why = raise(this.pack, merc);
+    this.views.snap(this.sim);
+    this.itemsChanged();
+    return why;
+  }
+
+  /** The Market sells a potion. */
+  buy(id: string): string | null {
+    const why = buy(this.pack, id);
+    this.itemsChanged();
+    return why;
+  }
+
+  /** The Market buys a pack item. */
+  sell(uid: number): string | null {
+    const why = sell(this.pack, uid);
+    this.itemsChanged();
+    return why;
+  }
+
   /** Closes the Waystation's post. Walking back to it opens it again. */
   closeStation(): void {
     this.stationOpen = false;
@@ -855,6 +1027,9 @@ export default class Game {
       }
       if (this.mapOpen) {
         this.openMap(false);
+      }
+      if (this.townOpen) {
+        this.closeTown();
       }
       return;
     }
@@ -1052,6 +1227,7 @@ export default class Game {
         this.loot();
         this.meet();
         this.visitStation();
+        this.visitTown();
         this.acc -= TICK;
         if (shutArena(this.sim, this.stage, this.boss)) {
           // The gate slams shut behind the party.

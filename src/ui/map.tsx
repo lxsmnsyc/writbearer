@@ -12,6 +12,7 @@ const NAME: Record<NodeKind, string> = {
   combat: 'Fight',
   elite: 'Elite',
   camp: 'Camp',
+  town: 'Town',
   boss: 'Boss',
 };
 
@@ -20,6 +21,7 @@ const KIND_CLASS: Record<NodeKind, string> = {
   combat: 'fill-zinc-900 stroke-zinc-500',
   elite: 'fill-red-950 stroke-red-400',
   camp: 'fill-amber-950 stroke-amber-500',
+  town: 'fill-teal-950 stroke-teal-400',
   boss: 'fill-red-950 stroke-red-400',
 };
 
@@ -161,7 +163,8 @@ export default function LayerMapPanel(props: Props): JSX.Element {
       </svg>
       <p data-part="note" class="mt-1 text-xs text-zinc-500">
         Fights give experience and loot. Elites hold a strong pack and better spoils. At a Camp the
-        party rests back to full. The roads not taken collapse behind the bearer. M or Esc to close.
+        party rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
+        taken collapse behind the bearer. M or Esc to close.
       </p>
     </aside>
   );

@@ -10,6 +10,7 @@ import {
   stacks,
   usableBy,
 } from '../sim/item';
+import type { Materials } from '../content/materials';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -35,6 +36,8 @@ export interface GroundItem {
 export class Pack {
   readonly items: Item[] = [];
   gold = 0;
+  // The pouch: crafting materials, with no weight and no slot limit
+  readonly materials: Materials = new Map();
 
   get weight(): number {
     return this.items.reduce((sum, i) => sum + i.base.weight * i.quantity, 0);

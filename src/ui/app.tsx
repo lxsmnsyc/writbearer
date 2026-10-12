@@ -8,6 +8,7 @@ import MercPanel from './merc-panel';
 import Station from './station';
 import ShoutBar, { type ShoutEntry } from './shouts';
 import LayerMapPanel from './map';
+import Town from './town';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
 
@@ -42,6 +43,7 @@ function runOptions(): GameOptions {
     area: Number.isInteger(area) && area > 0 ? area : undefined,
     station: params.has('station'),
     tomb: params.has('tomb'),
+    town: params.has('town'),
   };
 }
 
@@ -56,6 +58,7 @@ export default function App(): JSX.Element {
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
   const [station, setStation] = createSignal(false);
   const [map, setMap] = createSignal(false);
+  const [town, setTown] = createSignal(false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -86,6 +89,9 @@ export default function App(): JSX.Element {
         },
         onMap: (open) => {
           setMap(open);
+        },
+        onTown: (open) => {
+          setTown(open);
         },
       },
       runOptions(),
@@ -218,6 +224,17 @@ export default function App(): JSX.Element {
             version={items()}
             onClose={() => {
               g.openInventory(false);
+            }}
+          />
+        )}
+      </Show>
+      <Show when={town() && game()} keyed>
+        {(g) => (
+          <Town
+            game={g}
+            version={items()}
+            onClose={() => {
+              g.closeTown();
             }}
           />
         )}
