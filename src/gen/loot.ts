@@ -328,7 +328,7 @@ export function rollCards(rng: RNG, kind: string, rank: Rank): Item[] {
 }
 
 // Names of item kinds, for what a card fits.
-const TYPE_NAME: Partial<Record<ItemType, string>> = {
+export const TYPE_NAME: Partial<Record<ItemType, string>> = {
   [ItemType.Weapon]: 'weapons',
   [ItemType.Shield]: 'shields',
   [ItemType.Head]: 'helms',

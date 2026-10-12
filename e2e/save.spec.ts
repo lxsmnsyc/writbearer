@@ -15,7 +15,7 @@ test('a run is saved as it begins, and can be continued after a reload', async (
       page.evaluate(
         async () =>
           new Promise<string | null>((resolve) => {
-            const open = indexedDB.open('writbearer', 1);
+            const open = indexedDB.open('writbearer', 2);
             open.onsuccess = () => {
               const get = open.result
                 .transaction('run', 'readonly')

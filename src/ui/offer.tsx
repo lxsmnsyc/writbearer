@@ -72,6 +72,7 @@ interface StartProps {
   // A suspended run, where it stands, and how to take it up again
   saved: { seed: string; place: string } | null;
   onResume: () => void;
+  onCompendium: () => void;
 }
 
 /** The start of a run: the bearer picks its first merc from three. */
@@ -120,6 +121,15 @@ export function StartPicker(props: StartProps): JSX.Element {
           )}
         </For>
       </div>
+      <button
+        type="button"
+        class="mt-3 text-xs text-zinc-500 hover:text-zinc-200"
+        onClick={() => {
+          props.onCompendium();
+        }}
+      >
+        The Compendium (K)
+      </button>
     </aside>
   );
 }

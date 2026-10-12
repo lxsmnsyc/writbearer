@@ -11,6 +11,7 @@ import ShoutBar, { type ShoutEntry } from './shouts';
 import LayerMapPanel from './map';
 import Town from './town';
 import EventPanel from './event';
+import CompendiumPanel from './compendium';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
 
@@ -65,6 +66,7 @@ export default function App(): JSX.Element {
   const [event, setEvent] = createSignal<EventView | null>(null);
   // The suspended run, offered at the start of a new one
   const [saved, setSaved] = createSignal<RunSave | null>(null);
+  const [compendium, setCompendium] = createSignal(false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -102,6 +104,9 @@ export default function App(): JSX.Element {
         onEvent: (e) => {
           setEvent(e);
         },
+        onCompendium: (open) => {
+          setCompendium(open);
+        },
       },
       runOptions(),
     );
@@ -110,6 +115,17 @@ export default function App(): JSX.Element {
     readSave()
       .then((save) => {
         setSaved(save);
+      })
+      .catch(() => null);
+    // A kill count still waiting to be written goes in as the page closes.
+    const flush = (): void => {
+      g.compendium.flush();
+    };
+    addEventListener('pagehide', flush);
+    g.compendium
+      .load()
+      .then(() => {
+        g.changed();
       })
       .catch(() => null);
     const timer = setInterval(() => {
@@ -130,6 +146,7 @@ export default function App(): JSX.Element {
     }, PARTY_REFRESH);
     onCleanup(() => {
       clearInterval(timer);
+      removeEventListener('pagehide', flush);
       g.stop();
     });
   });
@@ -299,12 +316,27 @@ export default function App(): JSX.Element {
               setSaved(null);
             }}
             saved={saved() && { seed: saved()!.seed, place: describeSave(saved()!) }}
+            onCompendium={() => {
+              g.openCompendium(true);
+            }}
             onResume={() => {
               const save = saved();
               setSaved(null);
               if (save) {
                 g.resume(save);
               }
+            }}
+          />
+        )}
+      </Show>
+
+      <Show when={compendium() && game()} keyed>
+        {(g) => (
+          <CompendiumPanel
+            game={g}
+            version={items()}
+            onClose={() => {
+              g.openCompendium(false);
             }}
           />
         )}

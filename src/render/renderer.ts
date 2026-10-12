@@ -859,7 +859,7 @@ export default class Renderer {
     out.fillStyle = '#b9b0a0';
     out.textAlign = 'start';
     out.fillText(
-      'WASD or click: move.  1–4: mercs.  Z X C F: shouts.  I: pack.  M: map.  Q: drink.  R: restart.',
+      'WASD or click: move.  1–4: mercs.  Z X C F: shouts.  I: pack.  M: map.  K: compendium.  Q: drink.  R: restart.',
       16,
       26,
     );

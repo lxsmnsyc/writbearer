@@ -121,6 +121,17 @@ The UI hides details the player has not discovered in any run yet.
 - Hidden details affect how the player plans: which mercs to bring, which gear to craft, which path to take. They never weaken the mercs.
 - Item identification is separate. An unidentified item hides its rolls in every run, even when its base is known.
 
+#### In the game so far
+
+- `src/game/compendium.ts` keeps the record in IndexedDB, beside the suspended run. K opens it, in a run or from the start screen, and the game pauses while it is open.
+- **Monsters:** each kind, the bosses and the Creditor. Never met shows "?"; met shows the name, with race, element, how it fights and its card as "?"; beaten shows them all, how many were beaten, and who it was (`src/content/bestiary.ts`). The Creditor stays nameless until it has been beaten or has risen.
+- **Mercs:** each merc taken into the party or met by its fire, with its job, level and traits.
+- **Uniques:** a silhouette ("A unique Flanged Mace.") until one is acquired, then its name, value ranges and lore.
+- **Cards:** "?" until one drops, then its name with its effect as "?" until one is acquired.
+- **Gear:** each base acquired. **Runs:** how each run ended.
+- Anything in the pack or worn counts as acquired, with the cards set in it. Raised mercs are not monsters.
+- Something found for the first time is written at once; kill counts a second later, or as the page closes. Nothing is written until the stored record is read, so it is never replaced. Runs started at a chosen place through the address record nothing.
+
 ### Seeds
 
 - Seeds can be shared, so players can compare runs on the same seed.

@@ -47,6 +47,7 @@ import {
   unequipToPack,
 } from './inventory';
 import { type Due, Payroll, desert } from './wages';
+import { Compendium, type Ending } from './compendium';
 import {
   type RunSave,
   SAVE_VERSION,
@@ -74,7 +75,7 @@ import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
-import { spawnMerc } from '../content/roster';
+import { MERCS, spawnMerc } from '../content/roster';
 import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -114,6 +115,8 @@ export interface GameHooks {
   // Called when the bearer walks up to an Event, as it changes, and with
   // null when it closes.
   onEvent?: (event: EventView | null) => void;
+  // Called when the compendium opens or closes.
+  onCompendium?: (open: boolean) => void;
 }
 
 /** An Event as the interface shows it. */
@@ -238,6 +241,9 @@ export default class Game {
   private pendingEvent: { def: EventDef; rng: RNG; state: number } | null = null;
   private eventOpen = false;
   private readonly eventsSeen = new Set<string>();
+  // What the player has found over every run, and whether it is open
+  readonly compendium: Compendium;
+  private compendiumOpen = false;
   // A line shown under the hint for a while, such as who left unpaid
   private notice: { text: string; until: number } | null = null;
   // This layer's map, the area the party is in (null at a Waystation) and
@@ -267,6 +273,7 @@ export default class Game {
     private readonly options: GameOptions = {},
   ) {
     this.renderer = new Renderer(canvas);
+    this.compendium = new Compendium(this.saving);
     this.reset();
   }
 
@@ -280,7 +287,8 @@ export default class Game {
       this.stationOpen ||
       this.mapOpen ||
       this.townOpen ||
-      this.eventOpen
+      this.eventOpen ||
+      this.compendiumOpen
     );
   }
 
@@ -322,11 +330,20 @@ export default class Game {
     }
   }
 
-  // The run is over, won or lost: its save goes with it.
-  private endRun(): void {
+  // The run is over, won or lost: its save goes with it, and the
+  // compendium notes how it ended.
+  private endRun(ending: Ending): void {
     if (this.saving) {
       deleteSave();
     }
+    this.compendium.end(ending);
+  }
+
+  /** Opens or closes the compendium. The game pauses while it is open. */
+  openCompendium(open: boolean): void {
+    this.compendiumOpen = open;
+    this.keys.clear();
+    this.hooks.onCompendium?.(open);
   }
 
   /** The run as it stands, for the save. Taken on entering an area. */
@@ -399,9 +416,15 @@ export default class Game {
   }
 
   private join(offer: Offer, x: number, z: number): void {
-    spawnMerc(this.sim, offer.kind, offer.level, x, z, undefined, {
+    const merc = spawnMerc(this.sim, offer.kind, offer.level, x, z, undefined, {
       name: offer.name,
       traits: offer.traits,
+    });
+    this.compendium.meet({
+      name: merc.name,
+      job: merc.job.name,
+      traits: offer.traits,
+      level: offer.level,
     });
     this.views.snap(this.sim);
     this.hooks.onChange?.();
@@ -418,6 +441,12 @@ export default class Game {
       w.met = false;
     } else if (d <= MEET_REACH && !w.met && this.bearer.alive) {
       w.met = true;
+      this.compendium.meet({
+        name: w.offer.name,
+        job: MERCS[w.offer.kind].job.name,
+        traits: w.offer.traits,
+        level: w.offer.level,
+      });
       this.recruiting = w.offer;
       this.keys.clear();
       this.bearer.order = null;
@@ -498,6 +527,15 @@ export default class Game {
 
   private itemsChanged(): void {
     this.bearer.burden = this.pack.speed;
+    // Whatever the party holds counts as acquired.
+    for (const item of this.pack.items) {
+      this.compendium.acquire(item);
+    }
+    for (const merc of this.mercs()) {
+      for (const item of merc.equipment.values()) {
+        this.compendium.acquire(item);
+      }
+    }
     this.hooks.onChange?.();
   }
 
@@ -617,6 +655,7 @@ export default class Game {
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       if (event.source.side === Side.Monster) {
         this.slain++;
+        this.compendium.beat(event.source.kind);
         this.shareXp(event.source);
         this.scatter(
           [
@@ -632,7 +671,7 @@ export default class Game {
       }
       if (event.source === this.bearer) {
         this.over = true;
-        this.endRun();
+        this.endRun('fallen');
       } else if (event.source.side === Side.Party) {
         this.souls++;
       }
@@ -674,6 +713,7 @@ export default class Game {
   private scatter(items: Item[], at: { x: number; z: number }): void {
     const rng = this.streams.get(1, Stream.Loot);
     for (const item of items) {
+      this.compendium.seeDrop(item);
       const a = rng.random() * Math.PI * 2;
       const r = rng.range(0.3, 0.9);
       this.ground.push({ item, x: at.x + Math.cos(a) * r, z: at.z + Math.sin(a) * r });
@@ -806,6 +846,15 @@ export default class Game {
       this.effects.stain(s.x, s.z, s.r, '#560b0b');
     }
     this.beginEvent();
+  }
+
+  // Monsters awake are seen, for the compendium.
+  private noteMonsters(): void {
+    for (const m of this.sim.units) {
+      if (m.side === Side.Monster && m.aware && m.alive) {
+        this.compendium.see(m.kind);
+      }
+    }
   }
 
   // Rolls what waits at this area's Event, if it has one.
@@ -1087,7 +1136,7 @@ export default class Game {
     }
     if (f.ending) {
       this.over = true;
-      this.endRun();
+      this.endRun(f.ending);
     }
   }
 
@@ -1311,6 +1360,9 @@ export default class Game {
       if (this.eventOpen) {
         this.closeEvent();
       }
+      if (this.compendiumOpen) {
+        this.openCompendium(false);
+      }
       return;
     }
     // Once the seal breaks, the player can only look at the mercs, or start
@@ -1329,6 +1381,10 @@ export default class Game {
     }
     if (key === 'm' && !this.over && this.offers === null) {
       this.openMap(!this.mapOpen);
+      return;
+    }
+    if (key === 'k') {
+      this.openCompendium(!this.compendiumOpen);
       return;
     }
     if (key === 'i' && !this.over) {
@@ -1509,6 +1565,7 @@ export default class Game {
         this.visitStation();
         this.visitTown();
         this.visitEvent();
+        this.noteMonsters();
         this.acc -= TICK;
         if (shutArena(this.sim, this.stage, this.boss)) {
           // The gate slams shut behind the party.

@@ -13,6 +13,7 @@ import type Sim from '../sim/sim';
 import type { BaseStats, Modifier } from '../sim/stats';
 import type Unit from '../sim/unit';
 import type { Pack, Vault } from './inventory';
+import { Store, deleteRecord, readRecord, writeRecord } from './store';
 
 // The suspended run, from the tech-stack design: one slot in IndexedDB,
 // written as the party crosses into an area, holding a snapshot of the run
@@ -219,61 +220,11 @@ export function loadPack(s: RunSave, pack: Pack, vault: Vault): void {
   vault.items.push(...loadItems(s.vault));
 }
 
-// IndexedDB, one store with one key. Where it is missing, as in tests, or
-// fails, the game runs on without a save.
-const DB = 'writbearer';
-const STORE = 'run';
 const KEY = 'suspended';
-
-async function open(): Promise<IDBDatabase | null> {
-  if (typeof indexedDB === 'undefined') {
-    return null;
-  }
-  return new Promise((resolve) => {
-    const request = indexedDB.open(DB, 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE);
-    };
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-    request.onerror = () => {
-      resolve(null);
-    };
-  });
-}
-
-async function run(
-  mode: IDBTransactionMode,
-  act: (store: IDBObjectStore) => IDBRequest,
-): Promise<unknown> {
-  const db = await open();
-  if (!db) {
-    return null;
-  }
-  return new Promise((resolve) => {
-    let request: IDBRequest;
-    try {
-      request = act(db.transaction(STORE, mode).objectStore(STORE));
-    } catch {
-      resolve(null);
-      db.close();
-      return;
-    }
-    request.onsuccess = () => {
-      resolve(request.result as unknown);
-      db.close();
-    };
-    request.onerror = () => {
-      resolve(null);
-      db.close();
-    };
-  });
-}
 
 /** Writes the suspended run, over any before it, in the background. */
 export function writeSave(save: RunSave): void {
-  run('readwrite', (store) => store.put(save, KEY)).catch(() => null);
+  writeRecord(Store.Run, KEY, save);
 }
 
 // Whether what the store holds is a save this version of the game reads.
@@ -285,13 +236,13 @@ const isSave = (value: unknown): value is RunSave =>
 
 /** The suspended run, if there is one of this version. */
 export async function readSave(): Promise<RunSave | null> {
-  const save = await run('readonly', (store) => store.get(KEY)).catch(() => null);
+  const save = await readRecord(Store.Run, KEY);
   return isSave(save) ? save : null;
 }
 
 /** Deletes the suspended run, as the run ends, in the background. */
 export function deleteSave(): void {
-  run('readwrite', (store) => store.delete(KEY)).catch(() => null);
+  deleteRecord(Store.Run, KEY);
 }
 
 /** Where a saved run stands, for the player to recognise it. */
