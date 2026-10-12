@@ -150,6 +150,8 @@ export default class Unit {
   // How a merc feels about the job, and how well it follows orders, 0 to 100
   morale = MORALE_START;
   discipline = 0;
+  // Discipline from what the party wears, such as a squad set's, on top
+  disciplineBonus = 0;
   // The bearer's last shout as this merc heard it
   heard: Heard | null = null;
   // Effects of what it wears, uniques' and socketed cards', by item and socket

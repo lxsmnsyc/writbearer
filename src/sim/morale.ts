@@ -61,7 +61,7 @@ export function moraleOf(u: Unit): Morale {
 
 /** Discipline as morale scales it in a fight. */
 export const effectiveDiscipline = (u: Unit): number =>
-  Math.round(u.discipline * FACTOR[moraleOf(u)]);
+  Math.round(Math.min(100, u.discipline + u.disciplineBonus) * FACTOR[moraleOf(u)]);
 
 /**
  * How many of its target priorities a merc follows, by its effective

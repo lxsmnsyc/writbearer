@@ -10,7 +10,7 @@ import { DamageFlags, DamageKind, DamagePriority, Range, ValuePriority } from '.
 
 // A listener that is added on start and removed on stop, so passives that
 // are set up again at a new rank leave nothing behind.
-function listen<K extends keyof SimEventMap>(
+export function listen<K extends keyof SimEventMap>(
   sim: Sim,
   type: K,
   priority: SimEventMap[K][1],

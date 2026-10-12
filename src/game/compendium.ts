@@ -3,6 +3,7 @@ import { CARDS, CARD_OF } from '../content/cards';
 import { BASES, BASE_BY_ID } from '../content/items';
 import { MONSTERS, type MonsterKind } from '../content/roster';
 import { TRAIT_BY_ID } from '../content/traits';
+import { SETS, type SetDef, type SetPiece } from '../content/sets';
 import { UNIQUES, type UniqueDef } from '../content/uniques';
 import { TYPE_NAME } from '../gen/loot';
 import { type Item, ItemType } from '../sim/item';
@@ -34,6 +35,8 @@ export interface CompendiumData {
   // Item bases, uniques and cards acquired, and cards seen dropped
   bases: string[];
   uniques: string[];
+  // Set pieces acquired, by piece id
+  pieces?: string[];
   cards: string[];
   cardsSeen: string[];
   endings: Record<Ending, number>;
@@ -124,6 +127,7 @@ export class Compendium {
     d.seen = union(d.seen, other.seen);
     d.bases = union(d.bases, other.bases);
     d.uniques = union(d.uniques, other.uniques);
+    d.pieces = union(d.pieces ?? [], other.pieces ?? []);
     d.cards = union(d.cards, other.cards);
     d.cardsSeen = union(d.cardsSeen, other.cardsSeen);
     for (const [kind, n] of Object.entries(other.beaten)) {
@@ -210,6 +214,10 @@ export class Compendium {
     }
     if (item.unique !== undefined) {
       found = this.add(this.data.uniques, item.unique) || found;
+    }
+    if (item.piece !== undefined) {
+      this.data.pieces ??= [];
+      found = this.add(this.data.pieces, item.piece) || found;
     }
     for (const card of item.cards) {
       found = this.add(this.data.cards, card.id) || found;
@@ -323,6 +331,21 @@ function uniqueEntry(d: CompendiumData, def: UniqueDef): Entry {
   };
 }
 
+function pieceEntry(d: CompendiumData, set: SetDef, piece: SetPiece): Entry {
+  const base = BASE_BY_ID.get(piece.base);
+  if (!d.pieces?.includes(piece.id)) {
+    return { name: HIDDEN, known: false, lines: [`A piece of ${set.name}: ${base?.name ?? ''}.`] };
+  }
+  return {
+    name: piece.name,
+    known: true,
+    lines: [
+      ...piece.lines,
+      `${set.name}: ${set.bonuses.map((b) => `${b.count}, ${b.line}`).join('; ')}`,
+    ],
+  };
+}
+
 function cardEntry(d: CompendiumData, id: string): Entry {
   const card = CARDS.find((c) => c.id === id);
   if (!card?.socket) {
@@ -374,6 +397,11 @@ export function compendiumView(d: CompendiumData): Section[] {
       title: 'Uniques',
       found: count(d.uniques.length, UNIQUES.length),
       entries: UNIQUES.map((u) => uniqueEntry(d, u)),
+    },
+    {
+      title: 'Sets',
+      found: count(d.pieces?.length ?? 0, SETS.flatMap((s) => s.pieces).length),
+      entries: SETS.flatMap((set) => set.pieces.map((p) => pieceEntry(d, set, p))),
     },
     {
       title: 'Cards',

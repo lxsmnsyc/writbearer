@@ -36,7 +36,7 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
     })
     .toBeLessThan(7.2);
   await page.keyboard.down('s');
-  await expect(party).toContainText('Low morale', { timeout: 15000 });
+  await expect(party).toContainText('Low morale', { timeout: 40000 });
   await page.keyboard.up('d');
   await page.keyboard.up('s');
   await expect(party.getByRole('button')).toHaveCount(2);

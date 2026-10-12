@@ -41,7 +41,7 @@ export default function CompendiumPanel(props: Props): JSX.Element {
           Close
         </button>
       </header>
-      <div class="mb-3 grid grid-cols-6 gap-1" role="tablist" aria-label="Compendium">
+      <div class="mb-3 grid grid-cols-7 gap-1" role="tablist" aria-label="Compendium">
         <For each={sections()}>
           {(s, i) => (
             <button

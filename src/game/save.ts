@@ -35,6 +35,7 @@ export interface ItemSave {
   refine: number;
   unique?: string;
   uniqueValues?: number[];
+  piece?: string;
   name?: string;
   quantity: number;
 }
@@ -105,6 +106,7 @@ export function saveItem(item: Item): ItemSave {
     refine: item.refine,
     unique: item.unique,
     uniqueValues: item.uniqueValues && [...item.uniqueValues],
+    piece: item.piece,
     name: item.name,
     quantity: item.quantity,
   };
@@ -131,6 +133,7 @@ export function loadItem(s: ItemSave): Item | null {
     unique: s.unique,
     uniqueValues: s.uniqueValues,
     effect: def && s.uniqueValues ? def.effect?.(s.uniqueValues) : undefined,
+    piece: s.piece,
     name: s.name,
     quantity: s.quantity,
   };

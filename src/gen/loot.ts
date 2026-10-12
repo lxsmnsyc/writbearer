@@ -1,4 +1,5 @@
 import { CARD_OF, GEMS } from '../content/cards';
+import { PIECE_BY_ID, SETS, type SetPiece } from '../content/sets';
 import { UNIQUES, UNIQUE_BY_ID, type UniqueDef } from '../content/uniques';
 import {
   AFFIXES,
@@ -37,6 +38,7 @@ const BASE_SCALE: Record<Quality, number> = {
   [Quality.Magic]: 1,
   [Quality.Rare]: 1,
   [Quality.Unique]: 1,
+  [Quality.Set]: 1,
 };
 
 // Most sockets each quality allows. See the quality table in the items design.
@@ -47,6 +49,7 @@ const MAX_SOCKETS: Record<Quality, number> = {
   [Quality.Magic]: 2,
   [Quality.Rare]: 1,
   [Quality.Unique]: 1,
+  [Quality.Set]: 0,
 };
 
 // Quality weights. Elites and bosses shift them up.
@@ -314,6 +317,38 @@ export function rollUnique(rng: RNG, itemLevel: number, rank: Rank): Item | null
   return allowed.length > 0 ? makeUnique(rng, rng.pick(allowed), itemLevel) : null;
 }
 
+// Chance a slain monster drops a squad set's piece, by rank.
+const SET_CHANCE: Record<Rank, number> = {
+  [Rank.Normal]: 0.006,
+  [Rank.Elite]: 0.05,
+  [Rank.Boss]: 0.2,
+};
+
+/** A squad set's piece, with its fixed bonuses. */
+export function makeSetPiece(piece: SetPiece, itemLevel = piece.level): Item {
+  const base = BASE_BY_ID.get(piece.base);
+  if (!base) {
+    throw new Error(`No base "${piece.base}" for the set piece "${piece.id}"`);
+  }
+  return {
+    ...plainItem(base, itemLevel),
+    quality: Quality.Set,
+    name: piece.name,
+    piece: piece.id,
+    bonuses: [...piece.modifiers],
+    sockets: 0,
+  };
+}
+
+/** A set piece a slain monster drops, by chance, of those its level allows. */
+export function rollSetPiece(rng: RNG, itemLevel: number, rank: Rank): Item | null {
+  if (!rng.chance(SET_CHANCE[rank])) {
+    return null;
+  }
+  const allowed = SETS.flatMap((s) => s.pieces).filter((p) => p.level <= itemLevel);
+  return allowed.length > 0 ? makeSetPiece(rng.pick(allowed), itemLevel) : null;
+}
+
 /** The card a slain monster drops, and a gem, either of them by chance. */
 export function rollCards(rng: RNG, kind: string, rank: Rank): Item[] {
   const out: Item[] = [];
@@ -351,7 +386,7 @@ function unrefinedName(item: Item): string {
   if (item.base.type === ItemType.Potion) {
     return item.quantity > 1 ? `${item.base.name} ×${item.quantity}` : item.base.name;
   }
-  if ((item.quality === Quality.Rare || item.quality === Quality.Unique) && item.name) {
+  if (item.quality >= Quality.Rare && item.name) {
     return item.name;
   }
   const prefix = item.affixes
@@ -443,8 +478,11 @@ export function itemLines(item: Item): string[] {
     );
   }
   const unique = item.unique === undefined ? undefined : UNIQUE_BY_ID.get(item.unique);
+  const set = item.piece === undefined ? undefined : PIECE_BY_ID.get(item.piece);
   if (unique) {
     lines.push(...unique.lines(item.uniqueValues ?? []));
+  } else if (set) {
+    lines.push(...set.piece.lines);
   } else {
     for (const m of item.bonuses) {
       const line = describe(m);
@@ -482,6 +520,14 @@ export function itemLines(item: Item): string[] {
   }
 
   lines.push(`Weight ${item.base.weight}`);
+  if (set) {
+    // The set's bonuses, for pieces worn across the party
+    lines.push(`${set.set.name}, ${set.set.pieces.length} pieces across the party:`);
+    for (const b of set.set.bonuses) {
+      lines.push(`  ${b.count}: ${b.line}`);
+    }
+    lines.push(`“${set.set.lore}”`);
+  }
   if (unique) {
     lines.push(`“${unique.lore}”`);
   }

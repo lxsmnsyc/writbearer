@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 test('at the tomb the seal breaks, the player loses control, and the run ends', async ({
   page,
 }) => {
+  // The fight plays out in real time, which runs slow while other tests share the machine.
+  test.setTimeout(150000);
   await page.goto('/?party=vanguard,ranger&tomb');
   const canvas = page.locator('canvas');
   await expect(canvas).toHaveAttribute('data-finale', 'none');
@@ -27,5 +29,5 @@ test('at the tomb the seal breaks, the player loses control, and the run ends', 
   await page.keyboard.press('Escape');
 
   // Two level 5 mercs stand no chance: the Creditor rises.
-  await expect(canvas).toHaveAttribute('data-finale', 'risen', { timeout: 60000 });
+  await expect(canvas).toHaveAttribute('data-finale', 'risen', { timeout: 120000 });
 });

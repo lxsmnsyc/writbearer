@@ -91,7 +91,9 @@ export default function MercPanel(props: Props): JSX.Element {
   const moraleName = (): string =>
     version() >= 0 ? `${MORALE_NAME[moraleOf(props.unit)]} (${Math.round(props.unit.morale)})` : '';
   const discipline = (): string =>
-    version() >= 0 ? `${props.unit.discipline}, ${effectiveDiscipline(props.unit)} in a fight` : '';
+    version() >= 0
+      ? `${props.unit.discipline}${props.unit.disciplineBonus > 0 ? ` +${props.unit.disciplineBonus} from sets` : ''}, ${effectiveDiscipline(props.unit)} in a fight`
+      : '';
   const followed = (): number => (version() >= 0 ? prioritiesFollowed(props.unit) : 0);
   // Points left to spend on a tab: skill points on Skills, stat points on Stats.
   const points = (t: Tab): number => {

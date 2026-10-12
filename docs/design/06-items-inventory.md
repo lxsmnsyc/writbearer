@@ -197,6 +197,16 @@ The fewer affixes an item has, the more sockets it can have. This gives two ways
 
 Squad sets come after uniques are tested. See [milestones](02-tech-stack.md#later-milestones).
 
+**In the game so far** (`src/content/sets.ts`), added before uniques were tested in play, so their numbers are first guesses:
+
+- Set pieces are green, named, with fixed stats and no sockets. They drop 0.6% of the time from a normal monster, 5% from an elite and 20% from a boss, of the pieces the monster's level allows. Their tooltip lists the set's bonuses.
+- A set counts the distinct pieces worn by living mercs, at most one for each merc wearing any. Bonuses are worked out again whenever gear changes, a merc dies or a merc rises.
+- **Oath of the Iron Company**, 4 pieces: Helm (+20 armor, +3 VIT), Hauberk (+25 armor, -10% from ranged), Banner, a tower shield (+6% block, +3 WIL), Signet (+5 Discipline). 2: every merc +10% armor. 3: every merc +10 Discipline. 4: the bearer takes 15% less damage. The design's Ward that refills after each fight waits for a Ward against every kind of damage; the Banner's morale waits for morale bonuses.
+- **Rites of the Pale Choir**, 3 pieces: Censer, Hood, Vestments. 2: every merc +15% Radiant damage. 3: once an area, the first merc to die rises at 30% health, even if its death breaks the set.
+- **The Warden's Watch**, 3 pieces: Longbow, Cloak, Boots. 2: every merc +5 DEX. 3: the bearer +25 evasion.
+- Discipline from sets is on top of a merc's own, shown on its sheet, and not saved: it is worked out again from what is worn.
+- The compendium lists each piece, as a silhouette until acquired.
+
 In Diablo 2, a set is a group of named items, such as the 5 pieces of Tal Rasha's Wrappings. Each piece has its own stats. Wearing more pieces of the same set on one character unlocks extra bonuses, and wearing all of them unlocks a full set bonus.
 
 A squad set uses the same idea, but counts pieces across the whole party instead of one character.

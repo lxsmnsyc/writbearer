@@ -60,6 +60,8 @@ export const enum Quality {
   Rare = 4,
   // A named item with fixed bonuses, each rolled in a range, and an effect
   Unique = 5,
+  // A piece of a squad set: fixed bonuses, and more for the party
+  Set = 6,
 }
 
 /** What a weapon is, which decides who can wield it and how it is drawn. */
@@ -123,6 +125,8 @@ export interface Item {
   unique?: string;
   uniqueValues?: number[];
   effect?: (unit: Unit) => Lifecycle;
+  // A squad set's piece, by its id
+  piece?: string;
   // A rare's rolled name, such as "Grave Fang"
   name?: string;
   // Gold only

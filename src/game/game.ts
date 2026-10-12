@@ -31,6 +31,7 @@ import {
   rollGold,
   rollItem,
   rollPotion,
+  rollSetPiece,
   rollUnique,
 } from '../gen/loot';
 import { gainXp, killXp } from '../sim/progress';
@@ -76,6 +77,7 @@ import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { MERCS, spawnMerc } from '../content/roster';
+import { applySets } from '../content/sets';
 import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -542,6 +544,7 @@ export default class Game {
 
   private itemsChanged(): void {
     this.bearer.burden = this.pack.speed;
+    applySets(this.sim);
     // Whatever the party holds counts as acquired.
     for (const item of this.pack.items) {
       this.compendium.acquire(item);
@@ -668,6 +671,10 @@ export default class Game {
       this.hitStop = Math.max(this.hitStop, HIT_STOP);
       this.shake = Math.max(this.shake, Math.min(MAX_SHAKE, event.value / 12));
     });
+    // A merc that rises puts its set pieces back into the count.
+    this.sim.on(SimEvents.UnitRevived, EventPriority.Post, () => {
+      applySets(this.sim);
+    });
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
       if (event.source.side === Side.Monster) {
         this.slain++;
@@ -679,11 +686,16 @@ export default class Game {
             ...rollCards(this.streams.get(1, Stream.Loot), event.source.kind, event.source.rank),
             ...[
               rollUnique(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+              rollSetPiece(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
             ].filter((i) => i !== null),
           ],
           event.source,
         );
         gather(this.pack.materials, materialsFrom(this.streams.get(1, Stream.Loot), event.source));
+      }
+      // A merc's death takes its set pieces out of the count.
+      if (event.source.side === Side.Party) {
+        applySets(this.sim);
       }
       if (event.source === this.bearer) {
         this.over = true;
