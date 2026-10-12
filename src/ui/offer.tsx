@@ -69,6 +69,9 @@ interface StartProps {
   gold: number;
   offers: Offer[];
   onPick: (index: number) => void;
+  // A suspended run, where it stands, and how to take it up again
+  saved: { seed: string; place: string } | null;
+  onResume: () => void;
 }
 
 /** The start of a run: the bearer picks its first merc from three. */
@@ -87,6 +90,23 @@ export function StartPicker(props: StartProps): JSX.Element {
         {props.gold} gold, enough to hire three more by the fires of wandering mercs on the way.
         Seed {props.seed}.
       </p>
+      <Show when={props.saved} keyed>
+        {(saved) => (
+          <button
+            type="button"
+            data-part="choice"
+            class="mb-4 w-full border border-amber-700 px-3 py-2 text-left hover:border-amber-400"
+            onClick={() => {
+              props.onResume();
+            }}
+          >
+            Continue the last run
+            <span data-part="note" class="block text-xs text-zinc-500">
+              Seed {saved.seed} · {saved.place}. Taking a new merc instead starts over.
+            </span>
+          </button>
+        )}
+      </Show>
       <div class="flex gap-3">
         <For each={props.offers}>
           {(offer, i) => (

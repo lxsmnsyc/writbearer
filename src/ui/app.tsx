@@ -1,5 +1,6 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game, { type EventView, type GameOptions } from '../game/game';
+import { type RunSave, describeSave, readSave } from '../game/save';
 import { HIREABLE } from '../content/recruits';
 import { MORALE_NAME, Morale, moraleOf } from '../sim/morale';
 import type Unit from '../sim/unit';
@@ -62,6 +63,8 @@ export default function App(): JSX.Element {
   const [map, setMap] = createSignal(false);
   const [town, setTown] = createSignal(false);
   const [event, setEvent] = createSignal<EventView | null>(null);
+  // The suspended run, offered at the start of a new one
+  const [saved, setSaved] = createSignal<RunSave | null>(null);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -104,6 +107,11 @@ export default function App(): JSX.Element {
     );
     g.start();
     setGame(g);
+    readSave()
+      .then((save) => {
+        setSaved(save);
+      })
+      .catch(() => null);
     const timer = setInterval(() => {
       setParty(
         g.mercs().map((unit) => ({
@@ -288,6 +296,15 @@ export default function App(): JSX.Element {
             offers={offers() ?? []}
             onPick={(index) => {
               g.choose(index);
+              setSaved(null);
+            }}
+            saved={saved() && { seed: saved()!.seed, place: describeSave(saved()!) }}
+            onResume={() => {
+              const save = saved();
+              setSaved(null);
+              if (save) {
+                g.resume(save);
+              }
             }}
           />
         )}

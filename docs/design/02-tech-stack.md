@@ -145,6 +145,7 @@ The game stores two things in the browser's IndexedDB. Nothing else is kept.
 - The save is a snapshot of the run state and the position of each random stream. It does not replay an action log.
 - Loading a save does not delete it. Because the random streams are saved, replaying a node gives the same rolls.
 - The save is deleted when the run ends, by winning or by the citizen's death.
+- **In the game so far:** `src/game/save.ts` keeps the slot in IndexedDB. The game writes it as the first merc is taken and each time the party crosses into an area: the area as laid out, its Event and that Event's stream before it began, the map position and path, every stream's state, the bearer's health, each merc (level, experience, points, stats, traits, morale, Discipline, skill ranks, orders, gear, belt, alive or torn), the pack, the pouch and the vault. Items come back with new ids, and uniques with their effects. The start screen offers "Continue the last run" with its seed and place; taking a new merc instead starts over and takes the slot. A run started at a chosen place (`?party`, `?area`, `?station`, `?tomb`, `?town`, `?event`) never writes or deletes the save, so tests and playtesting leave the player's run alone. A save of an older version is ignored.
 
 ### Compendium
 

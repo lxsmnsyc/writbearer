@@ -48,6 +48,16 @@ import {
 } from './inventory';
 import { type Due, Payroll, desert } from './wages';
 import {
+  type RunSave,
+  SAVE_VERSION,
+  deleteSave,
+  loadMerc,
+  loadPack,
+  saveItem,
+  saveMerc,
+  writeSave,
+} from './save';
+import {
   addSocket,
   buy,
   cannotAddSocket,
@@ -60,7 +70,7 @@ import {
 } from './town';
 import { gather, materialsFrom } from '../content/materials';
 import type { Recipe } from '../content/recipes';
-import type RNG from '../core/rng';
+import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
@@ -222,8 +232,10 @@ export default class Game {
     at: { x: number; z: number };
     outcome: string | null;
     met: boolean;
+    // Its stream as it stood before it began, for the save
+    state: number;
   } | null = null;
-  private pendingEvent: { def: EventDef; rng: RNG } | null = null;
+  private pendingEvent: { def: EventDef; rng: RNG; state: number } | null = null;
   private eventOpen = false;
   private readonly eventsSeen = new Set<string>();
   // A line shown under the hint for a while, such as who left unpaid
@@ -286,6 +298,77 @@ export default class Game {
     this.join(offer, this.bearer.x + 1, this.bearer.z);
     this.offers = null;
     this.hooks.onOffers?.(null);
+    // A new run takes the save slot from any run before it.
+    this.persist();
+  }
+
+  /** Resumes a saved run at the entrance of the area it was saved in. */
+  resume(save: RunSave): void {
+    this.reset(save);
+  }
+
+  // Whether this run keeps a save: not one started at a chosen place, as
+  // tests and playtesting do, so they never touch the player's run.
+  private get saving(): boolean {
+    const o = this.options;
+    const placed = [o.party, o.area, o.event].some((v) => v !== undefined);
+    return !placed && !o.station && !o.tomb && !o.town;
+  }
+
+  // Writes the run as it stands at this area's entrance.
+  private persist(): void {
+    if (this.saving && !this.over) {
+      writeSave(this.snapshot());
+    }
+  }
+
+  // The run is over, won or lost: its save goes with it.
+  private endRun(): void {
+    if (this.saving) {
+      deleteSave();
+    }
+  }
+
+  /** The run as it stands, for the save. Taken on entering an area. */
+  snapshot(): RunSave {
+    const e = this.encounter;
+    return {
+      version: SAVE_VERSION,
+      seed: this.streams.seed,
+      streams: this.streams.save(),
+      stageIndex: this.stageIndex,
+      node: this.node && { ...this.node },
+      path: this.path.map((p) => ({ ...p })),
+      stage: structuredClone(this.stage),
+      event: e && { id: e.def.id, state: e.state },
+      eventsSeen: [...this.eventsSeen],
+      souls: this.souls,
+      slain: this.slain,
+      bearer: { hp: this.bearer.hp, mana: this.bearer.mana },
+      mercs: this.mercs().map((m) => saveMerc(m)),
+      gold: this.pack.gold,
+      pack: this.pack.items.map((i) => saveItem(i)),
+      materials: [...this.pack.materials],
+      vault: this.vault.items.map((i) => saveItem(i)),
+    };
+  }
+
+  // Lays out the saved area again, as it stood when the party entered it.
+  private resumeArea(save: RunSave): void {
+    this.node = save.node && { ...save.node };
+    this.path = save.path.map((p) => ({ ...p }));
+    this.stage = structuredClone(save.stage);
+    for (const id of save.eventsSeen) {
+      this.eventsSeen.add(id);
+    }
+    const def = save.event && EVENT_BY_ID.get(save.event.id);
+    this.pendingEvent =
+      save.event && def ? { def, rng: new RNG(save.event.state), state: save.event.state } : null;
+    this.rested = false;
+    if (this.stage.station) {
+      this.payroll = new Payroll();
+      this.stationMet = false;
+    }
   }
 
   /** Hires the wandering merc being talked to. Returns why it failed, or null. */
@@ -452,19 +535,27 @@ export default class Game {
     return best;
   }
 
-  reset(): void {
-    this.streams = new RunStreams(this.options.seed ?? randomSeed());
+  /** Starts a new run, or resumes a saved one at its area's entrance. */
+  reset(save: RunSave | null = null): void {
+    this.streams = save
+      ? RunStreams.load(save.seed, save.streams)
+      : new RunStreams(this.options.seed ?? randomSeed());
     // The pack comes first: an Event the run starts at deals with it.
     this.pack = new Pack();
     this.pack.gold = START_GOLD;
-    for (const [id, count] of STARTER_PACK) {
-      const base = BASE_BY_ID.get(id);
-      if (base) {
-        this.pack.add(potionStack(base, count));
+    this.vault.items.length = 0;
+    if (save) {
+      loadPack(save, this.pack, this.vault);
+    } else {
+      for (const [id, count] of STARTER_PACK) {
+        const base = BASE_BY_ID.get(id);
+        if (base) {
+          this.pack.add(potionStack(base, count));
+        }
       }
     }
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
-    this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
+    this.stageIndex = save?.stageIndex ?? Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
     this.mapOpen = false;
     this.souls = 0;
@@ -472,7 +563,9 @@ export default class Game {
     this.eventsSeen.clear();
     this.eventOpen = false;
     this.rollMap();
-    if (this.options.tomb) {
+    if (save) {
+      this.resumeArea(save);
+    } else if (this.options.tomb) {
       this.stageIndex = LAYERS.length * AREAS_PER_LAYER;
       this.node = null;
       this.stage = generateTomb(this.streams.area(1, Stream.Layout, TOMB_STREAM), this.stageIndex);
@@ -497,9 +590,19 @@ export default class Game {
     this.views = new Views();
     this.effects = new Effects(this.sim, this.views);
     this.bearer = spawnParty(this.sim, this.stage, this.options.party ?? []);
-    this.offers = this.options.party
-      ? null
-      : rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL);
+    if (save) {
+      this.bearer.hp = save.bearer.hp;
+      this.bearer.mana = save.bearer.mana;
+      for (const m of save.mercs) {
+        loadMerc(this.sim, m, this.stage.entrance.x, this.stage.entrance.z);
+      }
+      carryParty(this.sim, this.stage);
+      this.views.snap(this.sim);
+    }
+    this.offers =
+      this.options.party || save
+        ? null
+        : rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL);
     this.recruiting = null;
     this.hooks.onOffers?.(this.offers);
     this.hooks.onRecruit?.(null);
@@ -529,16 +632,17 @@ export default class Game {
       }
       if (event.source === this.bearer) {
         this.over = true;
+        this.endRun();
       } else if (event.source.side === Side.Party) {
         this.souls++;
       }
     });
-    this.slain = 0;
+    this.slain = save?.slain ?? 0;
+    this.souls = save?.souls ?? 0;
     this.over = false;
     this.ground = [];
     this.fetching = null;
     this.inventory = false;
-    this.vault.items.length = 0;
     this.stationOpen = false;
     this.notice = null;
     this.hooks.onStation?.(false);
@@ -676,7 +780,7 @@ export default class Game {
       const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
       const def = forced ?? pickEvent(rng, layerIndexOf(this.stageIndex), this.eventsSeen);
       this.eventsSeen.add(def.id);
-      this.pendingEvent = { def, rng };
+      this.pendingEvent = { def, rng, state: rng.state };
       plan.scene = def.props;
     }
     // Each area of a column lays out from its own stream; the first keeps
@@ -734,7 +838,14 @@ export default class Game {
         this.join(offer, at.x + 1, at.z);
       },
     });
-    this.encounter = { def: pending.def, play, at, outcome: null, met: false };
+    this.encounter = {
+      def: pending.def,
+      play,
+      at,
+      outcome: null,
+      met: false,
+      state: pending.state,
+    };
   }
 
   // Who stands in the area out of the fight: the wandering merc, or
@@ -865,6 +976,7 @@ export default class Game {
     this.views.snap(this.sim);
     this.renderer.snapCamera();
     this.enter();
+    this.persist();
   }
 
   // The Waystation before the current area, with this layer's wages owed.
@@ -975,6 +1087,7 @@ export default class Game {
     }
     if (f.ending) {
       this.over = true;
+      this.endRun();
     }
   }
 

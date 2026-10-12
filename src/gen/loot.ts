@@ -26,6 +26,9 @@ import { Range, Rank } from '../sim/types';
 
 let nextUid = 1;
 
+/** A new item id, for an item made outside the rolls, such as one loaded from a save. */
+export const freshUid = (): number => nextUid++;
+
 // Base rolls by quality, as Diablo 2: inferior bases roll low, superior high.
 const BASE_SCALE: Record<Quality, number> = {
   [Quality.Inferior]: 0.8,
