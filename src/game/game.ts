@@ -1,5 +1,5 @@
 import { EventPriority } from '../core/event-emitter';
-import { RunStreams, Stream, randomSeed } from '../core/seed';
+import { RunStreams, Stream, normalizeSeed, randomSeed } from '../core/seed';
 import { SimEvents } from '../sim/events';
 import { look } from '../render/rig';
 import Sim, { TICK } from '../sim/sim';
@@ -103,7 +103,7 @@ export interface GameHooks {
   // Called whenever the pack, anyone's gear, levels or skills change.
   onChange?: () => void;
   // Called with the offers to pick from at the start of a run, then null.
-  onOffers?: (offers: Offer[] | null) => void;
+  onOffers?: (offers: Offer[] | null, seed: string) => void;
   // Called when the bearer meets a wandering merc, then null.
   onRecruit?: (offer: Offer | null) => void;
   // Called when the bearer reaches a Waystation's post, and when it closes.
@@ -314,7 +314,7 @@ export default class Game {
     }
     this.join(offer, this.bearer.x + 1, this.bearer.z);
     this.offers = null;
-    this.hooks.onOffers?.(null);
+    this.hooks.onOffers?.(null, this.streams.seed);
     // A new run takes the save slot from any run before it.
     this.persist();
   }
@@ -658,7 +658,7 @@ export default class Game {
         ? null
         : rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL);
     this.recruiting = null;
-    this.hooks.onOffers?.(this.offers);
+    this.hooks.onOffers?.(this.offers, this.streams.seed);
     this.hooks.onRecruit?.(null);
     this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
@@ -820,6 +820,21 @@ export default class Game {
   /** Whether this run is in endless mode. */
   get isEndless(): boolean {
     return this.endless;
+  }
+
+  /** Starts the run about to begin on another seed, as typed or shared. */
+  setSeed(seed: string): void {
+    const clean = normalizeSeed(seed);
+    if (this.offers === null || clean === '' || clean === this.streams.seed) {
+      return;
+    }
+    this.reset(null, clean);
+  }
+
+  /** A link that starts this run's seed, in its mode, for another player. */
+  shareLink(): string {
+    const seed = encodeURIComponent(this.streams.seed);
+    return `${location.origin}${location.pathname}?seed=${seed}${this.endless ? '&endless' : ''}`;
   }
 
   /** Switches the run about to begin between story and endless, on its seed. */
@@ -1661,6 +1676,7 @@ export default class Game {
       over: this.over,
       ending: this.finale?.ending ?? null,
       region: this.region,
+      seed: this.streams.seed,
       paused: this.paused,
       selected: this.selected,
       shake: this.shake,

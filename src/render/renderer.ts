@@ -130,6 +130,8 @@ export interface Frame {
   callout: string | null;
   // Where the party is: the layer, or an endless phase
   region: string;
+  // The run's seed, shown when it ends so it can be shared
+  seed: string;
   // How the final fight ended: the Creditor sealed again, or risen
   ending: 'sealed' | 'risen' | null;
 }
@@ -900,7 +902,12 @@ export default class Renderer {
       out.fillText(line, (W * SCALE) / 2, (H * SCALE) / 2 + 36);
       out.font = '16px ui-monospace, monospace';
       out.fillStyle = '#9a9a9a';
-      out.fillText('Press R to draw another lot.', (W * SCALE) / 2, (H * SCALE) / 2 + 70);
+      out.fillText(
+        `Seed ${f.seed} · ${f.region}, ${place(f.stage)} · Slain: ${f.slain}`,
+        (W * SCALE) / 2,
+        (H * SCALE) / 2 + 70,
+      );
+      out.fillText('Press R to draw another lot.', (W * SCALE) / 2, (H * SCALE) / 2 + 96);
       out.textAlign = 'start';
     }
   }

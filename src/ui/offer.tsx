@@ -76,6 +76,10 @@ interface StartProps {
   // Endless mode, and switching to and from it
   endless: boolean;
   onMode: (endless: boolean) => void;
+  // Starting on a seed typed in, or a new random one, and copying a link
+  // to this one
+  onSeed: (seed: string | null) => void;
+  shareLink: () => string;
 }
 
 const MODES = [
@@ -126,9 +130,9 @@ export function StartPicker(props: StartProps): JSX.Element {
           No Writ and no ending: the Guild sends the party down, phase after phase, each deeper and
           harder, until the bearer falls. Mercs can be hired in every phase. The purse holds{' '}
           {props.gold} gold.
-        </Show>{' '}
-        Seed {props.seed}.
+        </Show>
       </p>
+      <SeedBar seed={props.seed} onSeed={props.onSeed} shareLink={props.shareLink} />
       <Show when={props.saved} keyed>
         {(saved) => (
           <button
@@ -169,6 +173,85 @@ export function StartPicker(props: StartProps): JSX.Element {
         The Compendium (K)
       </button>
     </aside>
+  );
+}
+
+interface SeedProps {
+  seed: string;
+  onSeed: (seed: string | null) => void;
+  shareLink: () => string;
+}
+
+/**
+ * The run's seed: typed in to play a run someone shared, drawn anew, or
+ * copied as a link to share this one.
+ */
+function SeedBar(props: SeedProps): JSX.Element {
+  const [typed, setTyped] = createSignal('');
+  const [copied, setCopied] = createSignal<string | null>(null);
+  const copy = async (): Promise<void> => {
+    const link = props.shareLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied('Link copied.');
+    } catch {
+      // No clipboard, as over plain HTTP: show the link to copy by hand.
+      setCopied(link);
+    }
+  };
+  return (
+    <form
+      class="mb-4 flex flex-wrap items-center gap-2 text-xs"
+      aria-label="Seed"
+      onSubmit={(e) => {
+        e.preventDefault();
+        props.onSeed(typed());
+        setTyped('');
+        setCopied(null);
+      }}
+    >
+      <span data-part="note" class="text-zinc-500">
+        Seed <span class="font-mono text-zinc-200">{props.seed}</span>
+      </span>
+      <input
+        type="text"
+        aria-label="Play a seed"
+        placeholder="Play a seed"
+        maxLength={32}
+        class="w-32 border border-zinc-700 bg-zinc-900 px-2 py-0.5 font-mono text-zinc-200 uppercase"
+        value={typed()}
+        onInput={(e) => {
+          setTyped(e.currentTarget.value);
+        }}
+      />
+      <button type="submit" class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300">
+        Play
+      </button>
+      <button
+        type="button"
+        class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300"
+        onClick={() => {
+          props.onSeed(null);
+          setCopied(null);
+        }}
+      >
+        New seed
+      </button>
+      <button
+        type="button"
+        class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300"
+        onClick={() => {
+          copy().catch(() => null);
+        }}
+      >
+        Copy link
+      </button>
+      <Show when={copied()}>
+        <span data-part="note" class="basis-full text-zinc-400 select-all" role="status">
+          {copied()}
+        </span>
+      </Show>
+    </form>
   );
 }
 

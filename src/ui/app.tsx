@@ -1,6 +1,7 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game, { type EventView, type GameOptions } from '../game/game';
 import { type RunSave, describeSave, readSave } from '../game/save';
+import { randomSeed } from '../core/seed';
 import { HIREABLE } from '../content/recruits';
 import { MORALE_NAME, Morale, moraleOf } from '../sim/morale';
 import type Unit from '../sim/unit';
@@ -68,6 +69,8 @@ export default function App(): JSX.Element {
   // The suspended run, offered at the start of a new one
   const [saved, setSaved] = createSignal<RunSave | null>(null);
   const [compendium, setCompendium] = createSignal(false);
+  // The seed of the run about to begin
+  const [runSeed, setRunSeed] = createSignal('');
   const [endless, setEndless] = createSignal(runOptions().endless ?? false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
@@ -88,8 +91,9 @@ export default function App(): JSX.Element {
         onChange: () => {
           setItems((v) => v + 1);
         },
-        onOffers: (o) => {
+        onOffers: (o, seed) => {
           setOffers(o);
+          setRunSeed(seed);
         },
         onRecruit: (o) => {
           setRecruit(o);
@@ -310,7 +314,7 @@ export default function App(): JSX.Element {
       <Show when={offers() && game()} keyed>
         {(g) => (
           <StartPicker
-            seed={g.seed}
+            seed={runSeed()}
             gold={g.pack.gold}
             offers={offers() ?? []}
             onPick={(index) => {
@@ -326,6 +330,10 @@ export default function App(): JSX.Element {
               setEndless(on);
               g.setEndless(on);
             }}
+            onSeed={(seed) => {
+              g.setSeed(seed ?? randomSeed());
+            }}
+            shareLink={() => g.shareLink()}
             onResume={() => {
               const save = saved();
               setSaved(null);

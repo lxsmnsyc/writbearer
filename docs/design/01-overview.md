@@ -136,6 +136,7 @@ The UI hides details the player has not discovered in any run yet.
 ### Seeds
 
 - Seeds can be shared, so players can compare runs on the same seed.
+- **In the game so far:** the start screen shows the run's seed. A seed typed in starts that run instead, trimmed and upper-cased; New seed draws another; Copy link copies a link that starts the seed in its mode (`?seed=WRIT`, with `&endless` for endless mode), or shows the link where the clipboard is not allowed. The end-of-run screen shows the seed, where the run ended and how many were slain, so players can compare.
 
 ## Tone
 
