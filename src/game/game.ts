@@ -6,10 +6,11 @@ import Sim, { TICK } from '../sim/sim';
 import { DamageFlags, DamagePriority, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
-import Renderer from '../render/renderer';
+import Renderer, { type Frame } from '../render/renderer';
 import { Views } from '../render/view';
 import {
   type Ahead,
+  type AreaPlan,
   type Stage,
   generateStage,
   generateTomb,
@@ -17,6 +18,7 @@ import {
   monsterLevel,
 } from '../gen/stage';
 import { reveal } from '../content/creditor';
+import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
 import { type EquipSlot, type Item, isCard, isPotion, refinable } from '../sim/item';
@@ -99,6 +101,19 @@ export interface GameHooks {
   onMap?: (open: boolean) => void;
   // Called when the bearer reaches a Town's well, and when its panel closes.
   onTown?: (open: boolean) => void;
+  // Called when the bearer walks up to an Event, as it changes, and with
+  // null when it closes.
+  onEvent?: (event: EventView | null) => void;
+}
+
+/** An Event as the interface shows it. */
+export interface EventView {
+  title: string;
+  text: string;
+  // Each choice, and why it cannot be made now, if it cannot
+  choices: { label: string; why: string | null }[];
+  // What came of the choice made, once made
+  outcome: string | null;
 }
 
 export interface GameOptions {
@@ -114,6 +129,8 @@ export interface GameOptions {
   tomb?: boolean;
   // Starts in a Town, in the area given by `area`
   town?: boolean;
+  // Starts at this Event, by its id, in the area given by `area`
+  event?: string;
 }
 
 // The most mercs in the party, living or dead.
@@ -198,6 +215,17 @@ export default class Game {
   private stationMet = false;
   private townOpen = false;
   private townMet = false;
+  // The Event of this area, as it plays out, and the ones met on this run
+  private encounter: {
+    def: EventDef;
+    play: EventPlay;
+    at: { x: number; z: number };
+    outcome: string | null;
+    met: boolean;
+  } | null = null;
+  private pendingEvent: { def: EventDef; rng: RNG } | null = null;
+  private eventOpen = false;
+  private readonly eventsSeen = new Set<string>();
   // A line shown under the hint for a while, such as who left unpaid
   private notice: { text: string; until: number } | null = null;
   // This layer's map, the area the party is in (null at a Waystation) and
@@ -239,7 +267,8 @@ export default class Game {
       this.recruiting !== null ||
       this.stationOpen ||
       this.mapOpen ||
-      this.townOpen
+      this.townOpen ||
+      this.eventOpen
     );
   }
 
@@ -425,12 +454,23 @@ export default class Game {
 
   reset(): void {
     this.streams = new RunStreams(this.options.seed ?? randomSeed());
+    // The pack comes first: an Event the run starts at deals with it.
+    this.pack = new Pack();
+    this.pack.gold = START_GOLD;
+    for (const [id, count] of STARTER_PACK) {
+      const base = BASE_BY_ID.get(id);
+      if (base) {
+        this.pack.add(potionStack(base, count));
+      }
+    }
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
     this.stageIndex = Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
     this.mapOpen = false;
     this.souls = 0;
     this.finale = null;
+    this.eventsSeen.clear();
+    this.eventOpen = false;
     this.rollMap();
     if (this.options.tomb) {
       this.stageIndex = LAYERS.length * AREAS_PER_LAYER;
@@ -443,6 +483,9 @@ export default class Game {
         this.stageIndex,
         { kind: 'town', ahead: ['combat'] },
       );
+    } else if (this.options.event) {
+      this.goTo(this.stageIndex % AREAS_PER_LAYER, 0);
+      this.stage = this.buildStage('event');
     } else if (this.options.station) {
       this.stageIndex -= this.stageIndex % AREAS_PER_LAYER;
       this.node = null;
@@ -492,14 +535,6 @@ export default class Game {
     });
     this.slain = 0;
     this.over = false;
-    this.pack = new Pack();
-    this.pack.gold = START_GOLD;
-    for (const [id, count] of STARTER_PACK) {
-      const base = BASE_BY_ID.get(id);
-      if (base) {
-        this.pack.add(potionStack(base, count));
-      }
-    }
     this.ground = [];
     this.fetching = null;
     this.inventory = false;
@@ -507,6 +542,7 @@ export default class Game {
     this.stationOpen = false;
     this.notice = null;
     this.hooks.onStation?.(false);
+    this.hooks.onEvent?.(null);
     this.select(null);
     this.acc = 0;
     this.hooks.onInventory?.(false);
@@ -627,17 +663,25 @@ export default class Game {
     this.stageIndex = Math.floor(this.stageIndex / AREAS_PER_LAYER) * AREAS_PER_LAYER + column;
   }
 
-  private buildStage(): Stage {
+  // Builds the area the party is in, as the map has it, or as `kind`.
+  private buildStage(kind?: MapNode['kind']): Stage {
     const node = this.here();
     const row = this.node?.row ?? 0;
+    const area = this.stageIndex + AREA_ROW_STREAM * row;
     this.rested = false;
+    this.pendingEvent = null;
+    const plan: AreaPlan = { kind: kind ?? node?.kind ?? 'combat', ahead: this.aheadOf(node) };
+    if (plan.kind === 'event') {
+      const rng = this.streams.area(1, Stream.Events, area);
+      const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
+      const def = forced ?? pickEvent(rng, layerIndexOf(this.stageIndex), this.eventsSeen);
+      this.eventsSeen.add(def.id);
+      this.pendingEvent = { def, rng };
+      plan.scene = def.props;
+    }
     // Each area of a column lays out from its own stream; the first keeps
     // the stream areas had before the map.
-    return generateStage(
-      this.streams.area(1, Stream.Layout, this.stageIndex + AREA_ROW_STREAM * row),
-      this.stageIndex,
-      { kind: node?.kind ?? 'combat', ahead: this.aheadOf(node) },
-    );
+    return generateStage(this.streams.area(1, Stream.Layout, area), this.stageIndex, plan);
   }
 
   // Lays out the current stage around the party.
@@ -657,6 +701,122 @@ export default class Game {
     for (const s of this.stage.stains) {
       this.effects.stain(s.x, s.z, s.r, '#560b0b');
     }
+    this.beginEvent();
+  }
+
+  // Rolls what waits at this area's Event, if it has one.
+  private beginEvent(): void {
+    const pending = this.pendingEvent;
+    const at = this.stage.event;
+    this.encounter = null;
+    this.pendingEvent = null;
+    if (!pending || !at) {
+      return;
+    }
+    const play = pending.def.begin({
+      rng: pending.rng,
+      sim: this.sim,
+      pack: this.pack,
+      level: monsterLevel(this.stageIndex),
+      mercLevel: START_LEVEL + Math.floor(this.stageIndex / 2),
+      at,
+      give: (items) => {
+        this.scatter(items, { x: at.x + 1, z: at.z });
+      },
+      cannotHire: (wage) => {
+        if (this.mercs().length >= PARTY_SIZE) {
+          return `The party is full: ${PARTY_SIZE} mercs at most.`;
+        }
+        return this.pack.gold < wage ? `It costs ${wage} gold. You have ${this.pack.gold}.` : null;
+      },
+      hire: (offer, wage) => {
+        this.pack.gold -= wage;
+        this.join(offer, at.x + 1, at.z);
+      },
+    });
+    this.encounter = { def: pending.def, play, at, outcome: null, met: false };
+  }
+
+  // Who stands in the area out of the fight: the wandering merc, or
+  // whoever waits at the Event until a choice is made, or lies dead there.
+  private figure(): Frame['figure'] {
+    const w = this.wanderer;
+    if (w) {
+      return {
+        kind: w.offer.kind,
+        x: w.x,
+        z: w.z,
+        label: `${w.offer.name}, for hire`,
+        fallen: false,
+      };
+    }
+    const e = this.encounter;
+    const kind = e?.play.figure;
+    if (!e || !kind || (e.outcome !== null && !e.play.fallen)) {
+      return null;
+    }
+    return {
+      kind,
+      x: e.at.x,
+      z: e.at.z,
+      label: e.outcome === null ? e.def.title : null,
+      fallen: e.play.fallen ?? false,
+    };
+  }
+
+  // The Event as the interface shows it.
+  private eventView(): EventView | null {
+    const e = this.encounter;
+    return e
+      ? {
+          title: e.def.title,
+          text: e.play.text,
+          choices: e.play.choices.map((c) => ({ label: c.label, why: c.why?.() ?? null })),
+          outcome: e.outcome,
+        }
+      : null;
+  }
+
+  // Opens the Event when the bearer walks up to it, until a choice is made.
+  private visitEvent(): void {
+    const e = this.encounter;
+    if (e?.outcome !== null || this.eventOpen) {
+      return;
+    }
+    const d = Math.hypot(this.bearer.x - e.at.x, this.bearer.z - e.at.z);
+    if (d > LEAVE_REACH) {
+      e.met = false;
+    } else if (d <= MEET_REACH && !e.met && this.bearer.alive) {
+      e.met = true;
+      this.eventOpen = true;
+      this.keys.clear();
+      this.bearer.order = null;
+      this.hooks.onEvent?.(this.eventView());
+    }
+  }
+
+  /** Makes one of the Event's choices. Returns why it could not, or null. */
+  chooseEvent(index: number): string | null {
+    const e = this.encounter;
+    const choice = e?.play.choices[index];
+    if (!e || !choice || e.outcome !== null) {
+      return null;
+    }
+    const why = choice.why?.() ?? null;
+    if (why) {
+      return why;
+    }
+    e.outcome = choice.pick();
+    this.views.snap(this.sim);
+    this.itemsChanged();
+    this.hooks.onEvent?.(this.eventView());
+    return null;
+  }
+
+  /** Closes the Event. Before a choice is made, walking back opens it again. */
+  closeEvent(): void {
+    this.eventOpen = false;
+    this.hooks.onEvent?.(null);
   }
 
   // The bearer left by the exit: on to the next area, down to the next
@@ -1035,6 +1195,9 @@ export default class Game {
       if (this.townOpen) {
         this.closeTown();
       }
+      if (this.eventOpen) {
+        this.closeEvent();
+      }
       return;
     }
     // Once the seal breaks, the player can only look at the mercs, or start
@@ -1232,6 +1395,7 @@ export default class Game {
         this.meet();
         this.visitStation();
         this.visitTown();
+        this.visitEvent();
         this.acc -= TICK;
         if (shutArena(this.sim, this.stage, this.boss)) {
           // The gate slams shut behind the party.
@@ -1267,7 +1431,7 @@ export default class Game {
       time: this.time,
       slain: this.slain,
       ground: this.ground,
-      wanderer: this.wanderer,
+      figure: this.figure(),
       over: this.over,
       ending: this.finale?.ending ?? null,
       paused: this.paused,

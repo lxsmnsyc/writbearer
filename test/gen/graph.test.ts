@@ -37,14 +37,14 @@ describe('a layer map', () => {
     }
   });
 
-  it('never joins two Camps or two Elites by a road', () => {
+  it('never joins two Camps, two Elites or two Events by a road', () => {
     for (const seed of SEEDS) {
       const { columns } = generateLayerMap(new RNG(seed));
       columns.forEach((column, c) => {
         for (const node of column) {
           for (const j of node.next) {
             const next = columns[c + 1][j];
-            if (node.kind === 'camp' || node.kind === 'elite') {
+            if (node.kind === 'camp' || node.kind === 'elite' || node.kind === 'event') {
               expect(next.kind).not.toBe(node.kind);
             }
           }

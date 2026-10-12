@@ -1,7 +1,6 @@
 import type { Ahead, Prop, Stage } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
-import type { Offer } from '../content/recruits';
 import { ItemType, Quality } from '../sim/item';
 import {
   BURN,
@@ -49,6 +48,7 @@ const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
   elite: 'Elite: a strong pack, better spoils',
   camp: 'Camp: rest by a fire',
   town: 'Town: smith, bench, temple, market',
+  event: 'Event: someone on the road',
   boss: 'The walled ring',
 };
 
@@ -113,8 +113,9 @@ export interface Frame {
   slain: number;
   // Items lying on the floor
   ground: GroundItem[];
-  // A merc for hire waiting by its fire, if the stage has one
-  wanderer: { offer: Offer; x: number; z: number } | null;
+  // Someone standing in the area who is not in a fight: a merc for hire
+  // by its fire, or whoever waits at an Event, with a label over its head
+  figure: { kind: string; x: number; z: number; label: string | null; fallen: boolean } | null;
   over: boolean;
   paused: boolean;
   // The merc whose orders are open
@@ -327,11 +328,12 @@ export default class Renderer {
         });
       }
     }
-    const w = f.wanderer;
-    if (w && fog.visible(w.x, w.z) > 0.05 && isKind(w.offer.kind)) {
-      const kind = w.offer.kind;
-      // It turns to watch the bearer come.
-      const angle = bearer ? Math.atan2(bearer.z - w.z, bearer.x - w.x) : Math.PI;
+    const w = f.figure;
+    if (w && fog.visible(w.x, w.z) > 0.05 && isKind(w.kind)) {
+      const kind = w.kind;
+      // It turns to watch the bearer come, unless it lies dead.
+      const angle =
+        bearer && !w.fallen ? Math.atan2(bearer.z - w.z, bearer.x - w.x) : Math.PI * 0.75;
       list.push({
         depth: w.x + w.z,
         draw: () => {
@@ -347,7 +349,7 @@ export default class Renderer {
               stride: 0,
               atk: -1,
               shout: -1,
-              fall: -1,
+              fall: w.fallen ? 1 : -1,
               hurt: 9,
               alert: false,
             },
@@ -749,10 +751,10 @@ export default class Renderer {
       );
       out.font = '15px "IM Fell English", Georgia, serif';
     }
-    const w = f.wanderer;
-    if (w && fog.visible(w.x, w.z) > 0.5) {
+    const w = f.figure;
+    if (w?.label && fog.visible(w.x, w.z) > 0.5) {
       const b = this.iso(w.x, w.z);
-      const text = `${w.offer.name}, for hire`;
+      const text = w.label;
       const x = b.x * SCALE - this.sub.x;
       const y = (b.y - 52 * look.zoom) * SCALE - this.sub.y;
       const width = out.measureText(text).width + 8;
@@ -924,6 +926,9 @@ function place(stage: Stage): string {
   if (stage.kind === 'town') {
     return `${area}, Town`;
   }
+  if (stage.kind === 'event') {
+    return `${area}, Event`;
+  }
   return area;
 }
 
@@ -947,6 +952,9 @@ function hint(f: Frame): string {
   }
   if (f.stage.town) {
     return 'A Town. Walk to the well to deal with the smith, the bench, the temple and the market.';
+  }
+  if (f.stage.event) {
+    return 'Something waits by the road. Walk up to it, then take a road on. M for the map.';
   }
   if (f.stage.rest) {
     return 'A Camp. Walk to the fire to rest, then take a road on. M for the map.';

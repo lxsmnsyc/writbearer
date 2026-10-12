@@ -1,5 +1,5 @@
 import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
-import Game, { type GameOptions } from '../game/game';
+import Game, { type EventView, type GameOptions } from '../game/game';
 import { HIREABLE } from '../content/recruits';
 import { MORALE_NAME, Morale, moraleOf } from '../sim/morale';
 import type Unit from '../sim/unit';
@@ -9,6 +9,7 @@ import Station from './station';
 import ShoutBar, { type ShoutEntry } from './shouts';
 import LayerMapPanel from './map';
 import Town from './town';
+import EventPanel from './event';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
 
@@ -44,6 +45,7 @@ function runOptions(): GameOptions {
     station: params.has('station'),
     tomb: params.has('tomb'),
     town: params.has('town'),
+    event: params.get('event') ?? undefined,
   };
 }
 
@@ -59,6 +61,7 @@ export default function App(): JSX.Element {
   const [station, setStation] = createSignal(false);
   const [map, setMap] = createSignal(false);
   const [town, setTown] = createSignal(false);
+  const [event, setEvent] = createSignal<EventView | null>(null);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -92,6 +95,9 @@ export default function App(): JSX.Element {
         },
         onTown: (open) => {
           setTown(open);
+        },
+        onEvent: (e) => {
+          setEvent(e);
         },
       },
       runOptions(),
@@ -238,6 +244,20 @@ export default function App(): JSX.Element {
             }}
           />
         )}
+      </Show>
+      <Show when={game() && event()} keyed>
+        {(e) => {
+          const g = game();
+          return g ? (
+            <EventPanel
+              event={e}
+              onChoose={(i) => g.chooseEvent(i)}
+              onClose={() => {
+                g.closeEvent();
+              }}
+            />
+          ) : null;
+        }}
       </Show>
       <Show when={map() && game()} keyed>
         {(g) => (

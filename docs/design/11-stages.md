@@ -87,9 +87,18 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Exits:** inside a layer, an area's exit is the road on to the next area, off the east edge, marked by the Guild's signpost and two torches. Only the last area of a layer has a way down, a stair between two braziers, to the next layer. The phase boss will stand before it.
 - **Layer map:** `src/gen/graph.ts` rolls each layer's map from the `map` stream, as Slay the Spire's: 8 columns, one per area. The first column has 2 areas below a Waystation and 1 where the run begins; columns 2 to 7 have 2 or 3; the last is the boss's arena. Each area leads to 1 or 2 areas of the next column, and no roads cross. M opens the map: the areas crossed, the one the party is in and the ones it can go to next.
 - **Monsters by layer:** each layer fields its own packs, after the lore. The Marches: the Blight's mites and crawlers, the drowned Husks and the Church's first keepers. The Rift Road: the Old King's guard, Hollow soldiers in threes. The Undercroft: Penitents, Cantors and the drowned. The Sunken Crown: the Hollowed, with the last of the guard. The lair's pack follows the layer too.
-- **Area kinds:** Fight, Elite from the third column (25%), and Camp from the fourth (18%). No road joins two Camps or two Elites. The column before the boss always has a Camp and never an Elite, so the party can rest before the fight.
+- **Area kinds:** Fight, Event from the second column (16%), Elite from the third (25%), and Camp from the fourth (18%). No road joins two Camps, two Elites or two Events. The column before the boss always has a Camp and never an Elite, so the party can rest before the fight.
   - **Elite:** 40% more threat, and its lair always holds an elite, even in the first layer's early areas.
   - **Town:** in the Marches and the Rift Road only, one per layer, in the fourth or fifth column. A small safe field round a well, with a smithy, a Synthesis bench, a chapel, a market stall and a tavern fire with a merc to hire. See [items](06-items-inventory.md#in-the-game-so-far).
+  - **Event:** a small safe field with someone or something by the road, its scenery in an arc behind it. Walking up to it opens a text choice; once made, the choice says what came of it and the Event is spent. Each Event rolls what it offers from the `events` stream, and a run meets each at most once while the layer has others left. See `src/content/events.ts`:
+    - **The toll** (layers 1 to 3): three of the Old King's guard ask 20 gold plus 10 per monster level. Refusing wakes them, round the scene.
+    - **Another bearer** (all): a dead bearer with the same Writ. Search it for an elite's drop and gold (mercs −5 morale), bury it (+6), or read its Writ.
+    - **Refugees** (layers 1 and 2): give two Healing Draughts (mercs +8 morale), or share their fire: gold, or one time in three a Hollowed assassin.
+    - **The old sergeant** (layers 1 to 3): pays 15 gold per level for +5 Discipline to every living merc.
+    - **The Penitents' blessing** (all): heals the party whole, but only Devout mercs like it (+10; others −6). Or leave alms for a Smith's Blessing.
+    - **Dice by the fire** (layers 1 to 3): double or nothing, 10 gold per level, won 45% of the time.
+    - **A fallen cellar** (layers 2 to 4): digging costs every merc a quarter of its health, for two elite drops and 2 Iron.
+    - **A deserter** (layers 1 and 2): a merc at half the wage, always Cowardly or Greedy.
   - **Camp:** a small safe field with a fire. Walking up to it rests the living back to full health and mana, once. While anyone is left to hire, a wandering merc waits by it.
 - **Forks:** an area that leads to two others has two exits on its east edge, each with a road, a signpost and two torches. The signpost names what lies ahead: Fight, Elite, Camp or the walled ring. Taking one road closes the other; there is no way back.
 - **Waystation:** the way down from a layer's last area leads to the Guild's Waystation at the top of the next layer. It is a small safe field, 26 by 20 tiles, with the paymaster's post, the vault's strongbox and the road on to the east. No monsters come there. Leaving by the road begins the layer's first area. See [wages](05-mercenaries.md#wages-and-contracts).
@@ -109,7 +118,7 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
 - **Crossing:** when the bearer reaches the exit, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
 
-Not yet: water, ledges, grass, alarms, patrols, Treasure, Event, Shrine and Town areas, and seamless crossing between areas.
+Not yet: water, ledges, grass, alarms, patrols, Treasure and Shrine areas, and seamless crossing between areas.
 
 ### Map
 

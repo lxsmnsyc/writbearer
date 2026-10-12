@@ -12,15 +12,17 @@ const NAME: Record<NodeKind, string> = {
   combat: 'Fight',
   elite: 'Elite',
   camp: 'Camp',
+  event: 'Event',
   town: 'Town',
   boss: 'Boss',
 };
 
-// Elites and the boss in red, Camps in gold, fights in grey.
+// Elites and the boss in red, Camps in gold, Events in violet, fights in grey.
 const KIND_CLASS: Record<NodeKind, string> = {
   combat: 'fill-zinc-900 stroke-zinc-500',
   elite: 'fill-red-950 stroke-red-400',
   camp: 'fill-amber-950 stroke-amber-500',
+  event: 'fill-violet-950 stroke-violet-400',
   town: 'fill-teal-950 stroke-teal-400',
   boss: 'fill-red-950 stroke-red-400',
 };

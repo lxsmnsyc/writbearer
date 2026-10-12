@@ -63,6 +63,8 @@ export interface Exit extends Spot {
 export interface AreaPlan {
   kind: NodeKind | 'waystation' | 'tomb';
   ahead: Ahead[];
+  // An Event's scenery, laid round where it happens
+  scene?: readonly PropKind[];
 }
 
 /**
@@ -106,6 +108,8 @@ export interface Stage {
   tomb?: Spot;
   // A Town's well, where its smith, bench, temple and market are dealt with
   town?: Spot;
+  // Where an Event happens: the bearer walks up to it to see what waits
+  event?: Spot;
 }
 
 // The plan of an area with one road on to a Combat area, as tests use.
@@ -210,6 +214,9 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
   }
   if (plan.kind === 'town') {
     return generateTown(rng, index, plan.ahead);
+  }
+  if (plan.kind === 'event') {
+    return generateEvent(rng, index, plan.ahead, plan.scene ?? []);
   }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
@@ -467,6 +474,23 @@ function generateCamp(rng: RNG, index: number, ahead: Ahead[]): Stage {
     stage.recruit = { x: fire.x + 1, z: fire.z + 0.6 };
   }
   edgeTrees(stage, add, rng, fire);
+  return stage;
+}
+
+/**
+ * An Event: a small safe field with something waiting by the road, between
+ * the roads on. Its scenery stands in an arc round where it happens.
+ */
+function generateEvent(rng: RNG, index: number, ahead: Ahead[], scene: readonly PropKind[]): Stage {
+  const { stage, add } = smallField(rng, index, 'event', ahead);
+  const at = { x: stage.width / 2, z: stage.depth / 2 };
+  stage.event = at;
+  // An arc behind it, open to the west where the bearer comes from
+  scene.forEach((kind, i) => {
+    const a = scene.length > 1 ? (-0.7 + (1.4 * i) / (scene.length - 1)) * Math.PI : 0;
+    add(kind, at.x + Math.cos(a) * 2.2, at.z + Math.sin(a) * 2.2);
+  });
+  edgeTrees(stage, add, rng, at);
   return stage;
 }
 

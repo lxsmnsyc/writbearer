@@ -2,7 +2,7 @@ import type RNG from '../core/rng';
 import { AREAS_PER_LAYER } from './layers';
 
 /** What waits in an area of a layer's map. */
-export type NodeKind = 'combat' | 'elite' | 'camp' | 'town' | 'boss';
+export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
 
 /** One area on a layer's map. */
 export interface MapNode {
@@ -27,6 +27,9 @@ const ELITE_FROM = 2;
 const ELITE_CHANCE = 0.25;
 const CAMP_FROM = 3;
 const CAMP_CHANCE = 0.18;
+// Events from the second column.
+const EVENT_FROM = 1;
+const EVENT_CHANCE = 0.16;
 
 // The columns a layer's Town may stand in.
 const TOWN_COLUMNS = [3, 4];
@@ -56,7 +59,7 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap 
   for (let c = 0; c < last; c++) {
     link(rng, columns[c], columns[c + 1]);
   }
-  // No road joins two Camps or two Elites: a fight comes between them.
+  // No road joins two Camps, two Elites or two Events: a fight comes between them.
   for (let c = 1; c < last; c++) {
     for (const [j, node] of columns[c].entries()) {
       const before = columns[c - 1].filter((n) => n.next.includes(j));
@@ -95,6 +98,9 @@ function kindFor(rng: RNG, column: number): NodeKind {
   }
   if (column >= ELITE_FROM && rng.chance(ELITE_CHANCE)) {
     return 'elite';
+  }
+  if (column >= EVENT_FROM && rng.chance(EVENT_CHANCE)) {
+    return 'event';
   }
   return 'combat';
 }
