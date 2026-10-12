@@ -48,6 +48,7 @@ function runOptions(): GameOptions {
     tomb: params.has('tomb'),
     town: params.has('town'),
     event: params.get('event') ?? undefined,
+    endless: params.has('endless'),
   };
 }
 
@@ -67,6 +68,7 @@ export default function App(): JSX.Element {
   // The suspended run, offered at the start of a new one
   const [saved, setSaved] = createSignal<RunSave | null>(null);
   const [compendium, setCompendium] = createSignal(false);
+  const [endless, setEndless] = createSignal(runOptions().endless ?? false);
   // Bumped whenever the pack or gear changes, so panels read it again.
   const [items, setItems] = createSignal(0);
 
@@ -318,6 +320,11 @@ export default function App(): JSX.Element {
             saved={saved() && { seed: saved()!.seed, place: describeSave(saved()!) }}
             onCompendium={() => {
               g.openCompendium(true);
+            }}
+            endless={endless()}
+            onMode={(on) => {
+              setEndless(on);
+              g.setEndless(on);
             }}
             onResume={() => {
               const save = saved();

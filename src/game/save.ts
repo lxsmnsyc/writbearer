@@ -4,7 +4,7 @@ import { HIREABLE } from '../content/recruits';
 import { type MercKind, spawnMerc } from '../content/roster';
 import { findNode } from '../content/trees';
 import { UNIQUE_BY_ID } from '../content/uniques';
-import { areaOf, layerOf } from '../gen/layers';
+import { AREAS_PER_LAYER, areaOf, layerOf } from '../gen/layers';
 import { freshUid } from '../gen/loot';
 import type { Stage } from '../gen/stage';
 import { type Toggles, copyToggles } from '../sim/ai';
@@ -21,7 +21,7 @@ import { Store, deleteRecord, readRecord, writeRecord } from './store';
 // entrance. It is deleted when the run ends.
 
 /** Bumped when the shape of a save changes. Older saves are not loaded. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export interface ItemSave {
   base: string;
@@ -64,6 +64,8 @@ export interface MercSave {
 export interface RunSave {
   version: number;
   seed: string;
+  // Whether it is an endless run
+  endless: boolean;
   // The state of each random stream drawn from so far
   streams: Record<string, number>;
   stageIndex: number;
@@ -247,7 +249,8 @@ export function deleteSave(): void {
 
 /** Where a saved run stands, for the player to recognise it. */
 export function describeSave(save: RunSave): string {
-  const layer = layerOf(save.stageIndex).name;
+  const phase = Math.floor(save.stageIndex / AREAS_PER_LAYER) + 1;
+  const layer = save.endless ? `Endless, phase ${phase}` : layerOf(save.stageIndex).name;
   if (save.stage.kind === 'waystation') {
     return `${layer}, the Waystation`;
   }

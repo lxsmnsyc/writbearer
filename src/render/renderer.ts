@@ -21,7 +21,7 @@ import type Unit from '../sim/unit';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import Atmosphere, { drawVignette } from './atmosphere';
 import { type Effects, drawPiece } from './effects';
-import { areaOf, layerOf } from '../gen/layers';
+import { areaOf } from '../gen/layers';
 import { Shout } from '../sim/shout';
 import { type FloorImage, buildFloor } from './floor';
 import Fog from './fog';
@@ -128,6 +128,8 @@ export interface Frame {
   notice: string | null;
   // The bearer's shout, shown over its head for a moment
   callout: string | null;
+  // Where the party is: the layer, or an endless phase
+  region: string;
   // How the final fight ended: the Creditor sealed again, or risen
   ending: 'sealed' | 'risen' | null;
 }
@@ -864,11 +866,7 @@ export default class Renderer {
       26,
     );
     out.textAlign = 'right';
-    out.fillText(
-      `${layerOf(f.stage.index).name} · ${place(f.stage)} · Slain: ${f.slain}`,
-      W * SCALE - 16,
-      26,
-    );
+    out.fillText(`${f.region} · ${place(f.stage)} · Slain: ${f.slain}`, W * SCALE - 16, 26);
     out.textAlign = 'start';
     out.fillStyle = '#8a8274';
     out.fillText(hint(f), 16, 52);

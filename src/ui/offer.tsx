@@ -73,7 +73,15 @@ interface StartProps {
   saved: { seed: string; place: string } | null;
   onResume: () => void;
   onCompendium: () => void;
+  // Endless mode, and switching to and from it
+  endless: boolean;
+  onMode: (endless: boolean) => void;
 }
+
+const MODES = [
+  { endless: false, name: 'Story' },
+  { endless: true, name: 'Endless' },
+];
 
 /** The start of a run: the bearer picks its first merc from three. */
 export function StartPicker(props: StartProps): JSX.Element {
@@ -86,9 +94,39 @@ export function StartPicker(props: StartProps): JSX.Element {
       <h2 data-part="title" class="font-serif text-xl text-zinc-100">
         Choose your first merc
       </h2>
+      <div class="my-2 flex gap-1" role="radiogroup" aria-label="Mode">
+        <For each={MODES}>
+          {(mode) => (
+            <button
+              type="button"
+              role="radio"
+              data-part="choice"
+              aria-checked={props.endless === mode.endless}
+              class="border px-3 py-1 text-xs"
+              onClick={() => {
+                props.onMode(mode.endless);
+              }}
+            >
+              {mode.name}
+            </button>
+          )}
+        </For>
+      </div>
       <p data-part="note" class="mb-4 text-xs text-zinc-500">
-        The Writ sets out for the Hollow with one sword at its side. The Guild's purse holds{' '}
-        {props.gold} gold, enough to hire three more by the fires of wandering mercs on the way.
+        <Show
+          when={props.endless}
+          fallback={
+            <>
+              The Writ sets out for the Hollow with one sword at its side. The Guild's purse holds{' '}
+              {props.gold} gold, enough to hire three more by the fires of wandering mercs on the
+              way.
+            </>
+          }
+        >
+          No Writ and no ending: the Guild sends the party down, phase after phase, each deeper and
+          harder, until the bearer falls. Mercs can be hired in every phase. The purse holds{' '}
+          {props.gold} gold.
+        </Show>{' '}
         Seed {props.seed}.
       </p>
       <Show when={props.saved} keyed>

@@ -1,7 +1,6 @@
 import { For, type JSX, Show } from 'solid-js';
 import type Game from '../game/game';
 import type { NodeKind } from '../gen/graph';
-import { LAYERS } from '../gen/layers';
 
 interface Props {
   game: Game;
@@ -78,7 +77,7 @@ export default function LayerMapPanel(props: Props): JSX.Element {
     >
       <header class="mb-2 flex items-baseline justify-between gap-8">
         <h2 data-part="title" class="font-serif text-lg text-zinc-100">
-          {LAYERS[Math.min(state.layer, LAYERS.length - 1)].name}
+          {state.title}
         </h2>
         <button
           type="button"

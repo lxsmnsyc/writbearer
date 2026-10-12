@@ -144,6 +144,8 @@ export interface GameOptions {
   town?: boolean;
   // Starts at this Event, by its id, in the area given by `area`
   event?: string;
+  // Plays endless mode: numbered phases without end, and no Writ
+  endless?: boolean;
 }
 
 // The most mercs in the party, living or dead.
@@ -162,6 +164,8 @@ const AREA_ROW_STREAM = 100;
 const TOMB_STREAM = 2000;
 // Towns stand in the first two layers only.
 const TOWN_LAYERS = 2;
+// Each endless phase rolls its biome from its own stream.
+const ENDLESS_BIOME = 10000;
 // The keys left to the player once the seal breaks: a merc's sheet, and restart
 const FINALE_KEYS = new Set(['1', '2', '3', '4', 'escape', 'r']);
 // How near the sarcophagus the bearer comes before the seal breaks, and
@@ -244,6 +248,10 @@ export default class Game {
   // What the player has found over every run, and whether it is open
   readonly compendium: Compendium;
   private compendiumOpen = false;
+  // Endless mode: phases without end, each on a biome rolled from every
+  // layer's, recruits in all of them, no Writ and no Creditor
+  private endless = false;
+  private chosenEndless: boolean;
   // A line shown under the hint for a while, such as who left unpaid
   private notice: { text: string; until: number } | null = null;
   // This layer's map, the area the party is in (null at a Waystation) and
@@ -274,6 +282,7 @@ export default class Game {
   ) {
     this.renderer = new Renderer(canvas);
     this.compendium = new Compendium(this.saving);
+    this.chosenEndless = options.endless ?? false;
     this.reset();
   }
 
@@ -336,7 +345,12 @@ export default class Game {
     if (this.saving) {
       deleteSave();
     }
-    this.compendium.end(ending);
+    if (this.endless) {
+      // Endless runs only fall; the compendium keeps the deepest phase.
+      this.compendium.reach(Math.floor(this.stageIndex / AREAS_PER_LAYER) + 1);
+    } else {
+      this.compendium.end(ending);
+    }
   }
 
   /** Opens or closes the compendium. The game pauses while it is open. */
@@ -352,6 +366,7 @@ export default class Game {
     return {
       version: SAVE_VERSION,
       seed: this.streams.seed,
+      endless: this.endless,
       streams: this.streams.save(),
       stageIndex: this.stageIndex,
       node: this.node && { ...this.node },
@@ -574,10 +589,11 @@ export default class Game {
   }
 
   /** Starts a new run, or resumes a saved one at its area's entrance. */
-  reset(save: RunSave | null = null): void {
+  reset(save: RunSave | null = null, seed = this.options.seed): void {
     this.streams = save
       ? RunStreams.load(save.seed, save.streams)
-      : new RunStreams(this.options.seed ?? randomSeed());
+      : new RunStreams(seed ?? randomSeed());
+    this.endless = save?.endless ?? this.chosenEndless;
     // The pack comes first: an Event the run starts at deals with it.
     this.pack = new Pack();
     this.pack.gold = START_GOLD;
@@ -791,13 +807,44 @@ export default class Game {
   // Rolls the map of the layer the current area is in.
   private rollMap(): void {
     const layer = Math.floor(this.stageIndex / AREAS_PER_LAYER);
-    // Towns stand only in the layers where people still live.
+    // Towns stand only in the layers where people still live, and in every
+    // endless phase.
     this.map = generateLayerMap(
       this.streams.area(1, Stream.Map, layer),
       layer === 0 ? 1 : 2,
-      layer < TOWN_LAYERS,
+      this.endless || layer < TOWN_LAYERS,
     );
     this.path = [];
+  }
+
+  /** Whether this run is in endless mode. */
+  get isEndless(): boolean {
+    return this.endless;
+  }
+
+  /** Switches the run about to begin between story and endless, on its seed. */
+  setEndless(on: boolean): void {
+    if (this.offers === null || on === this.endless) {
+      return;
+    }
+    this.chosenEndless = on;
+    this.reset(null, this.streams.seed);
+  }
+
+  // Which layer's ground and monsters the current area has: its own in the
+  // story, one rolled for each phase in endless mode.
+  private get biome(): number {
+    const phase = Math.floor(this.stageIndex / AREAS_PER_LAYER);
+    if (!this.endless) {
+      return Math.min(phase, LAYERS.length - 1);
+    }
+    return this.streams.area(1, Stream.Map, ENDLESS_BIOME + phase).int(0, LAYERS.length - 1);
+  }
+
+  // Where the party is, for the HUD and the map: the layer, or the phase.
+  private get region(): string {
+    const phase = Math.floor(this.stageIndex / AREAS_PER_LAYER);
+    return this.endless ? `Phase ${phase + 1}` : LAYERS[Math.min(phase, LAYERS.length - 1)].name;
   }
 
   // Enters an area of the layer's map, by its column and row.
@@ -814,11 +861,16 @@ export default class Game {
     const area = this.stageIndex + AREA_ROW_STREAM * row;
     this.rested = false;
     this.pendingEvent = null;
-    const plan: AreaPlan = { kind: kind ?? node?.kind ?? 'combat', ahead: this.aheadOf(node) };
+    const plan: AreaPlan = {
+      kind: kind ?? node?.kind ?? 'combat',
+      ahead: this.aheadOf(node),
+      biome: this.biome,
+      endless: this.endless,
+    };
     if (plan.kind === 'event') {
       const rng = this.streams.area(1, Stream.Events, area);
       const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
-      const def = forced ?? pickEvent(rng, layerIndexOf(this.stageIndex), this.eventsSeen);
+      const def = forced ?? pickEvent(rng, this.biome, this.eventsSeen);
       this.eventsSeen.add(def.id);
       this.pendingEvent = { def, rng, state: rng.state };
       plan.scene = def.props;
@@ -1000,6 +1052,7 @@ export default class Game {
       this.stage = this.buildStage();
     } else if (
       this.stage.exits[exit]?.ahead === 'down' &&
+      !this.endless &&
       layerIndexOf(this.stageIndex) === LAYERS.length - 1
     ) {
       // Below the Sunken Crown lies only the tomb.
@@ -1036,6 +1089,7 @@ export default class Game {
       this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
       this.stageIndex,
       this.aheadOf(null),
+      this.biome,
     );
   }
 
@@ -1074,12 +1128,14 @@ export default class Game {
     path: { column: number; row: number }[];
     at: { column: number; row: number } | null;
     layer: number;
+    title: string;
   } {
     return {
       map: this.map,
       path: [...this.path],
       at: this.node,
       layer: Math.floor(this.stageIndex / AREAS_PER_LAYER),
+      title: this.region,
     };
   }
 
@@ -1604,6 +1660,7 @@ export default class Game {
       figure: this.figure(),
       over: this.over,
       ending: this.finale?.ending ?? null,
+      region: this.region,
       paused: this.paused,
       selected: this.selected,
       shake: this.shake,

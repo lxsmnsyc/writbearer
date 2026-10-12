@@ -84,6 +84,7 @@ Target: 60 to 75 minutes for a full run.
 - Each phase rolls a biome from the full pool, plus modifiers.
 - Phases never end. Enemy tiers and modifiers keep rising until the citizen dies.
 - There is no Writ, no Creditor and no final fight.
+- **In the game so far:** the start screen chooses Story or Endless, on the same seed; `?endless` starts in it. Phases are named "Phase 1", "Phase 2" and on, on the HUD and the map. Each is a layer map of 8 areas ending in a boss's arena, then a Waystation, as in the story. Each phase rolls its biome, one of the four layers' ground, monster packs, boss and Events, from its own `map` stream. Monster levels and threat budgets keep rising with depth as they do in the story, without end. Wandering mercs and a Town are offered in every phase. The way down from the fourth phase leads on to the fifth, not to the tomb. When the bearer falls, the compendium keeps the deepest phase reached; endless runs do not count toward the story's endings. Modifiers such as night or rain wait for those systems.
 
 ## Between runs
 

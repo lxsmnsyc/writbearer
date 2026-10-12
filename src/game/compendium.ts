@@ -37,6 +37,8 @@ export interface CompendiumData {
   cards: string[];
   cardsSeen: string[];
   endings: Record<Ending, number>;
+  // The deepest phase an endless run reached
+  deepest?: number;
 }
 
 const VERSION = 1;
@@ -127,6 +129,7 @@ export class Compendium {
     for (const [kind, n] of Object.entries(other.beaten)) {
       d.beaten[kind] = (d.beaten[kind] ?? 0) + n;
     }
+    d.deepest = Math.max(d.deepest ?? 0, other.deepest ?? 0);
     for (const ending of ['fallen', 'sealed', 'risen'] as const) {
       d.endings[ending] += other.endings[ending];
     }
@@ -217,6 +220,16 @@ export class Compendium {
   /** A card seen as it dropped, picked up or not. */
   seeDrop(item: Item): boolean {
     return item.base.type === ItemType.Card && this.add(this.data.cardsSeen, item.base.id);
+  }
+
+  /** The phase an endless run fell in. Returns whether it was the deepest yet. */
+  reach(phase: number): boolean {
+    if (phase <= (this.data.deepest ?? 0)) {
+      return false;
+    }
+    this.data.deepest = phase;
+    this.changed();
+    return true;
   }
 
   /** How a run ended. */
@@ -383,6 +396,11 @@ export function compendiumView(d: CompendiumData): Section[] {
         { name: 'The bearer fell', known: true, lines: [`${d.endings.fallen}×`] },
         { name: 'The Creditor sealed again', known: true, lines: [`${d.endings.sealed}×`] },
         { name: 'The Creditor rose', known: true, lines: [`${d.endings.risen}×`] },
+        {
+          name: 'Endless: deepest phase',
+          known: true,
+          lines: [d.deepest ? `Phase ${d.deepest}` : 'Not yet played'],
+        },
       ],
     },
   ];

@@ -94,4 +94,17 @@ describe('the compendium', () => {
     expect(now.data.seen.sort((a, b) => a.localeCompare(b))).toEqual(['crawler', 'husk']);
     expect(now.data.endings.fallen).toBe(1);
   });
+
+  it('keeps the deepest phase an endless run reached', () => {
+    const c = book();
+    const deepest = (): string[] => section(c, 'Runs').entries.at(-1)!.lines;
+    expect(deepest()).toEqual(['Not yet played']);
+    expect(c.reach(3)).toBe(true);
+    expect(c.reach(2)).toBe(false);
+    expect(deepest()).toEqual(['Phase 3']);
+    const other = book();
+    other.reach(5);
+    c.merge(other.data);
+    expect(c.data.deepest).toBe(5);
+  });
 });

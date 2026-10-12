@@ -1,5 +1,5 @@
 import RNG from '../core/rng';
-import { type Ground, layerOf } from '../gen/layers';
+import { type Ground, LAYERS } from '../gen/layers';
 import type { Stage } from '../gen/stage';
 import { type Pt, pt } from './draw';
 
@@ -59,7 +59,7 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     ctx.fill();
   };
 
-  const ground = layerOf(stage.index).ground;
+  const ground = LAYERS[stage.biome].ground;
   const outline = [at(0, 0), at(width, 0), at(width, depth), at(0, depth)];
   if (ground === 'flagstone') {
     poly(outline, MORTAR);

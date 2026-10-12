@@ -101,3 +101,26 @@ describe('areas on the map', () => {
     expect(stage.exits).toHaveLength(2);
   });
 });
+
+describe('endless phases', () => {
+  it('lay an area out on another layer’s ground and monsters', () => {
+    const marches = generateStage(new RNG(6), 40, { kind: 'combat', ahead: ['combat'], biome: 0 });
+    const crown = generateStage(new RNG(6), 40, { kind: 'combat', ahead: ['combat'], biome: 3 });
+    expect(marches.biome).toBe(0);
+    expect(marches.props.some((p) => p.kind === 'tree')).toBe(true);
+    expect(crown.props.some((p) => p.kind === 'tree')).toBe(false);
+    const kinds = (s: typeof crown): Set<string> => new Set(s.packs.flatMap((p) => p.kinds));
+    expect(kinds(crown).has('mite')).toBe(false);
+    expect(kinds(crown).has('hollowed')).toBe(true);
+    const arena = generateStage(new RNG(6), 47, { kind: 'boss', ahead: ['down'], biome: 1 });
+    expect(arena.biome).toBe(1);
+  });
+
+  it('offer mercs at any depth, where the story has no one left to hire', () => {
+    const plan = { kind: 'camp', ahead: ['combat'] } as const;
+    expect(generateStage(new RNG(2), 30, { ...plan, ahead: ['combat'] }).recruit).toBeUndefined();
+    expect(
+      generateStage(new RNG(2), 30, { ...plan, ahead: ['combat'], endless: true }).recruit,
+    ).toBeDefined();
+  });
+});

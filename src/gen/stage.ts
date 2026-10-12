@@ -2,7 +2,7 @@ import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Spot } from '../sim/nav';
 import type { NodeKind } from './graph';
-import { AREAS_PER_LAYER, layerIndexOf, layerOf, leadsDown } from './layers';
+import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
 
 export type PropKind =
   | 'pillar'
@@ -65,6 +65,10 @@ export interface AreaPlan {
   ahead: Ahead[];
   // An Event's scenery, laid round where it happens
   scene?: readonly PropKind[];
+  // The layer whose ground and monsters it has, when not its own, as an
+  // endless phase rolls; and whether merc are offered whatever the depth
+  biome?: number;
+  endless?: boolean;
 }
 
 /**
@@ -76,6 +80,8 @@ export interface Stage {
   // 0 for the first stage of a run, counting up
   index: number;
   kind: AreaPlan['kind'];
+  // The layer whose ground and monsters it has, from 0
+  biome: number;
   width: number;
   depth: number;
   entrance: Spot;
@@ -197,6 +203,10 @@ const KEEP_PLACE = 3;
 // mercenaries design says. Below that, no one is left to hire.
 export const RECRUIT_STAGES = 16;
 const RECRUIT_CHANCE = 0.6;
+// What stands tall on a layer's ground: dead trees on earth, pillars on stone.
+const tallFor = (biome: number): PropKind =>
+  LAYERS[biome]?.ground === 'earth' ? 'tree' : 'pillar';
+
 // Packs never stand this close to the entrance, so a stage does not open in a fight.
 const PACK_DISTANCE = 13;
 
@@ -206,17 +216,20 @@ const PACK_DISTANCE = 13;
  * everything can be reached, then packs from a threat budget.
  */
 export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): Stage {
+  const biome = plan.biome ?? layerIndexOf(index);
+  // Below the Rift Road no one is left to hire, but in endless mode.
+  const hires = plan.endless === true || index < RECRUIT_STAGES;
   if (leadsDown(index) || plan.kind === 'boss') {
-    return generateArena(rng, index);
+    return generateArena(rng, index, biome);
   }
   if (plan.kind === 'camp') {
-    return generateCamp(rng, index, plan.ahead);
+    return generateCamp(rng, index, plan.ahead, biome, hires);
   }
   if (plan.kind === 'town') {
-    return generateTown(rng, index, plan.ahead);
+    return generateTown(rng, index, plan.ahead, biome, hires);
   }
   if (plan.kind === 'event') {
-    return generateEvent(rng, index, plan.ahead, plan.scene ?? []);
+    return generateEvent(rng, index, plan.ahead, plan.scene ?? [], biome);
   }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
@@ -225,6 +238,7 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
   const stage: Stage = {
     index,
     kind: plan.kind,
+    biome,
     width,
     depth,
     entrance,
@@ -315,7 +329,7 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
   add('chest', cache.x, cache.z);
 
   // A wandering merc by its fire, only while there is still anyone to hire.
-  if (index >= 1 && index < RECRUIT_STAGES && rng.chance(RECRUIT_CHANCE)) {
+  if (index >= 1 && hires && rng.chance(RECRUIT_CHANCE)) {
     const camp = spot(10, wallX - 4, 2);
     keep.push({ ...camp, r: 5 });
     add('campfire', camp.x, camp.z);
@@ -324,7 +338,7 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
 
   // Terrain from noise: trees or pillars where it runs high, rubble where it
   // runs low. The road stays clear.
-  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
+  const tall = tallFor(biome);
   const noise = valueNoise(rng, width, depth, 7);
   const solids: Spot[] = [];
   for (let i = 0; i < width * depth * 0.06; i++) {
@@ -379,6 +393,7 @@ function smallField(
   index: number,
   kind: AreaPlan['kind'],
   ahead: Ahead[],
+  biome: number,
 ): { stage: Stage; add: Add } {
   const width = 28;
   const depth = 24;
@@ -386,6 +401,7 @@ function smallField(
   const stage: Stage = {
     index,
     kind,
+    biome,
     width,
     depth,
     entrance,
@@ -410,7 +426,7 @@ function smallField(
 
 // Trees or pillars round a small field's edge, off the roads and its place.
 function edgeTrees(stage: Stage, add: Add, rng: RNG, place: Spot): void {
-  const tall = layerOf(stage.index).ground === 'earth' ? 'tree' : 'pillar';
+  const tall = tallFor(stage.biome);
   for (let i = 0; i < 16; i++) {
     const x = rng.range(1.5, stage.width - 1.5);
     const z = rng.chance(0.5) ? rng.range(1, 3.5) : rng.range(stage.depth - 3.5, stage.depth - 1);
@@ -426,8 +442,13 @@ function edgeTrees(stage: Stage, add: Add, rng: RNG, place: Spot): void {
  * between the roads on. No monsters come here. `index` is the index of the
  * layer's first area.
  */
-export function generateWaystation(rng: RNG, index: number, ahead: Ahead[] = ['combat']): Stage {
-  const { stage, add } = smallField(rng, index, 'waystation', ahead);
+export function generateWaystation(
+  rng: RNG,
+  index: number,
+  ahead: Ahead[] = ['combat'],
+  biome = layerIndexOf(index),
+): Stage {
+  const { stage, add } = smallField(rng, index, 'waystation', ahead, biome);
   const post = { x: stage.width / 2, z: stage.depth / 2 };
   stage.station = { x: post.x - 1.8, z: post.z };
   add('post', post.x, post.z);
@@ -442,8 +463,14 @@ export function generateWaystation(rng: RNG, index: number, ahead: Ahead[] = ['c
  * well, with a smithy, a Synthesis bench, a chapel and a market stall.
  * While anyone is left to hire, a merc waits at the tavern fire.
  */
-function generateTown(rng: RNG, index: number, ahead: Ahead[]): Stage {
-  const { stage, add } = smallField(rng, index, 'town', ahead);
+function generateTown(
+  rng: RNG,
+  index: number,
+  ahead: Ahead[],
+  biome: number,
+  hires: boolean,
+): Stage {
+  const { stage, add } = smallField(rng, index, 'town', ahead, biome);
   const well = { x: stage.width / 2, z: stage.depth / 2 };
   add('well', well.x, well.z);
   stage.town = { x: well.x - 1.4, z: well.z };
@@ -452,7 +479,7 @@ function generateTown(rng: RNG, index: number, ahead: Ahead[]): Stage {
   add('chapel', well.x + 3.6, well.z + 0.2);
   add('stall', well.x - 2, well.z + 3.2);
   add('torch', well.x + 0.4, well.z - 1.8);
-  if (index < RECRUIT_STAGES) {
+  if (hires) {
     add('campfire', well.x + 2, well.z + 3.4);
     stage.recruit = { x: well.x + 3, z: well.z + 3.8 };
   }
@@ -465,12 +492,18 @@ function generateTown(rng: RNG, index: number, ahead: Ahead[]): Stage {
  * rests there once, back to full health and mana. While anyone is left to
  * hire, a wandering merc always waits by it.
  */
-function generateCamp(rng: RNG, index: number, ahead: Ahead[]): Stage {
-  const { stage, add } = smallField(rng, index, 'camp', ahead);
+function generateCamp(
+  rng: RNG,
+  index: number,
+  ahead: Ahead[],
+  biome: number,
+  hires: boolean,
+): Stage {
+  const { stage, add } = smallField(rng, index, 'camp', ahead, biome);
   const fire = { x: stage.width / 2, z: stage.depth / 2 };
   add('campfire', fire.x, fire.z);
   stage.rest = fire;
-  if (index < RECRUIT_STAGES) {
+  if (hires) {
     stage.recruit = { x: fire.x + 1, z: fire.z + 0.6 };
   }
   edgeTrees(stage, add, rng, fire);
@@ -481,8 +514,14 @@ function generateCamp(rng: RNG, index: number, ahead: Ahead[]): Stage {
  * An Event: a small safe field with something waiting by the road, between
  * the roads on. Its scenery stands in an arc round where it happens.
  */
-function generateEvent(rng: RNG, index: number, ahead: Ahead[], scene: readonly PropKind[]): Stage {
-  const { stage, add } = smallField(rng, index, 'event', ahead);
+function generateEvent(
+  rng: RNG,
+  index: number,
+  ahead: Ahead[],
+  scene: readonly PropKind[],
+  biome: number,
+): Stage {
+  const { stage, add } = smallField(rng, index, 'event', ahead, biome);
   const at = { x: stage.width / 2, z: stage.depth / 2 };
   stage.event = at;
   // An arc behind it, open to the west where the bearer comes from
@@ -507,6 +546,7 @@ export function generateTomb(rng: RNG, index: number): Stage {
   const stage: Stage = {
     index,
     kind: 'tomb',
+    biome: LAYERS.length - 1,
     width,
     depth,
     entrance,
@@ -561,7 +601,7 @@ export const GATE_SOLID = 0.5;
  * one gate. The boss waits inside, before the way down. The gate shuts once
  * the bearer is in.
  */
-function generateArena(rng: RNG, index: number): Stage {
+function generateArena(rng: RNG, index: number, biome: number): Stage {
   const width = rng.int(44, 48);
   const depth = rng.int(30, 34);
   const entrance = { x: 2.5, z: depth / 2 };
@@ -571,6 +611,7 @@ function generateArena(rng: RNG, index: number): Stage {
   const stage: Stage = {
     index,
     kind: 'boss',
+    biome,
     width,
     depth,
     entrance,
@@ -623,7 +664,7 @@ function generateArena(rng: RNG, index: number): Stage {
   }
 
   // The approach: dead trees and rubble off the road, and her brood astray.
-  const tall = layerOf(index).ground === 'earth' ? 'tree' : 'pillar';
+  const tall = tallFor(biome);
   const clearOf = (x: number, z: number): boolean =>
     Math.hypot(x - entrance.x, z - entrance.z) > KEEP_ENTRANCE &&
     Math.hypot(x - arena.x, z - arena.z) > ARENA_R + 2 &&
@@ -645,7 +686,7 @@ function generateArena(rng: RNG, index: number): Stage {
   for (const t of [0.45, 0.75]) {
     const x = entrance.x + (gate.x - entrance.x) * t;
     const z = entrance.z + (t < 0.6 ? -1 : 1) * rng.range(3, 6);
-    stage.packs.push({ kinds: approachPack(rng, index), x, z, elite: -1 });
+    stage.packs.push({ kinds: approachPack(rng, biome), x, z, elite: -1 });
   }
   ensureReachable(stage, [gate]);
   return stage;
@@ -732,8 +773,7 @@ const FACTIONS: { layer: number; from: number; kinds: MonsterKind[] }[] = [
 
 // A pack straying on the way to a boss's arena: the Brood Mother's mites in
 // the Marches, the layer's own packs below.
-function approachPack(rng: RNG, index: number): MonsterKind[] {
-  const layer = layerIndexOf(index);
+function approachPack(rng: RNG, layer: number): MonsterKind[] {
   if (layer === 0) {
     return ['mite', 'mite', 'mite'];
   }
@@ -753,8 +793,7 @@ function siteKeepers(index: number): MonsterKind[] {
 }
 
 // What holds the lair, by depth, and below the Marches by layer.
-function lairPack(index: number): MonsterKind[] {
-  const layer = layerIndexOf(index);
+function lairPack(index: number, layer: number): MonsterKind[] {
   if (layer === 2) {
     return ['penitent', 'penitent', 'cantor'];
   }
@@ -781,7 +820,7 @@ function placePacks(
 ): void {
   // An Elite area holds more, and its lair always has an elite.
   let budget = (9 + stage.index * 5) * (eliteArea ? ELITE_BUDGET : 1);
-  const layer = layerIndexOf(stage.index);
+  const layer = stage.biome;
   const pool = FACTIONS.filter(
     (f) => f.layer === layer && f.from <= stage.index % AREAS_PER_LAYER,
   ).map((f) => f.kinds);
@@ -801,7 +840,7 @@ function placePacks(
   });
   // The lair holds the strongest pack, led by an elite once deep enough.
   push({
-    kinds: lairPack(stage.index),
+    kinds: lairPack(stage.index, stage.biome),
     x: places.lair.x,
     z: places.lair.z,
     elite: stage.index >= ELITE_FROM || eliteArea ? 0 : -1,
