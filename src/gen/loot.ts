@@ -1,5 +1,14 @@
 import { CARD_OF, GEMS } from '../content/cards';
-import { AFFIXES, BASES, GOLD, POTIONS, RARE_FIRST, RARE_SECOND } from '../content/items';
+import { UNIQUES, UNIQUE_BY_ID, type UniqueDef } from '../content/uniques';
+import {
+  AFFIXES,
+  BASES,
+  BASE_BY_ID,
+  GOLD,
+  POTIONS,
+  RARE_FIRST,
+  RARE_SECOND,
+} from '../content/items';
 import type RNG from '../core/rng';
 import {
   type Affix,
@@ -24,6 +33,7 @@ const BASE_SCALE: Record<Quality, number> = {
   [Quality.Superior]: 1.15,
   [Quality.Magic]: 1,
   [Quality.Rare]: 1,
+  [Quality.Unique]: 1,
 };
 
 // Most sockets each quality allows. See the quality table in the items design.
@@ -33,6 +43,7 @@ const MAX_SOCKETS: Record<Quality, number> = {
   [Quality.Superior]: 3,
   [Quality.Magic]: 2,
   [Quality.Rare]: 1,
+  [Quality.Unique]: 1,
 };
 
 // Quality weights. Elites and bosses shift them up.
@@ -88,9 +99,14 @@ const within = (rng: RNG, span: Span, scale: number): number =>
 
 const middle = (span: Span): number => Math.round((span.min + span.max) / 2);
 
-/** The most sockets an item can have: the lower of its base's and its quality's. */
+/**
+ * The most sockets an item can have: the lower of its base's and its
+ * quality's. A unique keeps the sockets it came with.
+ */
 export const socketLimit = (item: Item): number =>
-  Math.min(item.base.maxSockets, MAX_SOCKETS[item.quality]);
+  item.quality === Quality.Unique
+    ? item.sockets
+    : Math.min(item.base.maxSockets, MAX_SOCKETS[item.quality]);
 
 /** A plain copy of a base with middle rolls, such as starter gear. */
 export function plainItem(base: ItemBase, itemLevel = 1): Item {
@@ -259,6 +275,42 @@ const GEM_CHANCE: Record<Rank, number> = {
   [Rank.Boss]: 0.5,
 };
 
+// Chance a slain monster drops a unique, by rank.
+const UNIQUE_CHANCE: Record<Rank, number> = {
+  [Rank.Normal]: 0.004,
+  [Rank.Elite]: 0.04,
+  [Rank.Boss]: 0.3,
+};
+
+/** A unique, its values rolled in their ranges. */
+export function makeUnique(rng: RNG, def: UniqueDef, itemLevel = def.level): Item {
+  const base = BASE_BY_ID.get(def.base);
+  if (!base) {
+    throw new Error(`No base "${def.base}" for the unique "${def.id}"`);
+  }
+  const values = def.rolls.map((span) => rng.int(span.min, span.max));
+  const effect = def.effect?.(values);
+  return {
+    ...plainItem(base, itemLevel),
+    quality: Quality.Unique,
+    name: def.name,
+    unique: def.id,
+    uniqueValues: values,
+    bonuses: def.modifiers(values),
+    sockets: def.sockets,
+    effect,
+  };
+}
+
+/** A unique a slain monster drops, by chance, of those its level allows. */
+export function rollUnique(rng: RNG, itemLevel: number, rank: Rank): Item | null {
+  if (!rng.chance(UNIQUE_CHANCE[rank])) {
+    return null;
+  }
+  const allowed = UNIQUES.filter((u) => u.level <= itemLevel);
+  return allowed.length > 0 ? makeUnique(rng, rng.pick(allowed), itemLevel) : null;
+}
+
 /** The card a slain monster drops, and a gem, either of them by chance. */
 export function rollCards(rng: RNG, kind: string, rank: Rank): Item[] {
   const out: Item[] = [];
@@ -296,7 +348,7 @@ function unrefinedName(item: Item): string {
   if (item.base.type === ItemType.Potion) {
     return item.quantity > 1 ? `${item.base.name} ×${item.quantity}` : item.base.name;
   }
-  if (item.quality === Quality.Rare && item.name) {
+  if ((item.quality === Quality.Rare || item.quality === Quality.Unique) && item.name) {
     return item.name;
   }
   const prefix = item.affixes
@@ -387,10 +439,15 @@ export function itemLines(item: Item): string[] {
       `Blocks ${item.base.block.chance}% of blows from the front, for ${item.base.block.amount}%`,
     );
   }
-  for (const m of item.bonuses) {
-    const line = describe(m);
-    if (line) {
-      lines.push(line);
+  const unique = item.unique === undefined ? undefined : UNIQUE_BY_ID.get(item.unique);
+  if (unique) {
+    lines.push(...unique.lines(item.uniqueValues ?? []));
+  } else {
+    for (const m of item.bonuses) {
+      const line = describe(m);
+      if (line) {
+        lines.push(line);
+      }
     }
   }
   const socket = item.base.socket;
@@ -420,6 +477,10 @@ export function itemLines(item: Item): string[] {
   if (item.base.jobs) {
     lines.push(`For: ${item.base.jobs.join(', ')}`);
   }
+
   lines.push(`Weight ${item.base.weight}`);
+  if (unique) {
+    lines.push(`“${unique.lore}”`);
+  }
   return lines;
 }

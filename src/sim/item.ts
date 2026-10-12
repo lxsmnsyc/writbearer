@@ -58,6 +58,8 @@ export const enum Quality {
   Superior = 2,
   Magic = 3,
   Rare = 4,
+  // A named item with fixed bonuses, each rolled in a range, and an effect
+  Unique = 5,
 }
 
 /** What a weapon is, which decides who can wield it and how it is drawn. */
@@ -117,6 +119,10 @@ export interface Item {
   cards: ItemBase[];
   // Refine level, +0 to +10, raised by a Blacksmith
   refine: number;
+  // A unique's id, its rolled values, and what it does beyond stats while worn
+  unique?: string;
+  uniqueValues?: number[];
+  effect?: (unit: Unit) => Lifecycle;
   // A rare's rolled name, such as "Grave Fang"
   name?: string;
   // Gold only

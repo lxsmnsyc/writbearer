@@ -151,6 +151,10 @@
   color: #8a6420;
 }
 
+[data-quality='5'] {
+  color: #8a6a3a;
+}
+
 [data-ui='paper'] [data-quality='3'] {
   color: #2f6a60;
 }

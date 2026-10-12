@@ -102,7 +102,23 @@ Equipment weight:
   - **Market:** sells Healing Draughts and Mana Tinctures for 25 gold and Greater Draughts for 60, and buys anything in the pack: gear for 4 gold per item level times its quality, plus 10 per refine level; cards for 30; potions for 8.
 - **Materials:** a slain monster leaves its race's material for the pouch: Chitin from insects and beasts, Bone from the Undead, Rags from Humans; 35% of the time from a normal monster, 2 from an elite, 4 from a boss. Venom, Occult and Radiant monsters also leave their essence: 10%, 50% from an elite, 2 from a boss. The pack panel lists the pouch.
 
-Not yet: autocast, skill-grant and combo cards, the Card collector, recipe drops, crafting at Camps, identification, cursed items, uniques, sets and requirements. Rares drop identified for now.
+- **Uniques:** a slain monster drops one 0.4% of the time, an elite 4%, a boss 30%, of those its level allows. Each is a named item on a fixed base, with its values rolled in their ranges, a fixed number of sockets the smith cannot add to, and a line of lore. Their names show in a darker gold.
+
+| Unique | Base | Bonuses | Effect |
+|---|---|---|---|
+| Debtor's Chain | Flanged mace | +30 to 50% attack | Its wearer's wage doubles. |
+| The Last Contract | Hauberk, 1 socket | +20 to 40 armor | When the bearer would die, its wearer takes the blow and dies instead, its body whole. Once an area. |
+| Widow's Lantern | Amulet | -10 to 20% Occult damage taken, +2 to 4 WIL | |
+| Penitent's Lash | Stiletto | +25 to 40% attack | Each blow it lands costs its wielder 3% of max health. |
+| Gravewarden's Bulwark | Tower shield, 1 socket | +8 to 12% block, -20 to 30% damage from the Undead | |
+| Saint's Reliquary | Censer | | Its wielder's heals restore 25 to 40% more. |
+| Mire Treads | Boots | +3 to 5 AGI | Cannot be rooted. |
+| Thornhide | Jerkin | | Melee attackers take 20 to 30% of their blow back. |
+| The Hollow Crown | Kettle helm | +15 to 25% attack | Dread builds up twice as fast. |
+
+The design's Widow's Lantern reveals invisible enemies and its Rimecaller turns Frost spells: both wait for those to exist.
+
+Not yet: autocast, skill-grant and combo cards, the Card collector, recipe drops, crafting at Camps, identification, cursed items, sets and requirements. Rares drop identified for now.
 
 ## Item data
 

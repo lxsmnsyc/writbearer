@@ -11,6 +11,7 @@ import type Unit from '../sim/unit';
  * packs and its boss. Returns the boss, if the stage has one.
  */
 export function enterStage(sim: Sim, stage: Stage): Unit | null {
+  sim.area++;
   sim.obstacles.length = 0;
   sim.obstacles.push(...solidsOf(stage));
   sim.setFloor(stage.width, stage.depth);

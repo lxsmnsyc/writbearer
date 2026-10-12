@@ -29,6 +29,7 @@ import {
   rollGold,
   rollItem,
   rollPotion,
+  rollUnique,
 } from '../gen/loot';
 import { gainXp, killXp } from '../sim/progress';
 import {
@@ -475,6 +476,9 @@ export default class Game {
           [
             ...rollDrops(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
             ...rollCards(this.streams.get(1, Stream.Loot), event.source.kind, event.source.rank),
+            ...[
+              rollUnique(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+            ].filter((i) => i !== null),
           ],
           event.source,
         );

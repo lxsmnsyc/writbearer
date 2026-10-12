@@ -85,6 +85,7 @@ const QUALITY_COLOR: Partial<Record<Quality, string>> = {
   [Quality.Superior]: C.bone,
   [Quality.Magic]: C.teal,
   [Quality.Rare]: C.gold,
+  [Quality.Unique]: C.gold,
 };
 
 /** Label colors by quality: grey for crude, white for plain, teal for magic, gold for rare. */
@@ -94,6 +95,8 @@ export const LABEL_COLOR: Record<Quality, string> = {
   [Quality.Superior]: '#ffffff',
   [Quality.Magic]: '#5fd4c0',
   [Quality.Rare]: '#d9a845',
+  // As Diablo 2's uniques: a darker gold
+  [Quality.Unique]: '#b08a52',
 };
 
 // The height of an item's floor label, in screen pixels.

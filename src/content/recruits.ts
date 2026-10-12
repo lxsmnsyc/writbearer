@@ -1,6 +1,7 @@
 import type RNG from '../core/rng';
 import type { MercKind } from './roster';
 import { TRAIT_BY_ID, rollTraits } from './traits';
+import { wageFactor } from './uniques';
 
 /** A merc offered for hire, before it joins. */
 export interface Offer {
@@ -54,9 +55,18 @@ export const wageFor = (level: number): number => BASE_WAGE + WAGE_PER_LEVEL * l
 export const traitScale = (traits: readonly string[]): number =>
   traits.reduce((k, id) => k * (TRAIT_BY_ID.get(id)?.wage ?? 1), 1);
 
-/** What a merc asks at a phase's start: its level's wage, scaled by its traits. */
-export const wageOf = (merc: { level: number; traits: readonly string[] }): number =>
-  Math.round(wageFor(merc.level) * traitScale(merc.traits));
+/**
+ * What a merc asks at a phase's start: its level's wage, scaled by its traits
+ * and by what it wears, such as the Debtor's Chain.
+ */
+export const wageOf = (merc: {
+  level: number;
+  traits: readonly string[];
+  equipment?: ReadonlyMap<unknown, { unique?: string }>;
+}): number =>
+  Math.round(
+    wageFor(merc.level) * traitScale(merc.traits) * wageFactor(merc.equipment?.values() ?? []),
+  );
 
 /** Rolls a recruit: a job, a name, its traits and its wage. */
 export function rollOffer(

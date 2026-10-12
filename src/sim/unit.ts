@@ -9,7 +9,7 @@ import {
   type UnitDamageEvent,
   type UnitHealEvent,
 } from './events';
-import { EquipSlot, type Item, type ItemBase, itemModifiers, weaponOf } from './item';
+import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
 import { MENDING, REFRESHING } from './statuses';
 import { MORALE_START } from './morale';
 import type { Heard } from './shout';
@@ -152,7 +152,7 @@ export default class Unit {
   discipline = 0;
   // The bearer's last shout as this merc heard it
   heard: Heard | null = null;
-  // Effects of the cards in its sockets, by item and socket
+  // Effects of what it wears, uniques' and socketed cards', by item and socket
   private readonly cardEffects = new Map<string, Lifecycle>();
 
   // Position on the floor, in tiles, and facing in radians. 0 faces +x.
@@ -624,15 +624,19 @@ export default class Unit {
   }
 
   /**
-   * Starts the effects of the cards in what the unit wears, and stops those
-   * of cards it no longer wears. Call it after gear or sockets change.
+   * Starts the effects of what the unit wears, a unique's or a socketed
+   * card's, and stops those of what it no longer wears. Call it after gear
+   * or sockets change.
    */
   refreshCards(): void {
-    const worn = new Map<string, ItemBase>();
+    const worn = new Map<string, (unit: Unit) => Lifecycle>();
     for (const item of this.equipment.values()) {
+      if (item.effect) {
+        worn.set(`${item.uid}:unique`, item.effect);
+      }
       item.cards.forEach((card, i) => {
         if (card.socket?.setup) {
-          worn.set(`${item.uid}:${i}`, card);
+          worn.set(`${item.uid}:${i}`, card.socket.setup);
         }
       });
     }
@@ -642,9 +646,9 @@ export default class Unit {
         this.cardEffects.delete(key);
       }
     }
-    for (const [key, card] of worn) {
-      if (!this.cardEffects.has(key) && card.socket?.setup) {
-        const life = card.socket.setup(this);
+    for (const [key, setup] of worn) {
+      if (!this.cardEffects.has(key)) {
+        const life = setup(this);
         this.cardEffects.set(key, life);
         life.start();
       }
