@@ -1,3 +1,4 @@
+import { CARD_OF, GEMS } from '../content/cards';
 import { AFFIXES, BASES, GOLD, POTIONS, RARE_FIRST, RARE_SECOND } from '../content/items';
 import type RNG from '../core/rng';
 import { type Affix, type Item, type ItemBase, ItemType, Quality, type Span } from '../sim/item';
@@ -94,6 +95,7 @@ export function plainItem(base: ItemBase, itemLevel = 1): Item {
     affixes: [],
     bonuses: [],
     sockets: 0,
+    cards: [],
     quantity: 1,
   };
 }
@@ -151,6 +153,7 @@ export function rollItem(rng: RNG, itemLevel: number, rank: Rank = Rank.Normal):
     affixes: [],
     bonuses: [],
     sockets: 0,
+    cards: [],
     quantity: 1,
   };
   const taken = new Set<string>();
@@ -184,6 +187,7 @@ export function rollGold(rng: RNG, itemLevel: number): Item {
     affixes: [],
     bonuses: [],
     sockets: 0,
+    cards: [],
     quantity: rng.int(4, 12) * itemLevel,
   };
 }
@@ -219,6 +223,42 @@ export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
   }
   return out;
 }
+
+// Chance a monster drops its card, by rank, and a gem, from the items design.
+const CARD_CHANCE: Record<Rank, number> = {
+  [Rank.Normal]: 0.05,
+  [Rank.Elite]: 0.25,
+  [Rank.Boss]: 1,
+};
+const GEM_CHANCE: Record<Rank, number> = {
+  [Rank.Normal]: 0.04,
+  [Rank.Elite]: 0.15,
+  [Rank.Boss]: 0.5,
+};
+
+/** The card a slain monster drops, and a gem, either of them by chance. */
+export function rollCards(rng: RNG, kind: string, rank: Rank): Item[] {
+  const out: Item[] = [];
+  const card = CARD_OF.get(kind);
+  if (card && rng.chance(CARD_CHANCE[rank])) {
+    out.push(plainItem(card));
+  }
+  if (rng.chance(GEM_CHANCE[rank])) {
+    out.push(plainItem(rng.pick(GEMS)));
+  }
+  return out;
+}
+
+// Names of item kinds, for what a card fits.
+const TYPE_NAME: Partial<Record<ItemType, string>> = {
+  [ItemType.Weapon]: 'weapons',
+  [ItemType.Shield]: 'shields',
+  [ItemType.Head]: 'helms',
+  [ItemType.Body]: 'body armor',
+  [ItemType.Cloak]: 'cloaks',
+  [ItemType.Boots]: 'boots',
+  [ItemType.Accessory]: 'accessories',
+};
 
 /** An item's full name: "Sturdy Hood of the Bear", or a rare's own name. */
 export function itemName(item: Item): string {
@@ -325,8 +365,22 @@ export function itemLines(item: Item): string[] {
       lines.push(line);
     }
   }
+  const socket = item.base.socket;
+  if (socket) {
+    lines.push(socket.describe);
+    lines.push(
+      socket.fits === 'any'
+        ? 'Fits any socket'
+        : `Fits: ${socket.fits.map((t) => TYPE_NAME[t]).join(', ')}`,
+    );
+  }
   if (item.sockets > 0) {
-    lines.push(`Sockets: ${item.sockets}`);
+    const filled = item.cards.map((c) => c.name);
+    const empty = Array.from({ length: item.sockets - item.cards.length }, () => 'empty');
+    lines.push(`Sockets: ${[...filled, ...empty].join(', ')}`);
+    for (const c of item.cards) {
+      lines.push(`  ${c.name}: ${c.socket?.describe ?? ''}`);
+    }
   }
   if (item.base.jobs) {
     lines.push(`For: ${item.base.jobs.join(', ')}`);

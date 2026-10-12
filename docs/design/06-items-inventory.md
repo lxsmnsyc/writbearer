@@ -78,7 +78,24 @@ Equipment weight:
 - **The belt:** each merc has 3 belt slots of up to 5 potions. The Vanguard starts with 2 Healing Draughts, the Ranger with 2 and a Mana Tincture. Clicking a potion in the inventory puts it on the chosen merc's belt, under the same fight rule as gear. A merc drinks on its own: healing below its belt threshold, set in its orders at 50%, 30% or emergencies (15%), and mana below 25% in a fight if it has skills. One potion per second at most.
 - **The bearer drinks** a Healing Draught from the pack with Q.
 
-Not yet: identification, cursed items, uniques, sets, sockets with cards, refining and requirements. Rares drop identified for now.
+- **Cards and gems:** every monster kind but the Creditor drops its card: 5% of the time from a normal monster, 25% from an elite, always from a boss. Any monster may also drop a gem: 4%, 15% from an elite, 50% from a boss. In the pack, Socket beside a card sets it into the first item the chosen merc wears that it fits and that has a free socket, under the same fight rule as gear. It stays in that item for good, and works while the item is worn. Hovering an item lists its sockets and what is in them.
+
+| Card | Fits | Effect |
+|---|---|---|
+| Mite | Accessory | +3 AGI. |
+| Husk | Body | +10% max health. |
+| Crawler | Weapon | Basic attacks add 15 Poison buildup. |
+| Hollow Soldier | Shield | +15% armor. |
+| Penitent | Weapon | +20% damage to Humans. |
+| Cantor | Accessory | +4 INT, +10% max mana. |
+| Hollowed | Head | Dread builds up at half the rate. |
+| Brood Mother | Body | +25% max health. -10% attack. |
+| Gatekeeper | Shield | +40% armor. -15 evasion. |
+| Abbess | Accessory | +25% damage to the Undead. -15% max mana. |
+| Hollowed Saint | Weapon | Basic attacks add 25 Dread buildup. Takes 15% more Occult damage. |
+| Garnet, Topaz, Onyx, Opal | Any | +2 STR, DEX, VIT or INT. |
+
+Not yet: autocast, skill-grant and combo cards, the Card collector, adding sockets at a Blacksmith, identification, cursed items, uniques, sets, refining and requirements. Rares drop identified for now.
 
 ## Item data
 

@@ -9,7 +9,7 @@ import {
   type UnitDamageEvent,
   type UnitHealEvent,
 } from './events';
-import { EquipSlot, type Item, itemModifiers, weaponOf } from './item';
+import { EquipSlot, type Item, type ItemBase, itemModifiers, weaponOf } from './item';
 import { MENDING, REFRESHING } from './statuses';
 import { MORALE_START } from './morale';
 import type { Heard } from './shout';
@@ -152,6 +152,8 @@ export default class Unit {
   discipline = 0;
   // The bearer's last shout as this merc heard it
   heard: Heard | null = null;
+  // Effects of the cards in its sockets, by item and socket
+  private readonly cardEffects = new Map<string, Lifecycle>();
 
   // Position on the floor, in tiles, and facing in radians. 0 faces +x.
   x: number;
@@ -608,6 +610,7 @@ export default class Unit {
     const before = this.equipment.get(slot) ?? null;
     this.equipment.set(slot, item);
     this.recalc();
+    this.refreshCards();
     return before;
   }
 
@@ -616,7 +619,36 @@ export default class Unit {
     const item = this.equipment.get(slot) ?? null;
     this.equipment.delete(slot);
     this.recalc();
+    this.refreshCards();
     return item;
+  }
+
+  /**
+   * Starts the effects of the cards in what the unit wears, and stops those
+   * of cards it no longer wears. Call it after gear or sockets change.
+   */
+  refreshCards(): void {
+    const worn = new Map<string, ItemBase>();
+    for (const item of this.equipment.values()) {
+      item.cards.forEach((card, i) => {
+        if (card.socket?.setup) {
+          worn.set(`${item.uid}:${i}`, card);
+        }
+      });
+    }
+    for (const [key, life] of this.cardEffects) {
+      if (!worn.has(key)) {
+        life.stop();
+        this.cardEffects.delete(key);
+      }
+    }
+    for (const [key, card] of worn) {
+      if (!this.cardEffects.has(key) && card.socket?.setup) {
+        const life = card.socket.setup(this);
+        this.cardEffects.set(key, life);
+        life.start();
+      }
+    }
   }
 
   /**

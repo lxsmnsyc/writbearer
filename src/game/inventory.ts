@@ -1,5 +1,15 @@
 import { potionStack } from '../gen/loot';
-import { EquipSlot, type Item, ItemType, isPotion, slotFor, stacks, usableBy } from '../sim/item';
+import {
+  EQUIP_SLOTS,
+  EquipSlot,
+  type Item,
+  ItemType,
+  canSocket,
+  isPotion,
+  slotFor,
+  stacks,
+  usableBy,
+} from '../sim/item';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -140,6 +150,48 @@ export function takeFromVault(pack: Pack, vault: Vault, uid: number): string | n
     return why;
   }
   pack.add(vault.items.splice(i, 1)[0]);
+  return null;
+}
+
+/** The first item a merc wears that a card or gem can go into, if any. */
+export function socketFor(merc: Unit, card: Item): Item | null {
+  for (const slot of EQUIP_SLOTS) {
+    const worn = merc.equipment.get(slot);
+    if (worn && canSocket(card, worn)) {
+      return worn;
+    }
+  }
+  return null;
+}
+
+/**
+ * Sets a card or gem from the pack into the first item the merc wears that
+ * fits it and has a free socket. It stays there for good. Returns why it
+ * could not, or null.
+ */
+export function socketCard(
+  sim: Sim,
+  bearer: Unit,
+  pack: Pack,
+  merc: Unit,
+  uid: number,
+): string | null {
+  const card = pack.items.find((x) => x.uid === uid);
+  if (!card?.base.socket) {
+    return 'That cannot go in a socket.';
+  }
+  const blocked = cannotHand(sim, bearer, merc);
+  if (blocked) {
+    return blocked;
+  }
+  const into = socketFor(merc, card);
+  if (!into) {
+    return `Nothing ${merc.name} wears has a free socket for the ${card.base.name}.`;
+  }
+  pack.take(uid);
+  into.cards.push(card.base);
+  merc.recalc();
+  merc.refreshCards();
   return null;
 }
 

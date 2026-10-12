@@ -1,8 +1,17 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
 import type Game from '../game/game';
 import { itemLines, itemName } from '../gen/loot';
-import { EQUIP_SLOTS, EquipSlot, type Item, isPotion, usableBy } from '../sim/item';
+import { socketFor } from '../game/inventory';
+import { EQUIP_SLOTS, EquipSlot, type Item, isCard, isPotion, usableBy } from '../sim/item';
 import type Unit from '../sim/unit';
+
+// What handing an item over does: wear it, belt it, or socket it.
+const action = (item: Item): string => {
+  if (isPotion(item)) {
+    return 'Belt';
+  }
+  return isCard(item) ? 'Socket' : 'Give';
+};
 
 const SLOT_NAMES: Record<EquipSlot, string> = {
   [EquipSlot.Weapon]: 'Weapon',
@@ -49,7 +58,10 @@ export default function Inventory(props: Props): JSX.Element {
   const name = (item: Item): string => (props.version >= 0 ? itemName(item) : '');
   const fits = (item: Item): boolean => {
     const m = merc();
-    return m !== undefined && usableBy(item, m.job.name);
+    if (!m) {
+      return false;
+    }
+    return isCard(item) ? socketFor(m, item) !== null : usableBy(item, m.job.name);
   };
   const nobody = (item: Item): boolean => !mercs().some((m) => usableBy(item, m.job.name));
 
@@ -122,7 +134,7 @@ export default function Inventory(props: Props): JSX.Element {
                       equip(item);
                     }}
                   >
-                    {isPotion(item) ? 'Belt' : 'Give'}
+                    {action(item)}
                   </button>
                 </Show>
                 <button

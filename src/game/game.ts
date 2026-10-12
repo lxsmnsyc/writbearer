@@ -19,9 +19,9 @@ import {
 import { reveal } from '../content/creditor';
 import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
-import { type EquipSlot, type Item, isPotion } from '../sim/item';
+import { type EquipSlot, type Item, isCard, isPotion } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
-import { potionStack, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
+import { potionStack, rollCards, rollDrops, rollGold, rollItem, rollPotion } from '../gen/loot';
 import { gainXp, killXp } from '../sim/progress';
 import {
   type GroundItem,
@@ -30,6 +30,7 @@ import {
   beltToPack,
   equipFromPack,
   packToBelt,
+  socketCard,
   storeInVault,
   takeFromVault,
   unequipToPack,
@@ -306,11 +307,15 @@ export default class Game {
   /** Hands an item from the pack to a merc. Returns why it failed, or null. */
   equip(merc: Unit, uid: number): string | null {
     const item = this.pack.items.find((i) => i.uid === uid);
-    // Potions go on the belt, everything else is worn.
-    const error =
-      item && isPotion(item)
-        ? packToBelt(this.sim, this.bearer, this.pack, merc, uid)
-        : equipFromPack(this.sim, this.bearer, this.pack, merc, uid);
+    // Potions go on the belt, cards and gems into a socket, the rest is worn.
+    let error: string | null;
+    if (item && isPotion(item)) {
+      error = packToBelt(this.sim, this.bearer, this.pack, merc, uid);
+    } else if (item && isCard(item)) {
+      error = socketCard(this.sim, this.bearer, this.pack, merc, uid);
+    } else {
+      error = equipFromPack(this.sim, this.bearer, this.pack, merc, uid);
+    }
     this.itemsChanged();
     return error;
   }
@@ -429,7 +434,10 @@ export default class Game {
         this.slain++;
         this.shareXp(event.source);
         this.scatter(
-          rollDrops(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+          [
+            ...rollDrops(this.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+            ...rollCards(this.streams.get(1, Stream.Loot), event.source.kind, event.source.rank),
+          ],
           event.source,
         );
       }

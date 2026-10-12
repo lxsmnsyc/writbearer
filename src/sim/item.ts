@@ -1,4 +1,6 @@
+import type { Lifecycle } from '../core/lifecycle';
 import type { Modifier, Weapon } from './stats';
+import type Unit from './unit';
 
 export const enum EquipSlot {
   Weapon = 0,
@@ -34,6 +36,19 @@ export const enum ItemType {
   Gold = 7,
   // Drunk from the belt or by the bearer. Stacks.
   Potion = 8,
+  // A monster card or a gem, set into a socket for good.
+  Card = 9,
+}
+
+/** What a card or a gem does once set into a socket. */
+export interface Socketable {
+  // The kinds of item it fits. Gems fit any.
+  fits: readonly ItemType[] | 'any';
+  // One line on what it does
+  describe: string;
+  modifiers: readonly Modifier[];
+  // An effect beyond stats, such as buildup on hit, while it is worn
+  setup?: (unit: Unit) => Lifecycle;
 }
 
 /** From Diablo 2. Fewer affixes leave room for more sockets. */
@@ -76,6 +91,8 @@ export interface ItemBase {
   potion?: { health?: number; mana?: number };
   // How many fit in one pack slot or belt slot. Absent means one.
   stackMax?: number;
+  // Cards and gems: what they do in a socket
+  socket?: Socketable;
 }
 
 /** One rolled affix: which, and its rolled values. */
@@ -96,6 +113,8 @@ export interface Item {
   // What the affixes give, worked out when the item was rolled
   bonuses: Modifier[];
   sockets: number;
+  // Cards and gems set into the sockets, at most `sockets` of them
+  cards: ItemBase[];
   // A rare's rolled name, such as "Grave Fang"
   name?: string;
   // Gold only
@@ -165,6 +184,19 @@ export function weaponOf(item: Item): Weapon | null {
   };
 }
 
+/** Whether an item is a card or a gem, for sockets. */
+export const isCard = (item: Item): boolean => item.base.type === ItemType.Card;
+
+/** Whether a card or gem fits an item, and the item has a free socket. */
+export function canSocket(card: Item, into: Item): boolean {
+  const fits = card.base.socket?.fits;
+  return (
+    fits !== undefined &&
+    into.cards.length < into.sockets &&
+    (fits === 'any' || fits.includes(into.base.type))
+  );
+}
+
 /** Every stat bonus an item gives its wearer, base values and affixes alike. */
 export function itemModifiers(item: Item): Modifier[] {
   const out: Modifier[] = [];
@@ -176,5 +208,8 @@ export function itemModifiers(item: Item): Modifier[] {
     out.push({ stat: 'blockAmount', add: item.base.block.amount });
   }
   out.push(...item.bonuses);
+  for (const card of item.cards) {
+    out.push(...(card.socket?.modifiers ?? []));
+  }
   return out;
 }
