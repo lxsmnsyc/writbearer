@@ -52,6 +52,9 @@ const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
   boss: 'The walled ring',
 };
 
+/** How far an exit's plate reaches from its middle, in tiles. Clicks within it choose it. */
+export const EXIT_PLATE = 0.9;
+
 // A tile is 32 by 16 pixels on screen, times the zoom.
 const TW = 32;
 const TH = 16;
@@ -133,6 +136,9 @@ export interface Frame {
   callout: string | null;
   // Where the party is: the layer, or an endless phase
   region: string;
+  // The exit under the mouse, and the one the bearer was sent to, if any
+  hoverExit: number | null;
+  leaving: number | null;
   // The run's seed, shown when it ends so it can be shared
   seed: string;
   // How the final fight ended: the Creditor sealed again, or risen
@@ -261,6 +267,7 @@ export default class Renderer {
     const fog = this.updateFog(f);
     fog.draw(ctx, iso, C.void, this.floorOnScreen());
     this.drawGround(f, fog);
+    this.drawExits(f, fog);
     f.effects.drawRings(ctx, iso);
     this.drawTraps(f);
 
@@ -431,6 +438,11 @@ export default class Renderer {
   shareOnScreen(x: number, z: number): Pt {
     const b = this.iso(x, z);
     return pt((b.x * SCALE - this.sub.x) / (W * SCALE), (b.y * SCALE - this.sub.y) / (H * SCALE));
+  }
+
+  /** Whether the party has seen a floor point. */
+  known(x: number, z: number): boolean {
+    return this.fog?.fog.known(x, z) ?? false;
   }
 
   /** Whether the party sees a floor point now. */
@@ -836,6 +848,37 @@ export default class Renderer {
     this.ctx.fillRect(bx - 7, y + 2, Math.max(1, Math.round(14 * best.share)), 1);
   }
 
+  // Each way out is a plate on the ground the player clicks to leave by:
+  // brighter under the mouse or once chosen, dark red while the way down
+  // is shut.
+  private drawExits(f: Frame, fog: Fog): void {
+    const { ctx, iso } = this;
+    f.stage.exits.forEach((e, i) => {
+      if (!fog.known(e.x, e.z)) {
+        return;
+      }
+      const shut = e.ahead === 'down' && (f.boss?.alive ?? false);
+      const hot = !shut && (f.hoverExit === i || f.leaving === i);
+      // A square on the floor, a diamond on screen, that breathes when idle.
+      const r = EXIT_PLATE * (hot ? 1 : 0.92 + 0.08 * Math.sin(f.time * 3 + i));
+      const square = (k: number): Pt[] => [
+        iso(e.x - k, e.z - k),
+        iso(e.x + k, e.z - k),
+        iso(e.x + k, e.z + k),
+        iso(e.x - k, e.z + k),
+      ];
+      const color = shut ? C.blood : C.gold;
+      if (hot) {
+        ctx.globalAlpha = 0.45;
+        fillPoly(ctx, square(r), color, null);
+        ctx.globalAlpha = 1;
+      }
+      fillPoly(ctx, square(r), 'rgba(0,0,0,0)', color);
+      // An inner diamond, so it reads as a marked tile and not a stain
+      fillPoly(ctx, square(r * 0.4), shut ? C.ink : color, null);
+    });
+  }
+
   // Health bars: gold for the party, red for monsters.
   private drawHealth(f: Frame, fog: Fog): void {
     const { ctx } = this;
@@ -863,21 +906,16 @@ export default class Renderer {
   private drawHud(f: Frame): void {
     const { out } = this;
     out.font = '20px "IM Fell English", Georgia, serif';
-    out.fillStyle = '#b9b0a0';
-    out.textAlign = 'start';
-    out.fillText(
-      'WASD or click: move.  1–4: mercs.  Z X C F: shouts.  I: pack.  M: map.  K: compendium.  Q: drink.  R: restart.',
-      16,
-      26,
-    );
-    out.textAlign = 'right';
-    out.fillText(`${f.region} · ${place(f.stage)} · Slain: ${f.slain}`, W * SCALE - 16, 26);
-    out.textAlign = 'start';
-    out.fillStyle = '#8a8274';
-    out.fillText(hint(f), 16, 52);
+    // A notice, such as who deserted, shows above the party for a while.
     if (f.notice) {
+      out.textAlign = 'center';
+      const y = H * SCALE - 132;
+      const width = out.measureText(f.notice).width + 24;
+      out.fillStyle = 'rgba(0,0,0,0.6)';
+      out.fillRect((W * SCALE - width) / 2, y - 20, width, 28);
       out.fillStyle = C.gold;
-      out.fillText(f.notice, 16, 76);
+      out.fillText(f.notice, (W * SCALE) / 2, y);
+      out.textAlign = 'start';
     }
     if (f.boss?.alive && (f.stage.arena?.closed || f.stage.tomb)) {
       // The boss's name and health across the top, as Diablo 2 shows them.
@@ -916,7 +954,7 @@ export default class Renderer {
   }
 }
 
-// Where the party is, for the HUD.
+// Where the party is, for the end of a run.
 function place(stage: Stage): string {
   if (stage.kind === 'waystation') {
     return 'Waystation';
@@ -938,39 +976,6 @@ function place(stage: Stage): string {
     return `${area}, Event`;
   }
   return area;
-}
-
-// What the player is to do in this area, under the controls.
-function hint(f: Frame): string {
-  if (f.stage.tomb) {
-    return f.boss
-      ? 'The Creditor wakes in the bearer’s body. The mercs fight on alone. 1–4 to look at them.'
-      : 'The tomb at the bottom of the Hollow. Bring the Writ to it.';
-  }
-  if (f.stage.station) {
-    return 'The Guild’s Waystation. Pay your mercs and use the vault at the post, then take a road east.';
-  }
-  if (f.boss) {
-    if (f.boss.alive) {
-      return f.stage.arena?.closed
-        ? `${f.boss.name} bars the way down. The gate is shut.`
-        : 'Something waits in the walled ring, before the way down.';
-    }
-    return 'The way down is open, to the east.';
-  }
-  if (f.stage.town) {
-    return 'A Town. Walk to the well to deal with the smith, the bench, the temple and the market.';
-  }
-  if (f.stage.event) {
-    return 'Something waits by the road. Walk up to it, then take a road on. M for the map.';
-  }
-  if (f.stage.rest) {
-    return 'A Camp. Walk to the fire to rest, then take a road on. M for the map.';
-  }
-  if (f.stage.exits.length > 1) {
-    return 'The road forks to the east. Each signpost says what lies ahead. M for the map.';
-  }
-  return 'Follow the road east, to the next area. M for the map.';
 }
 
 // Whether a floor point's screen spot is near enough the frame to draw what stands there.

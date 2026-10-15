@@ -83,7 +83,7 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 
 `src/gen/stage.ts` builds an area from the `layout` stream with its index, so a seed always gives the same journey. It follows the steps above, for one kind of field.
 
-- **Layers:** `src/gen/layers.ts` splits the run into the four layers of the lore, 8 areas each, one per layer of a phase's stage graph. The Marches, on the surface, have bare earth with dead grass and dead trees. The Rift Road has bare rock and stone pillars. The two layers under the city keep the flagstone plazas. The HUD names the layer and the area.
+- **Layers:** `src/gen/layers.ts` splits the run into the four layers of the lore, 8 areas each, one per layer of a phase's stage graph. The Marches, on the surface, have bare earth with dead grass and dead trees. The Rift Road has bare rock and stone pillars. The two layers under the city keep the flagstone plazas. The map (M) names the layer.
 - **Exits:** inside a layer, an area's exit is the road on to the next area, off the east edge, marked by the Guild's signpost and two torches. Only the last area of a layer has a way down, a stair between two braziers, to the next layer. The phase boss will stand before it.
 - **Layer map:** `src/gen/graph.ts` rolls each layer's map from the `map` stream, as Slay the Spire's: 8 columns, one per area. The first column has 2 areas below a Waystation and 1 where the run begins; columns 2 to 7 have 2 or 3; the last is the boss's arena. Each area leads to 1 or 2 areas of the next column, and no roads cross. M opens the map: the areas crossed, the one the party is in and the ones it can go to next.
 - **Monsters by layer:** each layer fields its own packs, after the lore. The Marches: the Blight's mites and crawlers, the drowned Husks and the Church's first keepers. The Rift Road: the Old King's guard, Hollow soldiers in threes. The Undercroft: Penitents, Cantors and the drowned. The Sunken Crown: the Hollowed, with the last of the guard. The lair's pack follows the layer too.
@@ -109,14 +109,15 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
   - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other side of the wall from the site.
-  - A cache, a chest for now.
+  - A cache, a chest for now. It opens only when clicked: the bearer walks to it and opens it.
 - **Terrain from noise:** pillars where the noise runs high, rubble where it runs low, plus pikes and gibbets along the way. Every place keeps clear ground around it.
 - **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.
 - **Packs:** a threat budget of 9, plus 5 per stage deeper. Mites and Husks cost 1, other monsters 2 or 3, and an elite 6 more. Monster level is 2, plus 1 per stage. No pack stands within 13 tiles of the entrance.
 - **Depth:** the first two stages field only Mites and Husks, with one Penitent at the Church's site and Husks in the lair. Crawlers and Hollow soldiers join from the third stage, Penitent packs from the fifth, elites and the Cantor from the fifth, and the Hollowed from the sixth.
 - **Balance check:** a test plays the first stages with a lone merc of each job. The bearer walks to the exit, steps behind its merc when monsters near it wake, and drinks when hurt. Every job must clear the first two stages on 11 of 12 seeds. Measured on 40 seeds, all three jobs clear four stages alone every time. From the fifth stage on, a lone merc starts to fall: by the eighth, 38% to 60% of runs survive, so a second merc and gear matter.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
-- **Crossing:** when the bearer reaches the exit, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
+- **Exits:** each way out is a gold tile on the ground, a diamond on screen, that fills when the mouse is over it. Clicking it walks the bearer there, and the party leaves on arrival. Walking over it without clicking does nothing, so no one leaves by accident. The way down shows dark red while the boss lives.
+- **Crossing:** when the bearer reaches the exit it was sent to, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
 
 Not yet: water, ledges, grass, alarms, patrols, Treasure and Shrine areas, and seamless crossing between areas.
 

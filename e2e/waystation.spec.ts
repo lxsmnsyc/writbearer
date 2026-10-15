@@ -24,7 +24,7 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
   const vault = panel.getByRole('list', { name: 'Vault' });
   await expect(vault.getByRole('button', { name: /^Take Healing Draught/ })).toBeVisible();
 
-  // Taking the north road on, the unpaid Ranger goes on with low morale.
+  // Walking over the north road's exit does not take it.
   // D walks north-east on the floor, then D and S together walk east.
   await panel.getByRole('button', { name: 'Close' }).click();
   const party = page.getByRole('navigation', { name: 'Party' });
@@ -36,8 +36,23 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
     })
     .toBeLessThan(7.2);
   await page.keyboard.down('s');
-  await expect(party).toContainText('Low morale', { timeout: 40000 });
+  await expect
+    .poll(async () => Number((await canvas.getAttribute('data-bearer'))?.split(',')[0]), {
+      timeout: 40000,
+    })
+    .toBeGreaterThan(26.5);
   await page.keyboard.up('d');
   await page.keyboard.up('s');
+  await expect(party).not.toContainText('Low morale');
+
+  // Clicking its plate takes it: the unpaid Ranger goes on with low morale.
+  const exits = ((await canvas.getAttribute('data-exits')) ?? '').split(';');
+  const [sx, sy] = exits[0].split(',').map(Number);
+  const box = await canvas.boundingBox();
+  if (!box) {
+    throw new Error('No canvas');
+  }
+  await page.mouse.click(box.x + sx * box.width, box.y + sy * box.height);
+  await expect(party).toContainText('Low morale', { timeout: 40000 });
   await expect(party.getByRole('button')).toHaveCount(2);
 });

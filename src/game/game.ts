@@ -6,11 +6,12 @@ import Sim, { TICK } from '../sim/sim';
 import { DamageFlags, DamagePriority, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { Effects } from '../render/effects';
-import Renderer, { type Frame } from '../render/renderer';
+import Renderer, { EXIT_PLATE, type Frame } from '../render/renderer';
 import { Views } from '../render/view';
 import {
   type Ahead,
   type AreaPlan,
+  type Prop,
   type Stage,
   generateStage,
   generateTomb,
@@ -88,6 +89,8 @@ const EXIT_REACH = 1.2;
 // The bearer picks up an item, or opens a chest, from this close.
 const PICK_REACH = 0.8;
 const CHEST_REACH = 1.3;
+// How near a click must land to a chest, in tiles, to open it
+const CHEST_PICK = 1.1;
 // A chest holds this many pieces of equipment, rolled as an elite's drop.
 const CHEST_ITEMS = 3;
 // How near a click must land to an item, in frame pixels, to pick it up.
@@ -219,8 +222,14 @@ export default class Game {
   // What the bearer carries, and what lies on the floor
   pack = new Pack();
   private ground: GroundItem[] = [];
-  // The item the bearer is walking over to pick up
+  // The item the bearer is walking over to pick up, the chest it is
+  // walking to open and the exit it is walking to leave by. Each is done
+  // only once clicked, so walking past never opens or leaves by accident.
   private fetching: GroundItem | null = null;
+  private opening: Prop | null = null;
+  private leaving: number | null = null;
+  // The exit under the mouse, drawn brighter
+  private hoverExit: number | null = null;
   // The offers to pick the first merc from, while the run has not begun
   private offers: Offer[] | null = null;
   // A merc waiting by its fire on this stage, and the one being talked to
@@ -708,7 +717,7 @@ export default class Game {
     this.souls = save?.souls ?? 0;
     this.over = false;
     this.ground = [];
-    this.fetching = null;
+    this.goFor();
     this.inventory = false;
     this.stationOpen = false;
     this.notice = null;
@@ -763,8 +772,9 @@ export default class Game {
       }
     }
     for (const p of this.stage.props) {
-      if (p.kind === 'chest' && !p.open && b.distanceTo(p) <= CHEST_REACH) {
+      if (p === this.opening && !p.open && b.distanceTo(p) <= CHEST_REACH) {
         p.open = true;
+        this.opening = null;
         const rng = this.streams.get(1, Stream.Loot);
         const level = 4 + this.stageIndex;
         const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
@@ -1101,7 +1111,8 @@ export default class Game {
     this.effects.clear();
     // What was left on the old stage's floor is lost.
     this.ground = [];
-    this.fetching = null;
+    this.goFor();
+    this.hoverExit = null;
     this.views.snap(this.sim);
     this.renderer.snapCamera();
     this.enter();
@@ -1496,7 +1507,35 @@ export default class Game {
 
   private readonly onMouseMove = (e: MouseEvent): void => {
     this.pointer = { x: e.clientX, y: e.clientY };
+    // What a click would do shows in the cursor and the exit's plate.
+    const free = !this.paused && !this.over && !this.finale;
+    this.hoverExit = free ? this.exitAt(e.clientX, e.clientY) : null;
+    const clickable =
+      free &&
+      (this.hoverExit !== null ||
+        this.chestAt(e.clientX, e.clientY) !== null ||
+        this.renderer.labelAt(e.clientX, e.clientY) !== null);
+    this.canvas.style.cursor = clickable ? 'pointer' : '';
   };
+
+  // The exit whose plate is under a point on the screen, if any.
+  private exitAt(clientX: number, clientY: number): number | null {
+    const p = this.renderer.unproject(clientX, clientY);
+    const i = this.stage.exits.findIndex(
+      (e) => Math.max(Math.abs(p.x - e.x), Math.abs(p.z - e.z)) <= EXIT_PLATE,
+    );
+    return i >= 0 && this.renderer.known(this.stage.exits[i].x, this.stage.exits[i].z) ? i : null;
+  }
+
+  // The closed chest under a point on the screen, if any.
+  private chestAt(clientX: number, clientY: number): Prop | null {
+    const p = this.renderer.unproject(clientX, clientY);
+    return (
+      this.stage.props.find(
+        (c) => c.kind === 'chest' && !c.open && Math.hypot(c.x - p.x, c.z - p.z) <= CHEST_PICK,
+      ) ?? null
+    );
+  }
 
   // The enemy in sight nearest the mouse, within a tile and a half of it.
   private enemyAtPointer(): Unit | null {
@@ -1561,7 +1600,7 @@ export default class Game {
     // An item's label comes first: it may sit right over a merc.
     const labelled = this.paused ? null : this.renderer.labelAt(e.clientX, e.clientY);
     if (labelled) {
-      this.fetching = labelled;
+      this.goFor({ fetching: labelled });
       this.bearer.order = { x: labelled.x, z: labelled.z };
       return;
     }
@@ -1577,17 +1616,43 @@ export default class Game {
     // Clicking an item walks the bearer over to pick it up.
     const item = this.pickItem(e.clientX, e.clientY);
     if (item) {
-      this.fetching = item;
+      this.goFor({ fetching: item });
       this.bearer.order = { x: item.x, z: item.z };
       return;
     }
-    this.fetching = null;
+    // Clicking an exit's plate walks the bearer to it, to leave by it.
+    const exit = this.exitAt(e.clientX, e.clientY);
+    if (exit !== null) {
+      const e2 = this.stage.exits[exit];
+      if (e2.ahead === 'down' && this.boss?.alive) {
+        this.say(`The way down is shut while ${this.boss.name} lives.`);
+        return;
+      }
+      this.goFor({ leaving: exit });
+      this.bearer.order = { x: e2.x, z: e2.z };
+      return;
+    }
+    // Clicking a chest walks the bearer to it, to open it.
+    const chest = this.chestAt(e.clientX, e.clientY);
+    if (chest) {
+      this.goFor({ opening: chest });
+      this.bearer.order = { x: chest.x - 0.6, z: chest.z };
+      return;
+    }
+    this.goFor({});
     const spot = this.renderer.unproject(e.clientX, e.clientY);
     this.bearer.order = {
       x: Math.min(this.stage.width - 0.5, Math.max(0.5, spot.x)),
       z: Math.min(this.stage.depth - 0.5, Math.max(0.5, spot.z)),
     };
   };
+
+  // What the bearer is walking over to do, replacing whatever it was before.
+  private goFor(aim: { fetching?: GroundItem; opening?: Prop; leaving?: number } = {}): void {
+    this.fetching = aim.fetching ?? null;
+    this.opening = aim.opening ?? null;
+    this.leaving = aim.leaving ?? null;
+  }
 
   // WASD moves along the screen: right is +x -z, down is +x +z.
   private steer(): void {
@@ -1612,7 +1677,7 @@ export default class Game {
     if (mx === 0 && my === 0) {
       return;
     }
-    this.fetching = null;
+    this.goFor();
     const wx = mx + my;
     const wz = my - mx;
     const l = Math.hypot(wx, wz);
@@ -1658,9 +1723,12 @@ export default class Game {
         this.breakSeal();
         this.endFinale();
         // The way down opens only once the boss is dead.
+        // The bearer leaves only by the exit it was sent to.
         const exit = this.stage.exits.findIndex(
-          (e) =>
-            this.bearer.distanceTo(e) <= EXIT_REACH && !(e.ahead === 'down' && this.boss?.alive),
+          (e, i) =>
+            i === this.leaving &&
+            this.bearer.distanceTo(e) <= EXIT_REACH &&
+            !(e.ahead === 'down' && this.boss?.alive),
         );
         if (this.bearer.alive && exit >= 0) {
           this.descend(exit);
@@ -1688,6 +1756,8 @@ export default class Game {
       over: this.over,
       ending: this.finale?.ending ?? null,
       region: this.region,
+      hoverExit: this.hoverExit,
+      leaving: this.leaving,
       seed: this.streams.seed,
       paused: this.paused,
       selected: this.selected,
@@ -1702,6 +1772,13 @@ export default class Game {
     this.canvas.dataset.camera = `${cam.x},${cam.y}`;
     // How the final fight stands: not begun, under way, or how it ended.
     this.canvas.dataset.finale = this.finale ? (this.finale.ending ?? 'fighting') : 'none';
+    // Each exit's plate, north first, as shares of the canvas, so tests can click them.
+    this.canvas.dataset.exits = this.stage.exits
+      .map((e) => {
+        const p = this.renderer.shareOnScreen(e.x, e.z);
+        return `${p.x.toFixed(4)},${p.y.toFixed(4)}`;
+      })
+      .join(';');
     // Each merc's feet, as shares of the canvas, so tests can click them.
     this.canvas.dataset.mercs = this.mercs()
       .map((m) => {

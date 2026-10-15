@@ -1,4 +1,4 @@
-import { For, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
+import { Index, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game, { type EventView, type GameOptions } from '../game/game';
 import { type RunSave, describeSave, readSave } from '../game/save';
 import { randomSeed } from '../core/seed';
@@ -177,62 +177,64 @@ export default function App(): JSX.Element {
         )}
       </Show>
       <nav class="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2" aria-label="Party">
-        <For each={party()}>
-          {(m, i) => (
+        <Index each={party()}>
+          {(entry, i) => (
             <button
               type="button"
               data-part="card"
-              aria-pressed={selected() === m.unit}
+              aria-pressed={selected() === entry().unit}
               class="w-40 border bg-zinc-950/90 px-3 py-2 text-left text-xs"
               classList={{
-                'border-amber-500': selected() === m.unit,
-                'border-zinc-700 hover:border-zinc-500': selected() !== m.unit,
-                'opacity-50': !m.alive,
+                'border-amber-500': selected() === entry().unit,
+                'border-zinc-700 hover:border-zinc-500': selected() !== entry().unit,
+                'opacity-50': !entry().alive,
               }}
-              disabled={!m.alive}
-              onClick={() => game()?.select(m.unit)}
+              disabled={!entry().alive}
+              onClick={() => game()?.select(entry().unit)}
             >
               <div class="flex justify-between text-zinc-300">
                 <span>
-                  {m.unit.name}{' '}
+                  {entry().unit.name}{' '}
                   <span class="text-zinc-500">
-                    {m.unit.name === m.unit.job.name ? '' : `${m.unit.job.name} `}
-                    {m.level}
+                    {entry().unit.name === entry().unit.job.name ? '' : `${entry().unit.job.name} `}
+                    {entry().level}
                   </span>
-                  <Show when={m.points > 0}>
+                  <Show when={entry().points > 0}>
                     <span data-part="danger" class="text-amber-400" title="Points to spend">
                       {' '}
                       +
                     </span>
                   </Show>
                 </span>
-                <span class="text-zinc-600">{i() + 1}</span>
+                <span class="text-zinc-600">{i + 1}</span>
               </div>
               <div data-part="bar" class="mt-1 h-1 bg-zinc-800">
                 <div
                   data-part="bar-fill"
                   class="h-1 bg-amber-500"
-                  style={{ width: `${Math.max(0, (100 * m.hp) / m.maxHp)}%` }}
+                  style={{ width: `${Math.max(0, (100 * entry().hp) / entry().maxHp)}%` }}
                 />
               </div>
               <div data-part="bar" class="mt-0.5 h-0.5 bg-zinc-800">
                 <div
                   data-part="mana-fill"
                   class="h-0.5 bg-teal-600"
-                  style={{ width: `${m.maxMana ? (100 * m.mana) / m.maxMana : 0}%` }}
+                  style={{
+                    width: `${entry().maxMana ? (100 * entry().mana) / entry().maxMana : 0}%`,
+                  }}
                 />
               </div>
-              <Show when={!m.alive}>
+              <Show when={!entry().alive}>
                 <div class="mt-1 text-red-500">Dead</div>
               </Show>
-              <Show when={m.alive && m.morale <= Morale.Low}>
+              <Show when={entry().alive && entry().morale <= Morale.Low}>
                 <div data-part="danger" class="mt-1 text-red-500">
-                  {MORALE_NAME[m.morale]} morale
+                  {MORALE_NAME[entry().morale]} morale
                 </div>
               </Show>
             </button>
           )}
-        </For>
+        </Index>
       </nav>
 
       <Show when={game() && selected()} keyed>
