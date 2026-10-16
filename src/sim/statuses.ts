@@ -1,8 +1,8 @@
 import type { Lifecycle } from '../core/lifecycle';
-import { SimEvents, type UnitHealEvent } from './events';
+import { SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
 import type { BaseStat } from './stats';
 import type { ActiveStatus, StatusDef } from './status';
-import { DamageFlags, DamageKind, Element, HealPriority } from './types';
+import { DamageFlags, DamageKind, DamagePriority, Element, HealPriority, Race } from './types';
 import type Unit from './unit';
 
 // First numbers for statuses. A starting point for balance, not final values.
@@ -242,7 +242,100 @@ export const RENEWED: StatusDef = {
   },
 };
 
-/** The status each element builds up. Radiant and Spectral have none yet. */
+/**
+ * Radiant. Holy fire that clings to the dead and the Occult: they take a
+ * fifth more damage from the other side while it burns. Nothing else can
+ * be seared.
+ */
+export const SEAR: StatusDef = {
+  id: 'sear',
+  name: 'Sear',
+  duration: 4,
+  immunity: 3,
+  threshold: (u) =>
+    u.race === Race.Undead || u.element === Element.Occult ? threshold('wil')(u) : Infinity,
+  setup: (s) => {
+    const listener = (event: UnitDamageEvent): void => {
+      if (event.target === s.unit && event.source.side !== s.unit.side) {
+        event.value *= 1.2;
+      }
+    };
+    return {
+      start: () => {
+        s.unit.sim.on(SimEvents.UnitDamage, DamagePriority.Amplify, listener);
+      },
+      stop: () => {
+        s.unit.sim.off(SimEvents.UnitDamage, DamagePriority.Amplify, listener);
+      },
+    };
+  },
+};
+
+/**
+ * Behind a raised shield, as the Vanguard's Shield Wall: every physical
+ * blow from the front is stopped, and magic from the front halved. It
+ * cannot move.
+ */
+export const SHIELD_WALL: StatusDef = {
+  id: 'shieldWall',
+  name: 'Shield Wall',
+  duration: 3,
+  immunity: 0,
+  slow: 0,
+  setup: (s) => {
+    const listener = (event: UnitDamageEvent): void => {
+      if (
+        event.target !== s.unit ||
+        event.kind === DamageKind.True ||
+        event.flags & DamageFlags.Flank
+      ) {
+        return;
+      }
+      if (event.kind === DamageKind.Physical) {
+        event.value = 0;
+        event.flags |= DamageFlags.Blocked;
+      } else {
+        event.value *= 0.5;
+      }
+    };
+    return {
+      start: () => {
+        s.unit.sim.on(SimEvents.UnitDamage, DamagePriority.Block, listener);
+      },
+      stop: () => {
+        s.unit.sim.off(SimEvents.UnitDamage, DamagePriority.Block, listener);
+      },
+    };
+  },
+};
+
+/** Slowed by spikes underfoot. Refreshed while it stands in them. */
+export const SLOWED: StatusDef = {
+  id: 'slowed',
+  name: 'Slowed',
+  duration: 1.2,
+  immunity: 0,
+  slow: 0.5,
+};
+
+/** Bleeding: a share of max health each second, 1% per point of power. */
+export const BLEED: StatusDef = {
+  id: 'bleed',
+  name: 'Bleed',
+  duration: 4,
+  immunity: 0,
+  tick: (s, dt) => {
+    if (Math.floor(s.elapsed) > Math.floor(s.elapsed - dt) && s.elapsed >= 1) {
+      s.source.hit(s.unit, {
+        kind: DamageKind.True,
+        fixed: Math.max(1, Math.round(s.unit.derived.maxHp * 0.01 * s.power)),
+        flags: DamageFlags.DoT,
+      });
+    }
+  },
+};
+
+/** The status each element builds up. Spectral has none yet. */
 export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Fire]: BURN,
   [Element.Frost]: CHILL,
@@ -250,4 +343,5 @@ export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Earth]: PETRIFY,
   [Element.Venom]: POISON,
   [Element.Occult]: DREAD,
+  [Element.Radiant]: SEAR,
 };

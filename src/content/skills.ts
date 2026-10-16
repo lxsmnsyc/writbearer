@@ -7,10 +7,10 @@ import type Unit from '../sim/unit';
 // First numbers for active skills. A starting point for balance, not final
 // values. Every number that grows with rank says so in its skill's text.
 
-const isElite = (u: Unit): boolean => u.rank !== Rank.Normal;
+export const isElite = (u: Unit): boolean => u.rank !== Rank.Normal;
 // The rank a unit has in a skill, at least 1 while it is being used.
-const rankOf = (u: Unit, id: string): number => Math.max(1, u.skillRank(id));
-const inReach = (u: Unit, target: Unit | null): target is Unit =>
+export const rankOf = (u: Unit, id: string): number => Math.max(1, u.skillRank(id));
+export const inReach = (u: Unit, target: Unit | null): target is Unit =>
   target !== null && u.distanceTo(target) <= u.kit.reach;
 
 // ---------- Vanguard ----------
@@ -61,7 +61,7 @@ export const CHALLENGE: Skill = {
 };
 
 const crushRatio = (rank: number): number => 140 + rank * 20;
-const crushEarth = (rank: number): number => 30 + rank * 10;
+export const crushEarth = (rank: number): number => 30 + rank * 10;
 
 /**
  * Vanguard, Breaker tier 2. A heavy overhead blow that builds up Earth,
@@ -185,7 +185,7 @@ const SNARE_REACH = 7;
 const snareTime = (rank: number): number => 1.5 + rank * 0.5;
 
 // The awake enemy nearest the bearer that is coming for it, if any.
-function comingForBearer(u: Unit): Unit | null {
+export function comingForBearer(u: Unit): Unit | null {
   const bearer = u.sim.bearer;
   if (!bearer?.alive) {
     return null;
@@ -218,7 +218,9 @@ export const SNARE: Skill = {
   targeting: Targeting.Self,
   wants(u, _target, sim) {
     // One snare at a time.
-    return comingForBearer(u) !== null && !sim.traps.some((t) => t.owner === u);
+    return (
+      comingForBearer(u) !== null && !sim.traps.some((t) => t.owner === u && t.skill === 'snare')
+    );
   },
   elite(u) {
     const e = comingForBearer(u);
@@ -244,6 +246,7 @@ export const SNARE: Skill = {
       status: ROOTED,
       duration: snareTime(rankOf(u, 'snare')),
       sprung: false,
+      skill: 'snare',
     });
   },
 };
@@ -307,7 +310,7 @@ const PIERCE_OVERSHOOT = 2.5;
 const pierceRatio = (rank: number): number => 150 + rank * 15;
 
 // Enemies the line from `u` through `target` would pass.
-function inLine(u: Unit, target: Unit): Unit[] {
+export function inLine(u: Unit, target: Unit): Unit[] {
   const dx = target.x - u.x;
   const dz = target.z - u.z;
   const d = Math.hypot(dx, dz) || 1;
@@ -516,19 +519,23 @@ export const INTERCEPT: Skill = {
 // ---------- Cleric ----------
 
 // How far the Cleric's prayers reach, in tiles.
-const PRAYER_REACH = 6;
+export const PRAYER_REACH = 6;
 const healAmount = (u: Unit, rank: number): number => 40 + rank * 20 + u.derived.matkMax;
 // Allies below this share of health are worth a Heal.
 const HEAL_BELOW = 0.7;
 
 // The living party within reach of the Cleric, the bearer included.
-function flockOf(u: Unit): Unit[] {
+export function flockOf(u: Unit): Unit[] {
   return u.sim.living(Side.Party).filter((p) => u.distanceTo(p) <= PRAYER_REACH);
 }
 
 // The ally most in need, by share of health. The bearer comes first when
 // it is in danger at all.
-function neediest(u: Unit, below: number, skip: (p: Unit) => boolean = () => false): Unit | null {
+export function neediest(
+  u: Unit,
+  below: number,
+  skip: (p: Unit) => boolean = () => false,
+): Unit | null {
   const hurt = flockOf(u).filter((p) => p.hp < p.derived.maxHp * below && !skip(p));
   const bearer = hurt.find((p) => p === u.sim.bearer);
   if (bearer) {
@@ -548,6 +555,7 @@ export const HEAL: Skill = {
   windup: 0.6,
   recovery: 0.3,
   targeting: Targeting.Ally,
+  mends: true,
   aim: (u) => neediest(u, HEAL_BELOW),
   wants: (_u, target) => target !== null,
   elite: () => false,
@@ -570,6 +578,7 @@ export const RENEW: Skill = {
   windup: 0.4,
   recovery: 0.3,
   targeting: Targeting.Ally,
+  mends: true,
   aim: (u) => neediest(u, 0.85, (p) => p.statuses.has(RENEWED.id)),
   wants: (_u, target) => target !== null,
   elite: () => false,
@@ -629,6 +638,7 @@ export const RESURRECTION: Skill = {
   windup: 3,
   recovery: 0.5,
   targeting: Targeting.Ally,
+  mends: true,
   aim: (u) =>
     [...u.sim.units].find(
       (p) =>

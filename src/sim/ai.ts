@@ -6,6 +6,7 @@ import { MENDING, REFRESHING, TAUNTED } from './statuses';
 import { Rank, Side } from './types';
 import type Unit from './unit';
 import { type Warning, inside } from './warning';
+import type { Zone } from './zone';
 
 export const enum Stance {
   // Stays near the bearer when there is nothing to fight
@@ -85,6 +86,8 @@ const BLOODTHIRSTY_CHASE = 3;
 const LOYAL_CHASE = 2;
 const COWARD_AT = 0.25;
 
+// Mana a merc that heals keeps back for its healing skills.
+const HEAL_RESERVE = 25;
 // How close Hold mercs let enemies come before fighting.
 const HOLD_RADIUS = 2;
 // How far from the bearer rallied mercs fight, and how far behind it they
@@ -141,9 +144,14 @@ function engage(u: Unit, target: Unit, dt: number): void {
 
 // Uses the first skill the merc's orders allow and its rule wants.
 function useSkill(sim: Sim, u: Unit, toggles: Toggles, target: Unit | null): boolean {
+  // A healer keeps mana back for its healing.
+  const reserve = u.skills.some((s) => s.mends === true) ? HEAL_RESERVE : 0;
   for (const skill of u.skills) {
     const mode = skillMode(toggles, skill.id);
     if (mode === SkillMode.Off || !u.canCast(skill)) {
+      continue;
+    }
+    if (skill.mends !== true && u.mana - u.skillCost(skill) < reserve) {
       continue;
     }
     const aimed = skill.aim ? skill.aim(u, sim) : target;
@@ -352,6 +360,14 @@ function flee(u: Unit, from: Unit, dt: number): void {
   u.walkTo(u.x + (dx / d) * 2, u.z + (dz / d) * 2, dt);
 }
 
+// The nearest decoy of the party's drawing this monster in, if any.
+function lureFor(sim: Sim, u: Unit): Zone | undefined {
+  return sim.zones
+    .filter((z) => z.lure !== undefined && z.owner.side !== u.side && u.distanceTo(z) <= z.lure)
+    .sort((a, b) => u.distanceTo(a) - u.distanceTo(b))
+    .at(0);
+}
+
 function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const party = sim.living(Side.Party);
   if (!u.aware) {
@@ -371,6 +387,13 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A taunted monster goes for whoever taunted it.
   const taunt = u.statuses.get(TAUNTED.id);
+  // A decoy draws in what is not taunted, bosses aside.
+  const bait = taunt || u.rank === Rank.Boss ? undefined : lureFor(sim, u);
+  if (bait) {
+    u.target = null;
+    u.travel(bait.x, bait.z, dt, 0.6);
+    return;
+  }
   if (monsterSkill(sim, u, taunt?.source ?? u.target)) {
     return;
   }

@@ -34,27 +34,61 @@ In the lists below, **A** marks an active skill and **P** marks a passive.
 - **Stats:** the Stats tab spends stat points on the six base stats and shows experience to the next level.
 - A merc with points to spend shows a + on its party card. A level up shows a gold ring and rising light.
 
-Skills in the game, with what grows by rank:
+Every node of the three starting jobs is in the game. What grows by rank:
 
 | Job | Branch | Skill | Tier | Per rank |
 |---|---|---|---|---|
 | Vanguard | Bulwark | Challenge (A) | 1 | Taunt lasts 3 + 0.5 s |
+| Vanguard | Bulwark | Shield Wall (A) | 2 | Lasts 2 + 0.5 s. Stops physical blows from the front, halves magic from it. It cannot move. |
+| Vanguard | Bulwark | Bastion (P) | 3 | Allies behind it take 8% less ranged damage |
+| Vanguard | Bulwark | Rampart (A) | 4 | A wall toward the nearest archer for 4 + 1 s. Projectiles that fly into it stop. |
+| Vanguard | Bulwark | Immovable (P) | 5 | No stun, Petrify or Dread during Shield Wall or while holding |
 | Vanguard | Breaker | Sunder (P) | 1 | −4 armor per stack, up to 5 stacks |
 | Vanguard | Breaker | Crush (A) | 2 | 140 + 20% damage, 30 + 10 Earth buildup |
 | Vanguard | Breaker | Shield Bash (A) | 3 | 100 + 10% damage, 50 + 10 stun buildup |
+| Vanguard | Breaker | Fault Line (A) | 4 | A 5-tile shockwave, 110 + 15% damage, 20 + 8 Earth buildup, more with Crush |
+| Vanguard | Breaker | Earthshaker (P) | 5 | A Petrified enemy within 6 tiles gives 40 Earth buildup to those within 3 of it |
 | Vanguard | Oathkeeper | Vow (P) | 1 | +10 armor within 4 tiles of the bearer |
 | Vanguard | Oathkeeper | Intercept (A) | 2 | Dashes up to 4 + 1 tiles |
 | Vanguard | Oathkeeper | Shared Burden (P) | 3 | Takes 5% of each hit on the bearer |
+| Vanguard | Oathkeeper | Banner (A) | 4 | Lasts 10 + 2 s. Allies within 4 tiles gain 0.5 morale a second and take 10% less Dread buildup per rank, from 50% |
+| Vanguard | Oathkeeper | Last Line (P) | 5 | Once an area, at the bearer's 30%, taunts all within 5 tiles of it for 4 s |
 | Ranger | Hawkeye | Aimed Shot (A) | 1 | 200 + 30% damage |
 | Ranger | Hawkeye | Pin Down (A) | 2 | Roots for 1 + 0.5 s |
 | Ranger | Hawkeye | Eagle Eye (P) | 3 | +0.5 tiles of reach, +3 accuracy |
 | Ranger | Hawkeye | Piercing Arrow (A) | 4 | 150 + 15% damage |
+| Ranger | Hawkeye | Killshot (P) | 5 | An arrow at an enemy that had not noticed the party is a critical at double damage |
 | Ranger | Trapper | Snare (A) | 1 | Roots for 1.5 + 0.5 s |
+| Ranger | Trapper | Rearguard (P) | 2 | In a fight, a snare every 7 − 1 s where the bearer was 5 s ago, rooting 1 + 0.25 s. Two at a time. |
+| Ranger | Trapper | Bait (A) | 3 | A decoy past the nearest threat for 3 + 0.5 s. Monsters within 5 tiles go to it. Bosses ignore it. |
+| Ranger | Trapper | Spike Field (A) | 4 | 2 tiles for 6 s. Slows by half and bleeds 1% of max health a second per rank. |
+| Ranger | Trapper | Killing Ground (P) | 5 | A shouted Hold rings the bearer with 6 snares |
 | Ranger | Stormcaller | Charged Arrow (A) | 1 | 90 + 15% damage, chains once |
 | Ranger | Stormcaller | Static (P) | 2 | +25% Shock buildup |
+| Ranger | Stormcaller | Arc Volley (A) | 3 | 3 Storm arrows at different enemies, 70 + 10% each, each chains once |
+| Ranger | Stormcaller | Lightning Rod (A) | 4 | A 2.5-tile Storm field for 5 + 1 s, striking each enemy in it for 35 + 10% a second |
+| Ranger | Stormcaller | Thunderhead (P) | 5 | A Shock leaps to every enemy within 6 tiles carrying Shock, for 60% Storm damage |
+| Cleric | Mercy | Heal (A) | 1 | 40 + 20 health, plus magic attack |
+| Cleric | Mercy | Renew (A) | 2 | 8 + 6 health a second for 6 s |
+| Cleric | Mercy | Cleanse (A) | 3 | Cooldown 11 − 1 s |
+| Cleric | Mercy | Resurrection (A) | 4 | Raises with 10% health per rank |
+| Cleric | Mercy | Martyr (P) | 5 | When the Cleric dies, the dead within 5 tiles rise with 20% health |
+| Cleric | Sanctuary | Ward (A) | 1 | A Ward of 30 + 15, plus magic attack, on whoever an enemy is after |
+| Cleric | Sanctuary | Sacred Ground (A) | 2 | 2.2 tiles for 8 s, healing 6 + 5 a second, plus a quarter of magic attack |
+| Cleric | Sanctuary | Wall of Faith (A) | 3 | Stops the next 2 + 1 melee blows on anyone in it |
+| Cleric | Sanctuary | Veil (A) | 4 | 2.5 tiles around the bearer for 4 + 1 s. Stops ranged physical hits inside. |
+| Cleric | Sanctuary | Aegis (P) | 5 | 3 s out of a fight, the bearer's Ward fills to 80 + 4 per Cleric level |
+| Cleric | Inquisition | Smite (A) | 1 | 110 + 20% magic damage, half again on the Undead and Occult |
+| Cleric | Inquisition | Holy Light (P) | 2 | +25% Sear buildup |
+| Cleric | Inquisition | Turn Undead (A) | 3 | 15 + 5% chance, plus up to 30% as it is hurt, to destroy a non-boss Undead |
+| Cleric | Inquisition | Consecrate (A) | 4 | 2.5 tiles for 6 s, 40 + 10% Radiant magic damage a second |
+| Cleric | Inquisition | Purge (P) | 5 | Occult enemies take 25% more damage from the party |
 
 - Pin Down pins any enemy for now. It will also ground flyers once flyers exist.
-- Every other node shows in the tree as "not in the game yet" and cannot be learned. A branch stops at its first such node.
+- Ground skills leave a zone: a ring in the element's color, with a banner, rod, decoy or wall at its middle. Zones are `src/sim/zone.ts`.
+- A merc with a healing skill (Heal, Renew, Resurrection, Sacred Ground) keeps 25 mana back for them, and spends only the rest on its other skills.
+- No monster shoots yet, so Bastion, Rampart and Veil have nothing to stop. They work against ranged hits as soon as archers exist.
+- Not yet: Consecrate keeping corpses from being raised, and Purge lifting corruption at each phase start, wait for those systems.
 
 ## Starting jobs
 

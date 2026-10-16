@@ -4,6 +4,7 @@ import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
 import {
+  BLEED,
   BURN,
   CHILL,
   DREAD,
@@ -11,13 +12,16 @@ import {
   PETRIFY,
   POISON,
   ROOTED,
+  SEAR,
+  SHIELD_WALL,
   SHOCK,
+  SLOWED,
   STUN,
   SUNDERED,
   TAUNTED,
 } from '../sim/statuses';
 import type Sim from '../sim/sim';
-import { Rank, Side } from '../sim/types';
+import { Element, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { type Pt, blob, fillPoly, hex, pt, quad } from './draw';
 import Atmosphere, { drawVignette } from './atmosphere';
@@ -88,11 +92,23 @@ const STATUS_COLOR: Record<string, string> = {
   [POISON.id]: C.venom,
   [DREAD.id]: C.teal,
   [ROOTED.id]: C.bone,
+  [SEAR.id]: C.flame,
+  [BLEED.id]: C.blood,
+  [SLOWED.id]: C.bone,
+  [SHIELD_WALL.id]: C.gold,
+};
+
+// Each zone's color on the ground, by its element
+const ZONE_COLOR: Partial<Record<Element, string>> = {
+  [Element.Radiant]: C.flame,
+  [Element.Storm]: C.storm,
+  [Element.Earth]: C.earth,
+  [Element.Neutral]: C.bone,
 };
 
 // Statuses that build up, by id, to read their thresholds.
 const BUILDUP_STATUS = new Map(
-  [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON, DREAD].map((def) => [def.id, def]),
+  [STUN, BURN, CHILL, SHOCK, PETRIFY, POISON, DREAD, SEAR].map((def) => [def.id, def]),
 );
 
 // The glint over an item on the floor, by quality. Plain items have none.
@@ -284,6 +300,7 @@ export default class Renderer {
     this.drawExits(f, fog);
     this.drawHazards(f, fog);
     f.effects.drawRings(ctx, iso);
+    this.drawZones(f);
     this.drawTraps(f);
     this.drawWarnings(f);
 
@@ -788,6 +805,60 @@ export default class Renderer {
       fillPoly(ctx, fill, C.blood, null);
       ctx.globalAlpha = 1;
       fillPoly(ctx, outline, 'rgba(0,0,0,0)', C.blood);
+    }
+  }
+
+  // Zones skills leave on the ground: a ring in the element's color, faint
+  // inside, with a mark for what stands at its middle.
+  private drawZones(f: Frame): void {
+    const { ctx, iso } = this;
+    for (const z of f.sim.zones) {
+      const color = ZONE_COLOR[z.element] ?? C.bone;
+      const ring = Array.from({ length: 24 }, (_, i) => {
+        const a = (i / 24) * Math.PI * 2;
+        return iso(z.x + Math.cos(a) * z.r, z.z + Math.sin(a) * z.r);
+      });
+      // It fades as it runs out.
+      const fade = Math.min(1, z.life / 1.5);
+      ctx.globalAlpha = (0.1 + 0.05 * Math.sin(f.time * 3)) * fade;
+      fillPoly(ctx, ring, color, null);
+      ctx.globalAlpha = 0.7 * fade;
+      fillPoly(ctx, ring, 'rgba(0,0,0,0)', color);
+      ctx.globalAlpha = fade;
+      const c = iso(z.x, z.z);
+      const x = Math.round(c.x);
+      const y = Math.round(c.y);
+      ctx.fillStyle = color;
+      if (z.kind === 'banner' || z.kind === 'lightningRod') {
+        // A pole, with a flag or a spark at its top
+        ctx.fillStyle = C.wood;
+        ctx.fillRect(x, y - 16, 1, 16);
+        ctx.fillStyle = z.kind === 'banner' ? C.blood : C.storm;
+        ctx.fillRect(x + 1, y - 16, z.kind === 'banner' ? 5 : 2, z.kind === 'banner' ? 4 : 2);
+      } else if (z.kind === 'bait') {
+        // A straw dummy on a stake
+        ctx.fillStyle = C.cloth;
+        ctx.fillRect(x - 1, y - 9, 3, 7);
+        ctx.fillRect(x - 3, y - 7, 7, 1);
+        ctx.fillStyle = C.wood;
+        ctx.fillRect(x, y - 2, 1, 2);
+      } else if (z.kind === 'rampart') {
+        // Stones heaped into a short wall
+        ctx.fillStyle = C.stoneA;
+        ctx.fillRect(x - 5, y - 4, 11, 4);
+        ctx.fillStyle = C.stoneLine;
+        ctx.fillRect(x - 5, y - 2, 11, 1);
+      } else if (z.kind === 'spikeField') {
+        ctx.fillStyle = C.bone;
+        for (let i = 0; i < 7; i++) {
+          const a = i * 2.4;
+          const p = iso(z.x + Math.cos(a) * z.r * 0.6, z.z + Math.sin(a) * z.r * 0.6);
+          ctx.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 2);
+        }
+      } else {
+        ctx.fillRect(x - 1, y - 1, 3, 2);
+      }
+      ctx.globalAlpha = 1;
     }
   }
 

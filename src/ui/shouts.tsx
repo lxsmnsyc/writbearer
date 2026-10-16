@@ -1,4 +1,4 @@
-import { For, type JSX } from 'solid-js';
+import { Index, type JSX } from 'solid-js';
 import type { Shout } from '../sim/shout';
 import type { IconName } from './icons';
 import { Icon, Tooltip } from './kit';
@@ -38,17 +38,19 @@ export default function ShoutBar(props: Props): JSX.Element {
       class="absolute bottom-6 left-6 flex gap-1.5 rounded-2xl bg-surface/80 p-1.5 ring-1 ring-line backdrop-blur-md"
       aria-label="Shouts"
     >
-      <For each={props.shouts}>
-        {(s) => {
-          const cooling = (): number => (s.cooldown > 0 ? s.left / s.cooldown : 0);
+      <Index each={props.shouts}>
+        {(entry) => {
+          // Read fresh each refresh; the buttons themselves stay put.
+          const s = (): ShoutEntry => entry();
+          const cooling = (): number => (s().cooldown > 0 ? s().left / s().cooldown : 0);
           return (
             <Tooltip
               content={() => (
                 <>
                   <p class="text-sm font-semibold text-neutral-50">
-                    {s.name} <span class="kbd ml-1">{s.key.toUpperCase()}</span>
+                    {s().name} <span class="kbd ml-1">{s().key.toUpperCase()}</span>
                   </p>
-                  <p class="mt-1">{WHAT[s.name]?.text}</p>
+                  <p class="mt-1">{WHAT[s().name]?.text}</p>
                 </>
               )}
             >
@@ -56,18 +58,18 @@ export default function ShoutBar(props: Props): JSX.Element {
                 <button
                   type="button"
                   {...anchor}
-                  aria-label={`${s.name} (${s.key.toUpperCase()})`}
-                  disabled={s.left > 0}
+                  aria-label={`${s().name} (${s().key.toUpperCase()})`}
+                  disabled={s().left > 0}
                   class="relative grid size-12 place-items-center overflow-hidden rounded-xl bg-white/5 text-neutral-200 ring-1 ring-white/10 transition hover:bg-white/10 disabled:text-neutral-600"
                   onMouseDown={(e) => {
                     // Keep the click from reaching the canvas under the bar.
                     e.stopPropagation();
                   }}
                   onClick={() => {
-                    props.onShout(s.shout);
+                    props.onShout(s().shout);
                   }}
                 >
-                  <Icon name={WHAT[s.name]?.icon ?? 'rally'} class="size-6" />
+                  <Icon name={WHAT[s().name]?.icon ?? 'rally'} class="size-6" />
                   <span
                     aria-hidden="true"
                     class="absolute inset-0 bg-black/60"
@@ -76,14 +78,14 @@ export default function ShoutBar(props: Props): JSX.Element {
                     }}
                   />
                   <span class="absolute top-0.5 left-1 text-[9px] font-bold text-neutral-400">
-                    {s.key.toUpperCase()}
+                    {s().key.toUpperCase()}
                   </span>
                 </button>
               )}
             </Tooltip>
           );
         }}
-      </For>
+      </Index>
     </nav>
   );
 }

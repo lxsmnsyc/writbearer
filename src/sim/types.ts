@@ -66,6 +66,8 @@ export const enum DamageFlags {
   Blocked = 0x1000,
   // Never misses: a blow warned of on the ground is dodged by stepping out
   Sure = 0x2000,
+  // Lands on a monster that had not noticed the party
+  Ambush = 0x4000,
 }
 
 /**

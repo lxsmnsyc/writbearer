@@ -28,6 +28,50 @@ import {
   SMITE,
   SNARE,
 } from './skills';
+import {
+  BANNER,
+  BASTION,
+  EARTHSHAKER,
+  FAULT_LINE,
+  IMMOVABLE,
+  LAST_LINE,
+  RAMPART,
+  SHIELD_WALL_SKILL,
+  bastionText,
+  earthshakerText,
+  immovableText,
+  lastLineText,
+} from './vanguard';
+import {
+  ARC_VOLLEY,
+  BAIT,
+  KILLING_GROUND,
+  KILLSHOT,
+  LIGHTNING_ROD,
+  REARGUARD,
+  SPIKE_FIELD,
+  THUNDERHEAD,
+  killingGroundText,
+  killshotText,
+  rearguardText,
+  thunderheadText,
+} from './ranger';
+import {
+  AEGIS,
+  CONSECRATION,
+  HOLY_LIGHT,
+  MARTYR,
+  PURGE,
+  SACRED_GROUND,
+  TURN_UNDEAD,
+  VEIL,
+  WALL_OF_FAITH,
+  WARD,
+  aegisText,
+  holyLightText,
+  martyrText,
+  purgeText,
+} from './cleric';
 
 /**
  * One skill in a tree. Nodes without a `skill` or `passive` are designed but
@@ -77,20 +121,6 @@ const passive = (
   summary: string,
 ): TreeNode => ({ id: effect.id, name, tier, passive: true, summary, effect, describe });
 
-const planned = (
-  tier: number,
-  id: string,
-  name: string,
-  kind: 'A' | 'P',
-  summary: string,
-): TreeNode => ({
-  id,
-  name,
-  tier,
-  passive: kind === 'P',
-  summary,
-});
-
 /** Each job's three branches, from the skill-tree design. */
 export const TREES: Record<string, Branch[]> = {
   Vanguard: [
@@ -99,27 +129,15 @@ export const TREES: Record<string, Branch[]> = {
       summary: 'Shields and taunts.',
       nodes: [
         active(1, CHALLENGE, 'Taunts every enemy within 3 tiles.'),
-        planned(
-          2,
-          'shieldWall',
-          'Shield Wall',
-          'A',
-          'Blocks every hit from the front for a few seconds, standing still.',
-        ),
-        planned(3, 'bastion', 'Bastion', 'P', 'Allies behind it take less ranged damage.'),
-        planned(
-          4,
-          'rampart',
-          'Rampart',
-          'A',
-          'Plants its shield as a short wall that stops ranged hits.',
-        ),
-        planned(
+        active(2, SHIELD_WALL_SKILL, 'Blocks every hit from the front for a few seconds.'),
+        passive(3, 'Bastion', BASTION, bastionText, 'Allies behind it take less ranged damage.'),
+        active(4, RAMPART, 'Plants its shield as a short wall that stops arrows.'),
+        passive(
           5,
-          'immovable',
           'Immovable',
-          'P',
-          'Cannot be knocked back, stunned or feared while holding.',
+          IMMOVABLE,
+          immovableText,
+          'Cannot be stunned or feared during Shield Wall or while holding.',
         ),
       ],
     },
@@ -130,18 +148,12 @@ export const TREES: Record<string, Branch[]> = {
         passive(1, 'Sunder', SUNDER, sunderText, 'Melee hits lower the target’s armor, stacking.'),
         active(2, CRUSH, 'A heavy hit with Earth buildup.'),
         active(3, SHIELD_BASH, 'Stun buildup. Interrupts casts.'),
-        planned(
-          4,
-          'faultLine',
-          'Fault Line',
-          'A',
-          'A shockwave in a line that adds Earth buildup.',
-        ),
-        planned(
+        active(4, FAULT_LINE, 'A shockwave in a line that adds Earth buildup.'),
+        passive(
           5,
-          'earthshaker',
           'Earthshaker',
-          'P',
+          EARTHSHAKER,
+          earthshakerText,
           'A Petrified enemy spreads Earth buildup to its neighbors.',
         ),
       ],
@@ -159,12 +171,12 @@ export const TREES: Record<string, Branch[]> = {
           sharedBurdenText,
           'Takes a share of the damage the bearer would take.',
         ),
-        planned(4, 'banner', 'Banner', 'A', 'Plants a banner. Allies near it resist fear.'),
-        planned(
+        active(4, BANNER, 'Plants a banner. Allies near it take heart and resist fear.'),
+        passive(
           5,
-          'lastLine',
           'Last Line',
-          'P',
+          LAST_LINE,
+          lastLineText,
           'When the bearer drops below 30%, taunts everything near it.',
         ),
       ],
@@ -179,11 +191,11 @@ export const TREES: Record<string, Branch[]> = {
         active(2, PIN_DOWN, 'Pins an enemy in place. Grounds flyers.'),
         passive(3, 'Eagle Eye', EAGLE_EYE, eagleEyeText, '+range and +accuracy.'),
         active(4, PIERCING_ARROW, 'Hits every enemy in a line.'),
-        planned(
+        passive(
           5,
-          'killshot',
           'Killshot',
-          'P',
+          KILLSHOT,
+          killshotText,
           'The first shot at an unaware enemy is a double-damage crit.',
         ),
       ],
@@ -193,14 +205,20 @@ export const TREES: Record<string, Branch[]> = {
       summary: 'Guards the path behind the bearer.',
       nodes: [
         active(1, SNARE, 'A trap that roots.'),
-        planned(2, 'rearguard', 'Rearguard', 'P', 'Sets traps where the bearer just walked.'),
-        planned(3, 'bait', 'Bait', 'A', 'A decoy that draws monsters for a few seconds.'),
-        planned(4, 'spikeField', 'Spike Field', 'A', 'An area that slows and adds bleed.'),
-        planned(
+        passive(
+          2,
+          'Rearguard',
+          REARGUARD,
+          rearguardText,
+          'Sets traps where the bearer just walked.',
+        ),
+        active(3, BAIT, 'A decoy that draws monsters for a few seconds.'),
+        active(4, SPIKE_FIELD, 'An area that slows and adds bleed.'),
+        passive(
           5,
-          'killingGround',
           'Killing Ground',
-          'P',
+          KILLING_GROUND,
+          killingGroundText,
           'A shouted Hold rings the spot with traps.',
         ),
       ],
@@ -211,14 +229,14 @@ export const TREES: Record<string, Branch[]> = {
       nodes: [
         active(1, CHARGED_ARROW, 'A Storm arrow that chains to 1 more target.'),
         passive(2, 'Static', STATIC, staticText, '+Storm buildup.'),
-        planned(3, 'arcVolley', 'Arc Volley', 'A', 'Several arrows. Each one chains.'),
-        planned(4, 'lightningRod', 'Lightning Rod', 'A', 'A rod that makes a Storm field.'),
-        planned(
+        active(3, ARC_VOLLEY, 'Several arrows. Each one chains.'),
+        active(4, LIGHTNING_ROD, 'A rod that makes a Storm field.'),
+        passive(
           5,
-          'thunderhead',
           'Thunderhead',
-          'P',
-          'Shock chains to every other Shocked enemy near.',
+          THUNDERHEAD,
+          thunderheadText,
+          'A Shock leaps to every other charged enemy near it.',
         ),
       ],
     },
@@ -232,42 +250,18 @@ export const TREES: Record<string, Branch[]> = {
         active(2, RENEW, 'Heals over time.'),
         active(3, CLEANSE, 'Removes harmful statuses and clears buildup.'),
         active(4, RESURRECTION, 'Brings a dead merc back. A long windup.'),
-        planned(
-          5,
-          'martyr',
-          'Martyr',
-          'P',
-          'When the Cleric dies, every dead ally near it rises at 20%.',
-        ),
+        passive(5, 'Martyr', MARTYR, martyrText, 'When the Cleric dies, the dead around it rise.'),
       ],
     },
     {
       name: 'Sanctuary',
       summary: 'Barriers.',
       nodes: [
-        planned(
-          1,
-          'ward',
-          'Ward',
-          'A',
-          'A pool on an ally or the bearer that absorbs magic damage.',
-        ),
-        planned(2, 'sacredGround', 'Sacred Ground', 'A', 'An area that heals over time.'),
-        planned(
-          3,
-          'wallOfFaith',
-          'Wall of Faith',
-          'A',
-          'A tile that stops a number of melee hits.',
-        ),
-        planned(4, 'veil', 'Veil', 'A', 'An area that stops ranged physical hits.'),
-        planned(
-          5,
-          'aegis',
-          'Aegis',
-          'P',
-          'The bearer always has a Ward that refills outside combat.',
-        ),
+        active(1, WARD, 'A pool that absorbs magical damage.'),
+        active(2, SACRED_GROUND, 'An area that heals over time.'),
+        active(3, WALL_OF_FAITH, 'A spot that stops a number of melee hits.'),
+        active(4, VEIL, 'An area that stops ranged physical hits.'),
+        passive(5, 'Aegis', AEGIS, aegisText, 'The bearer’s Ward refills outside a fight.'),
       ],
     },
     {
@@ -275,22 +269,16 @@ export const TREES: Record<string, Branch[]> = {
       summary: 'Fights the Occult and the dead.',
       nodes: [
         active(1, SMITE, 'Radiant damage.'),
-        planned(2, 'holyLight', 'Holy Light', 'P', '+Sear buildup.'),
-        planned(
-          3,
-          'turnUndead',
-          'Turn Undead',
-          'A',
-          'A chance to destroy a non-boss Undead at once.',
+        passive(2, 'Holy Light', HOLY_LIGHT, holyLightText, '+Sear buildup.'),
+        active(3, TURN_UNDEAD, 'A chance to destroy a non-boss Undead at once.'),
+        active(4, CONSECRATION, 'A Radiant field that burns enemies on it.'),
+        passive(
+          5,
+          'Purge',
+          PURGE,
+          purgeText,
+          'Occult enemies take 25% more damage from the party.',
         ),
-        planned(
-          4,
-          'consecrate',
-          'Consecrate',
-          'A',
-          'A Radiant field. Corpses in it cannot be raised.',
-        ),
-        planned(5, 'purge', 'Purge', 'P', 'Occult enemies take 25% more damage from the party.'),
       ],
     },
   ],

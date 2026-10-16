@@ -25,7 +25,7 @@ The mercs act on their own, so the player cannot aim element combos directly. El
 | Storm | Wind | Shock: a short stun. Storm skills can chain to nearby targets. |
 | Earth | Earth | Petrify: the target cannot act. |
 | Venom | Poison | Poison: damage over time that ignores armor. Also cuts healing received. |
-| Radiant | Holy | Sear: bonus damage against Occult and Undead. |
+| Radiant | Holy | Sear: builds only on the Undead and the Occult. While it lasts, they take 20% more damage from the other side. |
 | Occult | Shadow | Dread: drains morale and Ward. Causes fear. |
 | Spectral | Ghost | Defense only for most units. Neutral attacks deal 90% to 50% against it, by level. |
 

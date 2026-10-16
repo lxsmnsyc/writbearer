@@ -13,4 +13,6 @@ export interface Trap {
   status: StatusDef;
   duration: number;
   sprung: boolean;
+  // The skill that set it, so each counts only its own
+  skill?: string;
 }

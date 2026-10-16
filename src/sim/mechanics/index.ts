@@ -5,6 +5,7 @@ import setupDeathMechanics from './death';
 import setupHealMechanics from './heal';
 import setupHitMechanics from './hit';
 import setupSkillMechanics from './skill';
+import setupZoneMechanics from './zones';
 import setupMorale from '../morale';
 
 /**
@@ -18,5 +19,6 @@ export default function setupMechanics(sim: Sim): void {
   setupHealMechanics(sim);
   setupDeathMechanics(sim);
   setupSkillMechanics(sim);
+  setupZoneMechanics(sim);
   setupMorale(sim);
 }

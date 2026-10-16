@@ -189,7 +189,7 @@ export const MONSTERS = {
   // armor, and a slow cleave across everything in front of him. His skills
   // and his horn are set up in bosses.ts.
   gatekeeper: {
-    job: job('The Gatekeeper', 2400, 200, 60, Range.Melee),
+    job: job('The Gatekeeper', 2150, 200, 60, Range.Melee),
     base: stats(18, 4, 18, 1, 10, 6),
     weapon: { min: 26, max: 34, matk: 0 },
     kit: { reach: 1.6, interval: 1.8, hitAt: 0.6, moveSpeed: 1.7, notice: 6 },
@@ -213,7 +213,7 @@ export const MONSTERS = {
   // The Sunken Crown's boss: a saint of the Church who listened too long.
   // Dread gathers around her, and she leaps for the bearer.
   hollowedSaint: {
-    job: job('The Hollowed Saint', 2000, 180, 0, Range.Melee),
+    job: job('The Hollowed Saint', 1850, 180, 0, Range.Melee),
     base: stats(14, 16, 12, 1, 12, 1),
     weapon: { min: 16, max: 22, matk: 0 },
     kit: { reach: 1.2, interval: 1.1, hitAt: 0.45, moveSpeed: 2.8, notice: 6 },

@@ -2,25 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { COLLECT, SOUL_SHARE, reveal } from '../../src/content/creditor';
 import type { Offer } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { learn, treeFor } from '../../src/content/trees';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { generateTomb } from '../../src/gen/stage';
 import { Morale, moraleOf } from '../../src/sim/morale';
 import Sim from '../../src/sim/sim';
 import { DamageKind, Side } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
-
-function spendAll(m: Unit): void {
-  for (let pass = 0; pass < 40 && m.skillPoints > 0; pass++) {
-    for (const branch of treeFor(m)) {
-      for (const node of branch.nodes) {
-        if (m.skillPoints > 0) {
-          learn(m, branch, node);
-        }
-      }
-    }
-  }
-}
+import spendAll from '../support/build';
 
 const killed = (sim: Sim, m: Unit, blow: number): void => {
   spawnMonster(sim, 'mite', 1, 29, 23).hit(m, { kind: DamageKind.True, fixed: blow });

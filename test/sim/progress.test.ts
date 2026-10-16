@@ -86,7 +86,7 @@ describe('skill trees', () => {
     expect(learn(vanguard, crush.branch, crush.node)).toBeNull();
     expect(cannotLearn(vanguard, bash.branch, bash.node)).toMatch(/level 8/);
     const wall = findNode(vanguard, 'shieldWall')!;
-    expect(cannotLearn(vanguard, wall.branch, wall.node)).toMatch(/Not in the game/);
+    expect(cannotLearn(vanguard, wall.branch, wall.node)).toMatch(/Challenge first/);
   });
 
   it('stop at the last rank, and adds an active skill once', () => {

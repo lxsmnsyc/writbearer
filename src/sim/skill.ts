@@ -35,6 +35,9 @@ export interface Skill {
   windup: number;
   recovery: number;
   targeting: Targeting;
+  // Heals or raises the party. A merc that has such skills keeps mana back
+  // for them, and spends only the rest on others.
+  mends?: boolean;
   /**
    * Whether the merc's AI wants to use it now. `target` is whom the merc
    * is fighting, or null. Mana and cooldown are checked elsewhere.

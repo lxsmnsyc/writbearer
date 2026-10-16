@@ -7,6 +7,7 @@ import Nav from './nav';
 import type { Projectile } from './projectile';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
+import { type Zone, updateZones, zonesAt } from './zone';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
@@ -88,6 +89,10 @@ export function strike(source: Unit, target: Unit, options: HitOptions): ReturnT
   let flags = options.flags ?? 0;
   if (target.isFlankedBy(source)) {
     flags |= DamageFlags.Flank;
+  }
+  // A blow on something that had not noticed the party
+  if (!target.aware && target.side === Side.Monster) {
+    flags |= DamageFlags.Ambush;
   }
   target.aware = true;
   return source.hit(target, { ...options, flags });
@@ -205,6 +210,8 @@ export default class Sim extends EventEngine<SimEventMap> {
   readonly traps: Trap[] = [];
   // Warnings on the ground, filling before they strike
   readonly warnings: Warning[] = [];
+  // Zones skills leave on the ground, such as a healing circle
+  readonly zones: Zone[] = [];
 
   constructor(rng: RNG | number) {
     super();
@@ -320,17 +327,37 @@ export default class Sim extends EventEngine<SimEventMap> {
       advanceCast(u, dt);
     }
     for (const p of this.projectiles) {
+      this.stopAtWalls(p);
+      if (p.done) {
+        continue;
+      }
       if (p.homing) {
         flyHoming(p, dt);
       } else {
         flyStraight(this, p, dt);
       }
     }
+    for (const p of this.projectiles) {
+      this.stopAtWalls(p);
+    }
     removeDone(this.projectiles);
     this.springTraps(dt);
     updateWarnings(this, dt);
+    updateZones(this, dt);
     this.separate();
     this.emit(SimEvents.Tick, { id: 'Tick', disabled: false, dt });
+  }
+
+  // A projectile that flies into a wall of the other side's, such as a
+  // Rampart, stops there.
+  private stopAtWalls(p: Projectile): void {
+    if (p.done) {
+      return;
+    }
+    const other = p.source.side === Side.Party ? Side.Monster : Side.Party;
+    if (zonesAt(this, p, other).some((z) => z.blocks === true)) {
+      p.done = true;
+    }
   }
 
   // An enemy stepping on a trap springs it. Old traps rust away.

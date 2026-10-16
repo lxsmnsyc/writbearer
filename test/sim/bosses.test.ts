@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { CLEAVE, LITANY, LUNGE, SANCTIFIED, spawnBoss } from '../../src/content/bosses';
 import type { Offer } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { learn, treeFor } from '../../src/content/trees';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { enterStage, spawnParty } from '../../src/game/stage';
 import { AREAS_PER_LAYER } from '../../src/gen/layers';
@@ -12,23 +11,11 @@ import Sim from '../../src/sim/sim';
 import { DREAD } from '../../src/sim/statuses';
 import { SimEvents } from '../../src/sim/events';
 import { DamageKind, Side, ValuePriority } from '../../src/sim/types';
+import spendAll from '../support/build';
 import dodge from '../support/dodge';
 import type Unit from '../../src/sim/unit';
 
 const LEVEL = [9, 18, 26, 34];
-
-// Spends every point down the first nodes it can learn, as a player might.
-function spendAll(m: Unit): void {
-  for (let pass = 0; pass < 40 && m.skillPoints > 0; pass++) {
-    for (const branch of treeFor(m)) {
-      for (const node of branch.nodes) {
-        if (m.skillPoints > 0) {
-          learn(m, branch, node);
-        }
-      }
-    }
-  }
-}
 
 // A party four levels below a layer's boss, the bearer keeping about five
 // tiles from it. Returns whether the boss died first.
