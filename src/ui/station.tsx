@@ -4,6 +4,9 @@ import type { Due } from '../game/wages';
 import { itemName } from '../gen/loot';
 import type { Item } from '../sim/item';
 import { MORALE_NAME, moraleOf } from '../sim/morale';
+import { iconOr } from './icons';
+import { ItemSlot } from './items';
+import { Button, Icon, Notice, Panel } from './kit';
 
 interface Props {
   game: Game;
@@ -24,77 +27,73 @@ export default function Station(props: Props): JSX.Element {
   const vault = (): Item[] => (props.version >= 0 ? [...props.game.vault.items] : []);
   const name = (item: Item): string => (props.version >= 0 ? itemName(item) : '');
   const unpaid = (): Due[] => dues().filter((d) => !d.paid);
+  const free = (): number[] =>
+    Array.from({ length: Math.max(0, props.game.vault.slots - vault().length) }, (_, i) => i);
 
   return (
-    <aside
-      data-part="panel"
-      class="absolute top-6 left-1/2 w-[720px] -translate-x-1/2 border border-zinc-700 bg-zinc-950/95 p-4 text-sm text-zinc-300 shadow-xl"
-      aria-label="Waystation"
+    <Panel
+      label="Waystation"
+      title="The Guild’s Waystation"
+      icon="waystation"
+      class="w-[760px]"
+      aside={
+        <span class="flex h-8 items-center gap-1 text-sm font-semibold text-accent">
+          <Icon name="gold" class="size-4" />
+          {gold()}
+        </span>
+      }
+      onClose={() => {
+        props.onClose();
+      }}
     >
-      <header class="mb-3 flex items-baseline justify-between">
-        <h2 data-part="title" class="font-serif text-lg text-zinc-100">
-          The Guild’s Waystation
-        </h2>
-        <button
-          type="button"
-          class="text-zinc-500 hover:text-zinc-200"
-          onClick={() => {
-            props.onClose();
-          }}
-        >
-          Close
-        </button>
-      </header>
-
       <section aria-label="Wages">
-        <p data-part="note" class="mb-2 text-xs text-zinc-400">
-          The paymaster opens the ledger. Each merc asks its wage for the layer ahead. You have{' '}
-          {gold()} gold.
+        <h3 class="eyebrow mb-1">Wages</h3>
+        <p class="mb-3 text-xs text-neutral-400">
+          The paymaster opens the ledger. Each merc asks its wage for the layer ahead.
         </p>
-        <ul class="space-y-1">
+        <ul class="grid grid-cols-2 gap-2">
           <For each={dues()}>
             {(due) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1">
-                  {due.merc.name}
-                  <span data-part="note" class="text-xs text-zinc-500">
-                    {' '}
-                    · {due.merc.job.name} · level {due.merc.level} · morale{' '}
+              <li class="well flex items-center gap-3 p-2">
+                <span class="grid size-10 place-items-center rounded-lg bg-white/5 text-neutral-200">
+                  <Icon name={iconOr(due.merc.kind, 'vanguard')} class="size-6" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm text-neutral-100">{due.merc.name}</span>
+                  <span class="block text-[11px] text-neutral-500">
+                    {due.merc.job.name} · level {due.merc.level} · morale{' '}
                     {MORALE_NAME[moraleOf(due.merc)].toLowerCase()}
                   </span>
                 </span>
-                <span class="w-20 text-right">{due.wage} gold</span>
                 <Show
                   when={!due.paid}
                   fallback={
-                    <span data-part="note" class="w-16 text-center text-xs text-zinc-500">
+                    <span class="rounded-md bg-emerald-500/10 px-2 py-1 text-xs text-emerald-300">
                       Paid
                     </span>
                   }
                 >
-                  <button
-                    type="button"
-                    data-part="choice"
+                  <Button
+                    size="sm"
+                    tone="primary"
                     aria-label={`Pay ${due.merc.name}`}
-                    class="w-16 border border-zinc-600 px-2 hover:border-zinc-300"
                     onClick={() => {
                       setMessage(props.game.pay(due.merc));
                     }}
                   >
-                    Pay
-                  </button>
+                    <Icon name="gold" class="size-3.5" />
+                    {due.wage}
+                  </Button>
                 </Show>
               </li>
             )}
           </For>
         </ul>
         <Show when={dues().length === 0}>
-          <p data-part="note" class="text-xs text-zinc-500">
-            No living merc asks a wage. The dead draw none.
-          </p>
+          <p class="text-xs text-neutral-500">No living merc asks a wage. The dead draw none.</p>
         </Show>
         <Show when={unpaid().length > 0}>
-          <p data-part="danger" class="mt-2 text-xs text-red-400">
+          <p class="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-200 ring-1 ring-red-400/20">
             Unpaid mercs lose heart and Discipline when you take the road on, and a merc whose
             morale breaks deserts:{' '}
             {unpaid()
@@ -103,84 +102,61 @@ export default function Station(props: Props): JSX.Element {
             .
           </p>
         </Show>
-        <Show when={message()}>
-          <p data-part="danger" class="mt-2 text-xs text-red-400" role="alert">
-            {message()}
-          </p>
-        </Show>
+        <Notice text={message()} />
       </section>
 
-      <section class="mt-4 flex gap-4" aria-label="Vault">
-        <div class="w-1/2">
-          <h3 data-part="title" class="mb-1 font-serif text-zinc-100">
-            Pack
-          </h3>
-          <ul class="max-h-56 space-y-1 overflow-y-auto" aria-label="Pack to store">
-            <For each={pack()}>
+      <section class="mt-5 grid grid-cols-2 gap-5" aria-label="Vault">
+        <div>
+          <h3 class="eyebrow mb-2">Pack</h3>
+          <ul class="flex flex-wrap gap-1.5" aria-label="Pack to store">
+            <For each={pack()} fallback={<li class="text-xs text-neutral-600">Empty.</li>}>
               {(item) => (
-                <li
-                  data-part="row"
-                  class="flex items-center gap-2 border border-zinc-800 px-2 py-1"
-                >
-                  <span class="flex-1" data-quality={item.quality}>
-                    {name(item)}
-                  </span>
-                  <button
-                    type="button"
-                    data-part="choice"
+                <li>
+                  <ItemSlot
+                    version={props.version}
+                    item={item}
                     aria-label={`Store ${name(item)}`}
-                    class="border border-zinc-700 px-1.5 text-xs text-zinc-400 hover:border-zinc-300 hover:text-zinc-100"
                     onClick={() => {
                       setMessage(props.game.store(item.uid));
                     }}
-                  >
-                    Store
-                  </button>
+                    extra={<p class="text-neutral-500">Click to store it in the vault.</p>}
+                  />
                 </li>
               )}
             </For>
           </ul>
         </div>
-        <div class="w-1/2">
-          <h3 data-part="title" class="mb-1 font-serif text-zinc-100">
-            Vault
-            <span data-part="note" class="text-xs text-zinc-500">
-              {' '}
-              · {vault().length} / {props.game.vault.slots}
-            </span>
+        <div>
+          <h3 class="eyebrow mb-2">
+            Vault · {vault().length} / {props.game.vault.slots}
           </h3>
-          <ul class="max-h-56 space-y-1 overflow-y-auto" aria-label="Vault">
+          <ul class="flex flex-wrap gap-1.5" aria-label="Vault">
             <For each={vault()}>
               {(item) => (
-                <li
-                  data-part="row"
-                  class="flex items-center gap-2 border border-zinc-800 px-2 py-1"
-                >
-                  <span class="flex-1" data-quality={item.quality}>
-                    {name(item)}
-                  </span>
-                  <button
-                    type="button"
-                    data-part="choice"
+                <li>
+                  <ItemSlot
+                    version={props.version}
+                    item={item}
                     aria-label={`Take ${name(item)}`}
-                    class="border border-zinc-700 px-1.5 text-xs text-zinc-400 hover:border-zinc-300 hover:text-zinc-100"
                     onClick={() => {
                       setMessage(props.game.takeOut(item.uid));
                     }}
-                  >
-                    Take
-                  </button>
+                    extra={<p class="text-neutral-500">Click to take it into the pack.</p>}
+                  />
                 </li>
               )}
             </For>
+            <For each={free()}>
+              {() => (
+                <li aria-hidden="true" class="size-14 rounded-lg bg-black/25 ring-1 ring-white/3" />
+              )}
+            </For>
           </ul>
-          <Show when={vault().length === 0}>
-            <p data-part="note" class="text-xs text-zinc-500">
-              Empty. What you store here is safe, but it opens only at a Waystation.
-            </p>
-          </Show>
+          <p class="mt-2 text-[11px] text-neutral-600">
+            What you store here is safe, but it opens only at a Waystation.
+          </p>
         </div>
       </section>
-    </aside>
+    </Panel>
   );
 }

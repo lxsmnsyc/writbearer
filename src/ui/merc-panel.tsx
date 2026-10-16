@@ -1,4 +1,5 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
+import type { IconName } from './icons';
 import {
   DEFAULT_TOGGLES,
   DRINK_AT,
@@ -14,6 +15,8 @@ import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
 import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '../sim/morale';
 import type Unit from '../sim/unit';
+import { isIconName } from './icons';
+import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
 import SkillTree from './skill-tree';
 import StatSheet from './stat-sheet';
 
@@ -22,10 +25,20 @@ const MAX_PRIORITIES = 3;
 const MIN_CHASE = 3;
 const MAX_CHASE = 12;
 
-const STANCES: { value: Stance; name: string; note: string }[] = [
-  { value: Stance.Guard, name: 'Guard', note: 'Stays beside the bearer.' },
-  { value: Stance.Advance, name: 'Advance', note: 'Walks ahead and clears the way.' },
-  { value: Stance.Hold, name: 'Hold', note: 'Stands its ground. Fights only what comes close.' },
+const STANCES: { value: Stance; name: string; note: string; icon: IconName }[] = [
+  { value: Stance.Guard, name: 'Guard', note: 'Stays beside the bearer.', icon: 'guard' },
+  {
+    value: Stance.Advance,
+    name: 'Advance',
+    note: 'Walks ahead and clears the way.',
+    icon: 'advance',
+  },
+  {
+    value: Stance.Hold,
+    name: 'Hold',
+    note: 'Stands its ground. Fights only what comes close.',
+    icon: 'hold',
+  },
 ];
 
 const PRIORITIES: { value: Priority; name: string }[] = [
@@ -51,12 +64,6 @@ const DRINK_RULES: { value: number; name: string }[] = [
 const priorityName = (p: Priority): string => PRIORITIES.find((x) => x.value === p)?.name ?? '';
 
 type Tab = 'orders' | 'skills' | 'stats';
-
-const TABS: { value: Tab; name: string }[] = [
-  { value: 'orders', name: 'Orders' },
-  { value: 'skills', name: 'Skills' },
-  { value: 'stats', name: 'Stats' },
-];
 
 interface Props {
   unit: Unit;
@@ -143,316 +150,306 @@ export default function MercPanel(props: Props): JSX.Element {
 
   const hp = (): string => `${Math.max(0, Math.ceil(props.unit.hp))} / ${props.unit.derived.maxHp}`;
 
+  const traits = (): { name: string; note: string }[] =>
+    props.unit.traits.map((id) => ({
+      name: TRAIT_BY_ID.get(id)?.name ?? id,
+      note: TRAIT_BY_ID.get(id)?.description ?? '',
+    }));
+
   return (
     <aside
-      data-part="panel"
-      class="absolute top-6 right-6 border border-zinc-700 bg-zinc-950/95 p-4 text-sm text-zinc-300 shadow-xl"
-      classList={{ 'w-80': tab() !== 'skills', 'w-[680px]': tab() === 'skills' }}
+      class="panel absolute top-6 right-6 flex max-h-[calc(100%-9rem)] flex-col p-5"
+      classList={{ 'w-96': tab() !== 'skills', 'w-[620px]': tab() === 'skills' }}
       aria-label={`Orders for ${props.unit.name}`}
     >
-      <header class="mb-4 flex items-baseline justify-between">
-        <div>
-          <h2 data-part="title" class="font-serif text-lg text-zinc-100">
+      <header class="mb-3 flex items-start gap-3">
+        <span class="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
+          <Icon name={isIconName(props.unit.kind) ? props.unit.kind : 'vanguard'} class="size-8" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <h2 class="font-display text-xl leading-tight font-semibold text-neutral-50">
             {props.unit.name}
           </h2>
-          <p data-part="note" class="text-xs text-zinc-500">
+          <p class="text-xs text-neutral-400">
             {props.unit.job.name === props.unit.name ? '' : `${props.unit.job.name} · `}Level{' '}
-            {level()} · {hp()} health · {mana()} mana
+            {level()}
           </p>
-          <p data-part="note" class="text-xs text-zinc-500">
-            Morale {moraleName()} · Discipline {discipline()}
-          </p>
-          <Show when={props.unit.traits.length > 0}>
-            <p data-part="note" class="text-xs text-zinc-500">
-              {props.unit.traits.map((id) => TRAIT_BY_ID.get(id)?.name ?? id).join(', ')}
-            </p>
-          </Show>
         </div>
-        <div class="flex gap-3">
-          <button
-            type="button"
-            class="text-zinc-400 hover:text-zinc-100"
+        <div class="flex shrink-0 gap-1">
+          <Button
+            tone="ghost"
+            size="sm"
             onClick={() => {
               props.onGear();
             }}
           >
+            <Icon name="pack" class="size-4" />
             Gear
-          </button>
+          </Button>
           <button
             type="button"
-            class="text-zinc-500 hover:text-zinc-200"
+            aria-label="Close"
+            class="grid size-7 place-items-center rounded-lg text-neutral-500 transition hover:bg-white/10 hover:text-neutral-100"
             onClick={() => {
               props.onClose();
             }}
           >
-            Close
+            <CloseMark class="size-4" />
           </button>
         </div>
       </header>
+      <div class="mb-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-neutral-400">
+        <div>
+          <div class="flex justify-between">
+            <span>Health</span>
+            <span>{hp()}</span>
+          </div>
+          <Meter value={props.unit.hp} max={props.unit.derived.maxHp} color="var(--color-health)" />
+        </div>
+        <div>
+          <div class="flex justify-between">
+            <span>Mana</span>
+            <span>{mana()}</span>
+          </div>
+          <Meter
+            value={props.unit.mana}
+            max={props.unit.derived.maxMana}
+            color="var(--color-mana)"
+          />
+        </div>
+      </div>
 
-      <div class="mb-4 grid grid-cols-3 gap-1" role="tablist" aria-label="Sheet">
-        <For each={TABS}>
-          {(t) => (
-            <button
-              type="button"
-              role="tab"
-              data-part="choice"
-              aria-selected={tab() === t.value}
-              aria-checked={tab() === t.value}
-              class="border px-2 py-1"
-              classList={{
-                'border-amber-500 text-amber-400': tab() === t.value,
-                'border-zinc-700 text-zinc-400 hover:border-zinc-500': tab() !== t.value,
-              }}
-              onClick={() => {
-                setTab(t.value);
-              }}
+      <div class="mb-4 flex flex-wrap gap-1.5 text-[11px]">
+        <span class="rounded-full bg-white/5 px-2 py-0.5 text-neutral-300 ring-1 ring-white/10">
+          Morale {moraleName()}
+        </span>
+        <Tip text="Discipline sets how many target priorities it follows, and how fast it answers a shout.">
+          {(anchor) => (
+            <span
+              {...anchor}
+              class="rounded-full bg-white/5 px-2 py-0.5 text-neutral-300 ring-1 ring-white/10"
             >
-              {t.name}
-              <Show when={points(t.value) > 0}>
-                {' '}
-                <span data-part="danger">•</span>
-              </Show>
-            </button>
+              Discipline {discipline()}
+            </span>
+          )}
+        </Tip>
+        <For each={traits()}>
+          {(t) => (
+            <Tip text={t.note}>
+              {(anchor) => (
+                <span
+                  {...anchor}
+                  class="rounded-full bg-accent-soft px-2 py-0.5 text-accent ring-1 ring-accent/30"
+                >
+                  {t.name}
+                </span>
+              )}
+            </Tip>
           )}
         </For>
       </div>
 
-      <Show when={tab() === 'orders'}>
-        <section class="mb-4">
-          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
-            Stance
-          </h3>
-          <div class="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Stance">
-            <For each={STANCES}>
-              {(s) => (
-                <button
-                  type="button"
-                  role="radio"
-                  data-part="choice"
-                  aria-checked={toggles().stance === s.value}
-                  class="border px-2 py-1"
-                  classList={{
-                    'border-amber-500 text-amber-400': toggles().stance === s.value,
-                    'border-zinc-700 text-zinc-400 hover:border-zinc-500':
-                      toggles().stance !== s.value,
-                  }}
-                  onClick={() => {
-                    update({ ...toggles(), stance: s.value });
-                  }}
-                >
-                  {s.name}
-                </button>
-              )}
-            </For>
-          </div>
-          <p data-part="note" class="mt-2 text-xs text-zinc-500">
-            {STANCES.find((s) => s.value === toggles().stance)?.note}
-          </p>
-        </section>
+      <Tabs<Tab>
+        label="Sheet"
+        value={tab()}
+        onChange={(t) => {
+          setTab(t);
+        }}
+        tabs={[
+          { value: 'orders', name: 'Orders', icon: 'hold' },
+          {
+            value: 'skills',
+            name: 'Skills',
+            icon: 'points',
+            badge: () => points('skills') || null,
+          },
+          { value: 'stats', name: 'Stats', icon: 'str', badge: () => points('stats') || null },
+        ]}
+      />
 
-        <section class="mb-4">
-          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
-            Targets, in order
-          </h3>
-          <ol class="space-y-1" aria-label="Target priorities">
-            <For each={toggles().priorities}>
-              {(p, i) => (
-                <li
-                  data-part="row"
-                  class="flex items-center gap-2 border border-zinc-800 px-2 py-1"
-                >
-                  <span class="w-4 text-zinc-600">{i() + 1}</span>
-                  <span class="flex-1" classList={{ 'opacity-40': i() >= followed() }}>
-                    {priorityName(p)}
-                    <Show when={i() >= followed()}>
-                      <span data-part="note" class="text-xs text-zinc-500">
-                        {' '}
-                        · ignored
-                      </span>
-                    </Show>
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Move up"
-                    class="px-1 text-zinc-500 hover:text-zinc-200"
-                    onClick={() => {
-                      move(i(), -1);
-                    }}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Move down"
-                    class="px-1 text-zinc-500 hover:text-zinc-200"
-                    onClick={() => {
-                      move(i(), 1);
-                    }}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Remove"
-                    data-part="danger"
-                    class="px-1 text-zinc-500 hover:text-red-400"
-                    onClick={() => {
-                      remove(i());
-                    }}
-                  >
-                    ×
-                  </button>
-                </li>
-              )}
-            </For>
-          </ol>
-          <Show when={toggles().priorities.length > followed()}>
-            <p data-part="note" class="mt-1 text-xs text-zinc-500">
-              {props.unit.name} follows only its first {followed()}: its Discipline is too low for
-              more. Pay it, rest it and level it to raise it.
+      <div class="min-h-0 flex-1 overflow-y-auto pr-1">
+        <Show when={tab() === 'orders'}>
+          <section class="mb-5">
+            <h3 class="eyebrow mb-2">Stance</h3>
+            <Segmented
+              label="Stance"
+              options={STANCES}
+              value={toggles().stance}
+              onChange={(stance) => {
+                update({ ...toggles(), stance });
+              }}
+            />
+            <p class="mt-2 text-xs text-neutral-400">
+              {STANCES.find((s) => s.value === toggles().stance)?.note}
             </p>
-          </Show>
-          <Show when={toggles().priorities.length === 0}>
-            <p data-part="note" class="text-xs text-zinc-500">
-              No priorities: the merc fights whatever is nearest.
-            </p>
-          </Show>
-          <Show when={toggles().priorities.length < maxPriorities() && unused().length > 0}>
-            <div class="mt-2 flex flex-wrap gap-1">
-              <For each={unused()}>
-                {(p) => (
-                  <button
-                    type="button"
-                    data-part="add"
-                    class="border border-dashed border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 hover:border-zinc-500"
-                    onClick={() => {
-                      add(p);
-                    }}
-                  >
-                    + {priorityName(p)}
-                  </button>
-                )}
-              </For>
-            </div>
-          </Show>
-        </section>
+          </section>
 
-        <Show when={props.unit.skills.length > 0}>
-          <section class="mb-4">
-            <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
-              Skills
-            </h3>
-            <ul class="space-y-2">
-              <For each={props.unit.skills}>
-                {(skill) => (
-                  <li>
-                    <div class="mb-1 flex items-baseline justify-between">
-                      <span>{skill.name}</span>
-                      <span data-part="note" class="text-xs text-zinc-500">
-                        {skill.cost} mana
-                      </span>
-                    </div>
-                    <div
-                      class="grid grid-cols-3 gap-1"
-                      role="radiogroup"
-                      aria-label={`Use ${skill.name}`}
+          <section class="mb-5">
+            <h3 class="eyebrow mb-2">Targets, in order</h3>
+            <ol class="space-y-1" aria-label="Target priorities">
+              <For each={toggles().priorities}>
+                {(p, i) => (
+                  <li class="well flex h-9 items-center gap-2 px-2">
+                    <span class="grid size-5 place-items-center rounded bg-white/5 text-[10px] font-bold text-neutral-400">
+                      {i() + 1}
+                    </span>
+                    <span class="flex-1 text-sm" classList={{ 'opacity-40': i() >= followed() }}>
+                      {priorityName(p)}
+                      <Show when={i() >= followed()}>
+                        <span class="text-xs text-neutral-500"> · ignored</span>
+                      </Show>
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Move up"
+                      class="grid size-6 place-items-center rounded text-neutral-500 hover:bg-white/10 hover:text-neutral-100"
+                      onClick={() => {
+                        move(i(), -1);
+                      }}
                     >
-                      <For each={SKILL_MODES}>
-                        {(m) => (
-                          <button
-                            type="button"
-                            role="radio"
-                            data-part="choice"
-                            aria-checked={skillMode(toggles(), skill.id) === m.value}
-                            class="border px-2 py-0.5 text-xs"
-                            classList={{
-                              'border-amber-500 text-amber-400':
-                                skillMode(toggles(), skill.id) === m.value,
-                              'border-zinc-700 text-zinc-400 hover:border-zinc-500':
-                                skillMode(toggles(), skill.id) !== m.value,
-                            }}
-                            onClick={() => {
-                              setSkill(skill.id, m.value);
-                            }}
-                          >
-                            {m.name}
-                          </button>
-                        )}
-                      </For>
-                    </div>
-                    <p data-part="note" class="mt-1 text-xs text-zinc-500">
-                      {skill.describe(props.unit.skillRank(skill.id))}
-                    </p>
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Move down"
+                      class="grid size-6 place-items-center rounded text-neutral-500 hover:bg-white/10 hover:text-neutral-100"
+                      onClick={() => {
+                        move(i(), 1);
+                      }}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Remove"
+                      class="grid size-6 place-items-center rounded text-neutral-500 hover:bg-red-500/15 hover:text-red-300"
+                      onClick={() => {
+                        remove(i());
+                      }}
+                    >
+                      <CloseMark class="size-3" />
+                    </button>
                   </li>
                 )}
               </For>
-            </ul>
+            </ol>
+            <Show when={toggles().priorities.length > followed()}>
+              <p class="mt-1.5 text-xs text-neutral-500">
+                {props.unit.name} follows only its first {followed()}: its Discipline is too low for
+                more. Pay it, rest it and level it to raise it.
+              </p>
+            </Show>
+            <Show when={toggles().priorities.length === 0}>
+              <p class="text-xs text-neutral-500">
+                No priorities: the merc fights whatever is nearest.
+              </p>
+            </Show>
+            <Show when={toggles().priorities.length < maxPriorities() && unused().length > 0}>
+              <div class="mt-2 flex flex-wrap gap-1">
+                <For each={unused()}>
+                  {(p) => (
+                    <button
+                      type="button"
+                      class="h-7 rounded-md px-2 text-xs text-neutral-400 border border-dashed border-white/15 transition hover:bg-white/5 hover:text-neutral-100"
+                      onClick={() => {
+                        add(p);
+                      }}
+                    >
+                      + {priorityName(p)}
+                    </button>
+                  )}
+                </For>
+              </div>
+            </Show>
+          </section>
+
+          <Show when={props.unit.skills.length > 0}>
+            <section class="mb-5">
+              <h3 class="eyebrow mb-2">Skills</h3>
+              <ul class="space-y-2">
+                <For each={props.unit.skills}>
+                  {(skill) => (
+                    <li class="well flex items-center gap-3 p-2">
+                      <Tip text={skill.describe(props.unit.skillRank(skill.id))}>
+                        {(anchor) => (
+                          <span
+                            {...anchor}
+                            class="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent"
+                          >
+                            <Icon
+                              name={isIconName(skill.id) ? skill.id : 'points'}
+                              class="size-6"
+                            />
+                          </span>
+                        )}
+                      </Tip>
+                      <div class="min-w-0 flex-1">
+                        <div class="mb-1 flex items-baseline justify-between">
+                          <span class="text-sm text-neutral-100">{skill.name}</span>
+                          <span class="text-[11px] text-neutral-500">{skill.cost} mana</span>
+                        </div>
+                        <Segmented
+                          label={`Use ${skill.name}`}
+                          size="sm"
+                          options={SKILL_MODES}
+                          value={skillMode(toggles(), skill.id)}
+                          onChange={(mode) => {
+                            setSkill(skill.id, mode);
+                          }}
+                        />
+                      </div>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </section>
+          </Show>
+
+          <section class="mb-5">
+            <h3 class="eyebrow mb-2">Potions</h3>
+            <Segmented
+              label="Drink potions"
+              size="sm"
+              options={DRINK_RULES}
+              value={toggles().drinkAt}
+              onChange={(drinkAt) => {
+                update({ ...toggles(), drinkAt });
+              }}
+            />
+            <p class="mt-1.5 text-xs text-neutral-500">
+              Drinks a healing potion below {Math.round(toggles().drinkAt * 100)}% health. On the
+              belt: {belt()}.
+            </p>
+          </section>
+
+          <section>
+            <h3 class="eyebrow mb-2">Chase</h3>
+            <input
+              type="range"
+              aria-label="Chase distance"
+              class="w-full accent-accent"
+              min={MIN_CHASE}
+              max={MAX_CHASE}
+              value={toggles().chase}
+              onInput={(e) => {
+                update({ ...toggles(), chase: Number(e.currentTarget.value) });
+              }}
+            />
+            <p class="text-xs text-neutral-500">
+              Chases enemies up to {toggles().chase} tiles from the bearer.
+            </p>
           </section>
         </Show>
+        <Show when={tab() === 'skills'}>
+          <SkillTree unit={props.unit} version={version()} onSpend={spent} />
+        </Show>
+        <Show when={tab() === 'stats'}>
+          <StatSheet unit={props.unit} version={version()} onSpend={spent} />
+        </Show>
+      </div>
 
-        <section class="mb-4">
-          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
-            Belt
-          </h3>
-          <div class="grid grid-cols-3 gap-1" role="radiogroup" aria-label="Drink potions">
-            <For each={DRINK_RULES}>
-              {(r) => (
-                <button
-                  type="button"
-                  role="radio"
-                  data-part="choice"
-                  aria-checked={toggles().drinkAt === r.value}
-                  class="border px-2 py-0.5 text-xs"
-                  classList={{
-                    'border-amber-500 text-amber-400': toggles().drinkAt === r.value,
-                    'border-zinc-700 text-zinc-400 hover:border-zinc-500':
-                      toggles().drinkAt !== r.value,
-                  }}
-                  onClick={() => {
-                    update({ ...toggles(), drinkAt: r.value });
-                  }}
-                >
-                  {r.name}
-                </button>
-              )}
-            </For>
-          </div>
-          <p data-part="note" class="mt-1 text-xs text-zinc-500">
-            Drinks a healing potion below {Math.round(toggles().drinkAt * 100)}% health. On the
-            belt: {belt()}.
-          </p>
-        </section>
-
-        <section>
-          <h3 data-part="heading" class="mb-2 text-xs tracking-widest text-zinc-500 uppercase">
-            Chase
-          </h3>
-          <input
-            type="range"
-            aria-label="Chase distance"
-            class="w-full accent-amber-500"
-            min={MIN_CHASE}
-            max={MAX_CHASE}
-            value={toggles().chase}
-            onInput={(e) => {
-              update({ ...toggles(), chase: Number(e.currentTarget.value) });
-            }}
-          />
-          <p data-part="note" class="text-xs text-zinc-500">
-            Chases enemies up to {toggles().chase} tiles from the bearer.
-          </p>
-        </section>
-      </Show>
-      <Show when={tab() === 'skills'}>
-        <SkillTree unit={props.unit} version={version()} onSpend={spent} />
-      </Show>
-      <Show when={tab() === 'stats'}>
-        <StatSheet unit={props.unit} version={version()} onSpend={spent} />
-      </Show>
-
-      <footer data-part="note" class="mt-4 text-xs text-zinc-600">
-        Paused while orders are open. Esc to close.
+      <footer class="mt-3 text-[11px] text-neutral-600">
+        Paused while the sheet is open. <span class="kbd">Esc</span> to close.
       </footer>
     </aside>
   );

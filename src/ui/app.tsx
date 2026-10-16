@@ -16,6 +16,8 @@ import EventPanel from './event';
 import CompendiumPanel from './compendium';
 import { RecruitDialog, StartPicker } from './offer';
 import type { Offer } from '../content/recruits';
+import { iconOr } from './icons';
+import { Icon, Meter } from './kit';
 
 interface PartyEntry {
   unit: Unit;
@@ -162,7 +164,7 @@ export default function App(): JSX.Element {
   });
 
   return (
-    <main class="relative grid h-full place-items-center bg-black" data-ui="paper">
+    <main class="relative grid h-full place-items-center bg-black">
       <canvas
         ref={(el) => {
           canvas = el;
@@ -170,7 +172,7 @@ export default function App(): JSX.Element {
         class="max-h-full max-w-full cursor-crosshair [image-rendering:pixelated]"
       />
 
-      <Show when={game()} keyed>
+      <Show when={!title() && game()} keyed>
         {(g) => (
           <ShoutBar
             shouts={shouts()}
@@ -183,17 +185,23 @@ export default function App(): JSX.Element {
       <Show when={objective()} keyed>
         {(o) => (
           <section
-            data-part="card"
-            class="absolute right-4 bottom-4 w-56 border bg-zinc-950/90 px-3 py-2 text-xs"
-            classList={{ 'border-amber-500': o.done, 'border-zinc-700': !o.done }}
+            class="absolute top-6 left-6 flex w-64 items-start gap-3 rounded-2xl bg-surface/80 p-3 ring-1 backdrop-blur-md"
+            classList={{ 'ring-accent/60': o.done, 'ring-line': !o.done }}
             aria-label="Objective"
           >
-            <h2 data-part="title" class="font-serif text-sm text-zinc-100">
-              {o.title}
-            </h2>
-            <p data-part="note" class="text-zinc-400">
-              {o.detail}
-            </p>
+            <span
+              class="grid size-9 shrink-0 place-items-center rounded-lg"
+              classList={{
+                'bg-accent text-neutral-950': o.done,
+                'bg-white/5 text-neutral-300': !o.done,
+              }}
+            >
+              <Icon name={o.kind} class="size-5" />
+            </span>
+            <div class="min-w-0">
+              <h2 class="text-sm font-semibold text-neutral-50">{o.title}</h2>
+              <p class="text-xs text-neutral-400">{o.detail}</p>
+            </div>
           </section>
         )}
       </Show>
@@ -202,57 +210,57 @@ export default function App(): JSX.Element {
           {(entry, i) => (
             <button
               type="button"
-              data-part="card"
               aria-pressed={selected() === entry().unit}
-              class="w-40 border bg-zinc-950/90 px-3 py-2 text-left text-xs"
+              class="flex w-52 items-center gap-2.5 rounded-2xl bg-surface/80 p-2 text-left ring-1 backdrop-blur-md transition"
               classList={{
-                'border-amber-500': selected() === entry().unit,
-                'border-zinc-700 hover:border-zinc-500': selected() !== entry().unit,
-                'opacity-50': !entry().alive,
+                'ring-accent': selected() === entry().unit,
+                'ring-line hover:ring-white/25': selected() !== entry().unit,
+                'opacity-50 grayscale': !entry().alive,
               }}
               disabled={!entry().alive}
               onClick={() => game()?.select(entry().unit)}
             >
-              <div class="flex justify-between text-zinc-300">
-                <span>
-                  {entry().unit.name}{' '}
-                  <span class="text-zinc-500">
-                    {entry().unit.name === entry().unit.job.name ? '' : `${entry().unit.job.name} `}
-                    {entry().level}
+              <span class="relative grid size-11 shrink-0 place-items-center rounded-xl bg-white/5 text-neutral-200 ring-1 ring-white/10">
+                <Icon name={iconOr(entry().unit.kind, 'vanguard')} class="size-7" />
+                <span class="absolute -bottom-1 -left-1 kbd">{i + 1}</span>
+                <Show when={entry().points > 0}>
+                  <span
+                    class="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-accent text-[10px] font-bold text-neutral-950"
+                    title="Points to spend"
+                  >
+                    +
                   </span>
-                  <Show when={entry().points > 0}>
-                    <span data-part="danger" class="text-amber-400" title="Points to spend">
-                      {' '}
-                      +
-                    </span>
-                  </Show>
+                </Show>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-baseline justify-between gap-1 text-xs">
+                  <span class="truncate font-semibold text-neutral-100">{entry().unit.name}</span>
+                  <span class="shrink-0 text-[10px] text-neutral-500">
+                    {entry().unit.name === entry().unit.job.name ? '' : `${entry().unit.job.name} `}
+                    Lv {entry().level}
+                  </span>
                 </span>
-                <span class="text-zinc-600">{i + 1}</span>
-              </div>
-              <div data-part="bar" class="mt-1 h-1 bg-zinc-800">
-                <div
-                  data-part="bar-fill"
-                  class="h-1 bg-amber-500"
-                  style={{ width: `${Math.max(0, (100 * entry().hp) / entry().maxHp)}%` }}
+                <Meter
+                  class="mt-1 h-1.5"
+                  value={entry().hp}
+                  max={entry().maxHp}
+                  color="var(--color-health)"
                 />
-              </div>
-              <div data-part="bar" class="mt-0.5 h-0.5 bg-zinc-800">
-                <div
-                  data-part="mana-fill"
-                  class="h-0.5 bg-teal-600"
-                  style={{
-                    width: `${entry().maxMana ? (100 * entry().mana) / entry().maxMana : 0}%`,
-                  }}
+                <Meter
+                  class="mt-0.5 h-1"
+                  value={entry().mana}
+                  max={entry().maxMana}
+                  color="var(--color-mana)"
                 />
-              </div>
-              <Show when={!entry().alive}>
-                <div class="mt-1 text-red-500">Dead</div>
-              </Show>
-              <Show when={entry().alive && entry().morale <= Morale.Low}>
-                <div data-part="danger" class="mt-1 text-red-500">
-                  {MORALE_NAME[entry().morale]} morale
-                </div>
-              </Show>
+                <Show when={!entry().alive}>
+                  <span class="mt-0.5 block text-[10px] font-semibold text-red-400">Dead</span>
+                </Show>
+                <Show when={entry().alive && entry().morale <= Morale.Low}>
+                  <span class="mt-0.5 block text-[10px] font-semibold text-red-400">
+                    {MORALE_NAME[entry().morale]} morale
+                  </span>
+                </Show>
+              </span>
             </button>
           )}
         </Index>

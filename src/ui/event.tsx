@@ -1,5 +1,6 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
 import type { EventView } from '../game/game';
+import { Button, Icon, Notice } from './kit';
 
 interface Props {
   event: EventView;
@@ -16,36 +17,39 @@ export default function EventPanel(props: Props): JSX.Element {
   const [message, setMessage] = createSignal<string | null>(null);
   return (
     <aside
-      data-part="panel"
-      class="absolute top-1/2 left-1/2 w-[460px] -translate-x-1/2 -translate-y-1/2 border border-zinc-700 bg-zinc-950/95 p-5 text-sm text-zinc-300"
+      class="panel absolute top-1/2 left-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2 p-6"
       aria-label={props.event.title}
     >
-      <h2 data-part="title" class="mb-2 font-serif text-xl text-zinc-100">
-        {props.event.title}
-      </h2>
-      <p class="mb-4">{props.event.text}</p>
+      <div class="mb-3 flex items-center gap-3">
+        <span class="grid size-10 place-items-center rounded-xl bg-violet-500/15 text-violet-300">
+          <Icon name="event" class="size-6" />
+        </span>
+        <h2 class="font-display text-2xl font-semibold text-neutral-50">{props.event.title}</h2>
+      </div>
+      <p class="mb-5 text-sm leading-relaxed text-neutral-300">{props.event.text}</p>
       <Show
         when={props.event.outcome}
         fallback={
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-2">
             <For each={props.event.choices}>
               {(choice, i) => (
                 <button
                   type="button"
-                  data-part="choice"
                   disabled={choice.why !== null}
-                  title={choice.why ?? undefined}
-                  class="border border-zinc-600 px-2 py-1 text-left hover:border-zinc-300 disabled:opacity-40"
+                  class="group flex items-start gap-3 rounded-xl bg-white/4 px-4 py-3 text-left ring-1 ring-white/8 transition hover:bg-white/8 hover:ring-accent/50 disabled:opacity-40 disabled:hover:bg-white/4 disabled:hover:ring-white/8"
                   onClick={() => {
                     setMessage(props.onChoose(i()));
                   }}
                 >
-                  {choice.label}
-                  <Show when={choice.why}>
-                    <span data-part="note" class="block text-xs text-zinc-500">
-                      {choice.why}
-                    </span>
-                  </Show>
+                  <span class="grid size-5 shrink-0 place-items-center rounded bg-white/10 text-[10px] font-bold text-neutral-400 group-hover:text-accent">
+                    {i() + 1}
+                  </span>
+                  <span class="text-sm text-neutral-100">
+                    {choice.label}
+                    <Show when={choice.why}>
+                      <span class="block text-xs text-neutral-500">{choice.why}</span>
+                    </Show>
+                  </span>
                 </button>
               )}
             </For>
@@ -54,27 +58,25 @@ export default function EventPanel(props: Props): JSX.Element {
       >
         {(outcome) => (
           <>
-            <p data-part="note" class="mb-3 text-zinc-200 italic" role="status">
+            <p
+              class="mb-4 rounded-xl bg-accent-soft px-4 py-3 text-sm text-neutral-100 italic"
+              role="status"
+            >
               {outcome()}
             </p>
-            <button
-              type="button"
-              data-part="choice"
-              class="border border-zinc-600 px-2 py-1 hover:border-zinc-300"
+            <Button
+              tone="primary"
+              class="w-full"
               onClick={() => {
                 props.onClose();
               }}
             >
               Go on
-            </button>
+            </Button>
           </>
         )}
       </Show>
-      <Show when={message()}>
-        <p data-part="danger" class="mt-2 text-xs text-red-400" role="alert">
-          {message()}
-        </p>
-      </Show>
+      <Notice text={message()} />
     </aside>
   );
 }

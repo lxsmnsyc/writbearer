@@ -256,6 +256,8 @@ export interface Entry {
   // Whether it is known in full
   known: boolean;
   lines: string[];
+  // What the interface draws it as: a monster's kind, an item's base
+  icon?: string;
 }
 
 export interface Section {
@@ -372,7 +374,7 @@ const count = (found: number, total: number): string => `${found} of ${total}`;
 
 /** The compendium's sections, as the interface shows them. */
 export function compendiumView(d: CompendiumData): Section[] {
-  const monsters = MONSTER_ORDER.map((k) => monsterEntry(d, k));
+  const monsters = MONSTER_ORDER.map((k) => ({ ...monsterEntry(d, k), icon: k }));
   const gear = BASES;
   const ended = d.endings.fallen + d.endings.sealed + d.endings.risen;
   return [
@@ -387,6 +389,7 @@ export function compendiumView(d: CompendiumData): Section[] {
       entries: d.mercs.map((m) => ({
         name: m.name,
         known: true,
+        icon: m.job.toLowerCase(),
         lines: [
           `${m.job}, level ${m.level}`,
           m.traits.map((t) => TRAIT_BY_ID.get(t)?.name ?? t).join(', ') || 'No traits',
@@ -396,25 +399,30 @@ export function compendiumView(d: CompendiumData): Section[] {
     {
       title: 'Uniques',
       found: count(d.uniques.length, UNIQUES.length),
-      entries: UNIQUES.map((u) => uniqueEntry(d, u)),
+      entries: UNIQUES.map((u) => ({ ...uniqueEntry(d, u), icon: u.base })),
     },
     {
       title: 'Sets',
       found: count(d.pieces?.length ?? 0, SETS.flatMap((s) => s.pieces).length),
-      entries: SETS.flatMap((set) => set.pieces.map((p) => pieceEntry(d, set, p))),
+      entries: SETS.flatMap((set) =>
+        set.pieces.map((p) => ({ ...pieceEntry(d, set, p), icon: p.base })),
+      ),
     },
     {
       title: 'Cards',
       found: count(d.cards.length, CARDS.length),
-      entries: CARDS.map((c) => cardEntry(d, c.id)),
+      entries: CARDS.map((c) => ({
+        ...cardEntry(d, c.id),
+        icon: c.id.endsWith('Card') ? 'card' : 'gem',
+      })),
     },
     {
       title: 'Gear',
       found: count(gear.filter((b) => d.bases.includes(b.id)).length, gear.length),
       entries: gear.map((b) =>
         d.bases.includes(b.id)
-          ? { name: b.name, known: true, lines: [] }
-          : { name: HIDDEN, known: false, lines: [] },
+          ? { name: b.name, known: true, lines: [], icon: b.id }
+          : { name: HIDDEN, known: false, lines: [], icon: b.id },
       ),
     },
     {

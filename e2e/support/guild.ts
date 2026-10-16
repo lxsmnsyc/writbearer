@@ -46,16 +46,34 @@ export async function talkTo(page: Page, recruit: Recruit): Promise<ReturnType<P
   // is walked toward first.
   const find = async (): Promise<Recruit> =>
     (await recruits(page)).find((r) => r.name === recruit.name) ?? recruit;
+  // Where it stands once the camera has settled, which eases on after a walk
+  const settled = async (): Promise<Recruit> => {
+    let at = await find();
+    for (let i = 0; i < 20; i++) {
+      await page.waitForTimeout(150);
+      const now = await find();
+      if (Math.abs(now.x - at.x) < 0.002 && Math.abs(now.y - at.y) < 0.002) {
+        return now;
+      }
+      at = now;
+    }
+    return at;
+  };
   let at = await find();
   for (let i = 0; i < 10 && (at.x > 0.95 || at.x < 0.05); i++) {
     await page.keyboard.down('d');
     await page.waitForTimeout(400);
     await page.keyboard.up('d');
-    at = await find();
+    at = await settled();
   }
-  await page.mouse.click(box.x + at.x * box.width, box.y + at.y * box.height);
   const dialog = page.getByRole('complementary', { name: 'A merc for hire' });
-  await expect(dialog).toBeVisible({ timeout: 15000 });
+  await expect(async () => {
+    if (!(await dialog.isVisible())) {
+      const spot = await settled();
+      await page.mouse.click(box.x + spot.x * box.width, box.y + spot.y * box.height);
+    }
+    await expect(dialog).toBeVisible({ timeout: 6000 });
+  }).toPass({ timeout: 30000 });
   return dialog;
 }
 

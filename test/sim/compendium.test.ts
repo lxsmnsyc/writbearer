@@ -14,7 +14,7 @@ const monster = (c: Compendium, i: number): Entry => section(c, 'Monsters').entr
 describe('the compendium', () => {
   it('hides a monster until met, and its details until beaten', () => {
     const c = book();
-    expect(monster(c, 0)).toEqual({ name: '?', known: false, lines: ['Not yet met.'] });
+    expect(monster(c, 0)).toMatchObject({ name: '?', known: false, lines: ['Not yet met.'] });
     expect(c.see('mite')).toBe(true);
     expect(c.see('mite')).toBe(false);
     expect(monster(c, 0).name).toBe('Mite');
@@ -63,7 +63,11 @@ describe('the compendium', () => {
   it('shows a unique’s silhouette, then its name and value ranges', () => {
     const c = book();
     const entries = (): Entry[] => section(c, 'Uniques').entries;
-    expect(entries()[0]).toEqual({ name: '?', known: false, lines: ['A unique Flanged Mace.'] });
+    expect(entries()[0]).toMatchObject({
+      name: '?',
+      known: false,
+      lines: ['A unique Flanged Mace.'],
+    });
     c.acquire(makeUnique(new RNG(1), UNIQUE_BY_ID.get('debtorsChain')!));
     expect(entries()[0].name).toBe('Debtor’s Chain');
     expect(entries()[0].lines).toContain('+30–50% attack');

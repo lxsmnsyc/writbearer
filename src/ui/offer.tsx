@@ -3,6 +3,7 @@ import type { Offer } from '../content/recruits';
 import { MERCS } from '../content/roster';
 import { TRAIT_BY_ID } from '../content/traits';
 import { TREES } from '../content/trees';
+import { Button, Icon, Notice, Segmented, Tip } from './kit';
 
 // What each job does, in a line, for players choosing between them.
 const ROLE: Record<Offer['kind'], string> = {
@@ -23,43 +24,48 @@ export function OfferCard(props: CardProps): JSX.Element {
   const job = (): string => MERCS[props.offer.kind].job.name;
   return (
     <article
-      data-part="card"
-      class="flex w-56 flex-col border border-zinc-700 bg-zinc-950/95 p-3 text-sm text-zinc-300"
+      class="flex w-72 flex-col rounded-xl bg-white/3 p-4 ring-1 ring-white/8"
       aria-label={`${props.offer.name}, ${job()}`}
     >
-      <h3 data-part="title" class="font-serif text-lg text-zinc-100">
-        {props.offer.name}
-      </h3>
-      <p data-part="note" class="text-xs text-zinc-500">
-        {job()} · level {props.offer.level}
-      </p>
-      <p class="mt-2 text-xs">{ROLE[props.offer.kind]}</p>
-      <p data-part="note" class="mt-2 text-xs text-zinc-500">
+      <div class="flex items-center gap-3">
+        <span class="grid size-14 place-items-center rounded-xl bg-accent-soft text-accent">
+          <Icon name={props.offer.kind} class="size-9" />
+        </span>
+        <div>
+          <h3 class="font-display text-lg leading-tight font-semibold text-neutral-50">
+            {props.offer.name}
+          </h3>
+          <p class="text-xs text-neutral-400">
+            {job()} · level {props.offer.level}
+          </p>
+        </div>
+      </div>
+      <p class="mt-3 text-sm text-neutral-300">{ROLE[props.offer.kind]}</p>
+      <p class="mt-2 text-xs text-neutral-500">
         Branches: {(TREES[job()] ?? []).map((b) => b.name).join(', ')}
       </p>
-      <ul class="mt-2 space-y-1 text-xs">
-        <For each={props.offer.traits}>
-          {(id) => (
-            <li>
-              <span>{TRAIT_BY_ID.get(id)?.name}</span>
-              <span data-part="note" class="text-zinc-500">
-                {' '}
-                · {TRAIT_BY_ID.get(id)?.description}
-              </span>
-            </li>
-          )}
-        </For>
-      </ul>
-      <button
-        type="button"
-        data-part="choice"
-        class="mt-auto border border-zinc-600 px-2 py-1 pt-1 hover:border-zinc-300"
+      <Show when={props.offer.traits.length > 0}>
+        <ul class="mt-3 space-y-1.5 text-xs">
+          <For each={props.offer.traits}>
+            {(id) => (
+              <li class="rounded-lg bg-black/20 px-2.5 py-1.5">
+                <span class="font-semibold text-accent">{TRAIT_BY_ID.get(id)?.name}</span>
+                <span class="block text-neutral-400">{TRAIT_BY_ID.get(id)?.description}</span>
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
+      <Button
+        tone="primary"
+        class="mt-4"
         onClick={() => {
           props.onPick();
         }}
       >
+        <Icon name="gold" class="size-4" />
         {props.action}
-      </button>
+      </Button>
     </article>
   );
 }
@@ -83,8 +89,8 @@ interface StartProps {
 }
 
 const MODES = [
-  { endless: false, name: 'Story' },
-  { endless: true, name: 'Endless' },
+  { value: false, name: 'Story', note: 'Down the Hollow to the Tomb, and an ending.' },
+  { value: true, name: 'Endless', note: 'Phase after phase, until the bearer falls.' },
 ];
 
 /**
@@ -94,84 +100,82 @@ const MODES = [
 export function StartPicker(props: StartProps): JSX.Element {
   return (
     <aside
-      data-part="panel"
-      class="absolute top-1/2 left-1/2 w-[520px] -translate-x-1/2 -translate-y-1/2 border border-zinc-700 bg-zinc-950/95 p-5 text-zinc-300"
+      class="panel absolute top-1/2 left-1/2 w-[520px] -translate-x-1/2 -translate-y-1/2 p-7"
       aria-label="A new run"
     >
-      <h2 data-part="title" class="font-serif text-xl text-zinc-100">
-        Writbearer
-      </h2>
-      <div class="my-2 flex gap-1" role="radiogroup" aria-label="Mode">
-        <For each={MODES}>
-          {(mode) => (
-            <button
-              type="button"
-              role="radio"
-              data-part="choice"
-              aria-checked={props.endless === mode.endless}
-              class="border px-3 py-1 text-xs"
-              onClick={() => {
-                props.onMode(mode.endless);
-              }}
-            >
-              {mode.name}
-            </button>
-          )}
-        </For>
+      <div class="mb-6 text-center">
+        <span class="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent">
+          <Icon name="bearer" class="size-9" />
+        </span>
+        <h2 class="font-display text-4xl font-bold tracking-wide text-neutral-50">Writbearer</h2>
+        <p class="mt-1 text-xs tracking-[0.2em] text-neutral-500 uppercase">A new run</p>
       </div>
-      <p data-part="note" class="mb-4 text-xs text-zinc-500">
+      <Segmented
+        label="Mode"
+        options={MODES}
+        value={props.endless}
+        onChange={(endless) => {
+          props.onMode(endless);
+        }}
+      />
+      <p class="mt-3 mb-5 text-sm leading-relaxed text-neutral-400">
         <Show
           when={props.endless}
           fallback={
             <>
               The Guild sends the Writ down into the Hollow. Four recruits wait at the Guild House:
-              the Guild pays the first, and its purse holds {props.gold} gold for the others. No one
-              is left to hire below.
+              the Guild pays the first, and its purse holds{' '}
+              <span class="font-semibold text-accent">{props.gold} gold</span> for the others. No
+              one is left to hire below.
             </>
           }
         >
           No Writ and no ending: the Guild sends the party down, phase after phase, each deeper and
           harder, until the bearer falls. Mercs can be hired in every phase. The purse holds{' '}
-          {props.gold} gold.
+          <span class="font-semibold text-accent">{props.gold} gold</span>.
         </Show>
       </p>
       <SeedBar seed={props.seed} onSeed={props.onSeed} shareLink={props.shareLink} />
-      <Show when={props.saved} keyed>
-        {(saved) => (
-          <button
-            type="button"
-            data-part="choice"
-            class="mb-4 w-full border border-amber-700 px-3 py-2 text-left hover:border-amber-400"
-            onClick={() => {
-              props.onResume();
-            }}
-          >
-            Continue the last run
-            <span data-part="note" class="block text-xs text-zinc-500">
-              Seed {saved.seed} · {saved.place}. Setting out instead starts over.
-            </span>
-          </button>
-        )}
-      </Show>
-      <button
-        type="button"
-        data-part="choice"
-        class="w-full border border-zinc-500 px-3 py-2 hover:border-zinc-200"
-        onClick={() => {
-          props.onSetOut();
-        }}
-      >
-        Enter the Guild House
-      </button>
-      <button
-        type="button"
-        class="mt-3 text-xs text-zinc-500 hover:text-zinc-200"
-        onClick={() => {
-          props.onCompendium();
-        }}
-      >
-        The Compendium (K)
-      </button>
+      <div class="mt-5 flex flex-col gap-2">
+        <Show when={props.saved} keyed>
+          {(saved) => (
+            <button
+              type="button"
+              class="rounded-xl bg-white/5 px-4 py-3 text-left ring-1 ring-accent/40 transition hover:bg-accent-soft"
+              onClick={() => {
+                props.onResume();
+              }}
+            >
+              <span class="font-semibold text-neutral-50">Continue the last run</span>
+              <span class="block text-xs text-neutral-400">
+                Seed {saved.seed} · {saved.place}. Setting out instead starts over.
+              </span>
+            </button>
+          )}
+        </Show>
+        <Button
+          tone="primary"
+          size="lg"
+          onClick={() => {
+            props.onSetOut();
+          }}
+        >
+          Enter the Guild House
+        </Button>
+        <Button
+          tone="ghost"
+          aria-label="The Compendium (K)"
+          onClick={() => {
+            props.onCompendium();
+          }}
+        >
+          <Icon name="compendium" class="size-4" />
+          The Compendium <span class="kbd">K</span>
+        </Button>
+      </div>
+      <p class="mt-5 text-center text-[10px] text-neutral-600">
+        Icons by Lorc, Delapouite and others at game-icons.net, under CC BY 3.0.
+      </p>
     </aside>
   );
 }
@@ -201,7 +205,7 @@ function SeedBar(props: SeedProps): JSX.Element {
   };
   return (
     <form
-      class="mb-4 flex flex-wrap items-center gap-2 text-xs"
+      class="well p-3"
       aria-label="Seed"
       onSubmit={(e) => {
         e.preventDefault();
@@ -210,46 +214,51 @@ function SeedBar(props: SeedProps): JSX.Element {
         setCopied(null);
       }}
     >
-      <span data-part="note" class="text-zinc-500">
-        Seed <span class="font-mono text-zinc-200">{props.seed}</span>
-      </span>
-      <input
-        type="text"
-        aria-label="Play a seed"
-        placeholder="Play a seed"
-        maxLength={32}
-        class="w-32 border border-zinc-700 bg-zinc-900 px-2 py-0.5 font-mono text-zinc-200 uppercase"
-        value={typed()}
-        onInput={(e) => {
-          setTyped(e.currentTarget.value);
-        }}
-      />
-      <button type="submit" class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300">
-        Play
-      </button>
-      <button
-        type="button"
-        class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300"
-        onClick={() => {
-          props.onSeed(null);
-          setCopied(null);
-        }}
-      >
-        New seed
-      </button>
-      <button
-        type="button"
-        class="border border-zinc-700 px-2 py-0.5 hover:border-zinc-300"
-        onClick={() => {
-          copy().catch(() => null);
-        }}
-      >
-        Copy link
-      </button>
+      <div class="mb-2 flex items-center gap-2">
+        <Icon name="seed" class="size-4 text-neutral-500" />
+        <span class="eyebrow">Seed</span>{' '}
+        <span class="font-mono text-sm font-semibold text-neutral-100">{props.seed}</span>
+        <span class="flex-1" />
+        <Button
+          size="sm"
+          tone="ghost"
+          onClick={() => {
+            props.onSeed(null);
+            setCopied(null);
+          }}
+        >
+          New seed
+        </Button>
+        <Button
+          size="sm"
+          tone="ghost"
+          onClick={() => {
+            copy().catch(() => null);
+          }}
+        >
+          Copy link
+        </Button>
+      </div>
+      <div class="flex gap-2">
+        <input
+          type="text"
+          aria-label="Play a seed"
+          placeholder="Play a seed"
+          maxLength={32}
+          class="h-8 flex-1 rounded-lg bg-black/40 px-3 font-mono text-sm text-neutral-100 uppercase ring-1 ring-white/10 outline-none placeholder:text-neutral-600 placeholder:normal-case focus:ring-accent/60"
+          value={typed()}
+          onInput={(e) => {
+            setTyped(e.currentTarget.value);
+          }}
+        />
+        <Button type="submit" size="sm" class="h-8">
+          Play
+        </Button>
+      </div>
       <Show when={copied()}>
-        <span data-part="note" class="basis-full text-zinc-400 select-all" role="status">
+        <p class="mt-2 text-xs break-all text-neutral-400 select-all" role="status">
           {copied()}
-        </span>
+        </p>
       </Show>
     </form>
   );
@@ -264,46 +273,49 @@ interface RecruitProps {
   onLeave: () => void;
 }
 
-/** A wandering merc by its fire, asking its wage. */
+/** A merc for hire, at the Guild House or by its fire, asking its wage. */
 export function RecruitDialog(props: RecruitProps): JSX.Element {
   const [message, setMessage] = createSignal<string | null>(null);
   return (
     <aside
-      data-part="panel"
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-zinc-700 bg-zinc-950/95 p-5 text-zinc-300"
+      class="panel absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-5"
       aria-label="A merc for hire"
     >
-      <p data-part="note" class="mb-3 text-xs text-zinc-500">
-        {props.guild
-          ? 'A recruit of the Guild looks the bearer over.'
-          : 'A merc sits by the fire, and looks the bearer over.'}{' '}
-        You have {props.gold} gold.
+      <p class="mb-3 flex items-center justify-between gap-6 text-xs text-neutral-400">
+        <span>
+          {props.guild
+            ? 'A recruit of the Guild looks the bearer over.'
+            : 'A merc sits by the fire, and looks the bearer over.'}
+        </span>
+        <Tip text="The purse">
+          {(anchor) => (
+            <span {...anchor} class="flex items-center gap-1 font-semibold text-accent">
+              <Icon name="gold" class="size-4" />
+              {props.gold}
+            </span>
+          )}
+        </Tip>
       </p>
-      <div class="flex gap-3">
-        <OfferCard
-          offer={props.offer}
-          action={
-            props.offer.wage === 0 ? 'Take: the Guild pays' : `Hire for ${props.offer.wage} gold`
-          }
-          onPick={() => {
-            setMessage(props.onHire());
-          }}
-        />
-      </div>
-      <Show when={message()}>
-        <p data-part="danger" class="mt-2 text-xs text-red-400" role="alert">
-          {message()}
-        </p>
-      </Show>
-      <button
-        type="button"
-        class="mt-3 text-xs text-zinc-500 hover:text-zinc-200"
+      <OfferCard
+        offer={props.offer}
+        action={
+          props.offer.wage === 0 ? 'Take: the Guild pays' : `Hire for ${props.offer.wage} gold`
+        }
+        onPick={() => {
+          setMessage(props.onHire());
+        }}
+      />
+      <Notice text={message()} />
+      <Button
+        tone="ghost"
+        size="sm"
+        class="mt-3 w-full"
         onClick={() => {
           props.onLeave();
         }}
       >
         {props.guild ? 'Not now' : 'Leave it by the fire'}
-      </button>
+      </Button>
     </aside>
   );
 }

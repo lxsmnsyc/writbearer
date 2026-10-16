@@ -1008,14 +1008,14 @@ export default class Game {
   }
 
   /** What this area asks of the party, and how far along it is, for the HUD. */
-  objectiveStatus(): { title: string; detail: string; done: boolean } | null {
+  objectiveStatus(): { kind: Objective; title: string; detail: string; done: boolean } | null {
     const o = this.objective;
     if (!o) {
       return null;
     }
     const elite = this.stage.kind === 'elite' ? 'Elite ' : '';
     const title = `${elite}${OBJECTIVE_NAME[o.kind]}`;
-    return { title, detail: o.status(this.sim), done: o.done };
+    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done };
   }
 
   // Whether the exits are open: once the objective is done, if there is one,

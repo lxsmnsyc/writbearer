@@ -851,7 +851,7 @@ export default class Renderer {
   // Item names over the floor, as Diablo 2's labels, in the quality's color.
   private drawLabels(f: Frame, fog: Fog): void {
     const { out } = this;
-    out.font = '15px "IM Fell English", Georgia, serif';
+    out.font = '600 13px Inter, system-ui, sans-serif';
     out.textAlign = 'center';
     this.labels.length = 0;
     for (const g of f.ground) {
@@ -900,14 +900,14 @@ export default class Renderer {
     if (f.callout && f.sim.bearer) {
       const r = f.views.rig(f.sim.bearer, f.alpha);
       const b = this.iso(r.x, r.z);
-      out.font = '20px "IM Fell English", Georgia, serif';
+      out.font = '600 17px Inter, system-ui, sans-serif';
       out.fillStyle = C.gold;
       out.fillText(
         f.callout,
         b.x * SCALE - this.sub.x,
         (b.y - 46 * look.zoom) * SCALE - this.sub.y,
       );
-      out.font = '15px "IM Fell English", Georgia, serif';
+      out.font = '600 13px Inter, system-ui, sans-serif';
     }
     for (const w of f.figures) {
       if (!w.label || fog.visible(w.x, w.z) <= 0.5) {
@@ -1046,7 +1046,7 @@ export default class Renderer {
 
   private drawHud(f: Frame): void {
     const { out } = this;
-    out.font = '20px "IM Fell English", Georgia, serif';
+    out.font = '600 17px Inter, system-ui, sans-serif';
     // A notice, such as who deserted, shows above the party for a while.
     if (f.notice) {
       out.textAlign = 'center';
@@ -1076,10 +1076,10 @@ export default class Renderer {
       out.fillStyle = 'rgba(0,0,0,0.6)';
       out.fillRect(0, 0, W * SCALE, H * SCALE);
       out.fillStyle = f.ending === 'sealed' ? C.gold : C.blood;
-      out.font = '44px "IM Fell English SC", Georgia, serif';
+      out.font = '700 44px Cinzel, Georgia, serif';
       out.textAlign = 'center';
       out.fillText(title, (W * SCALE) / 2, (H * SCALE) / 2);
-      out.font = '18px "IM Fell English", Georgia, serif';
+      out.font = '17px Inter, system-ui, sans-serif';
       out.fillStyle = '#c8c2b6';
       out.fillText(line, (W * SCALE) / 2, (H * SCALE) / 2 + 36);
       out.font = '16px ui-monospace, monospace';

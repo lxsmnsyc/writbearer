@@ -13,17 +13,20 @@ import {
   socketCost,
 } from '../game/town';
 import { BASE_BY_ID } from '../content/items';
-import { itemLines, itemName, socketLimit } from '../gen/loot';
+import { itemName, socketLimit } from '../gen/loot';
 import { type Item, MAX_REFINE } from '../sim/item';
 import type Unit from '../sim/unit';
+import { iconOr } from './icons';
+import { ItemSlot, qualityColor } from './items';
+import { Button, Icon, Notice, Panel, type TabSpec, Tabs, Tip } from './kit';
 
 type Tab = 'smith' | 'bench' | 'temple' | 'market';
 
-const TABS: { value: Tab; name: string }[] = [
-  { value: 'smith', name: 'Smith' },
-  { value: 'bench', name: 'Bench' },
-  { value: 'temple', name: 'Temple' },
-  { value: 'market', name: 'Market' },
+const TABS: TabSpec<Tab>[] = [
+  { value: 'smith', name: 'Smith', icon: 'smith' },
+  { value: 'bench', name: 'Bench', icon: 'bench' },
+  { value: 'temple', name: 'Temple', icon: 'temple' },
+  { value: 'market', name: 'Market', icon: 'market' },
 ];
 
 interface Props {
@@ -33,11 +36,25 @@ interface Props {
   onClose: () => void;
 }
 
-const BUTTON =
-  'border border-zinc-700 px-1.5 text-xs text-zinc-400 hover:border-zinc-300 hover:text-zinc-100';
-
-const materialsText = (cost: readonly [string, number][]): string =>
-  cost.map(([id, n]) => `${n} ${MATERIAL_NAME.get(id) ?? id}`).join(', ');
+// A material and how many, as an icon chip
+function MaterialChip(props: { id: string; count: number; have?: number }): JSX.Element {
+  const short = (): boolean => props.have !== undefined && props.have < props.count;
+  return (
+    <Tip text={MATERIAL_NAME.get(props.id) ?? props.id}>
+      {(anchor) => (
+        <span
+          {...anchor}
+          class="inline-flex h-6 items-center gap-1 rounded-md bg-white/5 px-1.5 text-[11px] ring-1 ring-white/8"
+          classList={{ 'text-red-300': short(), 'text-neutral-300': !short() }}
+        >
+          <Icon name={iconOr(props.id, 'bone')} class="size-3.5" />
+          {props.count}
+          <span class="sr-only">{MATERIAL_NAME.get(props.id) ?? props.id}</span>
+        </span>
+      )}
+    </Tip>
+  );
+}
 
 /**
  * A Town: the Blacksmith refines and adds sockets, the Synthesis bench
@@ -48,7 +65,6 @@ export default function Town(props: Props): JSX.Element {
   const [tab, setTab] = createSignal<Tab>('smith');
   const [message, setMessage] = createSignal<string | null>(null);
   const [bless, setBless] = createSignal(true);
-  const [hovered, setHovered] = createSignal<Item | null>(null);
   const v = (): boolean => props.version >= 0;
   const gold = (): number => (v() ? props.game.pack.gold : 0);
   const pouch = (): [string, number][] => (v() ? [...props.game.pack.materials] : []);
@@ -63,185 +79,163 @@ export default function Town(props: Props): JSX.Element {
   };
 
   return (
-    <aside
-      data-part="panel"
-      class="absolute top-6 left-1/2 w-[760px] -translate-x-1/2 border border-zinc-700 bg-zinc-950/95 p-4 text-sm text-zinc-300 shadow-xl"
-      aria-label="Town"
-    >
-      <header class="mb-3 flex items-baseline justify-between">
-        <h2 data-part="title" class="font-serif text-lg text-zinc-100">
-          The Town
-        </h2>
-        <span data-part="note" class="text-xs text-zinc-500">
-          {gold()} gold
+    <Panel
+      label="Town"
+      title="The Town"
+      icon="town"
+      class="w-[760px]"
+      aside={
+        <span class="flex h-8 items-center gap-1 text-sm font-semibold text-accent">
+          <Icon name="gold" class="size-4" />
+          {gold()}
         </span>
-        <button
-          type="button"
-          class="text-zinc-500 hover:text-zinc-200"
-          onClick={() => {
-            props.onClose();
-          }}
-        >
-          Close
-        </button>
-      </header>
-      <div class="mb-3 grid grid-cols-4 gap-1" role="tablist" aria-label="Town">
-        <For each={TABS}>
-          {(t) => (
-            <button
-              type="button"
-              role="tab"
-              data-part="choice"
-              aria-selected={tab() === t.value}
-              aria-checked={tab() === t.value}
-              class="border px-2 py-1"
-              onClick={() => {
-                setTab(t.value);
-                setMessage(null);
-              }}
-            >
-              {t.name}
-            </button>
-          )}
-        </For>
-      </div>
+      }
+      onClose={() => {
+        props.onClose();
+      }}
+    >
+      <Tabs
+        label="Town"
+        tabs={TABS}
+        value={tab()}
+        onChange={(t) => {
+          setTab(t);
+          setMessage(null);
+        }}
+      />
 
       <Show when={tab() === 'smith'}>
-        <p data-part="note" class="mb-2 text-xs text-zinc-400">
+        <p class="mb-3 text-xs leading-relaxed text-neutral-400">
           Refining to +{SAFE_REFINE} always works. Past it, a failure breaks the item and every card
           in it, unless a Smith’s Blessing takes the blow: then it loses a level instead. A new
           socket can break the item too.
         </p>
-        <label class="mb-2 flex items-center gap-2 text-xs">
+        <label class="mb-3 flex items-center gap-2 text-xs text-neutral-300">
           <input
             type="checkbox"
+            class="accent-accent"
             checked={bless()}
             onChange={(e) => {
               setBless(e.currentTarget.checked);
             }}
           />
-          Use a Smith’s Blessing on a failure ({blessings()} in the pouch)
+          Use a Smith’s Blessing on a failure
+          <MaterialChip id="blessing" count={blessings()} />
         </label>
-        <ul class="max-h-80 space-y-1 overflow-y-auto" aria-label="Smith">
+        <ul class="grid grid-cols-2 gap-2" aria-label="Smith">
           <For each={smithable()}>
             {({ item, merc }) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span
-                  class="flex-1"
-                  data-quality={item.quality}
-                  onMouseEnter={() => {
-                    setHovered(item);
-                  }}
-                  onMouseLeave={() => {
-                    setHovered(null);
-                  }}
-                >
-                  {name(item)}
-                  <span data-part="note" class="text-xs text-zinc-500">
-                    {' '}
-                    · {merc ? merc.name : 'pack'}
-                  </span>
-                </span>
-                <Show when={item.refine < MAX_REFINE}>
-                  <button
-                    type="button"
-                    data-part="choice"
-                    aria-label={`Refine ${name(item)}`}
-                    class={BUTTON}
-                    onClick={() => {
-                      say(props.game.refineItem(item, bless()));
-                    }}
-                  >
-                    +{item.refine + 1} · {refineCost(item)}g ·{' '}
-                    {Math.round(refineChance(item) * 100)}%
-                  </button>
-                </Show>
-                <Show when={item.sockets < socketLimit(item)}>
-                  <button
-                    type="button"
-                    data-part="choice"
-                    aria-label={`Add a socket to ${name(item)}`}
-                    class={BUTTON}
-                    onClick={() => {
-                      say(props.game.socketItem(item));
-                    }}
-                  >
-                    Socket · {socketCost(item)}g
-                  </button>
-                </Show>
+              <li class="well flex items-center gap-3 p-2">
+                <ItemSlot item={item} version={props.version} tabIndex={-1} aria-hidden="true" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm" style={{ color: qualityColor(item) }}>
+                    {name(item)}
+                  </p>
+                  <p class="mb-1.5 text-[11px] text-neutral-500">{merc ? merc.name : 'Pack'}</p>
+                  <div class="flex flex-wrap gap-1">
+                    <Show when={item.refine < MAX_REFINE}>
+                      <Button
+                        size="sm"
+                        aria-label={`Refine ${name(item)}`}
+                        onClick={() => {
+                          say(props.game.refineItem(item, bless()));
+                        }}
+                      >
+                        +{item.refine + 1} · {refineCost(item)}g ·{' '}
+                        {Math.round(refineChance(item) * 100)}%
+                      </Button>
+                    </Show>
+                    <Show when={item.sockets < socketLimit(item)}>
+                      <Button
+                        size="sm"
+                        aria-label={`Add a socket to ${name(item)}`}
+                        onClick={() => {
+                          say(props.game.socketItem(item));
+                        }}
+                      >
+                        Socket · {socketCost(item)}g
+                      </Button>
+                    </Show>
+                  </div>
+                </div>
               </li>
             )}
           </For>
         </ul>
-        <Show when={hovered()} keyed>
-          {(item) => (
-            <div data-part="row" class="mt-2 border border-zinc-800 p-2 text-xs">
-              <For each={itemLines(item)}>{(line) => <p data-part="note">{line}</p>}</For>
-            </div>
-          )}
-        </Show>
       </Show>
 
       <Show when={tab() === 'bench'}>
-        <p data-part="note" class="mb-2 text-xs text-zinc-400">
-          The pouch:{' '}
-          {pouch().length > 0
-            ? pouch()
-                .map(([id, n]) => `${n} ${MATERIAL_NAME.get(id) ?? id}`)
-                .join(', ')
-            : 'empty. Monsters leave materials when they die.'}
-        </p>
-        <ul class="space-y-1" aria-label="Recipes">
+        <div class="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-neutral-500">
+          <span class="eyebrow mr-1">Pouch</span>
+          <For
+            each={pouch()}
+            fallback={<span>Empty. Monsters leave materials when they die.</span>}
+          >
+            {([id, n]) => <MaterialChip id={id} count={n} />}
+          </For>
+        </div>
+        <ul class="space-y-1.5" aria-label="Recipes">
           <For each={RECIPES}>
             {(recipe: Recipe) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1">
-                  {recipe.name}
-                  <span data-part="note" class="text-xs text-zinc-500">
-                    {' '}
-                    · {materialsText(recipe.materials)}, {recipe.gold} gold
+              <li class="well flex items-center gap-3 px-3 py-2">
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm text-neutral-100">{recipe.name}</p>
+                  <p class="text-xs text-neutral-500">{recipe.describe}</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-1">
+                  <For each={recipe.materials}>
+                    {([id, n]) => (
+                      <MaterialChip
+                        id={id}
+                        count={n}
+                        have={props.game.pack.materials.get(id) ?? 0}
+                      />
+                    )}
+                  </For>
+                  <span class="ml-1 flex items-center gap-0.5 text-[11px] text-accent">
+                    <Icon name="gold" class="size-3.5" />
+                    {recipe.gold}
                   </span>
-                  <span data-part="note" class="block text-xs text-zinc-500">
-                    {recipe.describe}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  data-part="choice"
+                </div>
+                <Button
+                  size="sm"
+                  tone="primary"
                   aria-label={`Make ${recipe.name}`}
                   disabled={v() && cannotCraft(props.game.pack, recipe) !== null}
-                  class={`${BUTTON} disabled:opacity-40`}
                   onClick={() => {
                     say(props.game.craft(recipe) ?? `Made: ${recipe.name}.`);
                   }}
                 >
                   Make
-                </button>
+                </Button>
               </li>
             )}
           </For>
         </ul>
-        <h3 data-part="title" class="mt-3 mb-1 font-serif text-zinc-100">
-          Salvage
-        </h3>
-        <ul class="max-h-40 space-y-1 overflow-y-auto" aria-label="Salvage">
-          <For each={pack().filter((i) => salvage(i).size > 0)}>
+        <h3 class="eyebrow mt-5 mb-2">Salvage</h3>
+        <ul class="flex flex-wrap gap-1.5" aria-label="Salvage">
+          <For
+            each={pack().filter((i) => salvage(i).size > 0)}
+            fallback={<li class="text-xs text-neutral-600">Nothing in the pack to salvage.</li>}
+          >
             {(item) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1" data-quality={item.quality}>
-                  {name(item)}
-                </span>
-                <button
-                  type="button"
-                  data-part="choice"
+              <li>
+                <ItemSlot
+                  version={props.version}
+                  item={item}
                   aria-label={`Salvage ${name(item)}`}
-                  class={BUTTON}
                   onClick={() => {
                     say(props.game.salvage(item.uid) ?? `Salvaged ${name(item)}.`);
                   }}
-                >
-                  Salvage
-                </button>
+                  extra={
+                    <div class="flex flex-wrap items-center gap-1 text-neutral-400">
+                      Click to break it down into
+                      <For each={[...salvage(item)]}>
+                        {([id, n]) => <MaterialChip id={id} count={n} />}
+                      </For>
+                    </div>
+                  }
+                />
               </li>
             )}
           </For>
@@ -249,95 +243,97 @@ export default function Town(props: Props): JSX.Element {
       </Show>
 
       <Show when={tab() === 'temple'}>
-        <p data-part="note" class="mb-2 text-xs text-zinc-400">
+        <p class="mb-3 text-xs leading-relaxed text-neutral-400">
           The priests of the old faith raise the dead, for an offering. They cannot raise a body
           that was torn apart.
         </p>
-        <ul class="space-y-1" aria-label="The dead">
+        <ul class="space-y-1.5" aria-label="The dead">
           <For each={dead()}>
             {(merc) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1">
+              <li class="well flex items-center gap-3 px-3 py-2">
+                <span class="grid size-9 place-items-center rounded-lg bg-white/5 text-neutral-500 grayscale">
+                  <Icon name={iconOr(merc.kind, 'vanguard')} class="size-6" />
+                </span>
+                <span class="flex-1 text-sm text-neutral-100">
                   {merc.name}
-                  <span data-part="note" class="text-xs text-zinc-500">
-                    {' '}
-                    · {merc.torn ? 'torn apart' : `level ${merc.level}`}
+                  <span class="block text-xs text-neutral-500">
+                    {merc.torn ? 'Torn apart' : `Level ${merc.level}`}
                   </span>
                 </span>
                 <Show when={!merc.torn}>
-                  <button
-                    type="button"
-                    data-part="choice"
+                  <Button
+                    size="sm"
+                    tone="primary"
                     aria-label={`Raise ${merc.name}`}
-                    class={BUTTON}
                     onClick={() => {
                       say(props.game.raise(merc) ?? `${merc.name} rises.`);
                     }}
                   >
                     Raise · {raiseCost(merc)}g
-                  </button>
+                  </Button>
                 </Show>
               </li>
             )}
           </For>
         </ul>
         <Show when={dead().length === 0}>
-          <p data-part="note" class="text-xs text-zinc-500">
-            No merc lies dead.
-          </p>
+          <p class="text-xs text-neutral-500">No merc lies dead.</p>
         </Show>
       </Show>
 
       <Show when={tab() === 'market'}>
-        <ul class="mb-3 space-y-1" aria-label="Wares">
+        <h3 class="eyebrow mb-2">Wares</h3>
+        <ul class="mb-5 grid grid-cols-3 gap-2" aria-label="Wares">
           <For each={WARES}>
             {(ware) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1">{BASE_BY_ID.get(ware.id)?.name}</span>
-                <button
-                  type="button"
-                  data-part="choice"
-                  aria-label={`Buy ${BASE_BY_ID.get(ware.id)?.name ?? ware.id}`}
-                  class={BUTTON}
-                  onClick={() => {
-                    say(props.game.buy(ware.id) ?? 'Bought.');
-                  }}
-                >
-                  Buy · {ware.price}g
-                </button>
+              <li class="well flex items-center gap-3 p-2">
+                <span class="grid size-11 place-items-center rounded-lg bg-black/30 text-neutral-200">
+                  <Icon name={iconOr(ware.id, 'healingDraught')} class="size-7" />
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm text-neutral-100">{BASE_BY_ID.get(ware.id)?.name}</p>
+                  <Button
+                    size="sm"
+                    tone="primary"
+                    class="mt-1"
+                    aria-label={`Buy ${BASE_BY_ID.get(ware.id)?.name ?? ware.id}`}
+                    onClick={() => {
+                      say(props.game.buy(ware.id) ?? 'Bought.');
+                    }}
+                  >
+                    <Icon name="gold" class="size-3.5" />
+                    {ware.price}
+                  </Button>
+                </div>
               </li>
             )}
           </For>
         </ul>
-        <ul class="max-h-56 space-y-1 overflow-y-auto" aria-label="Sell">
-          <For each={pack()}>
+        <h3 class="eyebrow mb-2">Sell from the pack</h3>
+        <ul class="flex flex-wrap gap-1.5" aria-label="Sell">
+          <For
+            each={pack()}
+            fallback={<li class="text-xs text-neutral-600">The pack is empty.</li>}
+          >
             {(item) => (
-              <li data-part="row" class="flex items-center gap-2 border border-zinc-800 px-2 py-1">
-                <span class="flex-1" data-quality={item.quality}>
-                  {name(item)}
-                </span>
-                <button
-                  type="button"
-                  data-part="choice"
+              <li class="flex flex-col items-center gap-0.5">
+                <ItemSlot
+                  version={props.version}
+                  item={item}
                   aria-label={`Sell ${name(item)}`}
-                  class={BUTTON}
                   onClick={() => {
                     say(props.game.sell(item.uid) ?? `Sold ${name(item)}.`);
                   }}
-                >
-                  Sell · {sellValue(item)}g
-                </button>
+                  extra={<p class="text-neutral-400">Click to sell for {sellValue(item)} gold.</p>}
+                />
+                <span class="text-[10px] text-accent">{sellValue(item)}g</span>
               </li>
             )}
           </For>
         </ul>
       </Show>
 
-      <Show when={message()}>
-        <p data-part="danger" class="mt-2 text-xs text-amber-300" role="alert">
-          {message()}
-        </p>
-      </Show>
-    </aside>
+      <Notice text={message()} tone="info" />
+    </Panel>
   );
 }

@@ -1,5 +1,23 @@
 @import 'tailwindcss';
 
+/*
+ * The interface: dark glass panels over the game, a clean sans for reading
+ * and a carved serif only for titles. Item and skill names keep the floor
+ * labels' quality colors, set inline from the renderer's table.
+ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Cinzel', Georgia, serif;
+  --color-accent: #e8b04a;
+  --color-accent-soft: #e8b04a26;
+  --color-surface: #0d0f14;
+  --color-raised: #161a22;
+  --color-line: #ffffff14;
+  --color-health: #d9474f;
+  --color-mana: #3f8fd9;
+  --color-xp: #b08cf0;
+}
+
 @layer base {
   html,
   body,
@@ -8,161 +26,49 @@
   }
 
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    @apply bg-black font-sans text-neutral-200 antialiased;
+    font-feature-settings: 'tnum';
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-white/10;
   }
 }
 
-/*
- * The paper interface. Panels and party cards are torn paper with ink text
- * and an old print face, like the Writ and the Church's manuscripts. These
- * rules sit outside Tailwind's layers, so they override its utilities.
- */
-[data-ui='paper'] [data-part='panel'],
-[data-ui='paper'] [data-part='card'] {
-  background-color: #cbc2ae;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgb(0 0 0 / 0.05), transparent 40%),
-    radial-gradient(circle at 80% 70%, rgb(0 0 0 / 0.06), transparent 45%);
-  color: #1d1914;
-  border: none;
-  font-family: 'IM Fell English', Georgia, serif;
-  clip-path: polygon(
-    0 5px,
-    7% 1px,
-    15% 4px,
-    24% 0,
-    33% 3px,
-    41% 1px,
-    52% 4px,
-    60% 0,
-    69% 3px,
-    78% 1px,
-    86% 4px,
-    94% 0,
-    100% 3px,
-    calc(100% - 3px) 14%,
-    100% 31%,
-    calc(100% - 2px) 47%,
-    100% 63%,
-    calc(100% - 4px) 79%,
-    100% 93%,
-    97% 100%,
-    88% calc(100% - 3px),
-    79% 100%,
-    70% calc(100% - 4px),
-    60% 100%,
-    51% calc(100% - 2px),
-    41% 100%,
-    32% calc(100% - 4px),
-    22% 100%,
-    13% calc(100% - 2px),
-    4% 100%,
-    0 calc(100% - 4px),
-    3px 84%,
-    0 68%,
-    2px 52%,
-    0 36%,
-    4px 20%
-  );
+@layer components {
+  /* A panel over the game */
+  .panel {
+    @apply rounded-2xl bg-surface/90 text-sm shadow-2xl ring-1 shadow-black/60 ring-line backdrop-blur-md;
+  }
+
+  /* A box inside a panel */
+  .well {
+    @apply rounded-lg bg-white/3 ring-1 ring-white/6;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold tracking-[0.14em] text-neutral-500 uppercase;
+  }
+
+  .kbd {
+    @apply inline-grid h-4 min-w-4 place-items-center rounded bg-white/10 px-1 font-mono text-[10px] leading-none text-neutral-300;
+  }
 }
 
-[data-ui='paper'] [data-part='card'][aria-pressed='true'] {
-  background-color: #e2d9c4;
+@keyframes ready {
+  50% {
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
 }
 
-[data-ui='paper'] [data-part='title'],
-[data-ui='paper'] [data-part='heading'] {
-  font-family: 'IM Fell English SC', Georgia, serif;
-  color: #1d1914;
-}
-
-[data-ui='paper'] [data-part='title'] {
-  font-size: 1.5rem;
-}
-
-[data-ui='paper'] [data-part='heading'] {
-  color: #5d5446;
-  letter-spacing: 0.12em;
-  text-transform: none;
-  font-size: 0.95rem;
-}
-
-[data-ui='paper'] [data-part='note'] {
-  color: #5d5446;
-  font-style: italic;
-}
-
-[data-ui='paper'] [data-part='choice'] {
-  border-color: #6d6456;
-  color: #3a332a;
-  background: transparent;
-}
-
-[data-ui='paper'] [data-part='choice'][aria-checked='true'] {
-  background: #1d1914;
-  color: #e6dece;
-  border-color: #1d1914;
-}
-
-[data-ui='paper'] [data-part='row'] {
-  border-color: #a69d8b;
-}
-
-[data-ui='paper'] [data-part='add'] {
-  border-color: #8a8172;
-  color: #3a332a;
-}
-
-[data-ui='paper'] [data-part='danger'] {
-  color: #8e1414;
-}
-
-[data-ui='paper'] [data-part='bar'] {
-  background: #9c9381;
-}
-
-[data-ui='paper'] [data-part='bar-fill'] {
-  background: #7a5a22;
-}
-
-[data-ui='paper'] [data-part='mana-fill'] {
-  background: #2f5f5a;
-}
-
-[data-ui='paper'] input[type='range'] {
-  accent-color: #1d1914;
-}
-
-[data-ui='paper'] [data-part='card'] * {
-  color: #1d1914;
-}
-
-/* Item names in the quality's color, as on the floor labels. */
-[data-quality='0'] {
-  color: #6a6a6a;
-}
-
-[data-quality='3'] {
-  color: #2f6a60;
-}
-
-[data-quality='4'] {
-  color: #8a6420;
-}
-
-[data-quality='5'] {
-  color: #8a6a3a;
-}
-
-[data-quality='6'] {
-  color: #3f7a2f;
-}
-
-[data-ui='paper'] [data-quality='3'] {
-  color: #2f6a60;
-}
-
-[data-ui='paper'] [data-quality='4'] {
-  color: #7a5a22;
+.animate-ready {
+  animation: ready 1.6s ease-in-out infinite;
 }

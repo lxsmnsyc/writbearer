@@ -1,6 +1,9 @@
 import { For, type JSX, Show } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import type Game from '../game/game';
 import { type MapNode, type NodeKind, OBJECTIVE_NAME } from '../gen/graph';
+import { ICONS, type IconName } from './icons';
+import { Panel } from './kit';
 
 interface Props {
   game: Game;
@@ -16,15 +19,19 @@ const NAME: Record<NodeKind, string> = {
   boss: 'Boss',
 };
 
-// Elites and the boss in red, Camps in gold, Events in violet, fights in grey.
-const KIND_CLASS: Record<NodeKind, string> = {
-  combat: 'fill-zinc-900 stroke-zinc-500',
-  elite: 'fill-red-950 stroke-red-400',
-  camp: 'fill-amber-950 stroke-amber-500',
-  event: 'fill-violet-950 stroke-violet-400',
-  town: 'fill-teal-950 stroke-teal-400',
-  boss: 'fill-red-950 stroke-red-400',
+// Elites and the boss in red, Camps in gold, Events in violet, Towns in
+// teal, fights in grey.
+const KIND_COLOR: Record<NodeKind, string> = {
+  combat: '#a3a3a3',
+  elite: '#f87171',
+  camp: '#e8b04a',
+  event: '#a78bfa',
+  town: '#2dd4bf',
+  boss: '#ef4444',
 };
+
+// A fight by its objective, the rest by their kind
+const iconOf = (node: MapNode): IconName => node.objective ?? node.kind;
 
 // An area's name on the map: a fight by its objective.
 const nameOf = (node: MapNode): string => {
@@ -36,10 +43,11 @@ const nameOf = (node: MapNode): string => {
 };
 
 // Where each area sits on the drawing, by column and row.
-const COLUMN = 78;
-const ROW = 64;
-const LEFT = 96;
-const MIDDLE = 104;
+const COLUMN = 84;
+const ROW = 72;
+const LEFT = 104;
+const MIDDLE = 116;
+const R = 17;
 
 /**
  * The layer's map: its areas column by column, the roads between them, the
@@ -79,38 +87,43 @@ export default function LayerMapPanel(props: Props): JSX.Element {
   const width = LEFT + (columns.length - 1) * COLUMN + 60;
 
   return (
-    <aside
-      data-part="panel"
-      class="absolute top-6 left-1/2 -translate-x-1/2 border border-zinc-700 bg-zinc-950/95 p-4 text-sm text-zinc-300 shadow-xl"
-      aria-label="Map"
+    <Panel
+      label="Map"
+      title={state.title}
+      icon="map"
+      onClose={() => {
+        props.onClose();
+      }}
     >
-      <header class="mb-2 flex items-baseline justify-between gap-8">
-        <h2 data-part="title" class="font-serif text-lg text-zinc-100">
-          {state.title}
-        </h2>
-        <button
-          type="button"
-          class="text-zinc-500 hover:text-zinc-200"
-          onClick={() => {
-            props.onClose();
-          }}
-        >
-          Close
-        </button>
-      </header>
-      <svg width={width} height={210} role="img" aria-label="The layer's areas and roads">
-        <text x={24} y={MIDDLE + 4} class="fill-zinc-500 text-[11px]">
-          {state.layer === 0 ? 'Start' : 'Waystation'}
-        </text>
+      <svg width={width} height={240} role="img" aria-label="The layer's areas and roads">
+        <g>
+          <circle cx={44} cy={MIDDLE} r={R} fill="#ffffff0d" stroke="#ffffff33" />
+          <Dynamic
+            component={ICONS[state.layer === 0 ? 'start' : 'waystation']}
+            x={44 - 10}
+            y={MIDDLE - 10}
+            width={20}
+            height={20}
+            fill="#d4d4d4"
+          />
+          <text
+            x={44}
+            y={MIDDLE + R + 14}
+            text-anchor="middle"
+            class="fill-neutral-500 text-[10px]"
+          >
+            {state.layer === 0 ? 'Start' : 'Waystation'}
+          </text>
+        </g>
         <For each={columns[0]}>
           {(_, row) => (
             <line
-              x1={60}
+              x1={44 + R}
               y1={MIDDLE}
               x2={at(0, row()).x}
               y2={at(0, row()).y}
-              class={crossed(0, row()) ? 'stroke-amber-500' : 'stroke-zinc-700'}
-              stroke-width={crossed(0, row()) ? 2 : 1}
+              stroke={crossed(0, row()) ? '#e8b04a' : '#ffffff22'}
+              stroke-width={crossed(0, row()) ? 2.5 : 1.5}
             />
           )}
         </For>
@@ -125,8 +138,9 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                       y1={at(c(), r()).y}
                       x2={at(c() + 1, next).x}
                       y2={at(c() + 1, next).y}
-                      class={taken(c(), r(), next) ? 'stroke-amber-500' : 'stroke-zinc-700'}
-                      stroke-width={taken(c(), r(), next) ? 2 : 1}
+                      stroke={taken(c(), r(), next) ? '#e8b04a' : '#ffffff22'}
+                      stroke-width={taken(c(), r(), next) ? 2.5 : 1.5}
+                      stroke-dasharray={ahead(c() + 1, next) && here(c(), r()) ? '4 3' : undefined}
                     />
                   )}
                 </For>
@@ -137,46 +151,62 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         <For each={columns}>
           {(column, c) => (
             <For each={column}>
-              {(node, r) => (
-                <g aria-label={`Area ${c() + 1}: ${nameOf(node)}`}>
-                  <circle
-                    cx={at(c(), r()).x}
-                    cy={at(c(), r()).y}
-                    r={node.kind === 'boss' ? 14 : 10}
-                    class={
-                      crossed(c(), r()) ? 'fill-zinc-500 stroke-zinc-300' : KIND_CLASS[node.kind]
-                    }
-                    stroke-width={ahead(c(), r()) ? 2 : 1}
-                  />
-                  <Show when={here(c(), r())}>
+              {(node, r) => {
+                const p = (): { x: number; y: number } => at(c(), r());
+                const size = node.kind === 'boss' ? 26 : 20;
+                const radius = node.kind === 'boss' ? R + 5 : R;
+                return (
+                  <g aria-label={`Area ${c() + 1}: ${nameOf(node)}`}>
+                    <Show when={ahead(c(), r())}>
+                      <circle
+                        cx={p().x}
+                        cy={p().y}
+                        r={radius + 5}
+                        fill="none"
+                        stroke={KIND_COLOR[node.kind]}
+                        stroke-opacity={0.35}
+                        stroke-width={2}
+                      />
+                    </Show>
                     <circle
-                      cx={at(c(), r()).x}
-                      cy={at(c(), r()).y}
-                      r={15}
-                      class="fill-none stroke-amber-400"
-                      stroke-width={2}
+                      cx={p().x}
+                      cy={p().y}
+                      r={radius}
+                      fill={crossed(c(), r()) ? '#2a2a2a' : '#0d0f14'}
+                      stroke={crossed(c(), r()) ? '#e8b04a' : KIND_COLOR[node.kind]}
+                      stroke-width={here(c(), r()) ? 3 : 1.5}
                     />
-                  </Show>
-                  <text
-                    x={at(c(), r()).x}
-                    y={at(c(), r()).y + 26}
-                    text-anchor="middle"
-                    class="fill-zinc-400 text-[10px]"
-                  >
-                    {nameOf(node)}
-                  </text>
-                </g>
-              )}
+                    <Dynamic
+                      component={ICONS[iconOf(node)]}
+                      x={p().x - size / 2}
+                      y={p().y - size / 2}
+                      width={size}
+                      height={size}
+                      fill={crossed(c(), r()) ? '#737373' : KIND_COLOR[node.kind]}
+                    />
+                    <text
+                      x={p().x}
+                      y={p().y + radius + 14}
+                      text-anchor="middle"
+                      class="text-[10px]"
+                      fill={here(c(), r()) ? '#e8b04a' : '#a3a3a3'}
+                    >
+                      {nameOf(node)}
+                    </text>
+                  </g>
+                );
+              }}
             </For>
           )}
         </For>
       </svg>
-      <p data-part="note" class="mt-1 text-xs text-zinc-500">
+      <p class="mt-2 max-w-[640px] text-xs leading-relaxed text-neutral-500">
         A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
         Labyrinth once the way through is found; each pays its spoils when done. Elites are harder,
         and pay better. At a Camp the party rests back to full. A Town has a smith, a bench, a
-        temple and a market. The roads not taken collapse behind the bearer. M or Esc to close.
+        temple and a market. The roads not taken collapse behind the bearer.{' '}
+        <span class="kbd">M</span> or <span class="kbd">Esc</span> to close.
       </p>
-    </aside>
+    </Panel>
   );
 }

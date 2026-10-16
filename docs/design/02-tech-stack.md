@@ -99,8 +99,12 @@ The game is mature: the Church's blood rites, gore and corruption are part of th
 
 ### Interface
 
-- Panels and party cards are torn paper with ink text in IM Fell English, an old print face that echoes the Writ and the Church's manuscripts.
-- The interface is due for another pass.
+- Panels are dark glass over the game: rounded, translucent, with a thin light edge. Text is Inter; titles, the boss's name and the ending are Cinzel.
+- Shared parts live in `src/ui/kit.tsx`: panels, tabs, choice rows, buttons, meters and tooltips. Tabs and choice rows are terracotta's headless `TabGroup` and `RadioGroup`; tooltips are positioned by solid-floating-ui.
+- Icons come from game-icons.net (CC BY 3.0), compiled into Solid components by unplugin-icons. `src/ui/icons.ts` maps the game's ids to them: item bases, skills and tree nodes, unit kinds, map areas, materials.
+- Items show as icons in square slots, as Diablo 2's, framed and tinted in the quality's floor-label color, with stack size, refine and sockets on the slot. Hovering a slot shows the item's full card.
+- The inventory is a paper doll of the chosen merc's eight slots beside a grid of the pack. Click or drag an item onto the gear to hand it over, click or drag worn gear back to the pack, and drag an item to the bin to drop it.
+- The skill tree is a grid as Diablo 2's: a column per branch, a row per tier, each node joined to the one it opens. Squares are active skills, circles passives. A node ready to learn pulses; one not in the game yet is dashed.
 
 ### Figures
 
