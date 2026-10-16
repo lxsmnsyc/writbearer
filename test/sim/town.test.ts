@@ -199,11 +199,17 @@ describe('Towns', () => {
     }
   });
 
-  it('are safe, with a well, and a merc to hire while anyone is left', () => {
+  it('are safe, with a well, and a merc to hire only in endless mode', () => {
     const town = generateStage(new RNG(4), 3, { kind: 'town', ahead: ['combat', 'elite'] });
     expect(town.packs).toHaveLength(0);
     expect(town.town).toBeDefined();
-    expect(town.recruit).toBeDefined();
+    expect(town.recruit).toBeUndefined();
     expect(town.exits).toHaveLength(2);
+    const endless = generateStage(new RNG(4), 3, {
+      kind: 'town',
+      ahead: ['combat'],
+      endless: true,
+    });
+    expect(endless.recruit).toBeDefined();
   });
 });

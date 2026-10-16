@@ -63,7 +63,7 @@ export default function App(): JSX.Element {
   const [shouts, setShouts] = createSignal<ShoutEntry[]>([]);
   const [objective, setObjective] = createSignal<ReturnType<Game['objectiveStatus']>>(null);
   const [inventory, setInventory] = createSignal(false);
-  const [offers, setOffers] = createSignal<Offer[] | null>(null);
+  const [title, setTitle] = createSignal(false);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
   const [station, setStation] = createSignal(false);
   const [map, setMap] = createSignal(false);
@@ -94,8 +94,8 @@ export default function App(): JSX.Element {
         onChange: () => {
           setItems((v) => v + 1);
         },
-        onOffers: (o, seed) => {
-          setOffers(o);
+        onTitle: (open, seed) => {
+          setTitle(open);
           setRunSeed(seed);
         },
         onRecruit: (o) => {
@@ -334,14 +334,13 @@ export default function App(): JSX.Element {
           />
         )}
       </Show>
-      <Show when={offers() && game()} keyed>
+      <Show when={title() && game()} keyed>
         {(g) => (
           <StartPicker
             seed={runSeed()}
             gold={g.pack.gold}
-            offers={offers() ?? []}
-            onPick={(index) => {
-              g.choose(index);
+            onSetOut={() => {
+              g.setOut();
               setSaved(null);
             }}
             saved={saved() && { seed: saved()!.seed, place: describeSave(saved()!) }}
@@ -385,6 +384,7 @@ export default function App(): JSX.Element {
           <RecruitDialog
             offer={recruit()!}
             gold={items() >= 0 ? g.pack.gold : 0}
+            guild={g.atGuild}
             onHire={() => g.hire()}
             onLeave={() => {
               g.endTalk();

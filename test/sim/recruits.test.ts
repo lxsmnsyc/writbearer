@@ -7,7 +7,7 @@ import RNG from '../../src/core/rng';
 import { START_GOLD } from '../../src/game/game';
 import { START_LEVEL } from '../../src/game/stage';
 import { RunStreams, Stream } from '../../src/core/seed';
-import { RECRUIT_STAGES, generateStage } from '../../src/gen/stage';
+import { generateGuild, generateStage } from '../../src/gen/stage';
 import { DEFAULT_TOGGLES, Priority } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim from '../../src/sim/sim';
@@ -15,7 +15,7 @@ import { DREAD, POISON, STUN } from '../../src/sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority } from '../../src/sim/types';
 
 describe('offers', () => {
-  it('start a run with fighters only, every fighting job among them, the same for the same seed', () => {
+  it('start a run with four recruits: every job, one more fighter, no name twice, the same for the same seed', () => {
     for (const seed of ['ASHEN', 'BRINE', 'COAL', 'DUSK', 'EMBER']) {
       const roll = (): string[] =>
         rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5).map(
@@ -23,14 +23,15 @@ describe('offers', () => {
         );
       const offers = roll();
       const kinds = offers.map((o) => o.split(':')[0]);
-      expect(offers).toHaveLength(3);
-      expect(kinds).not.toContain('cleric');
-      expect(new Set(kinds)).toEqual(new Set(FIGHTERS));
+      expect(offers).toHaveLength(4);
+      expect(new Set(kinds)).toEqual(new Set(['vanguard', 'ranger', 'cleric']));
+      expect(kinds.filter((k) => (FIGHTERS as readonly string[]).includes(k))).toHaveLength(3);
+      expect(new Set(offers.map((o) => o.split(':')[1])).size).toBe(4);
       expect(roll()).toEqual(offers);
     }
   });
 
-  it('start with gold enough to hire three mercs by the fires', () => {
+  it('start with gold enough to hire three recruits beside the one the Guild pays for', () => {
     expect(START_GOLD).toBeGreaterThanOrEqual(3 * wageFor(START_LEVEL));
   });
 
@@ -53,16 +54,29 @@ describe('offers', () => {
     expect(greedy.wage).toBeGreaterThan(plain.wage);
   });
 
-  it('wait by fires only in the first two phases', () => {
-    const fires = (from: number, to: number): number => {
+  it('wait by fires only in endless mode', () => {
+    const fires = (endless: boolean): number => {
       let n = 0;
-      for (let i = from; i < to; i++) {
-        n += generateStage(new RunStreams('ASHEN').area(1, Stream.Layout, i), i).recruit ? 1 : 0;
+      for (let i = 1; i < 24; i++) {
+        const stage = generateStage(new RunStreams('ASHEN').area(1, Stream.Layout, i), i, {
+          kind: 'combat',
+          ahead: ['combat'],
+          endless,
+        });
+        n += stage.recruit ? 1 : 0;
       }
       return n;
     };
-    expect(fires(1, RECRUIT_STAGES)).toBeGreaterThan(0);
-    expect(fires(RECRUIT_STAGES, RECRUIT_STAGES + 12)).toBe(0);
+    expect(fires(false)).toBe(0);
+    expect(fires(true)).toBeGreaterThan(0);
+  });
+
+  it('wait four at the Guild House, before the road into the first phase', () => {
+    const stage = generateGuild(new RNG(1), ['combat']);
+    expect(stage.recruits).toHaveLength(4);
+    expect(stage.packs).toHaveLength(0);
+    expect(stage.town).toBeDefined();
+    expect(stage.exits).toHaveLength(1);
   });
 });
 

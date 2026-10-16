@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { hire, recruits, titlePanel } from './support/guild';
 
 test('the compendium records a merc taken, and keeps it after a reload', async ({ page }) => {
   await page.goto('/?seed=ASHEN');
-  const picker = page.getByRole('complementary', { name: 'Choose your first merc' });
+  const picker = titlePanel(page);
   await picker.getByRole('button', { name: 'The Compendium (K)' }).click();
   const book = page.getByRole('complementary', { name: 'Compendium' });
   await expect(book).toBeVisible();
@@ -12,9 +13,10 @@ test('the compendium records a merc taken, and keeps it after a reload', async (
   await page.keyboard.press('k');
   await expect(book).toBeHidden();
 
-  const first = picker.getByRole('article').first();
-  const name = ((await first.getAttribute('aria-label')) ?? '').split(',')[0];
-  await first.getByRole('button', { name: 'Take' }).click();
+  await picker.getByRole('button', { name: 'Enter the Guild House' }).click();
+  const first = (await recruits(page))[0];
+  const name = first.name;
+  await hire(page, first);
   await page.keyboard.press('k');
   await book.getByRole('tab', { name: /Mercs/ }).click();
   await expect(book.getByRole('list', { name: 'Mercs' })).toContainText(name);

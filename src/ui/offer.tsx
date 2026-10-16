@@ -67,8 +67,8 @@ export function OfferCard(props: CardProps): JSX.Element {
 interface StartProps {
   seed: string;
   gold: number;
-  offers: Offer[];
-  onPick: (index: number) => void;
+  // Into the Guild House, to hire the party
+  onSetOut: () => void;
   // A suspended run, where it stands, and how to take it up again
   saved: { seed: string; place: string } | null;
   onResume: () => void;
@@ -87,16 +87,19 @@ const MODES = [
   { endless: true, name: 'Endless' },
 ];
 
-/** The start of a run: the bearer picks its first merc from three. */
+/**
+ * The start of a run: its mode and seed, a suspended run to continue, and
+ * the way into the Guild House, where the party is hired.
+ */
 export function StartPicker(props: StartProps): JSX.Element {
   return (
     <aside
       data-part="panel"
-      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-zinc-700 bg-zinc-950/95 p-5 text-zinc-300"
-      aria-label="Choose your first merc"
+      class="absolute top-1/2 left-1/2 w-[520px] -translate-x-1/2 -translate-y-1/2 border border-zinc-700 bg-zinc-950/95 p-5 text-zinc-300"
+      aria-label="A new run"
     >
       <h2 data-part="title" class="font-serif text-xl text-zinc-100">
-        Choose your first merc
+        Writbearer
       </h2>
       <div class="my-2 flex gap-1" role="radiogroup" aria-label="Mode">
         <For each={MODES}>
@@ -121,9 +124,9 @@ export function StartPicker(props: StartProps): JSX.Element {
           when={props.endless}
           fallback={
             <>
-              The Writ sets out for the Hollow with one sword at its side. The Guild's purse holds{' '}
-              {props.gold} gold, enough to hire three more by the fires of wandering mercs on the
-              way.
+              The Guild sends the Writ down into the Hollow. Four recruits wait at the Guild House:
+              the Guild pays the first, and its purse holds {props.gold} gold for the others. No one
+              is left to hire below.
             </>
           }
         >
@@ -145,24 +148,21 @@ export function StartPicker(props: StartProps): JSX.Element {
           >
             Continue the last run
             <span data-part="note" class="block text-xs text-zinc-500">
-              Seed {saved.seed} · {saved.place}. Taking a new merc instead starts over.
+              Seed {saved.seed} · {saved.place}. Setting out instead starts over.
             </span>
           </button>
         )}
       </Show>
-      <div class="flex gap-3">
-        <For each={props.offers}>
-          {(offer, i) => (
-            <OfferCard
-              offer={offer}
-              action="Take"
-              onPick={() => {
-                props.onPick(i());
-              }}
-            />
-          )}
-        </For>
-      </div>
+      <button
+        type="button"
+        data-part="choice"
+        class="w-full border border-zinc-500 px-3 py-2 hover:border-zinc-200"
+        onClick={() => {
+          props.onSetOut();
+        }}
+      >
+        Enter the Guild House
+      </button>
       <button
         type="button"
         class="mt-3 text-xs text-zinc-500 hover:text-zinc-200"
@@ -258,6 +258,8 @@ function SeedBar(props: SeedProps): JSX.Element {
 interface RecruitProps {
   offer: Offer;
   gold: number;
+  // Whether it waits at the Guild House, and not by a fire
+  guild: boolean;
   onHire: () => string | null;
   onLeave: () => void;
 }
@@ -272,12 +274,17 @@ export function RecruitDialog(props: RecruitProps): JSX.Element {
       aria-label="A merc for hire"
     >
       <p data-part="note" class="mb-3 text-xs text-zinc-500">
-        A merc sits by the fire, and looks the bearer over. You have {props.gold} gold.
+        {props.guild
+          ? 'A recruit of the Guild looks the bearer over.'
+          : 'A merc sits by the fire, and looks the bearer over.'}{' '}
+        You have {props.gold} gold.
       </p>
       <div class="flex gap-3">
         <OfferCard
           offer={props.offer}
-          action={`Hire for ${props.offer.wage} gold`}
+          action={
+            props.offer.wage === 0 ? 'Take: the Guild pays' : `Hire for ${props.offer.wage} gold`
+          }
           onPick={() => {
             setMessage(props.onHire());
           }}
@@ -295,7 +302,7 @@ export function RecruitDialog(props: RecruitProps): JSX.Element {
           props.onLeave();
         }}
       >
-        Leave it by the fire
+        {props.guild ? 'Not now' : 'Leave it by the fire'}
       </button>
     </aside>
   );

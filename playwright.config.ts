@@ -15,6 +15,9 @@ export default defineConfig({
   testDir: 'e2e',
   forbidOnly: onCI,
   retries: onCI ? 1 : 0,
+  // The game runs in real time, so a starved browser walks and fights
+  // slower than a test waits: a few at a time keep them steady.
+  workers: 3,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: onCI ? [['github'], ['html', { open: 'never' }]] : [['list']],

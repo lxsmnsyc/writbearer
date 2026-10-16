@@ -1,29 +1,53 @@
 import { expect, test } from '@playwright/test';
+import { enterGuild, hire, recruits, talkTo, titlePanel } from './support/guild';
 
-test('a run begins with a pick of one merc from three', async ({ page }) => {
+test('a run begins in the Guild House: four recruits, the first one free', async ({ page }) => {
   await page.goto('/?seed=ASHEN');
-  const picker = page.getByRole('complementary', { name: 'Choose your first merc' });
-  await expect(picker).toBeVisible();
-  await expect(picker.getByRole('article')).toHaveCount(3);
-  const first = picker.getByRole('article').first();
-  const label = (await first.getAttribute('aria-label')) ?? '';
-  const name = label.split(',')[0];
-  await first.getByRole('button', { name: 'Take' }).click();
-  await expect(picker).toBeHidden();
+  await expect(titlePanel(page)).toBeVisible();
+  await enterGuild(page);
+  const waiting = await recruits(page);
+  expect(waiting).toHaveLength(4);
+  expect(new Set(waiting.map((r) => r.name)).size).toBe(4);
+  expect(new Set(waiting.map((r) => r.kind))).toEqual(new Set(['vanguard', 'ranger', 'cleric']));
 
   const party = page.getByRole('navigation', { name: 'Party' });
+  const fighter = waiting.find((r) => r.kind !== 'cleric')!;
+  await hire(page, fighter);
   await expect(party.getByRole('button')).toHaveCount(1);
-  await expect(party.getByRole('button').first()).toContainText(name);
+  await expect(party.getByRole('button').first()).toContainText(fighter.name);
+
+  // The next costs its wage.
+  const dialog = await talkTo(page, (await recruits(page))[0]);
+  await expect(dialog.getByRole('button', { name: /Hire for \d+ gold/ })).toBeVisible();
 });
 
-test('the same seed offers the same mercs', async ({ page }) => {
+test('the same seed offers the same recruits', async ({ page }) => {
   const names = async (): Promise<string[]> => {
     await page.goto('/?seed=WRIT');
-    const cards = page
-      .getByRole('complementary', { name: 'Choose your first merc' })
-      .getByRole('article');
-    await expect(cards).toHaveCount(3);
-    return cards.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+    await expect.poll(async () => (await recruits(page)).length).toBe(4);
+    return (await recruits(page)).map((r) => `${r.name}/${r.kind}`);
   };
   expect(await names()).toEqual(await names());
+});
+
+test('the road out stays shut until a fighter is hired', async ({ page }) => {
+  await enterGuild(page);
+  const cleric = (await recruits(page)).find((r) => r.kind === 'cleric')!;
+  await hire(page, cleric);
+  const canvas = page.locator('canvas');
+  await page.keyboard.down('d');
+  await page.keyboard.down('s');
+  await expect
+    .poll(async () => Number((await canvas.getAttribute('data-bearer'))?.split(',')[0]), {
+      timeout: 15000,
+    })
+    .toBeGreaterThan(20);
+  await page.keyboard.up('d');
+  await page.keyboard.up('s');
+  const box = (await canvas.boundingBox())!;
+  const [sx, sy] = ((await canvas.getAttribute('data-exits')) ?? '').split(',').map(Number);
+  await page.mouse.click(box.x + sx * box.width, box.y + sy * box.height);
+  await page.waitForTimeout(3000);
+  // Still in the Guild House, its other recruits waiting
+  expect((await recruits(page)).length).toBe(3);
 });

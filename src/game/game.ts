@@ -13,6 +13,7 @@ import {
   type AreaPlan,
   type Prop,
   type Stage,
+  generateGuild,
   generateStage,
   generateTomb,
   generateWaystation,
@@ -85,7 +86,7 @@ import type { Recipe } from '../content/recipes';
 import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
-import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
+import { FIGHTERS, type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { MERCS, spawnMerc } from '../content/roster';
 import { applySets } from '../content/sets';
 import { START_LEVEL, carryParty, enterStage, spawnParty, wakeBoss } from './stage';
@@ -118,8 +119,9 @@ export interface GameHooks {
   onInventory?: (open: boolean) => void;
   // Called whenever the pack, anyone's gear, levels or skills change.
   onChange?: () => void;
-  // Called with the offers to pick from at the start of a run, then null.
-  onOffers?: (offers: Offer[] | null, seed: string) => void;
+  // Called when the title panel opens at the start of a run, with the run's
+  // seed, and when the bearer sets out into the Guild House.
+  onTitle?: (open: boolean, seed: string) => void;
   // Called when the bearer meets a wandering merc, then null.
   onRecruit?: (offer: Offer | null) => void;
   // Called when the bearer reaches a Waystation's post, and when it closes.
@@ -180,6 +182,7 @@ const MEET_REACH = 1.8;
 const WAYSTATION_STREAM = 1000;
 const AREA_ROW_STREAM = 100;
 const TOMB_STREAM = 2000;
+const GUILD_STREAM = 3000;
 // Towns stand in the first two layers only.
 const TOWN_LAYERS = 2;
 // Each endless phase rolls its biome from its own stream.
@@ -241,6 +244,7 @@ export default class Game {
   private fetching: GroundItem | null = null;
   private opening: Prop | null = null;
   private leaving: number | null = null;
+  private seeking: { offer: Offer; x: number; z: number; met: boolean } | null = null;
   // The exit under the mouse, drawn brighter
   private hoverExit: number | null = null;
   // What this area asks before its exits open, and whether it is done
@@ -248,10 +252,12 @@ export default class Game {
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
   private hurtHere = false;
-  // The offers to pick the first merc from, while the run has not begun
-  private offers: Offer[] | null = null;
+  // Whether the title panel is up, before the run begins
+  private title = false;
+  // The recruits rolled for the Guild House at the start of the run
+  private starting: Offer[] = [];
   // A merc waiting by its fire on this stage, and the one being talked to
-  private wanderer: { offer: Offer; x: number; z: number; met: boolean } | null = null;
+  private wanderers: { offer: Offer; x: number; z: number; met: boolean }[] = [];
   // The boss of a layer's last area, while the party is in it
   private boss: Unit | null = null;
   // The party's storage for the run, and the wages owed at this Waystation
@@ -299,7 +305,7 @@ export default class Game {
   // The end of the run: the Creditor, once the seal breaks, and how it ended
   private finale: { creditor: Unit; ending: 'sealed' | 'risen' | null } | null = null;
   private callout: { text: string; until: number } | null = null;
-  private recruiting: Offer | null = null;
+  private recruiting: { offer: Offer; x: number; z: number; met: boolean } | null = null;
   // Impact: a short freeze on heavy hits, and screen shake in pixels.
   private hitStop = 0;
   private shake = 0;
@@ -320,7 +326,7 @@ export default class Game {
     return (
       this.selected !== null ||
       this.inventory ||
-      this.offers !== null ||
+      this.title ||
       this.recruiting !== null ||
       this.stationOpen ||
       this.mapOpen ||
@@ -335,22 +341,31 @@ export default class Game {
     return this.streams.seed;
   }
 
-  /** Takes one of the starting offers into the party, and begins the run. */
-  choose(index: number): void {
-    const offer = this.offers?.[index];
-    if (!offer) {
-      return;
-    }
-    this.join(offer, this.bearer.x + 1, this.bearer.z);
-    this.offers = null;
-    this.hooks.onOffers?.(null, this.streams.seed);
-    // A new run takes the save slot from any run before it.
-    this.persist();
+  /** Closes the title panel: the bearer stands in the Guild House. */
+  setOut(): void {
+    this.title = false;
+    this.hooks.onTitle?.(false, this.streams.seed);
+  }
+
+  // What a recruit asks to join: nothing for the first, which the Guild pays.
+  private priceOf(offer: Offer): number {
+    return this.stage.kind === 'guild' && this.mercs().length === 0 ? 0 : offer.wage;
+  }
+
+  // Whether the party has a merc that can kill what attacks the bearer.
+  private get hasFighter(): boolean {
+    return this.mercs().some((m) => m.alive && (FIGHTERS as readonly string[]).includes(m.kind));
   }
 
   /** Resumes a saved run at the entrance of the area it was saved in. */
   resume(save: RunSave): void {
     this.reset(save);
+  }
+
+  // A run begins at the Guild House, unless started at a chosen place or
+  // with a party, as tests and playtesting do.
+  private get startsAtGuild(): boolean {
+    return this.saving && !this.options.party;
   }
 
   // Whether this run keeps a save: not one started at a chosen place, as
@@ -432,22 +447,23 @@ export default class Game {
     }
   }
 
-  /** Hires the wandering merc being talked to. Returns why it failed, or null. */
+  /** Hires the merc being talked to. Returns why it failed, or null. */
   hire(): string | null {
-    const offer = this.recruiting;
-    const w = this.wanderer;
-    if (!offer || !w) {
+    const w = this.recruiting;
+    if (!w) {
       return null;
     }
+    const { offer } = w;
     if (this.mercs().length >= PARTY_SIZE) {
       return `The party is full: ${PARTY_SIZE} mercs at most.`;
     }
-    if (this.pack.gold < offer.wage) {
-      return `${offer.name} wants ${offer.wage} gold. You have ${this.pack.gold}.`;
+    const price = this.priceOf(offer);
+    if (this.pack.gold < price) {
+      return `${offer.name} wants ${price} gold. You have ${this.pack.gold}.`;
     }
-    this.pack.gold -= offer.wage;
+    this.pack.gold -= price;
     this.join(offer, w.x, w.z);
-    this.wanderer = null;
+    this.wanderers = this.wanderers.filter((x) => x !== w);
     this.endTalk();
     this.itemsChanged();
     return null;
@@ -474,28 +490,35 @@ export default class Game {
     this.hooks.onChange?.();
   }
 
-  // Meets the wandering merc when the bearer walks up to it.
+  // Meets a recruit when the bearer walks up to it.
   private meet(): void {
-    const w = this.wanderer;
-    if (!w || this.recruiting) {
+    if (this.recruiting) {
       return;
     }
-    const d = Math.hypot(this.bearer.x - w.x, this.bearer.z - w.z);
-    if (d > LEAVE_REACH) {
-      w.met = false;
-    } else if (d <= MEET_REACH && !w.met && this.bearer.alive) {
-      w.met = true;
-      this.compendium.meet({
-        name: w.offer.name,
-        job: MERCS[w.offer.kind].job.name,
-        traits: w.offer.traits,
-        level: w.offer.level,
-      });
-      this.recruiting = w.offer;
-      this.keys.clear();
-      this.bearer.order = null;
-      this.hooks.onRecruit?.(w.offer);
+    // Only the recruit the bearer was sent to: walking past one asks nothing.
+    for (const w of this.wanderers) {
+      const d = Math.hypot(this.bearer.x - w.x, this.bearer.z - w.z);
+      if (w === this.seeking && d <= MEET_REACH && this.bearer.alive) {
+        this.seeking = null;
+        w.met = true;
+        this.compendium.meet({
+          name: w.offer.name,
+          job: MERCS[w.offer.kind].job.name,
+          traits: w.offer.traits,
+          level: w.offer.level,
+        });
+        this.recruiting = w;
+        this.keys.clear();
+        this.bearer.order = null;
+        this.hooks.onRecruit?.({ ...w.offer, wage: this.priceOf(w.offer) });
+        return;
+      }
     }
+  }
+
+  /** Whether the merc being talked to waits at the Guild House, and not by a fire. */
+  get atGuild(): boolean {
+    return this.stage.kind === 'guild';
   }
 
   /**
@@ -667,6 +690,13 @@ export default class Game {
       this.stageIndex -= this.stageIndex % AREAS_PER_LAYER;
       this.node = null;
       this.stage = this.buildWaystation();
+    } else if (this.startsAtGuild) {
+      this.node = null;
+      this.stage = generateGuild(
+        this.streams.area(1, Stream.Layout, GUILD_STREAM),
+        this.aheadOf(null),
+      );
+      withObjectivesAhead(this.stage, this.objectivesAhead(null));
     } else {
       this.goTo(this.stageIndex % AREAS_PER_LAYER, 0);
       this.stage = this.buildStage();
@@ -683,12 +713,13 @@ export default class Game {
       carryParty(this.sim, this.stage);
       this.views.snap(this.sim);
     }
-    this.offers =
-      this.options.party || save
-        ? null
-        : rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL);
+    this.starting =
+      this.stage.kind === 'guild'
+        ? rollStartingOffers(this.streams.get(1, Stream.Recruits), START_LEVEL)
+        : [];
+    this.title = !save && this.stage.kind === 'guild';
     this.recruiting = null;
-    this.hooks.onOffers?.(this.offers, this.streams.seed);
+    this.hooks.onTitle?.(this.title, this.streams.seed);
     this.hooks.onRecruit?.(null);
     this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
@@ -877,7 +908,7 @@ export default class Game {
   /** Starts the run about to begin on another seed, as typed or shared. */
   setSeed(seed: string): void {
     const clean = normalizeSeed(seed);
-    if (this.offers === null || clean === '' || clean === this.streams.seed) {
+    if (!this.title || clean === '' || clean === this.streams.seed) {
       return;
     }
     this.reset(null, clean);
@@ -891,7 +922,7 @@ export default class Game {
 
   /** Switches the run about to begin between story and endless, on its seed. */
   setEndless(on: boolean): void {
-    if (this.offers === null || on === this.endless) {
+    if (!this.title || on === this.endless) {
       return;
     }
     this.chosenEndless = on;
@@ -958,16 +989,18 @@ export default class Game {
     this.hazards = this.stage.hazards ? new Hazards(this.stage) : null;
     this.hurtHere = false;
     const camp = this.stage.recruit;
-    this.wanderer = camp
-      ? {
-          offer: rollOffer(
-            this.streams.area(1, Stream.Recruits, this.stageIndex),
-            START_LEVEL + Math.floor(this.stageIndex / 2),
-          ),
-          ...camp,
-          met: false,
-        }
-      : null;
+    const guild = this.stage.recruits ?? [];
+    this.wanderers = guild.map((at, i) => ({ offer: this.starting[i], ...at, met: false }));
+    if (camp) {
+      this.wanderers.push({
+        offer: rollOffer(
+          this.streams.area(1, Stream.Recruits, this.stageIndex),
+          START_LEVEL + Math.floor(this.stageIndex / 2),
+        ),
+        ...camp,
+        met: false,
+      });
+    }
     for (const s of this.stage.stains) {
       this.effects.stain(s.x, s.z, s.r, '#560b0b');
     }
@@ -985,8 +1018,12 @@ export default class Game {
     return { title, detail: o.status(this.sim), done: o.done };
   }
 
-  // Whether the exits are open: once the objective is done, if there is one.
+  // Whether the exits are open: once the objective is done, if there is one,
+  // and out of the Guild House once a fighter has been hired.
   private get exitsOpen(): boolean {
+    if (this.stage.kind === 'guild') {
+      return this.hasFighter;
+    }
     return this.objective?.done ?? true;
   }
 
@@ -1064,31 +1101,28 @@ export default class Game {
     };
   }
 
-  // Who stands in the area out of the fight: the wandering merc, or
+  // Who stands in the area out of the fight: recruits for hire, and
   // whoever waits at the Event until a choice is made, or lies dead there.
-  private figure(): Frame['figure'] {
-    const w = this.wanderer;
-    if (w) {
-      return {
-        kind: w.offer.kind,
-        x: w.x,
-        z: w.z,
-        label: `${w.offer.name}, for hire`,
-        fallen: false,
-      };
-    }
+  private figures(): Frame['figures'] {
+    const out: Frame['figures'] = this.wanderers.map((w) => ({
+      kind: w.offer.kind,
+      x: w.x,
+      z: w.z,
+      label: `${w.offer.name}, ${MERCS[w.offer.kind].job.name}`,
+      fallen: false,
+    }));
     const e = this.encounter;
     const kind = e?.play.figure;
-    if (!e || !kind || (e.outcome !== null && !e.play.fallen)) {
-      return null;
+    if (e && kind && (e.outcome === null || e.play.fallen)) {
+      out.push({
+        kind,
+        x: e.at.x,
+        z: e.at.z,
+        label: e.outcome === null ? e.def.title : null,
+        fallen: e.play.fallen ?? false,
+      });
     }
-    return {
-      kind,
-      x: e.at.x,
-      z: e.at.z,
-      label: e.outcome === null ? e.def.title : null,
-      fallen: e.play.fallen ?? false,
-    };
+    return out;
   }
 
   // The Event as the interface shows it.
@@ -1156,7 +1190,11 @@ export default class Game {
       this.say(`${names(gone)} ${gone.length > 1 ? 'desert' : 'deserts'} the party.`);
       this.hooks.onChange?.();
     }
-    if (this.stage.station) {
+    if (this.stage.kind === 'guild') {
+      // From the Guild House, the road leads into the first phase.
+      this.goTo(0, exit);
+      this.stage = this.buildStage();
+    } else if (this.stage.station) {
       // The unpaid lose heart as the party takes the road on.
       const unpaid = this.payroll?.settle(this.sim) ?? [];
       if (unpaid.length > 0) {
@@ -1554,7 +1592,7 @@ export default class Game {
       this.shout(shout);
       return;
     }
-    if (key === 'm' && !this.over && this.offers === null) {
+    if (key === 'm' && !this.over && !this.title) {
       this.openMap(!this.mapOpen);
       return;
     }
@@ -1594,6 +1632,7 @@ export default class Game {
     const clickable =
       free &&
       (this.hoverExit !== null ||
+        this.recruitAt(e.clientX, e.clientY) !== null ||
         this.chestAt(e.clientX, e.clientY) !== null ||
         this.renderer.labelAt(e.clientX, e.clientY) !== null);
     this.canvas.style.cursor = clickable ? 'pointer' : '';
@@ -1701,6 +1740,13 @@ export default class Game {
       this.bearer.order = { x: item.x, z: item.z };
       return;
     }
+    // Clicking a recruit walks the bearer over to talk to it.
+    const recruit = this.recruitAt(e.clientX, e.clientY);
+    if (recruit) {
+      this.goFor({ seeking: recruit });
+      this.bearer.order = { x: recruit.x - 0.8, z: recruit.z + 0.4 };
+      return;
+    }
     // Clicking an exit's plate walks the bearer to it, to leave by it.
     const exit = this.exitAt(e.clientX, e.clientY);
     if (exit !== null) {
@@ -1712,6 +1758,10 @@ export default class Game {
       const o = this.objective;
       if (o && !o.done) {
         this.say(`The way on opens once the ${OBJECTIVE_NAME[o.kind]} is done.`);
+        return;
+      }
+      if (this.stage.kind === 'guild' && !this.hasFighter) {
+        this.say('The Guild sends no Writ out without a sword: hire a Vanguard or a Ranger.');
         return;
       }
       this.goFor({ leaving: exit });
@@ -1734,10 +1784,30 @@ export default class Game {
   };
 
   // What the bearer is walking over to do, replacing whatever it was before.
-  private goFor(aim: { fetching?: GroundItem; opening?: Prop; leaving?: number } = {}): void {
+  private goFor(
+    aim: {
+      fetching?: GroundItem;
+      opening?: Prop;
+      leaving?: number;
+      seeking?: Game['seeking'];
+    } = {},
+  ): void {
     this.fetching = aim.fetching ?? null;
     this.opening = aim.opening ?? null;
     this.leaving = aim.leaving ?? null;
+    this.seeking = aim.seeking ?? null;
+  }
+
+  // The recruit drawn under a point on the screen, if any.
+  private recruitAt(clientX: number, clientY: number): Game['seeking'] {
+    const s = this.renderer.toSmall(clientX, clientY);
+    const z = look.zoom;
+    return (
+      this.wanderers.find((w) => {
+        const b = this.renderer.iso(w.x, w.z);
+        return Math.abs(s.x - b.x) <= 9 * z && s.y >= b.y - 38 * z && s.y <= b.y + 6 * z;
+      }) ?? null
+    );
   }
 
   // WASD moves along the screen: right is +x -z, down is +x +z.
@@ -1842,7 +1912,7 @@ export default class Game {
       time: this.time,
       slain: this.slain,
       ground: this.ground,
-      figure: this.figure(),
+      figures: this.figures(),
       over: this.over,
       ending: this.finale?.ending ?? null,
       region: this.region,
@@ -1863,6 +1933,13 @@ export default class Game {
     this.canvas.dataset.camera = `${cam.x},${cam.y}`;
     // How the final fight stands: not begun, under way, or how it ended.
     this.canvas.dataset.finale = this.finale ? (this.finale.ending ?? 'fighting') : 'none';
+    // Each recruit waiting to be hired, as shares of the canvas.
+    this.canvas.dataset.recruits = this.wanderers
+      .map((w) => {
+        const p = this.renderer.shareOnScreen(w.x, w.z);
+        return `${w.offer.name}/${w.offer.kind}:${p.x.toFixed(4)},${p.y.toFixed(4)}`;
+      })
+      .join(';');
     // Each exit's plate, north first, as shares of the canvas, so tests can click them.
     this.canvas.dataset.exits = this.stage.exits
       .map((e) => {

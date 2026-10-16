@@ -83,7 +83,9 @@ describe('areas on the map', () => {
       let sum = 0;
       for (let seed = 1; seed <= 10; seed++) {
         const s = generateStage(new RNG(seed), 2, { kind, ahead: ['combat'] });
+        // An elite counts as six more, as the budget counts it.
         sum += s.packs.flatMap((p) => p.kinds).reduce((n, k) => n + THREAT[k], 0);
+        sum += s.packs.filter((p) => p.elite >= 0).length * 6;
         if (kind === 'elite') {
           expect(s.packs.some((p) => p.elite >= 0)).toBe(true);
         }
@@ -93,12 +95,18 @@ describe('areas on the map', () => {
     expect(threat('elite')).toBeGreaterThan(threat('combat'));
   });
 
-  it('make a Camp safe, with a fire to rest by and a merc to hire', () => {
+  it('make a Camp safe, with a fire to rest by, and a merc to hire only in endless mode', () => {
     const stage = generateStage(new RNG(5), 4, { kind: 'camp', ahead: ['combat', 'elite'] });
     expect(stage.packs).toHaveLength(0);
     expect(stage.rest).toBeDefined();
-    expect(stage.recruit).toBeDefined();
+    expect(stage.recruit).toBeUndefined();
     expect(stage.exits).toHaveLength(2);
+    const endless = generateStage(new RNG(5), 4, {
+      kind: 'camp',
+      ahead: ['combat'],
+      endless: true,
+    });
+    expect(endless.recruit).toBeDefined();
   });
 });
 

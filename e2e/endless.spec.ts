@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { titlePanel } from './support/guild';
 
 test('endless mode is chosen at the start, and its phases are numbered', async ({ page }) => {
   await page.goto('/?seed=ASHEN');
-  const picker = page.getByRole('complementary', { name: 'Choose your first merc' });
+  const picker = titlePanel(page);
   await picker.getByRole('radio', { name: 'Endless' }).click();
   await expect(picker.getByRole('radio', { name: 'Endless' })).toHaveAttribute(
     'aria-checked',
@@ -10,7 +11,7 @@ test('endless mode is chosen at the start, and its phases are numbered', async (
   );
   await expect(picker).toContainText('No Writ and no ending');
   await expect(picker).toContainText('Seed ASHEN');
-  await picker.getByRole('article').first().getByRole('button', { name: 'Take' }).click();
+  await picker.getByRole('button', { name: 'Enter the Guild House' }).click();
   await page.keyboard.press('m');
   const map = page.getByRole('complementary', { name: 'Map' });
   await expect(map).toContainText('Phase 1');

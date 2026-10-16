@@ -1,10 +1,10 @@
 import { type Page, expect, test } from '@playwright/test';
+import { recruits, titlePanel } from './support/guild';
 
-const offers = async (page: Page): Promise<string[]> =>
-  page
-    .getByRole('complementary', { name: 'Choose your first merc' })
-    .getByRole('article')
-    .evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
+const offers = async (page: Page): Promise<string[]> => {
+  await expect.poll(async () => (await recruits(page)).length).toBe(4);
+  return (await recruits(page)).map((r) => `${r.name}/${r.kind}`);
+};
 
 test('a seed typed in gives the same run as its link, and the link can be copied', async ({
   page,
@@ -20,12 +20,9 @@ test('a seed typed in gives the same run as its link, and the link can be copied
   await seed.getByRole('textbox', { name: 'Play a seed' }).fill(' writ ');
   await seed.getByRole('button', { name: 'Play' }).click();
   await expect(seed).toContainText('Seed WRIT');
-  expect(await offers(page)).toEqual(shared);
+  await expect.poll(async () => offers(page)).toEqual(shared);
 
-  await page
-    .getByRole('complementary', { name: 'Choose your first merc' })
-    .getByRole('radio', { name: 'Endless' })
-    .click();
+  await titlePanel(page).getByRole('radio', { name: 'Endless' }).click();
   await seed.getByRole('button', { name: 'Copy link' }).click();
   await expect(seed.getByRole('status')).toBeVisible();
   const link = await page.evaluate(async () => navigator.clipboard.readText());

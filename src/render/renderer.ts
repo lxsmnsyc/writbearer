@@ -63,6 +63,10 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   maze: 'Labyrinth: find the way through',
 };
 
+// Places lit through, and how far their light reaches from the middle
+const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
+const LIT_RADIUS = 13;
+
 // A tile is 32 by 16 pixels on screen, times the zoom.
 const TW = 32;
 const TH = 16;
@@ -129,7 +133,7 @@ export interface Frame {
   ground: GroundItem[];
   // Someone standing in the area who is not in a fight: a merc for hire
   // by its fire, or whoever waits at an Event, with a label over its head
-  figure: { kind: string; x: number; z: number; label: string | null; fallen: boolean } | null;
+  figures: { kind: string; x: number; z: number; label: string | null; fallen: boolean }[];
   over: boolean;
   paused: boolean;
   // The merc whose orders are open
@@ -354,8 +358,10 @@ export default class Renderer {
         });
       }
     }
-    const w = f.figure;
-    if (w && fog.visible(w.x, w.z) > 0.05 && isKind(w.kind)) {
+    for (const w of f.figures) {
+      if (fog.visible(w.x, w.z) <= 0.05 || !isKind(w.kind)) {
+        continue;
+      }
       const kind = w.kind;
       // It turns to watch the bearer come, unless it lies dead.
       const angle =
@@ -434,6 +440,10 @@ export default class Renderer {
       const r = f.views.rig(u, f.alpha);
       return { x: r.x, z: r.z, radius: u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT };
     });
+    // The safe places are lit: the Guild House, Waystations, Towns and Camps.
+    if (LIT.has(f.stage.kind)) {
+      viewers.push({ x: f.stage.width / 2, z: f.stage.depth / 2, radius: LIT_RADIUS });
+    }
     // Once the seal breaks, the lantern burns on in the Creditor's hand.
     const focus = focusOf(f);
     if (focus && focus !== f.sim.bearer) {
@@ -899,8 +909,10 @@ export default class Renderer {
       );
       out.font = '15px "IM Fell English", Georgia, serif';
     }
-    const w = f.figure;
-    if (w?.label && fog.visible(w.x, w.z) > 0.5) {
+    for (const w of f.figures) {
+      if (!w.label || fog.visible(w.x, w.z) <= 0.5) {
+        continue;
+      }
       const b = this.iso(w.x, w.z);
       const text = w.label;
       const x = b.x * SCALE - this.sub.x;
@@ -1090,6 +1102,9 @@ function place(stage: Stage): string {
   }
   if (stage.kind === 'tomb') {
     return 'The Tomb';
+  }
+  if (stage.kind === 'guild') {
+    return 'The Guild House';
   }
   const area = `Area ${areaOf(stage.index)}`;
   if (stage.kind === 'elite') {

@@ -122,6 +122,8 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
   - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other side of the wall from the site.
   - A cache, a chest for now. It opens only when clicked: the bearer walks to it and opens it.
 - **Terrain from noise:** pillars where the noise runs high, rubble where it runs low, plus pikes and gibbets along the way. Every place keeps clear ground around it.
+- **Guild House:** where every run begins, before the first phase. A small field, lit through, with four recruits along its north side, a quartermaster's stall and the Guild's strongbox. Its road east leads into the first area. The game is not saved here; the first save is on entering the first area. Waystations, Towns and Camps are lit through too.
+- **Sight:** mercs take as targets only enemies they or the bearer can see, and monsters notice and go for only the party members they can see. Walls, pillars and trees block sight as they block bodies. A monster that loses sight of its quarry walks to where it saw it last.
 - **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.
 - **Packs:** a threat budget of 9, plus 5 per stage deeper. Mites and Husks cost 1, other monsters 2 or 3, and an elite 6 more. Monster level is 2, plus 1 per stage. No pack stands within 13 tiles of the entrance.
 - **Depth:** the first two stages field only Mites and Husks, with one Penitent at the Church's site and Husks in the lair. Crawlers and Hollow soldiers join from the third stage, Penitent packs from the fifth, elites and the Cantor from the fifth, and the Hollowed from the sixth.

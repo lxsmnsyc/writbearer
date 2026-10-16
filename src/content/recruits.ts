@@ -86,11 +86,19 @@ export function rollOffer(
 }
 
 /**
- * Three offers at the start of a run, all fighters, with every fighting job
- * among them.
+ * The recruits at the Guild House at the start of a run: one of each job
+ * and one more fighter, each under a different name.
  */
 export function rollStartingOffers(rng: RNG, level: number): Offer[] {
-  const jobs = [...FIGHTERS, rng.pick(FIGHTERS)];
+  const jobs = [...HIREABLE, rng.pick(FIGHTERS)];
   rng.shuffle(jobs);
-  return jobs.map((kind) => rollOffer(rng, level, [kind]));
+  const offers: Offer[] = [];
+  for (const kind of jobs) {
+    let offer = rollOffer(rng, level, [kind]);
+    for (let i = 0; i < 20 && offers.some((o) => o.name === offer.name); i++) {
+      offer = rollOffer(rng, level, [kind]);
+    }
+    offers.push(offer);
+  }
+  return offers;
 }

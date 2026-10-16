@@ -64,7 +64,7 @@ export interface Exit extends Spot {
 
 /** What an area is, and where each of its exits leads, north first. */
 export interface AreaPlan {
-  kind: NodeKind | 'waystation' | 'tomb';
+  kind: NodeKind | 'waystation' | 'tomb' | 'guild';
   ahead: Ahead[];
   // An Event's scenery, laid round where it happens
   scene?: readonly PropKind[];
@@ -111,6 +111,8 @@ export interface Stage {
   station?: Spot;
   // Where a wandering merc waits by its fire, on stages that have one
   recruit?: Spot;
+  // Where the Guild House's recruits wait, one spot each
+  recruits?: Spot[];
   // A Camp's fire, where the party rests
   rest?: Spot;
   // The Creditor's sarcophagus, where the seal breaks
@@ -234,9 +236,8 @@ const ELITE_THREAT = 6;
 const KEEP_ENTRANCE = 5;
 const KEEP_EXIT = 3.5;
 const KEEP_PLACE = 3;
-// Recruits are offered in phases 1 and 2, the first 16 stages, as the
-// mercenaries design says. Below that, no one is left to hire.
-export const RECRUIT_STAGES = 16;
+// Wandering mercs wait by fires only in endless mode. In the story, the
+// party is hired at the Guild House before the first phase.
 const RECRUIT_CHANCE = 0.6;
 // What stands tall on a layer's ground: dead trees on earth, pillars on stone.
 const tallFor = (biome: number): PropKind =>
@@ -267,8 +268,8 @@ export function withObjectivesAhead(
 
 function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   const biome = plan.biome ?? layerIndexOf(index);
-  // Below the Rift Road no one is left to hire, but in endless mode.
-  const hires = plan.endless === true || index < RECRUIT_STAGES;
+  // Mercs wait by the fires only in endless mode.
+  const hires = plan.endless === true;
   if (leadsDown(index) || plan.kind === 'boss') {
     return generateArena(rng, index, biome);
   }
@@ -546,6 +547,33 @@ export function generateWaystation(
   add('strongbox', post.x + 1.6, post.z + 1.4);
   add('torch', post.x - 1.6, post.z - 1.4);
   edgeTrees(stage, add, rng, post);
+  return stage;
+}
+
+/** How many recruits wait at the Guild House. */
+export const GUILD_RECRUITS = 4;
+
+/**
+ * The Guild House at the rim, where a run begins: a small safe field where
+ * the bearer hires its party from the recruits waiting along the north
+ * wall, and buys potions at the quartermaster's stall, before the road east
+ * to the first phase.
+ */
+export function generateGuild(rng: RNG, ahead: Ahead[]): Stage {
+  const { stage, add } = smallField(rng, 0, 'guild', ahead, 0);
+  const mid = { x: stage.width / 2, z: stage.depth / 2 };
+  stage.recruits = Array.from({ length: GUILD_RECRUITS }, (_, i) => ({
+    x: mid.x - 4.5 + i * 3,
+    z: mid.z - 4,
+  }));
+  add('banner', mid.x - 6.5, mid.z - 5.5);
+  add('banner', mid.x + 6.5, mid.z - 5.5);
+  add('torch', mid.x - 6, mid.z - 3);
+  add('torch', mid.x + 6, mid.z - 3);
+  add('stall', mid.x, mid.z + 4);
+  stage.town = { x: mid.x, z: mid.z + 2.4 };
+  add('strongbox', mid.x + 2, mid.z + 4.4);
+  edgeTrees(stage, add, rng, mid);
   return stage;
 }
 
