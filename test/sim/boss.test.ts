@@ -4,7 +4,8 @@ import type { Offer } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc } from '../../src/content/roster';
 import { findNode, learn } from '../../src/content/trees';
 import { RunStreams, Stream } from '../../src/core/seed';
-import { enterStage, shutArena, spawnParty } from '../../src/game/stage';
+import { enterStage, spawnParty, wakeBoss } from '../../src/game/stage';
+import dodge from '../support/dodge';
 import { AREAS_PER_LAYER } from '../../src/gen/layers';
 import { generateStage, navFor } from '../../src/gen/stage';
 import { DEFAULT_TOGGLES, Hunt, Priority } from '../../src/sim/ai';
@@ -43,7 +44,11 @@ function fight(seed: number, jobs: Offer['kind'][], casters: boolean): boolean {
   });
   const mother = spawnBroodMother(sim, 9, 16, 15);
   mother.aware = true;
-  sim.run(180, () => !mother.alive || !bearer.alive);
+  // The bearer stands behind its mercs, and steps out of her acid.
+  sim.run(180, () => {
+    dodge(sim, bearer, { x: 6, z: 15 });
+    return !mother.alive || !bearer.alive;
+  });
   return !mother.alive && bearer.alive;
 }
 
@@ -88,49 +93,46 @@ describe('the Brood Mother', () => {
     expect(mites(sim)).toHaveLength(0);
   });
 
-  it('is beaten by two mercs sent past the brood, rarely by two that are not', () => {
-    const seeds = [1, 2, 3, 4, 5, 6];
+  it('is beaten by three mercs, by two about half the time, and never by one', () => {
+    const seeds = Array.from({ length: 12 }, (_, i) => i + 1);
     const told = seeds.filter((s) => fight(s, ['vanguard', 'ranger'], true)).length;
     const untold = seeds.filter((s) => fight(s, ['vanguard', 'ranger'], false)).length;
-    expect(told).toBeGreaterThanOrEqual(4);
-    expect(untold).toBeLessThan(told);
+    for (const two of [told, untold]) {
+      expect(two).toBeGreaterThanOrEqual(4);
+      expect(two).toBeLessThan(12);
+    }
     expect(seeds.every((s) => fight(s, ['vanguard', 'ranger', 'cleric'], true))).toBe(true);
     expect(seeds.some((s) => fight(s, ['vanguard'], true))).toBe(false);
   });
 });
 
-describe('the arena', () => {
+describe('the boss field', () => {
   const index = AREAS_PER_LAYER - 1;
-  const arenaStage = (): ReturnType<typeof generateStage> =>
+  const bossStage = (): ReturnType<typeof generateStage> =>
     generateStage(new RunStreams('ASHEN').area(1, Stream.Layout, index), index);
 
-  it('rings the boss and the way down with a wall, open at its gate', () => {
-    const stage = arenaStage();
-    expect(stage.arena).toBeDefined();
+  it('is wide open, with the way down beyond the boss and no way back', () => {
+    const stage = bossStage();
+    expect(stage.width).toBeGreaterThanOrEqual(60);
+    expect(stage.props.some((p) => p.kind === 'wall')).toBe(false);
+    expect(stage.exits.map((e) => e.ahead)).toEqual(['down']);
+    expect(stage.exit.x).toBeGreaterThan(stage.boss!.x);
     const nav = navFor(stage);
     const end = nav.path(stage.entrance, stage.exit).at(-1)!;
     expect(Math.hypot(end.x - stage.exit.x, end.z - stage.exit.z)).toBeLessThan(1);
   });
 
-  it('shuts behind the bearer, pulls the party in and wakes the boss', () => {
-    const stage = arenaStage();
+  it('wakes the boss once the bearer comes near', () => {
+    const stage = bossStage();
     const sim = new Sim(1);
-    const bearer = spawnParty(sim, stage, ['vanguard', 'ranger']);
+    const bearer = spawnParty(sim, stage, ['vanguard']);
     const boss = enterStage(sim, stage)!;
+    expect(wakeBoss(sim, boss)).toBe(false);
     expect(boss.aware).toBe(false);
-    expect(shutArena(sim, stage, boss)).toBe(false);
-    const arena = stage.arena!;
-    bearer.x = arena.x - arena.r + 3;
-    bearer.z = arena.z;
-    expect(shutArena(sim, stage, boss)).toBe(true);
+    bearer.x = boss.x - 10;
+    bearer.z = boss.z;
+    expect(wakeBoss(sim, boss)).toBe(true);
     expect(boss.aware).toBe(true);
-    for (const u of sim.living(Side.Party)) {
-      expect(Math.hypot(u.x - arena.x, u.z - arena.z)).toBeLessThan(arena.r);
-    }
-    // No way back out through the gate.
-    const out = navFor(stage).path(bearer, stage.entrance).at(-1);
-    expect(
-      out === undefined || Math.hypot(out.x - stage.entrance.x, out.z - stage.entrance.z) > 5,
-    ).toBe(true);
+    expect(wakeBoss(sim, boss)).toBe(false);
   });
 });

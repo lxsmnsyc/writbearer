@@ -5,11 +5,12 @@ import { type Skill, Targeting } from '../sim/skill';
 import { DamagePriority } from '../sim/types';
 import type Unit from '../sim/unit';
 import { Hunt } from '../sim/ai';
+import { ACID_SPIT } from './boss-moves';
 import { spawnMonster } from './roster';
 
 // The Marches' boss. The Blight grows a mother where it breaks the surface,
 // and she lays mites as fast as the party can kill them. She tests whether
-// the party's orders send it past the brood to her.
+// the party keeps the bearer out of her acid while her brood swarms it.
 
 // Mites she lays at once, and at most alive around her
 const BROOD = 3;
@@ -23,6 +24,9 @@ const FRENZY_AT = 0.5;
 // Mothers that have frenzied, and the mites each one laid
 const frenzied = new WeakSet<Unit>();
 const broods = new WeakMap<Unit, Set<Unit>>();
+
+/** Whether a Brood Mother has frenzied, for her moves and tests. */
+export const isFrenzied = (u: Unit): boolean => frenzied.has(u);
 
 const livingBrood = (u: Unit): Unit[] => [...(broods.get(u) ?? [])].filter((m) => m.alive);
 
@@ -65,12 +69,13 @@ export const LAY_BROOD: Skill = {
 };
 
 /**
- * Spawns the Brood Mother. At half health she frenzies: she and every mite
- * of hers go for the bearer, and her clutches grow.
+ * Spawns the Brood Mother. She lays mites and spits acid where the bearer
+ * stands. At half health she frenzies: she and every mite of hers go for
+ * the bearer, and her clutches grow.
  */
 export function spawnBroodMother(sim: Sim, level: number, x: number, z: number): Unit {
   const mother = spawnMonster(sim, 'broodMother', level, x, z);
-  mother.skills.push(LAY_BROOD);
+  mother.skills.push(LAY_BROOD, ACID_SPIT);
   mother.mana = mother.derived.maxMana;
   sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
     if (
@@ -98,6 +103,3 @@ export function spawnBroodMother(sim: Sim, level: number, x: number, z: number):
   });
   return mother;
 }
-
-/** Whether a Brood Mother has frenzied, for the HUD and tests. */
-export const isFrenzied = (u: Unit): boolean => frenzied.has(u);

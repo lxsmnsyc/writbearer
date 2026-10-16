@@ -88,7 +88,7 @@ import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { MERCS, spawnMerc } from '../content/roster';
 import { applySets } from '../content/sets';
-import { START_LEVEL, carryParty, enterStage, shutArena, spawnParty } from './stage';
+import { START_LEVEL, carryParty, enterStage, spawnParty, wakeBoss } from './stage';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
@@ -1803,9 +1803,10 @@ export default class Game {
         this.hazards?.update(this.sim, TICK);
         this.checkObjective();
         this.acc -= TICK;
-        if (shutArena(this.sim, this.stage, this.boss)) {
-          // The gate slams shut behind the party.
+        if (wakeBoss(this.sim, this.boss)) {
+          // The boss rises to meet the party.
           this.shake = Math.max(this.shake, 4);
+          this.say(`${this.boss?.name ?? 'Something'} rises. There is no way back.`);
         }
         this.rest();
         this.breakSeal();

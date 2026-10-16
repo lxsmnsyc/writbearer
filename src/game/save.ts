@@ -21,7 +21,7 @@ import { Store, deleteRecord, readRecord, writeRecord } from './store';
 // entrance. It is deleted when the run ends.
 
 /** Bumped when the shape of a save changes. Older saves are not loaded. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export interface ItemSave {
   base: string;

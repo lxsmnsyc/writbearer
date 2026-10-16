@@ -19,7 +19,6 @@ export type PropKind =
   | 'brazier'
   | 'torch'
   | 'signpost'
-  | 'gate'
   | 'post'
   | 'strongbox'
   | 'sarcophagus'
@@ -106,9 +105,6 @@ export interface Stage {
   roads: Spot[][];
   // Whether the exit goes down to the next layer
   down: boolean;
-  // A layer's last area: the walled arena its boss waits in, and whether
-  // its gate has shut behind the party
-  arena?: { x: number; z: number; r: number; closed: boolean };
   // Where the boss stands
   boss?: Spot;
   // A Waystation's paymaster's post, where wages are paid and the vault opens
@@ -225,7 +221,7 @@ export const THREAT: Record<MonsterKind, number> = {
   hollowSoldier: 3,
   hollowed: 3,
   cantor: 3,
-  // Bosses are never rolled into a pack. They wait in their arenas.
+  // Bosses are never rolled into a pack. They wait in their fields.
   broodMother: 20,
   gatekeeper: 20,
   abbess: 20,
@@ -685,24 +681,23 @@ export function generateTomb(rng: RNG, index: number): Stage {
   return stage;
 }
 
-// The arena's wall, in tiles from its centre, and the gate's half width.
-const ARENA_R = 9;
-const GATE_HALF = 1.6;
-// Gate posts, solid once the gate shuts
-export const GATE_SOLID = 0.5;
+// A boss's field, wide enough to run in, and the ground kept clear round it
+const BOSS_WIDTH = 64;
+const BOSS_DEPTH = 46;
+const BOSS_CLEAR = 6;
 
 /**
- * A layer's last area: an approach from the west, then a walled arena with
- * one gate. The boss waits inside, before the way down. The gate shuts once
- * the bearer is in.
+ * A layer's last area: a wide open field with no way back, the boss in its
+ * middle and the way down far beyond it, shut while the boss lives. There
+ * is room to run from its blows. A few pillars or dead trees stand about,
+ * and packs of the layer's own stray on the near side.
  */
 function generateArena(rng: RNG, index: number, biome: number): Stage {
-  const width = rng.int(44, 48);
-  const depth = rng.int(30, 34);
+  const width = BOSS_WIDTH;
+  const depth = BOSS_DEPTH;
   const entrance = { x: 2.5, z: depth / 2 };
-  const arena = { x: width - ARENA_R - 3, z: depth / 2, r: ARENA_R, closed: false };
-  const exit = { x: arena.x + ARENA_R - 2.5, z: arena.z };
-  const gate = { x: arena.x - ARENA_R, z: arena.z };
+  const boss = { x: width * 0.6, z: depth / 2 };
+  const exit = { x: width - 3, z: depth / 2 };
   const stage: Stage = {
     index,
     kind: 'boss',
@@ -713,13 +708,12 @@ function generateArena(rng: RNG, index: number, biome: number): Stage {
     exit,
     exits: [{ ...exit, ahead: 'down' }],
     props: [],
-    sigils: [],
+    sigils: [boss],
     stains: [],
     packs: [],
-    roads: [[entrance, gate, { x: arena.x, z: arena.z }]],
+    roads: [],
     down: true,
-    arena,
-    boss: { x: arena.x + 1.5, z: arena.z },
+    boss,
   };
   const add = (kind: PropKind, x: number, z: number): Prop => {
     const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
@@ -731,59 +725,44 @@ function generateArena(rng: RNG, index: number, biome: number): Stage {
   add('brazier', exit.x - 1.2, exit.z - 1.6);
   add('brazier', exit.x - 1.2, exit.z + 1.6);
 
-  // The ring wall stands tall all round, but for the gate on the west.
-  const steps = Math.ceil((2 * Math.PI * ARENA_R) / 0.9);
-  for (let i = 0; i < steps; i++) {
-    const a = (i / steps) * Math.PI * 2;
-    const x = arena.x + Math.cos(a) * ARENA_R;
-    const z = arena.z + Math.sin(a) * ARENA_R;
-    if (Math.abs(z - gate.z) < GATE_HALF && x < arena.x) {
-      continue;
-    }
-    add('wall', x, z).seed = 0.55 + rng.random() * 0.45;
-  }
-  // The gate stands open until the party is in.
-  for (const dz of [-1, 0, 1]) {
-    add('gate', gate.x, gate.z + dz * GATE_HALF * 0.66);
-  }
-
-  // Old blood on the arena floor, and gibbets of what she fed on.
-  for (let i = 0; i < 8; i++) {
+  // Old blood round where the boss waits
+  for (let i = 0; i < 10; i++) {
     const a = rng.random() * Math.PI * 2;
-    const d = rng.range(2, ARENA_R - 2);
+    const d = rng.range(1, BOSS_CLEAR);
     stage.stains.push({
-      x: arena.x + Math.cos(a) * d,
-      z: arena.z + Math.sin(a) * d,
+      x: boss.x + Math.cos(a) * d,
+      z: boss.z + Math.sin(a) * d,
       r: rng.range(0.5, 1.1),
     });
   }
 
-  // The approach: dead trees and rubble off the road, and her brood astray.
+  // Sparse cover: something to put between the bearer and a charge, never
+  // enough to wall it in.
   const tall = tallFor(biome);
   const clearOf = (x: number, z: number): boolean =>
     Math.hypot(x - entrance.x, z - entrance.z) > KEEP_ENTRANCE &&
-    Math.hypot(x - arena.x, z - arena.z) > ARENA_R + 2 &&
-    distanceToSegment({ x, z }, entrance, gate) > 1.6;
+    Math.hypot(x - boss.x, z - boss.z) > BOSS_CLEAR &&
+    Math.hypot(x - exit.x, z - exit.z) > KEEP_EXIT;
   const solids: Spot[] = [];
-  for (let i = 0; i < width * depth * 0.04; i++) {
-    const x = rng.range(1.5, width - 1.5);
-    const z = rng.range(1.5, depth - 1.5);
-    if (!clearOf(x, z) || solids.some((o) => Math.hypot(o.x - x, o.z - z) < 2.2)) {
+  for (let i = 0; i < width * depth * 0.012; i++) {
+    const x = rng.range(3, width - 3);
+    const z = rng.range(3, depth - 3);
+    if (!clearOf(x, z) || solids.some((o) => Math.hypot(o.x - x, o.z - z) < 4)) {
       continue;
     }
-    if (rng.chance(0.6)) {
+    if (rng.chance(0.7)) {
       add(tall, x, z);
     } else {
       add('rubble', x, z).r = rng.range(0.35, 0.6);
     }
     solids.push({ x, z });
   }
-  for (const t of [0.45, 0.75]) {
-    const x = entrance.x + (gate.x - entrance.x) * t;
-    const z = entrance.z + (t < 0.6 ? -1 : 1) * rng.range(3, 6);
+  for (const t of [0.3, 0.45]) {
+    const x = width * t;
+    const z = entrance.z + (t < 0.4 ? -1 : 1) * rng.range(5, 10);
     stage.packs.push({ kinds: approachPack(rng, biome), x, z, elite: -1 });
   }
-  ensureReachable(stage, [gate]);
+  ensureReachable(stage, [boss, exit]);
   return stage;
 }
 
@@ -866,7 +845,7 @@ const FACTIONS: { layer: number; from: number; kinds: MonsterKind[] }[] = [
   { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'hollowed'] },
 ];
 
-// A pack straying on the way to a boss's arena: the Brood Mother's mites in
+// A pack straying on the way to a boss: the Brood Mother's mites in
 // the Marches, the layer's own packs below.
 function approachPack(rng: RNG, layer: number): MonsterKind[] {
   if (layer === 0) {

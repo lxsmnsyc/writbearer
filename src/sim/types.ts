@@ -64,6 +64,8 @@ export const enum DamageFlags {
   // Comes from behind the target, so a shield cannot block it
   Flank = 0x800,
   Blocked = 0x1000,
+  // Never misses: a blow warned of on the ground is dodged by stepping out
+  Sure = 0x2000,
 }
 
 /**

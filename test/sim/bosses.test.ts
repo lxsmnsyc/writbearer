@@ -12,6 +12,7 @@ import Sim from '../../src/sim/sim';
 import { DREAD } from '../../src/sim/statuses';
 import { SimEvents } from '../../src/sim/events';
 import { DamageKind, Side, ValuePriority } from '../../src/sim/types';
+import dodge from '../support/dodge';
 import type Unit from '../../src/sim/unit';
 
 const LEVEL = [9, 18, 26, 34];
@@ -42,11 +43,12 @@ function fight(seed: number, layer: number, jobs: Offer['kind'][]): boolean {
   const boss = spawnBoss(sim, layer, LEVEL[layer], 16, 15);
   boss.aware = true;
   for (let t = 0; t < 240 && boss.alive && bearer.alive; t += 0.05) {
-    const d = bearer.distanceTo(boss);
-    bearer.order =
-      d > 5.5
-        ? { x: boss.x - ((boss.x - bearer.x) / d) * 5, z: boss.z - ((boss.z - bearer.z) / d) * 5 }
-        : null;
+    // Five tiles back from the boss, out of any warning on the ground
+    const d = bearer.distanceTo(boss) || 1;
+    dodge(sim, bearer, {
+      x: Math.max(1, Math.min(39, boss.x - ((boss.x - bearer.x) / d) * 5)),
+      z: Math.max(1, Math.min(29, boss.z - ((boss.z - bearer.z) / d) * 5)),
+    });
     sim.tick();
   }
   return !boss.alive && bearer.alive;
@@ -87,13 +89,24 @@ describe('the Gatekeeper', () => {
     });
     const front = spawnMerc(sim, 'ranger', 10, 11.5, 10.5);
     const side = spawnMerc(sim, 'ranger', 10, 11.5, 9.4);
-    const behind = spawnMerc(sim, 'ranger', 10, 8.5, 10);
-    const hp = [front, side, behind].map((u) => u.hp);
+    const behind = spawnMerc(sim, 'ranger', 10, 7.6, 10);
+    const stepped = spawnMerc(sim, 'ranger', 10, 12, 10);
+    const all = [front, side, behind, stepped];
+    for (const m of all) {
+      m.kit.moveSpeed = 0;
+    }
+    const hp = all.map((u) => u.hp);
     expect(boss.startCast(CLEAVE, front)).toBe(true);
+    // The cleave shows on the ground first; one merc steps out of it.
     sim.run(CLEAVE.windup + 0.05);
+    expect(sim.warnings).toHaveLength(1);
+    expect(front.hp).toBe(hp[0]);
+    stepped.x = 16;
+    sim.run(CLEAVE.recovery + 0.05);
     expect(front.hp).toBeLessThan(hp[0]);
     expect(side.hp).toBeLessThan(hp[1]);
     expect(behind.hp).toBe(hp[2]);
+    expect(stepped.hp).toBe(hp[3]);
   });
 
   it('calls three of his guard at half health', () => {
@@ -162,7 +175,25 @@ describe('the Hollowed Saint', () => {
     spawnMonster(sim, 'mite', 1, 30, 30);
     boss.aware = true;
     expect(boss.startCast(LUNGE, null)).toBe(true);
-    sim.run(LUNGE.windup + 0.05);
+    sim.run(LUNGE.windup + LUNGE.recovery + 0.05);
     expect(boss.distanceTo(bearer)).toBeLessThan(1.5);
+  });
+
+  it('lands where the bearer stood: a bearer that moves is not struck', () => {
+    const sim = new Sim(1);
+    sim.on(SimEvents.CheckHit, ValuePriority.Post, (event) => {
+      event.hit = true;
+    });
+    const bearer = spawnBearer(sim, 0, 0);
+    const boss = spawnBoss(sim, 3, 34, 8, 0);
+    boss.aware = true;
+    const hp = bearer.hp;
+    boss.startCast(LUNGE, null);
+    sim.run(LUNGE.windup + 0.05);
+    bearer.x = 3;
+    bearer.z = 3;
+    sim.run(LUNGE.recovery + 0.05);
+    expect(bearer.hp).toBe(hp);
+    expect(Math.hypot(boss.x, boss.z)).toBeLessThan(0.5);
   });
 });

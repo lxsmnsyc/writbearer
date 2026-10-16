@@ -1046,7 +1046,7 @@ export default class Renderer {
       out.fillText(f.notice, (W * SCALE) / 2, y);
       out.textAlign = 'start';
     }
-    if (f.boss?.alive && (f.stage.arena?.closed || f.stage.tomb)) {
+    if (f.boss?.alive && (f.boss.aware || f.stage.tomb)) {
       // The boss's name and health across the top, as Diablo 2 shows them.
       const w = 360;
       const x = (W * SCALE - w) / 2;
@@ -1317,18 +1317,6 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
       C.stoneB,
     );
     fillPoly(ctx, blob(pt(base.x, base.y - 12), 6, 3, 9, p.seed), C.blood, null);
-  } else if (p.kind === 'gate') {
-    // Stakes of the arena's gate: a stump while open, a sharpened post once shut.
-    if (p.r === undefined) {
-      fillPoly(ctx, quad(pt(base.x, base.y), pt(base.x, base.y - 5), 2, 1.5), C.wood);
-    } else {
-      block(ctx, base, 0.35, 34, p.seed, C.wood);
-      fillPoly(
-        ctx,
-        [pt(base.x - 5, base.y - 34), pt(base.x + 5, base.y - 34), pt(base.x, base.y - 41)],
-        C.wood,
-      );
-    }
   } else if (p.kind === 'pillar') {
     fillPoly(
       ctx,

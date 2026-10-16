@@ -29,6 +29,8 @@ export interface Warning {
   strike: (unit: Unit) => void;
   // A boss's warning dies with it.
   source: Unit | null;
+  // What happens once it has struck, such as a charging boss landing
+  done?: () => void;
 }
 
 // The distance from a point to a segment.
@@ -88,5 +90,6 @@ export function updateWarnings(sim: Sim, dt: number): void {
         w.strike(u);
       }
     }
+    w.done?.();
   }
 }

@@ -1,6 +1,6 @@
 import { spawnBoss } from '../content/bosses';
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
-import { GATE_SOLID, type Stage, monsterLevel, solidsOf } from '../gen/stage';
+import { type Stage, monsterLevel, solidsOf } from '../gen/stage';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -36,44 +36,22 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
     : null;
 }
 
-// How far inside the arena wall the bearer gets before the gate shuts.
-const SHUT_DEPTH = 2;
+// How near the bearer comes before a boss wakes. A blow wakes it sooner.
+const WAKE_REACH = 13;
 
 /**
- * Shuts an arena's gate once the bearer is well inside. Mercs still outside,
- * living or dead, are pulled in through it as it shuts, and the boss wakes.
- * Returns whether it shut now.
+ * Wakes a boss once the bearer comes near it. Returns whether it woke now.
+ * There is no way back out of a boss's field, so the fight is on.
  */
-export function shutArena(sim: Sim, stage: Stage, boss: Unit | null): boolean {
-  const arena = stage.arena;
+export function wakeBoss(sim: Sim, boss: Unit | null): boolean {
   const bearer = sim.bearer;
-  if (!arena || arena.closed || !bearer?.alive) {
+  if (!boss?.alive || boss.aware || !bearer?.alive) {
     return false;
   }
-  if (Math.hypot(bearer.x - arena.x, bearer.z - arena.z) > arena.r - SHUT_DEPTH) {
+  if (boss.distanceTo(bearer) > WAKE_REACH) {
     return false;
   }
-  arena.closed = true;
-  for (const p of stage.props) {
-    if (p.kind === 'gate') {
-      p.r = GATE_SOLID;
-    }
-  }
-  sim.obstacles.length = 0;
-  sim.obstacles.push(...solidsOf(stage));
-  sim.setFloor(stage.width, stage.depth);
-  const inside = arena.r - 1.5;
-  const outside = [...sim.units].filter(
-    (u) => u.side === Side.Party && Math.hypot(u.x - arena.x, u.z - arena.z) > inside,
-  );
-  outside.forEach((u, i) => {
-    u.x = arena.x - inside + 0.5;
-    u.z = arena.z + (i - (outside.length - 1) / 2) * 0.9;
-    u.order = null;
-  });
-  if (boss) {
-    boss.aware = true;
-  }
+  boss.aware = true;
   return true;
 }
 
