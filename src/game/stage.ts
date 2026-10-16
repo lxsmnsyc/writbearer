@@ -27,7 +27,7 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
         {
           elite: i === pack.elite,
         },
-      );
+      ).marked = i === pack.marked;
     });
   }
   // A boss stands a level above the layer's last packs would.
@@ -106,6 +106,7 @@ export function carryParty(sim: Sim, stage: Stage): void {
     }
   }
   sim.projectiles.length = 0;
+  sim.warnings.length = 0;
   const { x, z } = stage.entrance;
   party.forEach((u, i) => {
     const a = (i / party.length) * Math.PI * 2;

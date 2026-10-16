@@ -1,6 +1,6 @@
 import { For, type JSX, Show } from 'solid-js';
 import type Game from '../game/game';
-import type { NodeKind } from '../gen/graph';
+import { type MapNode, type NodeKind, OBJECTIVE_NAME } from '../gen/graph';
 
 interface Props {
   game: Game;
@@ -24,6 +24,15 @@ const KIND_CLASS: Record<NodeKind, string> = {
   event: 'fill-violet-950 stroke-violet-400',
   town: 'fill-teal-950 stroke-teal-400',
   boss: 'fill-red-950 stroke-red-400',
+};
+
+// An area's name on the map: a fight by its objective.
+const nameOf = (node: MapNode): string => {
+  if (!node.objective) {
+    return NAME[node.kind];
+  }
+  const objective = OBJECTIVE_NAME[node.objective];
+  return node.kind === 'elite' ? `Elite ${objective.toLowerCase()}` : objective;
 };
 
 // Where each area sits on the drawing, by column and row.
@@ -129,7 +138,7 @@ export default function LayerMapPanel(props: Props): JSX.Element {
           {(column, c) => (
             <For each={column}>
               {(node, r) => (
-                <g aria-label={`Area ${c() + 1}: ${NAME[node.kind]}`}>
+                <g aria-label={`Area ${c() + 1}: ${nameOf(node)}`}>
                   <circle
                     cx={at(c(), r()).x}
                     cy={at(c(), r()).y}
@@ -154,7 +163,7 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                     text-anchor="middle"
                     class="fill-zinc-400 text-[10px]"
                   >
-                    {NAME[node.kind]}
+                    {nameOf(node)}
                   </text>
                 </g>
               )}
@@ -163,9 +172,10 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         </For>
       </svg>
       <p data-part="note" class="mt-1 text-xs text-zinc-500">
-        Fights give experience and loot. Elites hold a strong pack and better spoils. At a Camp the
-        party rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
-        taken collapse behind the bearer. M or Esc to close.
+        A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
+        Labyrinth once the way through is found; each pays its spoils when done. Elites are harder,
+        and pay better. At a Camp the party rests back to full. A Town has a smith, a bench, a
+        temple and a market. The roads not taken collapse behind the bearer. M or Esc to close.
       </p>
     </aside>
   );

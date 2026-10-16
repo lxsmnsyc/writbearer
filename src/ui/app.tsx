@@ -2,6 +2,7 @@ import { Index, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-j
 import Game, { type EventView, type GameOptions } from '../game/game';
 import { type RunSave, describeSave, readSave } from '../game/save';
 import { randomSeed } from '../core/seed';
+import { OBJECTIVES } from '../gen/graph';
 import { HIREABLE } from '../content/recruits';
 import { MORALE_NAME, Morale, moraleOf } from '../sim/morale';
 import type Unit from '../sim/unit';
@@ -50,6 +51,7 @@ function runOptions(): GameOptions {
     town: params.has('town'),
     event: params.get('event') ?? undefined,
     endless: params.has('endless'),
+    objective: OBJECTIVES.find((o) => o === params.get('objective')),
   };
 }
 
@@ -59,6 +61,7 @@ export default function App(): JSX.Element {
   const [selected, setSelected] = createSignal<Unit | null>(null);
   const [party, setParty] = createSignal<PartyEntry[]>([]);
   const [shouts, setShouts] = createSignal<ShoutEntry[]>([]);
+  const [objective, setObjective] = createSignal<ReturnType<Game['objectiveStatus']>>(null);
   const [inventory, setInventory] = createSignal(false);
   const [offers, setOffers] = createSignal<Offer[] | null>(null);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
@@ -149,6 +152,7 @@ export default function App(): JSX.Element {
         })),
       );
       setShouts(g.shoutBar());
+      setObjective(g.objectiveStatus());
     }, PARTY_REFRESH);
     onCleanup(() => {
       clearInterval(timer);
@@ -174,6 +178,23 @@ export default function App(): JSX.Element {
               g.shout(shout);
             }}
           />
+        )}
+      </Show>
+      <Show when={objective()} keyed>
+        {(o) => (
+          <section
+            data-part="card"
+            class="absolute right-4 bottom-4 w-56 border bg-zinc-950/90 px-3 py-2 text-xs"
+            classList={{ 'border-amber-500': o.done, 'border-zinc-700': !o.done }}
+            aria-label="Objective"
+          >
+            <h2 data-part="title" class="font-serif text-sm text-zinc-100">
+              {o.title}
+            </h2>
+            <p data-part="note" class="text-zinc-400">
+              {o.detail}
+            </p>
+          </section>
         )}
       </Show>
       <nav class="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2" aria-label="Party">

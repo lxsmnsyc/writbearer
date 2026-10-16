@@ -4,11 +4,26 @@ import { AREAS_PER_LAYER } from './layers';
 /** What waits in an area of a layer's map. */
 export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
 
+/**
+ * What a fight area asks of the party before its exits open, as Aghanim's
+ * Labyrinth's rooms: slay the marked monsters, hold out against waves, or
+ * find the way through a maze of traps.
+ */
+export type Objective = 'hunt' | 'horde' | 'maze';
+
+export const OBJECTIVE_NAME: Record<Objective, string> = {
+  hunt: 'Hunt',
+  horde: 'Horde',
+  maze: 'Labyrinth',
+};
+
 /** One area on a layer's map. */
 export interface MapNode {
   // Which of its column's nodes this is, from the north edge
   row: number;
   kind: NodeKind;
+  // A fight's objective, Elite or not
+  objective?: Objective;
   // Rows of the next column this area's exits lead to, north first
   next: number[];
 }
@@ -30,6 +45,9 @@ const CAMP_CHANCE = 0.18;
 // Events from the second column.
 const EVENT_FROM = 1;
 const EVENT_CHANCE = 0.16;
+
+// Each objective as often as the others
+export const OBJECTIVES: readonly Objective[] = ['hunt', 'horde', 'maze'];
 
 // The columns a layer's Town may stand in.
 const TOWN_COLUMNS = [3, 4];
@@ -86,6 +104,14 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap 
     for (const n of columns[last - 2]) {
       if (node.kind === 'camp' && n.kind === 'camp' && n.next.includes(j)) {
         n.kind = 'combat';
+      }
+    }
+  });
+  // Every fight has an objective. The run opens on a Hunt, the gentlest.
+  columns.forEach((column, c) => {
+    for (const node of column) {
+      if (node.kind === 'combat' || node.kind === 'elite') {
+        node.objective = c === 0 && opening === 1 ? 'hunt' : rng.pick(OBJECTIVES);
       }
     }
   });

@@ -17,10 +17,17 @@ import {
   generateTomb,
   generateWaystation,
   monsterLevel,
+  withObjectivesAhead,
 } from '../gen/stage';
 import { reveal } from '../content/creditor';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
-import { type LayerMap, type MapNode, generateLayerMap } from '../gen/graph';
+import {
+  type LayerMap,
+  type MapNode,
+  OBJECTIVE_NAME,
+  type Objective,
+  generateLayerMap,
+} from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
 import { type EquipSlot, type Item, isCard, isPotion, refinable } from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
@@ -50,6 +57,8 @@ import {
 } from './inventory';
 import { type Due, Payroll, desert } from './wages';
 import { Compendium, type Ending } from './compendium';
+import ObjectiveRun from './objective';
+import Hazards from './hazards';
 import {
   type RunSave,
   SAVE_VERSION,
@@ -91,6 +100,8 @@ const PICK_REACH = 0.8;
 const CHEST_REACH = 1.3;
 // How near a click must land to a chest, in tiles, to open it
 const CHEST_PICK = 1.1;
+// How far a chest blocks bodies, as the stage's chests do
+const CHEST_SOLID = 0.35;
 // A chest holds this many pieces of equipment, rolled as an elite's drop.
 const CHEST_ITEMS = 3;
 // How near a click must land to an item, in frame pixels, to pick it up.
@@ -151,6 +162,8 @@ export interface GameOptions {
   event?: string;
   // Plays endless mode: numbered phases without end, and no Writ
   endless?: boolean;
+  // Gives the first fight this objective, for tests and playtesting
+  objective?: Objective;
 }
 
 // The most mercs in the party, living or dead.
@@ -230,6 +243,11 @@ export default class Game {
   private leaving: number | null = null;
   // The exit under the mouse, drawn brighter
   private hoverExit: number | null = null;
+  // What this area asks before its exits open, and whether it is done
+  private objective: ObjectiveRun | null = null;
+  // A Labyrinth's traps, and whether the bearer was hurt in this area
+  private hazards: Hazards | null = null;
+  private hurtHere = false;
   // The offers to pick the first merc from, while the run has not begun
   private offers: Offer[] | null = null;
   // A merc waiting by its fire on this stage, and the one being talked to
@@ -339,7 +357,7 @@ export default class Game {
   // tests and playtesting do, so they never touch the player's run.
   private get saving(): boolean {
     const o = this.options;
-    const placed = [o.party, o.area, o.event].some((v) => v !== undefined);
+    const placed = [o.party, o.area, o.event, o.objective].some((v) => v !== undefined);
     return !placed && !o.station && !o.tomb && !o.town;
   }
 
@@ -674,6 +692,9 @@ export default class Game {
     this.hooks.onRecruit?.(null);
     this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
+      if (event.target === this.bearer && event.value > 0) {
+        this.hurtHere = true;
+      }
       if (event.value < HEAVY_HIT || event.flags & DamageFlags.DoT) {
         return;
       }
@@ -826,6 +847,15 @@ export default class Game {
     return node.next.map((row) => next[row].kind);
   }
 
+  // The objective of the fight beyond each of this area's exits.
+  private objectivesAhead(node: MapNode | null): (Objective | undefined)[] {
+    if (!node) {
+      return this.map.columns[0].map((n) => n.objective);
+    }
+    const next = this.map.columns[(this.node?.column ?? 0) + 1] ?? [];
+    return node.kind === 'boss' ? [] : node.next.map((row) => next[row]?.objective);
+  }
+
   // Rolls the map of the layer the current area is in.
   private rollMap(): void {
     const layer = Math.floor(this.stageIndex / AREAS_PER_LAYER);
@@ -901,6 +931,8 @@ export default class Game {
     const plan: AreaPlan = {
       kind: kind ?? node?.kind ?? 'combat',
       ahead: this.aheadOf(node),
+      aheadObjectives: this.objectivesAhead(node),
+      objective: node?.objective && (this.options.objective ?? node.objective),
       biome: this.biome,
       endless: this.endless,
     };
@@ -920,6 +952,11 @@ export default class Game {
   // Lays out the current stage around the party.
   private enter(): void {
     this.boss = enterStage(this.sim, this.stage);
+    this.objective = this.stage.objective
+      ? new ObjectiveRun(this.stage.objective, this.stage)
+      : null;
+    this.hazards = this.stage.hazards ? new Hazards(this.stage) : null;
+    this.hurtHere = false;
     const camp = this.stage.recruit;
     this.wanderer = camp
       ? {
@@ -935,6 +972,47 @@ export default class Game {
       this.effects.stain(s.x, s.z, s.r, '#560b0b');
     }
     this.beginEvent();
+  }
+
+  /** What this area asks of the party, and how far along it is, for the HUD. */
+  objectiveStatus(): { title: string; detail: string; done: boolean } | null {
+    const o = this.objective;
+    if (!o) {
+      return null;
+    }
+    const elite = this.stage.kind === 'elite' ? 'Elite ' : '';
+    const title = `${elite}${OBJECTIVE_NAME[o.kind]}`;
+    return { title, detail: o.status(this.sim), done: o.done };
+  }
+
+  // Whether the exits are open: once the objective is done, if there is one.
+  private get exitsOpen(): boolean {
+    return this.objective?.done ?? true;
+  }
+
+  // Finishes the objective once its condition is met: the exits open, and
+  // its spoils appear before them.
+  private checkObjective(): void {
+    const o = this.objective;
+    if (!o || !this.bearer.alive || !o.update(this.sim, TICK, monsterLevel(this.stageIndex))) {
+      return;
+    }
+    this.views.snap(this.sim);
+    this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and the spoils lie before it.`);
+    const at = this.stage.reward;
+    if (at) {
+      this.stage.props.push({ kind: 'chest', x: at.x, z: at.z, r: CHEST_SOLID, seed: 0.5 });
+      this.sim.obstacles.push({ x: at.x, z: at.z, r: CHEST_SOLID });
+      this.sim.setFloor(this.stage.width, this.stage.depth);
+      const loot = this.streams.get(1, Stream.Loot);
+      const spoils = [rollGold(loot, 6 + this.stageIndex)];
+      // A Labyrinth crossed without the bearer taking a scratch pays more.
+      if (o.kind === 'maze' && !this.hurtHere) {
+        spoils.push(rollItem(loot, 4 + this.stageIndex, Rank.Elite));
+        this.say('Labyrinth done, the bearer unhurt: the spoils are richer for it.');
+      }
+      this.scatter(spoils, { x: at.x - 1, z: at.z });
+    }
   }
 
   // Monsters awake are seen, for the compendium.
@@ -1123,11 +1201,14 @@ export default class Game {
   private buildWaystation(): Stage {
     this.payroll = new Payroll();
     this.stationMet = false;
-    return generateWaystation(
-      this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
-      this.stageIndex,
-      this.aheadOf(null),
-      this.biome,
+    return withObjectivesAhead(
+      generateWaystation(
+        this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
+        this.stageIndex,
+        this.aheadOf(null),
+        this.biome,
+      ),
+      this.objectivesAhead(null),
     );
   }
 
@@ -1628,6 +1709,11 @@ export default class Game {
         this.say(`The way down is shut while ${this.boss.name} lives.`);
         return;
       }
+      const o = this.objective;
+      if (o && !o.done) {
+        this.say(`The way on opens once the ${OBJECTIVE_NAME[o.kind]} is done.`);
+        return;
+      }
       this.goFor({ leaving: exit });
       this.bearer.order = { x: e2.x, z: e2.z };
       return;
@@ -1714,6 +1800,8 @@ export default class Game {
         this.visitTown();
         this.visitEvent();
         this.noteMonsters();
+        this.hazards?.update(this.sim, TICK);
+        this.checkObjective();
         this.acc -= TICK;
         if (shutArena(this.sim, this.stage, this.boss)) {
           // The gate slams shut behind the party.
@@ -1727,6 +1815,7 @@ export default class Game {
         const exit = this.stage.exits.findIndex(
           (e, i) =>
             i === this.leaving &&
+            this.exitsOpen &&
             this.bearer.distanceTo(e) <= EXIT_REACH &&
             !(e.ahead === 'down' && this.boss?.alive),
         );
@@ -1757,6 +1846,7 @@ export default class Game {
       ending: this.finale?.ending ?? null,
       region: this.region,
       hoverExit: this.hoverExit,
+      exitsShut: !this.exitsOpen,
       leaving: this.leaving,
       seed: this.streams.seed,
       paused: this.paused,

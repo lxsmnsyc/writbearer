@@ -1,7 +1,7 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Spot } from '../sim/nav';
-import type { NodeKind } from './graph';
+import type { NodeKind, Objective } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
 
 export type PropKind =
@@ -49,6 +49,8 @@ export interface Pack {
   z: number;
   // Index into `kinds` of the elite, or -1
   elite: number;
+  // Index into `kinds` of a Hunt's marked monster, if the pack has one
+  marked?: number;
 }
 
 /** Where an area's exit leads: an area of the layer's map, or down. */
@@ -57,6 +59,8 @@ export type Ahead = NodeKind | 'down';
 /** A way out of an area on its east edge, and what lies beyond it. */
 export interface Exit extends Spot {
   ahead: Ahead;
+  // The objective of the fight beyond it
+  objective?: Objective;
 }
 
 /** What an area is, and where each of its exits leads, north first. */
@@ -69,6 +73,9 @@ export interface AreaPlan {
   // endless phase rolls; and whether merc are offered whatever the depth
   biome?: number;
   endless?: boolean;
+  // A fight's objective, and the objectives of the fights its exits lead to
+  objective?: Objective;
+  aheadObjectives?: readonly (Objective | undefined)[];
 }
 
 /**
@@ -116,6 +123,38 @@ export interface Stage {
   town?: Spot;
   // Where an Event happens: the bearer walks up to it to see what waits
   event?: Spot;
+  // What the party must do before the exits open, and where the spoils
+  // appear once it is done
+  objective?: Objective;
+  reward?: Spot;
+  // A Horde's waves, in the order they come
+  waves?: Wave[];
+  // A Labyrinth's traps, and where its far end begins, in x
+  hazards?: Hazard[];
+  goal?: number;
+}
+
+/**
+ * A trap on a Labyrinth's floor. Every `period` seconds, from `phase`, it
+ * warns, then strikes whoever stands on it for a share of their health.
+ * Spikes are quick and small; fire vents slow, wide and hard.
+ */
+export interface Hazard {
+  kind: 'spikes' | 'vent';
+  x: number;
+  z: number;
+  period: number;
+  phase: number;
+}
+
+/** One wave of a Horde: what comes, from where on the edge, and how long after the last. */
+export interface Wave {
+  kinds: MonsterKind[];
+  from: Spot;
+  // Seconds after the wave before it, or after the Horde begins for the first
+  delay: number;
+  // Index into `kinds` of an elite leading it, or -1
+  elite: number;
 }
 
 // The plan of an area with one road on to a Combat area, as tests use.
@@ -216,6 +255,21 @@ const PACK_DISTANCE = 13;
  * everything can be reached, then packs from a threat budget.
  */
 export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): Stage {
+  return withObjectivesAhead(buildArea(rng, index, plan), plan.aheadObjectives);
+}
+
+/** Notes on each exit the objective of the fight it leads to, for its signpost. */
+export function withObjectivesAhead(
+  stage: Stage,
+  objectives: readonly (Objective | undefined)[] = [],
+): Stage {
+  stage.exits.forEach((e, k) => {
+    e.objective = objectives[k];
+  });
+  return stage;
+}
+
+function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   const biome = plan.biome ?? layerIndexOf(index);
   // Below the Rift Road no one is left to hire, but in endless mode.
   const hires = plan.endless === true || index < RECRUIT_STAGES;
@@ -230,6 +284,9 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
   }
   if (plan.kind === 'event') {
     return generateEvent(rng, index, plan.ahead, plan.scene ?? [], biome);
+  }
+  if (plan.objective === 'maze') {
+    return generateMaze(rng, index, plan, biome);
   }
   const width = rng.int(54, 62);
   const depth = rng.int(34, 42);
@@ -377,13 +434,51 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
     });
   }
 
-  placePacks(
-    stage,
-    rng,
-    { site, lair, breach: { x: wallX, z: breaches[0] } },
-    plan.kind === 'elite',
-  );
+  // A Horde's field stands empty: its monsters come in waves.
+  if (plan.objective === 'horde') {
+    stage.waves = buildWaves(stage, rng, plan.kind === 'elite');
+  } else {
+    placePacks(
+      stage,
+      rng,
+      { site, lair, breach: { x: wallX, z: breaches[0] } },
+      plan.kind === 'elite',
+    );
+  }
+  if (plan.objective) {
+    stage.objective = plan.objective;
+    // The spoils of a finished objective appear before the exits.
+    const mid = stage.exits.reduce((n, e) => n + e.z, 0) / Math.max(1, stage.exits.length);
+    stage.reward = { x: width - 7, z: mid };
+  }
+  if (plan.objective === 'hunt') {
+    markHunt(stage, rng, plan.kind === 'elite');
+  }
   return stage;
+}
+
+// How many marked monsters a Hunt has: 3, one more in an Elite area and one
+// more below the Marches.
+const HUNT_MARKS = 3;
+
+/**
+ * Marks a Hunt's quarry: the lair's leader, then leaders of other packs
+ * spread over the field. The exits open once every marked monster is dead.
+ */
+function markHunt(stage: Stage, rng: RNG, elite: boolean): void {
+  const want = HUNT_MARKS + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0);
+  // The lair's pack is the second placed, after the Church's site.
+  const lair = stage.packs[1];
+  lair.marked = Math.max(0, lair.elite);
+  // Of the packs farthest from the entrance, some at random, so the hunt
+  // crosses the field.
+  const far = stage.packs
+    .filter((p) => p !== lair)
+    .sort((a, b) => b.x - a.x)
+    .slice(0, 2 * (want - 1));
+  for (const p of rng.shuffle(far).slice(0, want - 1)) {
+    p.marked = 0;
+  }
 }
 
 // A small safe field: the entrance on the west, the exits on the east and
@@ -872,6 +967,239 @@ function placePacks(
     }
     push({ kinds, x, z, elite: -1 });
   }
+}
+
+// The packs a stage's layer fields at its depth.
+const factionPool = (stage: Stage): MonsterKind[][] =>
+  FACTIONS.filter((f) => f.layer === stage.biome && f.from <= stage.index % AREAS_PER_LAYER).map(
+    (f) => [...f.kinds],
+  );
+
+// A Horde's waves: 4, one more in an Elite area and one more below the
+// Marches, each a little stronger, 20 seconds apart unless beaten sooner.
+const HORDE_WAVES = 4;
+const WAVE_GAP = 20;
+const FIRST_WAVE = 3;
+
+/**
+ * A Horde's waves, from the threat budget a stage's packs would have had,
+ * split over them and rising. Each comes from a spot on the north, south or
+ * east edge, far from the entrance. The last is led by an elite once deep
+ * enough, or always in an Elite area.
+ */
+function buildWaves(stage: Stage, rng: RNG, elite: boolean): Wave[] {
+  const count = HORDE_WAVES + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0);
+  const total = (9 + stage.index * 5) * (elite ? ELITE_BUDGET : 1) * 1.2;
+  const pool = factionPool(stage);
+  const nav = navFor(stage);
+  const edge = (): Spot => {
+    for (let i = 0; i < 40; i++) {
+      const side = rng.int(0, 2);
+      const x = side === 2 ? stage.width - 2 : rng.range(PACK_DISTANCE + 4, stage.width - 3);
+      const z = [1.5, stage.depth - 1.5, rng.range(3, stage.depth - 3)][side];
+      if (nav.walkable(x, z)) {
+        return { x, z };
+      }
+    }
+    return { x: stage.width - 4, z: stage.depth / 2 };
+  };
+  const waves: Wave[] = [];
+  for (let w = 0; w < count; w++) {
+    // Later waves are stronger: shares rising from 0.6 to 1.4 of the mean
+    let budget = (total / count) * (0.6 + (0.8 * w) / Math.max(1, count - 1));
+    const kinds: MonsterKind[] = [];
+    while (budget > 0 && kinds.length < 9) {
+      const group = rng.pick(pool);
+      for (const k of group) {
+        kinds.push(k);
+        budget -= THREAT[k];
+      }
+    }
+    const last = w === count - 1;
+    waves.push({
+      kinds,
+      from: edge(),
+      delay: w === 0 ? FIRST_WAVE : WAVE_GAP,
+      elite: last && (elite || stage.index >= ELITE_FROM) ? 0 : -1,
+    });
+  }
+  return waves;
+}
+
+// A Labyrinth's cells, in tiles across, and how many across and down
+const CELL = 4;
+const MAZE_COLUMNS = 14;
+const MAZE_ROWS = 9;
+// Walls taken down at random after the maze is carved, so it has loops
+const MAZE_LOOPS = 0.12;
+
+/**
+ * A Labyrinth: a maze of ruined walls cut into square cells, carved from
+ * the entrance on the west, with loops, and a hall down the east side to
+ * the exits. Traps stand in its corridors and packs in its dead ends. The
+ * objective is to reach the hall.
+ */
+function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): Stage {
+  const width = MAZE_COLUMNS * CELL;
+  const depth = MAZE_ROWS * CELL;
+  const startRow = Math.floor(MAZE_ROWS / 2);
+  const entrance = { x: 2, z: startRow * CELL + CELL / 2 };
+  const stage: Stage = {
+    index,
+    kind: plan.kind,
+    biome,
+    width,
+    depth,
+    entrance,
+    exit: entrance,
+    exits: [],
+    props: [],
+    sigils: [],
+    stains: [],
+    packs: [],
+    roads: [],
+    down: false,
+    objective: 'maze',
+    goal: width - CELL,
+    hazards: [],
+  };
+  const add: Add = (kind, x, z) => {
+    const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
+    stage.props.push(prop);
+    return prop;
+  };
+  placeExits(stage, add, plan.ahead, depth / 2);
+  stage.reward = { x: width - CELL / 2, z: depth / 2 };
+
+  // Walls east of each cell and south of each, all standing at first.
+  const east = Array.from({ length: MAZE_COLUMNS }, () => Array<boolean>(MAZE_ROWS).fill(true));
+  const south = Array.from({ length: MAZE_COLUMNS }, () => Array<boolean>(MAZE_ROWS).fill(true));
+  // The last column is the hall: no walls across it.
+  const hall = MAZE_COLUMNS - 1;
+  for (let j = 0; j < MAZE_ROWS; j++) {
+    south[hall][j] = false;
+  }
+  // Carved depth first from the entrance, over every cell but the hall.
+  const seen = new Set<number>();
+  const key = (i: number, j: number): number => i * MAZE_ROWS + j;
+  const stack: [number, number][] = [[0, startRow]];
+  seen.add(key(0, startRow));
+  while (stack.length > 0) {
+    const [i, j] = stack[stack.length - 1];
+    const next = (
+      [
+        [i + 1, j],
+        [i - 1, j],
+        [i, j + 1],
+        [i, j - 1],
+      ] as [number, number][]
+    ).filter(([a, b]) => a >= 0 && a < hall && b >= 0 && b < MAZE_ROWS && !seen.has(key(a, b)));
+    if (next.length === 0) {
+      stack.pop();
+      continue;
+    }
+    const [a, b] = rng.pick(next);
+    if (a === i) {
+      south[i][Math.min(b, j)] = false;
+    } else {
+      east[Math.min(a, i)][j] = false;
+    }
+    seen.add(key(a, b));
+    stack.push([a, b]);
+  }
+  // Two ways into the hall, and loops elsewhere
+  for (const j of rng.shuffle(Array.from({ length: MAZE_ROWS }, (_, n) => n)).slice(0, 2)) {
+    east[hall - 1][j] = false;
+  }
+  for (let i = 0; i < hall; i++) {
+    for (let j = 0; j < MAZE_ROWS; j++) {
+      if (rng.chance(MAZE_LOOPS)) {
+        if (i < hall - 1) {
+          east[i][j] = false;
+        }
+        if (j < MAZE_ROWS - 1) {
+          south[i][j] = false;
+        }
+      }
+    }
+  }
+  // Each standing wall as a row of wall blocks along the cell's edge, kept
+  // low, so the party sees over them though not through them
+  const STEP = 0.9;
+  for (let i = 0; i < MAZE_COLUMNS; i++) {
+    for (let j = 0; j < MAZE_ROWS; j++) {
+      const x0 = i * CELL;
+      const z0 = j * CELL;
+      if (east[i][j] && i < MAZE_COLUMNS - 1) {
+        for (let t = 0; t <= CELL + 0.01; t += STEP) {
+          add('wall', x0 + CELL, z0 + t).seed = rng.random() * 0.2;
+        }
+      }
+      if (south[i][j] && j < MAZE_ROWS - 1) {
+        for (let t = 0; t <= CELL + 0.01; t += STEP) {
+          add('wall', x0 + t, z0 + CELL).seed = rng.random() * 0.2;
+        }
+      }
+    }
+  }
+
+  // Dead ends hold packs; corridors hold traps.
+  const walls = (i: number, j: number): number =>
+    [
+      i === 0 || east[i - 1][j],
+      east[i][j],
+      j === 0 || south[i][j - 1],
+      j === MAZE_ROWS - 1 || south[i][j],
+    ].filter(Boolean).length;
+  const cells: [number, number][] = [];
+  for (let i = 1; i < hall; i++) {
+    for (let j = 0; j < MAZE_ROWS; j++) {
+      cells.push([i, j]);
+    }
+  }
+  rng.shuffle(cells);
+  const middle = (i: number, j: number): Spot => ({
+    x: i * CELL + CELL / 2,
+    z: j * CELL + CELL / 2,
+  });
+  const elite = plan.kind === 'elite';
+  let budget = (9 + index * 5) * (elite ? ELITE_BUDGET : 1) * 0.8;
+  const pool = factionPool(stage);
+  const used = new Set<number>();
+  for (const [i, j] of cells) {
+    if (budget <= 0) {
+      break;
+    }
+    if (walls(i, j) < 3 || i < 2) {
+      continue;
+    }
+    const kinds = [...rng.pick(pool)].slice(0, rng.int(2, 3));
+    const at = middle(i, j);
+    const lead = stage.packs.length === 0 && (elite || index >= ELITE_FROM) ? 0 : -1;
+    stage.packs.push({ kinds, x: at.x, z: at.z, elite: lead });
+    budget -= kinds.reduce((n, k) => n + THREAT[k], 0) + (lead >= 0 ? ELITE_THREAT : 0);
+    used.add(key(i, j));
+  }
+  // A cache in one more dead end
+  const cache = cells.find(([i, j]) => walls(i, j) >= 3 && !used.has(key(i, j)));
+  if (cache) {
+    const at = middle(...cache);
+    add('chest', at.x, at.z);
+    used.add(key(...cache));
+  }
+  const traps = 8 + Math.floor(index / 2) + (elite ? 3 : 0);
+  for (const [i, j] of cells.filter(([a, b]) => !used.has(key(a, b))).slice(0, traps)) {
+    const at = middle(i, j);
+    const vent = rng.chance(0.35);
+    stage.hazards?.push({
+      kind: vent ? 'vent' : 'spikes',
+      x: at.x,
+      z: at.z,
+      period: vent ? 5 : 3,
+      phase: rng.range(0, vent ? 5 : 3),
+    });
+  }
+  return stage;
 }
 
 // Smooth noise from 0 to 1: random values on a coarse lattice, blended.

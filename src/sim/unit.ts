@@ -172,6 +172,8 @@ export default class Unit {
   target: Unit | null = null;
   // Monsters stand idle until they notice the party.
   aware = false;
+  // A Hunt's quarry: the exits open once every marked monster is dead.
+  marked = false;
   toggles: Toggles | undefined;
   hunt: Hunt | undefined;
   // Move speed multiplier from what the unit carries, such as the bearer's pack

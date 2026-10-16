@@ -1,3 +1,4 @@
+import type { Objective } from '../gen/graph';
 import type { Ahead, Prop, Stage } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
@@ -54,6 +55,13 @@ const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
 
 /** How far an exit's plate reaches from its middle, in tiles. Clicks within it choose it. */
 export const EXIT_PLATE = 0.9;
+
+// What a signpost says of the fight ahead, by its objective.
+const OBJECTIVE_SIGN: Record<Objective, string> = {
+  hunt: 'Hunt: slay the marked',
+  horde: 'Horde: hold out against the waves',
+  maze: 'Labyrinth: find the way through',
+};
 
 // A tile is 32 by 16 pixels on screen, times the zoom.
 const TW = 32;
@@ -139,6 +147,8 @@ export interface Frame {
   // The exit under the mouse, and the one the bearer was sent to, if any
   hoverExit: number | null;
   leaving: number | null;
+  // Whether the area's objective still holds every exit shut
+  exitsShut: boolean;
   // The run's seed, shown when it ends so it can be shared
   seed: string;
   // How the final fight ended: the Creditor sealed again, or risen
@@ -268,8 +278,10 @@ export default class Renderer {
     fog.draw(ctx, iso, C.void, this.floorOnScreen());
     this.drawGround(f, fog);
     this.drawExits(f, fog);
+    this.drawHazards(f, fog);
     f.effects.drawRings(ctx, iso);
     this.drawTraps(f);
+    this.drawWarnings(f);
 
     // A red ring marks the enemy the bearer told the party to focus on.
     const focused = new Set(
@@ -612,6 +624,18 @@ export default class Renderer {
     const { ctx } = this;
     for (const u of f.sim.living()) {
       const r = f.views.rig(u, f.alpha);
+      // A Hunt's quarry is marked even in the dark, so the party can find it.
+      if (u.marked) {
+        const b = this.iso(r.x, r.z);
+        const top = b.y - Math.round((barHeight(u) + 12) * look.zoom);
+        const bob = Math.round(Math.sin(f.time * 4) * 1.5);
+        fillPoly(
+          ctx,
+          [pt(b.x - 4, top + bob), pt(b.x + 4, top + bob), pt(b.x, top + 6 + bob)],
+          C.blood,
+          C.ink,
+        );
+      }
       if (seen(fog, u, r.x, r.z) < 0.5) {
         continue;
       }
@@ -654,6 +678,109 @@ export default class Renderer {
   }
 
   // Snares set on the floor: iron jaws, open, a ring of teeth.
+  // A Labyrinth's traps, so they can be seen before they spring: an iron
+  // grate of spikes, or a scorched fire vent.
+  private drawHazards(f: Frame, fog: Fog): void {
+    const { ctx, iso } = this;
+    for (const h of f.stage.hazards ?? []) {
+      if (!fog.known(h.x, h.z)) {
+        continue;
+      }
+      if (h.kind === 'spikes') {
+        const r = 1.1;
+        fillPoly(
+          ctx,
+          [
+            iso(h.x - r, h.z - r),
+            iso(h.x + r, h.z - r),
+            iso(h.x + r, h.z + r),
+            iso(h.x - r, h.z + r),
+          ],
+          C.ink,
+          C.stoneB,
+        );
+        ctx.fillStyle = C.bone;
+        for (const [dx, dz] of [
+          [-0.5, -0.5],
+          [0.5, -0.5],
+          [0.5, 0.5],
+          [-0.5, 0.5],
+          [0, 0],
+        ]) {
+          const p = iso(h.x + dx, h.z + dz);
+          ctx.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 2);
+        }
+      } else {
+        const ring = Array.from({ length: 16 }, (_, i) => {
+          const a = (i / 16) * Math.PI * 2;
+          return iso(h.x + Math.cos(a) * 1.3, h.z + Math.sin(a) * 1.3);
+        });
+        fillPoly(ctx, ring, C.ink, C.blood);
+        const c = iso(h.x, h.z);
+        ctx.fillStyle = C.flame;
+        ctx.fillRect(Math.round(c.x) - 1, Math.round(c.y) - 1, 3, 2);
+      }
+    }
+  }
+
+  // Warnings on the ground fill with red as they come due, so the party can
+  // see a blow coming and step out of it.
+  private drawWarnings(f: Frame): void {
+    const { ctx, iso } = this;
+    for (const w of f.sim.warnings) {
+      const k = Math.min(1, w.t / w.windup);
+      const s = w.shape;
+      let outline: Pt[];
+      let fill: Pt[];
+      if (s.kind === 'circle') {
+        const ring = (r: number): Pt[] =>
+          Array.from({ length: 20 }, (_, i) => {
+            const a = (i / 20) * Math.PI * 2;
+            return iso(w.x + Math.cos(a) * r, w.z + Math.sin(a) * r);
+          });
+        outline = ring(s.r);
+        fill = ring(s.r * k);
+      } else if (s.kind === 'square') {
+        const square = (r: number): Pt[] => [
+          iso(w.x - r, w.z - r),
+          iso(w.x + r, w.z - r),
+          iso(w.x + r, w.z + r),
+          iso(w.x - r, w.z + r),
+        ];
+        outline = square(s.r);
+        fill = square(s.r * k);
+      } else if (s.kind === 'line') {
+        const dx = s.x2 - w.x;
+        const dz = s.z2 - w.z;
+        const l = Math.hypot(dx, dz) || 1;
+        const nx = (-dz / l) * (s.width / 2);
+        const nz = (dx / l) * (s.width / 2);
+        const strip = (t: number): Pt[] => [
+          iso(w.x + nx, w.z + nz),
+          iso(w.x + dx * t + nx, w.z + dz * t + nz),
+          iso(w.x + dx * t - nx, w.z + dz * t - nz),
+          iso(w.x - nx, w.z - nz),
+        ];
+        outline = strip(1);
+        fill = strip(k);
+      } else {
+        const fan = (r: number): Pt[] => [
+          iso(w.x, w.z),
+          ...Array.from({ length: 9 }, (_, i) => {
+            const a = s.angle - s.spread / 2 + (s.spread * i) / 8;
+            return iso(w.x + Math.cos(a) * r, w.z + Math.sin(a) * r);
+          }),
+        ];
+        outline = fan(s.r);
+        fill = fan(s.r * k);
+      }
+      ctx.globalAlpha = 0.25 + 0.35 * k;
+      fillPoly(ctx, fill, C.blood, null);
+      ctx.globalAlpha = 1;
+      fillPoly(ctx, outline, 'rgba(0,0,0,0)', C.blood);
+    }
+  }
+
   private drawTraps(f: Frame): void {
     const { ctx } = this;
     for (const t of f.sim.traps) {
@@ -749,7 +876,9 @@ export default class Renderer {
         continue;
       }
       const b = this.iso(e.x - 2.2, e.z - 2.2);
-      const text = AHEAD_NAME[e.ahead];
+      const text = e.objective
+        ? `${e.ahead === 'elite' ? 'Elite ' : ''}${OBJECTIVE_SIGN[e.objective]}`
+        : AHEAD_NAME[e.ahead];
       const x = b.x * SCALE - this.sub.x;
       const y = (b.y - 40 * look.zoom) * SCALE - this.sub.y;
       const width = out.measureText(text).width + 8;
@@ -857,7 +986,7 @@ export default class Renderer {
       if (!fog.known(e.x, e.z)) {
         return;
       }
-      const shut = e.ahead === 'down' && (f.boss?.alive ?? false);
+      const shut = f.exitsShut || (e.ahead === 'down' && (f.boss?.alive ?? false));
       const hot = !shut && (f.hoverExit === i || f.leaving === i);
       // A square on the floor, a diamond on screen, that breathes when idle.
       const r = EXIT_PLATE * (hot ? 1 : 0.92 + 0.08 * Math.sin(f.time * 3 + i));

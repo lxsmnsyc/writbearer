@@ -6,6 +6,7 @@ import setupMechanics from './mechanics';
 import Nav from './nav';
 import type { Projectile } from './projectile';
 import type { Trap } from './trap';
+import { type Warning, updateWarnings } from './warning';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
@@ -202,6 +203,8 @@ export default class Sim extends EventEngine<SimEventMap> {
 
   // Traps set on the floor.
   readonly traps: Trap[] = [];
+  // Warnings on the ground, filling before they strike
+  readonly warnings: Warning[] = [];
 
   constructor(rng: RNG | number) {
     super();
@@ -297,6 +300,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     }
     removeDone(this.projectiles);
     this.springTraps(dt);
+    updateWarnings(this, dt);
     this.separate();
     this.emit(SimEvents.Tick, { id: 'Tick', disabled: false, dt });
   }
