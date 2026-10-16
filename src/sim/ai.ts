@@ -266,14 +266,18 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
       return false;
     }
     if (toggles.stance === Stance.Hold) {
-      return u.distanceTo(e) <= HOLD_RADIUS + u.kit.reach;
+      return u.distanceTo(e) <= HOLD_RADIUS + u.kit.reach && sim.sees(u, e);
     }
     // With no bearer left to keep to, a merc goes after every enemy that is
     // up, as at the end, in the Creditor's tomb.
     if (!bearer) {
       return e.aware;
     }
-    return u.distanceTo(e) <= u.kit.sight || e.distanceTo(bearer) <= u.kit.sight;
+    // Only what the merc or the bearer can see: nothing behind a wall.
+    return (
+      (u.distanceTo(e) <= u.kit.sight && sim.sees(u, e)) ||
+      (e.distanceTo(bearer) <= u.kit.sight && sim.sees(bearer, e))
+    );
   });
   const target = pick(u, toggles, bearer, enemies);
   if (useSkill(sim, u, toggles, target)) {
@@ -352,7 +356,8 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const party = sim.living(Side.Party);
   if (!u.aware) {
     const noticed = party.some(
-      (p) => u.distanceTo(p) <= u.kit.notice * (p === sim.bearer ? 1 : UNLIT_NOTICE),
+      (p) =>
+        u.distanceTo(p) <= u.kit.notice * (p === sim.bearer ? 1 : UNLIT_NOTICE) && sim.sees(u, p),
     );
     if (!noticed) {
       return;
@@ -373,18 +378,30 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
     support(sim, u, party, dt);
     return;
   }
+  // It goes only for whom it can see. Losing sight of its quarry, it walks
+  // to where it saw it last, and waits there.
+  const seen = party.filter((p) => sim.sees(u, p));
   let target: Unit | null;
   if (taunt?.source.alive) {
     target = taunt.source;
-  } else if ((u.hunt === Hunt.Bearer || u.hunt === Hunt.Assassin) && bearer) {
+  } else if (
+    (u.hunt === Hunt.Bearer || u.hunt === Hunt.Assassin) &&
+    bearer &&
+    seen.includes(bearer)
+  ) {
     target = bearer;
   } else {
-    target = nearest(u, party);
+    target = nearest(u, seen);
   }
   if (!target) {
     u.target = null;
+    const last = u.lastSeen;
+    if (last && u.travel(last.x, last.z, dt, 0.3)) {
+      u.lastSeen = null;
+    }
     return;
   }
+  u.lastSeen = { x: target.x, z: target.z };
   // A party member standing in reach is in the way, and gets hit first.
   // The monster still counts as going for its real target, so mercs that
   // guard the bearer see it coming.

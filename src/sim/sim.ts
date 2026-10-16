@@ -212,6 +212,34 @@ export default class Sim extends EventEngine<SimEventMap> {
     setupMechanics(this);
   }
 
+  /**
+   * Whether one point can see another: no obstacle stands across the line
+   * between them. Walls, pillars and trees block sight as they block bodies.
+   */
+  sees(a: { x: number; z: number }, b: { x: number; z: number }): boolean {
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const l2 = dx * dx + dz * dz;
+    if (l2 === 0) {
+      return true;
+    }
+    const x0 = Math.min(a.x, b.x);
+    const x1 = Math.max(a.x, b.x);
+    const z0 = Math.min(a.z, b.z);
+    const z1 = Math.max(a.z, b.z);
+    for (const o of this.obstacles) {
+      // Only those near the line's box can cross it.
+      if (o.x + o.r < x0 || o.x - o.r > x1 || o.z + o.r < z0 || o.z - o.r > z1) {
+        continue;
+      }
+      const t = Math.max(0, Math.min(1, ((o.x - a.x) * dx + (o.z - a.z) * dz) / l2));
+      if (Math.hypot(a.x + dx * t - o.x, a.z + dz * t - o.z) < o.r) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Sets the floor's size and builds where units can walk around the obstacles. */
   setFloor(width: number, depth: number): void {
     this.width = width;

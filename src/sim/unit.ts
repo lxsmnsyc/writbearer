@@ -174,6 +174,8 @@ export default class Unit {
   aware = false;
   // A Hunt's quarry: the exits open once every marked monster is dead.
   marked = false;
+  // Where a monster last saw whom it was after, to look for it there
+  lastSeen: { x: number; z: number } | null = null;
   toggles: Toggles | undefined;
   hunt: Hunt | undefined;
   // Move speed multiplier from what the unit carries, such as the bearer's pack
