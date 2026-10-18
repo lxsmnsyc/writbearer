@@ -27,6 +27,7 @@ import {
 import { reveal } from '../content/creditor';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import {
+  CHALLENGE_NAME,
   type LayerMap,
   type MapNode,
   OBJECTIVE_NAME,
@@ -115,6 +116,7 @@ import {
   wakeBoss,
 } from './stage';
 import { placeBeyond } from '../gen/place';
+import Bonus, { type BonusState } from './bonus';
 import { type Rect, inRect } from '../sim/nav';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -144,6 +146,21 @@ const MATERIALS_PAID: readonly [string, number][] = [
 ];
 const ESSENCES = ['venomEssence', 'occultEssence', 'radiantEssence'];
 const BLESSING_FROM_LAYER = 2;
+// What meeting a bonus challenge adds, by the reward, for the badge
+const BONUS_PAYS: Record<Reward, string> = {
+  gold: 'Twice the gold.',
+  arms: 'One item is Rare or better.',
+  cards: 'A second card.',
+  materials: 'Twice the materials.',
+  respite: 'The dead rise too.',
+};
+
+/** A fight's bonus challenge as the HUD shows it. */
+export interface BonusStatus {
+  title: string;
+  detail: string;
+  state: BonusState;
+}
 // How near a click must land to an item, in frame pixels, to pick it up.
 const PICK_PIXELS = 8;
 // Impact: hits at least this heavy freeze the world briefly and shake it.
@@ -304,9 +321,11 @@ export default class Game {
   private fading: { stage: Stage; t: number } | null = null;
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
-  private hurtHere = false;
-  // What this fight's chest holds once its objective is done
+  // What this fight's chest holds once its objective is done, its bonus
+  // challenge, and whether that was met once the objective was done
   private prize: Reward | null = null;
+  private bonus: Bonus | null = null;
+  private bonusMet: boolean | null = null;
   // Whether the title panel is up, before the run begins
   private title = false;
   // The recruits rolled for the Guild House at the start of the run
@@ -780,7 +799,7 @@ export default class Game {
     this.enter();
     this.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
       if (event.target === this.bearer && event.value > 0) {
-        this.hurtHere = true;
+        this.bonus?.hurt();
       }
       if (event.value < HEAVY_HIT || event.flags & DamageFlags.DoT) {
         return;
@@ -819,6 +838,7 @@ export default class Game {
         this.endRun('fallen');
       } else if (event.source.side === Side.Party) {
         this.souls++;
+        this.bonus?.lost();
       }
     });
     this.slain = save?.slain ?? 0;
@@ -886,7 +906,7 @@ export default class Game {
         const rng = this.streams.get(1, Stream.Loot);
         const level = 4 + this.stageIndex;
         if (p.holds) {
-          this.scatter(this.spoilsOf(p.holds, rng, level), p);
+          this.scatter(this.spoilsOf(p.holds, rng, level, p.better === true), p);
           continue;
         }
         const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
@@ -895,25 +915,30 @@ export default class Game {
     }
   }
 
-  // What a fight's chest holds: an item, gold and potions, and its reward.
-  private spoilsOf(reward: Reward, rng: RNG, level: number): Item[] {
+  // What a fight's chest holds: an item, gold and potions, and its reward,
+  // upgraded if the bonus challenge was met.
+  private spoilsOf(reward: Reward, rng: RNG, level: number, better: boolean): Item[] {
     const gold = rollGold(rng, level);
     const out = [rollItem(rng, level, Rank.Elite), gold, rollPotion(rng, level, 2)];
+    const more = better ? 2 : 1;
     if (reward === 'gold') {
-      gold.quantity *= GOLD_PILE;
+      gold.quantity *= GOLD_PILE * more;
     } else if (reward === 'arms') {
       const jobs = this.mercs()
         .filter((m) => m.alive)
         .map((m) => m.job.name);
       for (let i = 0; i < ARMS_ITEMS; i++) {
         const job = jobs.length > 0 ? rng.pick(jobs) : undefined;
-        out.push(rollItem(rng, level, Rank.Elite, { atLeast: Quality.Magic, job }));
+        const atLeast = better && i === 0 ? Quality.Rare : Quality.Magic;
+        out.push(rollItem(rng, level, Rank.Elite, { atLeast, job }));
       }
     } else if (reward === 'cards') {
-      out.push(plainItem(this.cardHere(rng)));
+      for (let i = 0; i < more; i++) {
+        out.push(plainItem(this.cardHere(rng)));
+      }
     } else if (reward === 'materials') {
-      const found: Materials = new Map(MATERIALS_PAID);
-      found.set(rng.pick(ESSENCES), 2);
+      const found: Materials = new Map(MATERIALS_PAID.map(([id, n]) => [id, n * more]));
+      found.set(rng.pick(ESSENCES), 2 * more);
       if (Math.floor(this.stageIndex / AREAS_PER_LAYER) >= BLESSING_FROM_LAYER) {
         found.set('blessing', 1);
       }
@@ -1108,9 +1133,14 @@ export default class Game {
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
     this.hazards = this.stage.hazards ? new Hazards(this.stage) : null;
-    this.hurtHere = false;
-    this.prize = (this.stage.objective && this.here()?.reward) ?? null;
+    const node = this.stage.objective ? this.here() : null;
+    this.prize = node?.reward ?? null;
     this.sim.spared = this.prize === 'respite';
+    this.bonus =
+      this.stage.objective && node?.challenge
+        ? new Bonus(node.challenge, this.stage.objective, rectOf(this.stage))
+        : null;
+    this.bonusMet = null;
     const camp = this.stage.recruit;
     const guild = this.stage.recruits ?? [];
     this.wanderers = guild.map((at, i) => ({ offer: this.starting[i], ...at, met: false }));
@@ -1131,14 +1161,31 @@ export default class Game {
   }
 
   /** What this area asks of the party, and how far along it is, for the HUD. */
-  objectiveStatus(): { kind: Objective; title: string; detail: string; done: boolean } | null {
+  objectiveStatus(): {
+    kind: Objective;
+    title: string;
+    detail: string;
+    done: boolean;
+    bonus: BonusStatus | null;
+  } | null {
     const o = this.objective;
     if (!o) {
       return null;
     }
     const elite = this.stage.kind === 'elite' ? 'Elite ' : '';
     const title = `${elite}${OBJECTIVE_NAME[o.kind]}`;
-    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done };
+    const b = this.bonus;
+    let bonus: BonusStatus | null = null;
+    if (b) {
+      let state: BonusState = b.state;
+      let detail = b.status(this.sim);
+      if (this.bonusMet !== null) {
+        state = this.bonusMet ? 'met' : 'failed';
+        detail = this.bonusMet ? `Met. ${BONUS_PAYS[this.prize ?? 'gold']}` : 'Failed.';
+      }
+      bonus = { title: CHALLENGE_NAME[b.kind], detail, state };
+    }
+    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done, bonus };
   }
 
   // Whether the exits are open: once the objective is done, if there is one,
@@ -1154,9 +1201,14 @@ export default class Game {
   // its spoils appear before them.
   private checkObjective(): void {
     const o = this.objective;
+    if (o && !o.done) {
+      this.bonus?.tick(TICK);
+    }
     if (!o || !this.bearer.alive || !o.update(this.sim, TICK, monsterLevel(this.stageIndex))) {
       return;
     }
+    const better = this.bonus?.met(this.sim) ?? false;
+    this.bonusMet = this.bonus ? better : null;
     this.views.snap(this.sim);
     const chest = this.prize ? `the ${REWARD_NAME[this.prize]} chest` : 'the spoils';
     this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and ${chest} lies before it.`);
@@ -1167,23 +1219,34 @@ export default class Game {
           m.mana = m.derived.maxMana;
         }
       }
+      if (better) {
+        for (const m of this.mercs()) {
+          m.revive(1);
+        }
+      }
       this.say('A respite: the party is whole again.');
+    }
+    if (this.bonus) {
+      const name = CHALLENGE_NAME[this.bonus.kind];
+      this.say(better ? `${name}: met. The reward is better for it.` : `${name}: failed.`);
     }
     const at = this.stage.reward;
     if (at) {
       const holds = this.prize ?? undefined;
-      this.stage.props.push({ kind: 'chest', x: at.x, z: at.z, r: CHEST_SOLID, seed: 0.5, holds });
+      this.stage.props.push({
+        kind: 'chest',
+        x: at.x,
+        z: at.z,
+        r: CHEST_SOLID,
+        seed: 0.5,
+        holds,
+        better,
+      });
       this.sim.obstacles.push({ x: at.x, z: at.z, r: CHEST_SOLID });
       // The floor stays as it is, with this area and any joined to it.
       this.sim.setWorld(this.sim.floor);
       const loot = this.streams.get(1, Stream.Loot);
-      const spoils = [rollGold(loot, 6 + this.stageIndex)];
-      // A Labyrinth crossed without the bearer taking a scratch pays more.
-      if (o.kind === 'maze' && !this.hurtHere) {
-        spoils.push(rollItem(loot, 4 + this.stageIndex, Rank.Elite));
-        this.say('Labyrinth done, the bearer unhurt: the spoils are richer for it.');
-      }
-      this.scatter(spoils, { x: at.x - 1, z: at.z });
+      this.scatter([rollGold(loot, 6 + this.stageIndex)], { x: at.x - 1, z: at.z });
     }
   }
 

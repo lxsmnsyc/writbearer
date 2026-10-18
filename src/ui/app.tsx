@@ -201,6 +201,21 @@ export default function App(): JSX.Element {
             <div class="min-w-0">
               <h2 class="text-sm font-semibold text-neutral-50">{o.title}</h2>
               <p class="text-xs text-neutral-400">{o.detail}</p>
+              <Show when={o.bonus}>
+                {(b) => (
+                  <p
+                    class="mt-1.5 border-t border-line pt-1.5 text-xs"
+                    classList={{
+                      'text-neutral-300': b().state === 'open',
+                      'text-accent': b().state === 'met',
+                      'text-neutral-500': b().state === 'failed',
+                    }}
+                    aria-label="Bonus challenge"
+                  >
+                    <span class="font-semibold">Bonus · {b().title}:</span> {b().detail}
+                  </p>
+                )}
+              </Show>
             </div>
           </section>
         )}

@@ -37,9 +37,11 @@ export interface Prop {
   r?: number;
   // For drawing variations, such as a wall block's height
   seed: number;
-  // A chest the bearer has opened, and what a fight's chest holds
+  // A chest the bearer has opened, what a fight's chest holds, and whether
+  // its bonus challenge was met
   open?: boolean;
   holds?: Reward;
+  better?: boolean;
 }
 
 /** A pack to spawn: its monsters, where it stands, and which one is an elite. */

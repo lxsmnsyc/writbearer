@@ -33,6 +33,26 @@ export const REWARD_NAME: Record<Reward, string> = {
   respite: 'Respite',
 };
 
+/**
+ * A fight's bonus challenge, as Aghanim's Labyrinth's room grades. Meeting
+ * it upgrades the reward. Failing it loses only the upgrade.
+ */
+export type Challenge = 'untouched' | 'noLosses' | 'swift' | 'thorough';
+
+/** The challenges each objective can roll. A Horde's field is empty, so it has no Thorough. */
+export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
+  hunt: ['untouched', 'noLosses', 'swift', 'thorough'],
+  horde: ['untouched', 'noLosses'],
+  maze: ['untouched', 'noLosses', 'swift', 'thorough'],
+};
+
+export const CHALLENGE_NAME: Record<Challenge, string> = {
+  untouched: 'Untouched',
+  noLosses: 'No losses',
+  swift: 'Swift',
+  thorough: 'Thorough',
+};
+
 /** One area on a layer's map. */
 export interface MapNode {
   // Which of its column's nodes this is, from the north edge
@@ -41,6 +61,7 @@ export interface MapNode {
   // A fight's objective, Elite or not, and what it pays
   objective?: Objective;
   reward?: Reward;
+  challenge?: Challenge;
   // Rows of the next column this area's exits lead to, north first
   next: number[];
 }
@@ -133,6 +154,11 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap 
     }
   });
   rollRewards(rng, columns);
+  for (const node of columns.flat()) {
+    if (node.objective) {
+      node.challenge = rng.pick(CHALLENGES[node.objective]);
+    }
+  }
   return { columns };
 }
 

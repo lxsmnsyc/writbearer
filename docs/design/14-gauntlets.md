@@ -57,6 +57,16 @@ As Aghanim's Labyrinth's room grades. Each gauntlet has one bonus challenge, sho
 | Silent | No horn is blown and no bell is rung. |
 | In order | The marked monsters of a Hunt die in the order shown. |
 
+In the game so far (`src/game/bonus.ts`):
+
+- Each fight on the map rolls Untouched, No losses, Swift or Thorough from the `map` stream.
+- A Horde rolls only Untouched or No losses. Its field starts empty, so Thorough would always be met, and its waves keep their own time.
+- Swift is 150 seconds for a Hunt and 120 for a Labyrinth, from when the party enters.
+- Thorough counts the living monsters inside the area's rectangle when the objective is done.
+- The badge shows the challenge, how it stands, and what it added once met.
+- Meeting it gives twice the gold, one Arms item of Rare or better, a second card, twice the materials, or for a Respite, raises the party's untorn dead.
+- Silent and In order are not in yet. Silent needs horns and bells, and In order needs the Hunt's order shown.
+
 ### Mutators
 
 As Aghanim's Labyrinth's room modifiers. From the Rift Road down, a gauntlet may roll one mutator. An Elite gauntlet always rolls one, and two in the Sunken Crown. The mutator shows on the signpost.
@@ -163,7 +173,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 ## Order to build in
 
 1. Rewards on the road. It changes how every fork is chosen, and needs only the chest and the signposts. Done, without Lore.
-2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check.
+2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check. Done, without Silent and In order.
 3. Wave warnings and the next wave in the Horde's badge.
 4. Arrows to marked monsters, and marked monsters that run.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead.
