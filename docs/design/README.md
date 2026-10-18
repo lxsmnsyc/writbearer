@@ -19,6 +19,9 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 9. [Skill trees](09-skill-trees.md)
 10. [Lore](10-lore.md) (draft)
 11. [Stages](11-stages.md) (draft)
+12. [New jobs](12-new-jobs.md) (draft)
+13. [Bestiary: monsters, mini-bosses and bosses](13-bestiary.md) (draft)
+14. [Gauntlets](14-gauntlets.md) (draft)
 
 ## Decisions so far
 
