@@ -103,8 +103,9 @@ function run(
     shape: { kind: 'line', x2, z2, width },
     done: () => {
       if (u.alive) {
-        u.x = Math.max(0.5, Math.min(u.sim.width - 0.5, x2));
-        u.z = Math.max(0.5, Math.min(u.sim.depth - 0.5, z2));
+        const at = u.sim.clamp({ x: x2, z: z2 });
+        u.x = at.x;
+        u.z = at.z;
       }
     },
   };

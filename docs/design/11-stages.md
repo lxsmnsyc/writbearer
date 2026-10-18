@@ -130,9 +130,12 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Balance check:** a test plays the first stages with a lone merc of each job. The bearer walks to the exit, steps behind its merc when monsters near it wake, and drinks when hurt. Every job must clear the first two stages on 11 of 12 seeds. Measured on 40 seeds, all three jobs clear four stages alone every time. From the fifth stage on, a lone merc starts to fall: by the eighth, 38% to 60% of runs survive, so a second merc and gear matter.
 - **Pathfinding:** a half-tile grid, blocked around solid props. Units walk straight when nothing is in the way, and follow an A* path when something is.
 - **Exits:** each way out is a gold tile on the ground, a diamond on screen, that fills when the mouse is over it. Clicking it walks the bearer there, and the party leaves on arrival. Walking over it without clicking does nothing, so no one leaves by accident. The way down shows dark red while the boss lives.
-- **Crossing:** when the bearer reaches the exit it was sent to, the next area is built, on the same layer or the one below. The party, living and dead, arrives at its entrance. The old area's monsters stay behind. This is a cut for now. Seamless crossing comes with the phase map.
+- **Turns:** an area's exits leave by its far edge or by its left or right edge, rolled from the `map` stream, so the way on turns as Aghanim's Labyrinth's doors do. With one road on, it goes straight half the time. With two, the roads take two different edges, the upper road of the map on the left.
+- **Crossing:** areas within a layer join edge to edge, with no cut. Clicking an open exit walks the bearer to it; there the next area is built, turned to face that way, and laid beyond the exit, its entrance across from it. Rubble runs along the edge where the two meet, but for the road. The other roads fall in, rubble across them. The next area's monsters wait in it from then on, and its objective starts once the bearer is a tile inside. See `src/gen/place.ts`.
+- **Collapse:** once the bearer is in the new area, the one behind waits up to 4 seconds for the party to follow, then collapses and its floor fades. What is left in it is lost. Mercs still in it, living or dead, are brought to the new area's entrance.
+- **The way down:** the stair from a boss's field to the next layer's Waystation, and down to the tomb, stays a cut.
 
-Not yet: water, ledges, grass, alarms, patrols, Treasure and Shrine areas, and seamless crossing between areas.
+Not yet: water, ledges, grass, alarms, patrols, and Treasure and Shrine areas.
 
 ### Map
 

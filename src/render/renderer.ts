@@ -1,5 +1,5 @@
 import type { Objective } from '../gen/graph';
-import type { Ahead, Prop, Stage } from '../gen/stage';
+import { type Ahead, type Prop, type Stage, rectOf } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
@@ -29,7 +29,7 @@ import { type Effects, drawPiece } from './effects';
 import { areaOf } from '../gen/layers';
 import { Shout } from '../sim/shout';
 import { type FloorImage, buildFloor } from './floor';
-import Fog from './fog';
+import { Fogs } from './fog';
 import { type Light, Lighting } from './light';
 import { C, quantize } from './palette';
 import { drawUnit, emissives, isKind, look } from './rig';
@@ -138,7 +138,11 @@ const LABEL_HEIGHT = 18;
 
 export interface Frame {
   sim: Sim;
+  // The area the party is in
   stage: Stage;
+  // Every area in the world: the one the party is in, the one joined ahead,
+  // and the one behind as it fades away, each with how solid it is, 0 to 1
+  areas: { stage: Stage; alpha: number }[];
   views: Views;
   effects: Effects;
   // How far between the last tick and the next, 0 to 1
@@ -175,6 +179,9 @@ export interface Frame {
   ending: 'sealed' | 'risen' | null;
 }
 
+// Everything that stands in every area
+const propsOf = (f: Frame): Prop[] => f.areas.flatMap((a) => a.stage.props);
+
 // What the camera and the lantern follow: the bearer, or once the seal
 // breaks, the Creditor in its body.
 const focusOf = (f: Frame): Unit | null => f.sim.bearer ?? (f.stage.tomb ? f.boss : null);
@@ -196,8 +203,8 @@ export default class Renderer {
   private readonly labels: { item: GroundItem; x: number; y: number; w: number }[] = [];
   private readonly lighting = new Lighting(W, H);
   private readonly atmosphere = new Atmosphere(W, H);
-  private floor: { stage: Stage; zoom: number; image: FloorImage } | null = null;
-  private fog: { stage: Stage; fog: Fog } | null = null;
+  private readonly floors = new Map<Stage, { zoom: number; image: FloorImage }>();
+  private readonly fog = new Fogs();
   private readonly scratch: CanvasRenderingContext2D;
 
   constructor(private readonly screen: HTMLCanvasElement) {
@@ -284,7 +291,7 @@ export default class Renderer {
     ctx.fillStyle = C.void;
     ctx.fillRect(0, 0, W, H);
     this.drawStoneFloor(f);
-    for (const s of f.stage.sigils) {
+    for (const s of f.areas.flatMap((a) => a.stage.sigils)) {
       this.drawSigil(s);
     }
     f.effects.drawDecals(ctx, iso);
@@ -336,7 +343,7 @@ export default class Renderer {
 
     // Everything that stands, sorted back to front.
     const list: { depth: number; draw: () => void }[] = [];
-    for (const p of f.stage.props) {
+    for (const p of propsOf(f)) {
       const b = iso(p.x, p.z);
       // Props stay where they were seen, dimmed while out of sight.
       if (!onScreen(b) || !fog.knownAround(p.x, p.z, p.r ?? 0.3)) {
@@ -449,25 +456,26 @@ export default class Renderer {
   }
 
   // What the party sees this frame. Solid props block sight; bodies do not.
-  private updateFog(f: Frame): Fog {
-    if (this.fog?.stage !== f.stage) {
-      this.fog = { stage: f.stage, fog: new Fog(f.stage.width, f.stage.depth) };
-    }
+  private updateFog(f: Frame): Fogs {
+    this.fog.sync(f.areas.map((a) => a.stage));
     const viewers = f.sim.living(Side.Party).map((u) => {
       const r = f.views.rig(u, f.alpha);
       return { x: r.x, z: r.z, radius: u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT };
     });
     // The safe places are lit: the Guild House, Waystations, Towns and Camps.
-    if (LIT.has(f.stage.kind)) {
-      viewers.push({ x: f.stage.width / 2, z: f.stage.depth / 2, radius: LIT_RADIUS });
+    for (const { stage } of f.areas) {
+      if (LIT.has(stage.kind)) {
+        const r = rectOf(stage);
+        viewers.push({ x: (r.x0 + r.x1) / 2, z: (r.z0 + r.z1) / 2, radius: LIT_RADIUS });
+      }
     }
     // Once the seal breaks, the lantern burns on in the Creditor's hand.
     const focus = focusOf(f);
     if (focus && focus !== f.sim.bearer) {
       viewers.push({ x: focus.x, z: focus.z, radius: BEARER_SIGHT });
     }
-    this.fog.fog.update(f.paused ? 0 : 1 / 60, viewers, f.sim.obstacles);
-    return this.fog.fog;
+    this.fog.update(f.paused ? 0 : 1 / 60, viewers, f.sim.obstacles);
+    return this.fog;
   }
 
   /**
@@ -481,12 +489,12 @@ export default class Renderer {
 
   /** Whether the party has seen a floor point. */
   known(x: number, z: number): boolean {
-    return this.fog?.fog.known(x, z) ?? false;
+    return this.fog.known(x, z);
   }
 
   /** Whether the party sees a floor point now. */
   sees(x: number, z: number): boolean {
-    return (this.fog?.fog.visible(x, z) ?? 0) > 0.5;
+    return this.fog.visible(x, z) > 0.5;
   }
 
   /** The camera's offset in screen pixels, for browser tests. */
@@ -548,12 +556,23 @@ export default class Renderer {
 
   // The worn stone floor, drawn once per stage and zoom, then copied.
   private drawStoneFloor(f: Frame): void {
-    if (this.floor?.stage !== f.stage || this.floor.zoom !== look.zoom) {
-      this.floor = { stage: f.stage, zoom: look.zoom, image: buildFloor(f.stage, look.zoom, 1234) };
+    for (const stage of this.floors.keys()) {
+      if (!f.areas.some((a) => a.stage === stage)) {
+        this.floors.delete(stage);
+      }
     }
-    const { image } = this.floor;
-    const origin = this.iso(0, 0);
-    this.ctx.drawImage(image.canvas, origin.x - image.ox, origin.y - image.oy);
+    for (const { stage, alpha } of f.areas) {
+      let floor = this.floors.get(stage);
+      if (floor?.zoom !== look.zoom) {
+        floor = { zoom: look.zoom, image: buildFloor(stage, look.zoom, 1234) };
+        this.floors.set(stage, floor);
+      }
+      const { image } = floor;
+      const origin = this.iso(stage.x0 ?? 0, stage.z0 ?? 0);
+      this.ctx.globalAlpha = alpha;
+      this.ctx.drawImage(image.canvas, origin.x - image.ox, origin.y - image.oy);
+      this.ctx.globalAlpha = 1;
+    }
   }
 
   // Warm lantern light in hard steps.
@@ -573,7 +592,7 @@ export default class Renderer {
         strength: 1.05,
       });
     }
-    for (const p of f.stage.props) {
+    for (const p of propsOf(f)) {
       if (p.kind === 'candle') {
         lights.push({
           x: p.x,
@@ -647,7 +666,7 @@ export default class Renderer {
   }
 
   // Eyes, growths and flames are drawn after the darkness, so they shine through it.
-  private drawGlow(f: Frame, fog: Fog): void {
+  private drawGlow(f: Frame, fog: Fogs): void {
     const { ctx } = this;
     for (const u of f.sim.living()) {
       const r = f.views.rig(u, f.alpha);
@@ -680,7 +699,7 @@ export default class Renderer {
       }
     }
     ctx.fillStyle = C.flame;
-    for (const p of f.stage.props) {
+    for (const p of propsOf(f)) {
       if (p.kind === 'candle' && fog.known(p.x, p.z)) {
         const b = this.iso(p.x, p.z);
         ctx.fillRect(b.x, b.y - Math.round(8 * look.zoom), 1, 2);
@@ -707,9 +726,9 @@ export default class Renderer {
   // Snares set on the floor: iron jaws, open, a ring of teeth.
   // A Labyrinth's traps, so they can be seen before they spring: an iron
   // grate of spikes, or a scorched fire vent.
-  private drawHazards(f: Frame, fog: Fog): void {
+  private drawHazards(f: Frame, fog: Fogs): void {
     const { ctx, iso } = this;
-    for (const h of f.stage.hazards ?? []) {
+    for (const h of f.areas.flatMap((a) => a.stage.hazards ?? [])) {
       if (!fog.known(h.x, h.z)) {
         continue;
       }
@@ -876,7 +895,7 @@ export default class Renderer {
   }
 
   // Items on the floor: a small shape for what it is, and a glint for its quality.
-  private drawGround(f: Frame, fog: Fog): void {
+  private drawGround(f: Frame, fog: Fogs): void {
     const { ctx } = this;
     for (const g of f.ground) {
       if (fog.visible(g.x, g.z) < 0.5) {
@@ -920,7 +939,7 @@ export default class Renderer {
   }
 
   // Item names over the floor, as Diablo 2's labels, in the quality's color.
-  private drawLabels(f: Frame, fog: Fog): void {
+  private drawLabels(f: Frame, fog: Fogs): void {
     const { out } = this;
     out.font = '600 13px Inter, system-ui, sans-serif';
     out.textAlign = 'center';
@@ -952,11 +971,11 @@ export default class Renderer {
       out.fillText(name, x, y);
     }
     // Each road on names what lies ahead, on its signpost.
-    for (const e of f.stage.exits) {
-      if (e.ahead === 'down' || !fog.known(e.x - 2.2, e.z - 2.2)) {
+    for (const e of f.areas.flatMap((a) => a.stage.exits)) {
+      if (e.ahead === 'down' || e.closed === true || !fog.known(e.sign.x, e.sign.z)) {
         continue;
       }
-      const b = this.iso(e.x - 2.2, e.z - 2.2);
+      const b = this.iso(e.sign.x, e.sign.z);
       const text = e.objective
         ? `${e.ahead === 'elite' ? 'Elite ' : ''}${OBJECTIVE_SIGN[e.objective]}`
         : AHEAD_NAME[e.ahead];
@@ -1063,10 +1082,10 @@ export default class Renderer {
   // Each way out is a plate on the ground the player clicks to leave by:
   // brighter under the mouse or once chosen, dark red while the way down
   // is shut.
-  private drawExits(f: Frame, fog: Fog): void {
+  private drawExits(f: Frame, fog: Fogs): void {
     const { ctx, iso } = this;
     f.stage.exits.forEach((e, i) => {
-      if (!fog.known(e.x, e.z)) {
+      if (!fog.known(e.x, e.z) || e.closed === true || e.taken === true) {
         return;
       }
       const shut = f.exitsShut || (e.ahead === 'down' && (f.boss?.alive ?? false));
@@ -1092,7 +1111,7 @@ export default class Renderer {
   }
 
   // Health bars: gold for the party, red for monsters.
-  private drawHealth(f: Frame, fog: Fog): void {
+  private drawHealth(f: Frame, fog: Fogs): void {
     const { ctx } = this;
     for (const u of f.sim.living()) {
       if (u.side === Side.Party && u.hp >= u.derived.maxHp && u.buildup.size === 0) {
@@ -1226,7 +1245,7 @@ function barHeight(u: Unit): number {
 }
 
 // How visible a unit is, 0 to 1. The party is always seen.
-function seen(fog: Fog, u: Unit, x: number, z: number): number {
+function seen(fog: Fogs, u: Unit, x: number, z: number): number {
   if (u.side === Side.Party) {
     return 1;
   }

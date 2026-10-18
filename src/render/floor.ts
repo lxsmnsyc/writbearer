@@ -5,7 +5,7 @@ import { type Pt, pt } from './draw';
 
 export interface FloorImage {
   canvas: HTMLCanvasElement;
-  // Where tile (0, 0) sits in the image
+  // Where the area's near corner sits in the image
   ox: number;
   oy: number;
 }
@@ -59,6 +59,14 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     ctx.fill();
   };
 
+  // Drawn as the area was built, from its own (0, 0); the renderer puts the
+  // image where the area lies. Roads are kept where they lie, so are moved back.
+  const X0 = stage.x0 ?? 0;
+  const Z0 = stage.z0 ?? 0;
+  const local: Stage = {
+    ...stage,
+    roads: stage.roads.map((road) => road.map((p) => ({ x: p.x - X0, z: p.z - Z0 }))),
+  };
   const ground = LAYERS[stage.biome].ground;
   const outline = [at(0, 0), at(width, 0), at(width, depth), at(0, depth)];
   if (ground === 'flagstone') {
@@ -72,8 +80,8 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     }
   } else {
     poly(outline, SOIL[ground].base);
-    soil(ctx, at, rng, stage, zoom, ground);
-    drawRoads(ctx, at, rng, stage, zoom);
+    soil(ctx, at, rng, local, zoom, ground);
+    drawRoads(ctx, at, rng, local, zoom);
   }
 
   // Dark grime where feet and blood have worn the stone.

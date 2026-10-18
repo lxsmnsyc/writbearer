@@ -3,6 +3,7 @@ import type { Objective } from '../gen/graph';
 import type { Stage } from '../gen/stage';
 import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
+import { inRect } from '../sim/nav';
 
 // A fight area's objective as it plays out, from the stages design: the
 // exits stay shut until it is done.
@@ -56,7 +57,8 @@ export default class ObjectiveRun {
     }
     // A Labyrinth is done once the bearer reaches the hall at its far end.
     const bearer = sim.bearer;
-    return bearer !== null && bearer.alive && bearer.x >= (this.stage.goal ?? Infinity);
+    const goal = this.stage.goal;
+    return goal !== undefined && bearer !== null && bearer.alive && inRect(goal, bearer);
   }
 
   private horde(sim: Sim, dt: number, level: number): void {

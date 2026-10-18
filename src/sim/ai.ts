@@ -534,10 +534,7 @@ function sidestep(sim: Sim, u: Unit, dt: number): boolean {
     return false;
   }
   const to = outOf(w, u);
-  u.travel(
-    Math.max(0.5, Math.min(sim.width - 0.5, to.x)),
-    Math.max(0.5, Math.min(sim.depth - 0.5, to.z)),
-    dt,
-  );
+  const at = sim.clamp(to);
+  u.travel(at.x, at.z, dt);
   return true;
 }

@@ -39,7 +39,13 @@ export default class Fog {
   private readonly seen: Uint8Array;
   private readonly target: Uint8Array;
 
-  constructor(width: number, depth: number) {
+  // Where its first cell starts, in tiles
+  readonly x0: number;
+  readonly z0: number;
+
+  constructor(width: number, depth: number, x0 = 0, z0 = 0) {
+    this.x0 = x0;
+    this.z0 = z0;
     this.nx = Math.ceil(width * RES);
     this.nz = Math.ceil(depth * RES);
     this.vis = new Float32Array(this.nx * this.nz);
@@ -53,18 +59,18 @@ export default class Fog {
     for (const v of viewers) {
       // Only blockers within reach can cut its sight.
       const near = blockers.filter((b) => Math.hypot(b.x - v.x, b.z - v.z) < v.radius + b.r);
-      const x0 = Math.max(0, Math.floor((v.x - v.radius) * RES));
-      const x1 = Math.min(nx - 1, Math.ceil((v.x + v.radius) * RES));
-      const z0 = Math.max(0, Math.floor((v.z - v.radius) * RES));
-      const z1 = Math.min(nz - 1, Math.ceil((v.z + v.radius) * RES));
+      const x0 = Math.max(0, Math.floor((v.x - v.radius - this.x0) * RES));
+      const x1 = Math.min(nx - 1, Math.ceil((v.x + v.radius - this.x0) * RES));
+      const z0 = Math.max(0, Math.floor((v.z - v.radius - this.z0) * RES));
+      const z1 = Math.min(nz - 1, Math.ceil((v.z + v.radius - this.z0) * RES));
       for (let i = x0; i <= x1; i++) {
         for (let j = z0; j <= z1; j++) {
           const k = i * nz + j;
           if (target[k]) {
             continue;
           }
-          const cx = (i + 0.5) / RES;
-          const cz = (j + 0.5) / RES;
+          const cx = this.x0 + (i + 0.5) / RES;
+          const cz = this.z0 + (j + 0.5) / RES;
           if (Math.hypot(cx - v.x, cz - v.z) <= v.radius && clear(v.x, v.z, cx, cz, near)) {
             target[k] = 1;
             seen[k] = 1;
@@ -126,10 +132,10 @@ export default class Fog {
     const { nx, nz, seen, vis } = this;
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
-    const i0 = Math.max(0, Math.floor(view.x0 * RES));
-    const i1 = Math.min(nx - 1, Math.ceil(view.x1 * RES));
-    const j0 = Math.max(0, Math.floor(view.z0 * RES));
-    const j1 = Math.min(nz - 1, Math.ceil(view.z1 * RES));
+    const i0 = Math.max(0, Math.floor((view.x0 - this.x0) * RES));
+    const i1 = Math.min(nx - 1, Math.ceil((view.x1 - this.x0) * RES));
+    const j0 = Math.max(0, Math.floor((view.z0 - this.z0) * RES));
+    const j1 = Math.min(nz - 1, Math.ceil((view.z1 - this.z0) * RES));
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const k = i * nz + j;
@@ -137,8 +143,8 @@ export default class Fog {
         if (v > 0.98) {
           continue;
         }
-        const x = i / RES;
-        const z = j / RES;
+        const x = this.x0 + i / RES;
+        const z = this.z0 + j / RES;
         const c = iso(x + 0.5 / RES, z + 0.5 / RES);
         if (c.x < -16 || c.x > w + 16 || c.y < -16 || c.y > h + 16) {
           continue;
@@ -166,9 +172,14 @@ export default class Fog {
     }
   }
 
+  /** Whether a floor point lies on this fog's grid. */
+  covers(x: number, z: number): boolean {
+    return this.cell(x, z) >= 0;
+  }
+
   private cell(x: number, z: number): number {
-    const i = Math.floor(x * RES);
-    const j = Math.floor(z * RES);
+    const i = Math.floor((x - this.x0) * RES);
+    const j = Math.floor((z - this.z0) * RES);
     if (i < 0 || j < 0 || i >= this.nx || j >= this.nz) {
       return -1;
     }
@@ -198,4 +209,79 @@ function clear(ax: number, az: number, bx: number, bz: number, blockers: Blocker
     }
   }
   return true;
+}
+
+/** The ground of one area, for `Fogs`: its size and where it lies. */
+export interface FogArea {
+  width: number;
+  depth: number;
+  x0?: number;
+  z0?: number;
+}
+
+/**
+ * The fog of every area in the world at once, one grid each, as areas
+ * join edge to edge. A point is looked up on the grid of the area it is in.
+ */
+export class Fogs {
+  private list: { area: FogArea; fog: Fog }[] = [];
+
+  /** Keeps a grid for each of these areas, and drops the rest. */
+  sync(areas: readonly FogArea[]): void {
+    this.list = areas.map(
+      (area) =>
+        this.list.find((f) => f.area === area) ?? {
+          area,
+          fog: new Fog(area.width, area.depth, area.x0 ?? 0, area.z0 ?? 0),
+        },
+    );
+  }
+
+  update(dt: number, viewers: Viewer[], blockers: Blocker[]): void {
+    for (const f of this.list) {
+      f.fog.update(dt, viewers, blockers);
+    }
+  }
+
+  private at(x: number, z: number): Fog | null {
+    return this.list.find((f) => f.fog.covers(x, z))?.fog ?? null;
+  }
+
+  visible(x: number, z: number): number {
+    return this.at(x, z)?.visible(x, z) ?? 0;
+  }
+
+  known(x: number, z: number): boolean {
+    return this.at(x, z)?.known(x, z) ?? false;
+  }
+
+  visibleAround(x: number, z: number, r: number): number {
+    let best = this.visible(x, z);
+    for (let a = 0; a < 8; a++) {
+      const t = (a / 8) * Math.PI * 2;
+      best = Math.max(best, this.visible(x + Math.cos(t) * (r + 0.2), z + Math.sin(t) * (r + 0.2)));
+    }
+    return best;
+  }
+
+  knownAround(x: number, z: number, r: number): boolean {
+    for (let a = 0; a < 8; a++) {
+      const t = (a / 8) * Math.PI * 2;
+      if (this.known(x + Math.cos(t) * (r + 0.2), z + Math.sin(t) * (r + 0.2))) {
+        return true;
+      }
+    }
+    return this.known(x, z);
+  }
+
+  draw(
+    ctx: CanvasRenderingContext2D,
+    iso: (x: number, z: number) => Pt,
+    void_: string,
+    view: { x0: number; x1: number; z0: number; z1: number },
+  ): void {
+    for (const f of this.list) {
+      f.fog.draw(ctx, iso, void_, view);
+    }
+  }
 }

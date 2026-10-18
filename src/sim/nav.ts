@@ -4,6 +4,26 @@ export interface Spot {
   z: number;
 }
 
+/** A rectangle of floor, from (x0, z0) to (x1, z1), in tiles. */
+export interface Rect {
+  x0: number;
+  z0: number;
+  x1: number;
+  z1: number;
+}
+
+/** Whether a point lies inside a rectangle. */
+export const inRect = (r: Rect, p: Spot): boolean =>
+  p.x >= r.x0 && p.x <= r.x1 && p.z >= r.z0 && p.z <= r.z1;
+
+/** The smallest rectangle holding every one of them. */
+export const unionOf = (rects: readonly Rect[]): Rect => ({
+  x0: Math.min(...rects.map((r) => r.x0)),
+  z0: Math.min(...rects.map((r) => r.z0)),
+  x1: Math.max(...rects.map((r) => r.x1)),
+  z1: Math.max(...rects.map((r) => r.z1)),
+});
+
 // Cells per tile along each axis.
 const RES = 2;
 // Room a body needs beside an obstacle, in tiles.
@@ -77,26 +97,47 @@ export default class Nav {
   readonly cols: number;
   readonly rows: number;
   private readonly blocked: Uint8Array;
+  // Where the grid's first cell starts
+  private readonly x0: number;
+  private readonly z0: number;
 
+  /**
+   * A grid over `width` by `depth` tiles from (x0, z0). With `floor`, only
+   * the cells inside one of its rectangles can be stood on, as when areas
+   * join edge to edge.
+   */
   constructor(
     readonly width: number,
     readonly depth: number,
     obstacles: readonly { x: number; z: number; r: number }[],
+    frame: { x0?: number; z0?: number; floor?: readonly Rect[] } = {},
   ) {
+    this.x0 = frame.x0 ?? 0;
+    this.z0 = frame.z0 ?? 0;
     this.cols = Math.ceil(width * RES);
     this.rows = Math.ceil(depth * RES);
     this.blocked = new Uint8Array(this.cols * this.rows);
+    const floor = frame.floor;
+    if (floor) {
+      for (let j = 0; j < this.rows; j++) {
+        for (let i = 0; i < this.cols; i++) {
+          const at = this.center(j * this.cols + i);
+          if (!floor.some((r) => inRect(r, at))) {
+            this.blocked[j * this.cols + i] = 1;
+          }
+        }
+      }
+    }
     for (const o of obstacles) {
       const r = o.r + CLEARANCE;
-      const i0 = Math.max(0, Math.floor((o.x - r) * RES));
-      const i1 = Math.min(this.cols - 1, Math.floor((o.x + r) * RES));
-      const j0 = Math.max(0, Math.floor((o.z - r) * RES));
-      const j1 = Math.min(this.rows - 1, Math.floor((o.z + r) * RES));
+      const i0 = Math.max(0, Math.floor((o.x - r - this.x0) * RES));
+      const i1 = Math.min(this.cols - 1, Math.floor((o.x + r - this.x0) * RES));
+      const j0 = Math.max(0, Math.floor((o.z - r - this.z0) * RES));
+      const j1 = Math.min(this.rows - 1, Math.floor((o.z + r - this.z0) * RES));
       for (let i = i0; i <= i1; i++) {
         for (let j = j0; j <= j1; j++) {
-          const cx = (i + 0.5) / RES;
-          const cz = (j + 0.5) / RES;
-          if (Math.hypot(cx - o.x, cz - o.z) < r) {
+          const c = this.center(j * this.cols + i);
+          if (Math.hypot(c.x - o.x, c.z - o.z) < r) {
             this.blocked[j * this.cols + i] = 1;
           }
         }
@@ -249,8 +290,8 @@ export default class Nav {
   }
 
   private cell(x: number, z: number): number {
-    const i = Math.floor(x * RES);
-    const j = Math.floor(z * RES);
+    const i = Math.floor((x - this.x0) * RES);
+    const j = Math.floor((z - this.z0) * RES);
     if (i < 0 || j < 0 || i >= this.cols || j >= this.rows) {
       return -1;
     }
@@ -258,6 +299,9 @@ export default class Nav {
   }
 
   private center(k: number): Spot {
-    return { x: ((k % this.cols) + 0.5) / RES, z: (Math.floor(k / this.cols) + 0.5) / RES };
+    return {
+      x: this.x0 + ((k % this.cols) + 0.5) / RES,
+      z: this.z0 + (Math.floor(k / this.cols) + 0.5) / RES,
+    };
   }
 }

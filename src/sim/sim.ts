@@ -3,7 +3,7 @@ import RNG from '../core/rng';
 import { think } from './ai';
 import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
-import Nav from './nav';
+import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
@@ -195,10 +195,14 @@ export default class Sim extends EventEngine<SimEventMap> {
   // Solid round props, such as pillars. Units cannot stand inside them.
   readonly obstacles: { x: number; z: number; r: number }[] = [];
 
-  // The floor's size, in tiles, along x and z. Units stay inside. Infinite
-  // means no bounds.
+  // The floor's far edges and near edges, in tiles, along x and z. Units
+  // stay on the floor's rectangles. Infinite means no bounds.
   width = Infinity;
   depth = Infinity;
+  x0 = 0;
+  z0 = 0;
+  // The rectangles of floor, one per area while areas are joined
+  floor: Rect[] = [];
 
   // Where units can walk, once the floor is set. Without it, they walk straight.
   nav: Nav | null = null;
@@ -249,9 +253,49 @@ export default class Sim extends EventEngine<SimEventMap> {
 
   /** Sets the floor's size and builds where units can walk around the obstacles. */
   setFloor(width: number, depth: number): void {
-    this.width = width;
-    this.depth = depth;
-    this.nav = new Nav(width, depth, this.obstacles);
+    this.setWorld([{ x0: 0, z0: 0, x1: width, z1: depth }]);
+  }
+
+  /**
+   * Sets the floor as one or more rectangles, such as two areas joined edge
+   * to edge, and builds where units can walk around the obstacles.
+   */
+  setWorld(floor: readonly Rect[]): void {
+    this.floor = [...floor];
+    const all = unionOf(floor);
+    this.width = all.x1;
+    this.depth = all.z1;
+    this.x0 = all.x0;
+    this.z0 = all.z0;
+    this.nav = new Nav(all.x1 - all.x0, all.z1 - all.z0, this.obstacles, {
+      x0: all.x0,
+      z0: all.z0,
+      floor: floor.length > 1 ? floor : undefined,
+    });
+  }
+
+  /** The nearest point on the floor to a point, half a tile in from any edge. */
+  clamp(p: { x: number; z: number }): { x: number; z: number } {
+    // On the floor, a point stays where it is, so a body can step across
+    // the edge where two areas meet.
+    if (
+      this.floor.length === 0 ||
+      (this.floor.length > 1 && this.floor.some((r) => inRect(r, p)))
+    ) {
+      return { x: p.x, z: p.z };
+    }
+    let best = { x: p.x, z: p.z };
+    let bestD = Infinity;
+    for (const r of this.floor) {
+      const x = Math.min(r.x1 - 0.5, Math.max(r.x0 + 0.5, p.x));
+      const z = Math.min(r.z1 - 0.5, Math.max(r.z0 + 0.5, p.z));
+      const d = Math.hypot(x - p.x, z - p.z);
+      if (d < bestD) {
+        bestD = d;
+        best = { x, z };
+      }
+    }
+    return best;
   }
 
   add(unit: Unit): Unit {
@@ -422,11 +466,10 @@ export default class Sim extends EventEngine<SimEventMap> {
           u.z = o.z + ((u.z - o.z) / d) * o.r;
         }
       }
-      if (Number.isFinite(this.width)) {
-        u.x = Math.min(this.width - 0.5, Math.max(0.5, u.x));
-      }
-      if (Number.isFinite(this.depth)) {
-        u.z = Math.min(this.depth - 0.5, Math.max(0.5, u.z));
+      if (this.floor.length > 0) {
+        const at = this.clamp(u);
+        u.x = at.x;
+        u.z = at.z;
       }
     }
   }

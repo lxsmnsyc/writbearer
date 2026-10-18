@@ -1,6 +1,6 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
-import Nav, { type Spot } from '../sim/nav';
+import Nav, { type Rect, type Spot } from '../sim/nav';
 import type { NodeKind, Objective } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
 
@@ -55,11 +55,22 @@ export interface Pack {
 /** Where an area's exit leads: an area of the layer's map, or down. */
 export type Ahead = NodeKind | 'down';
 
-/** A way out of an area on its east edge, and what lies beyond it. */
+/** Which edge of an area an exit leaves by, as the area is laid out: ahead, left or right. */
+export type ExitSide = 'east' | 'north' | 'south';
+
+/** A way out of an area by one of its edges, and what lies beyond it. */
 export interface Exit extends Spot {
   ahead: Ahead;
   // The objective of the fight beyond it
   objective?: Objective;
+  // The edge it leaves by, and the way out across it, one tile long
+  side: ExitSide;
+  out: Spot;
+  // Where its signpost stands
+  sign: Spot;
+  // The road the party took on, and roads not taken, which collapse
+  taken?: boolean;
+  closed?: boolean;
 }
 
 /** What an area is, and where each of its exits leads, north first. */
@@ -75,6 +86,8 @@ export interface AreaPlan {
   // A fight's objective, and the objectives of the fights its exits lead to
   objective?: Objective;
   aheadObjectives?: readonly (Objective | undefined)[];
+  // The edge each exit leaves by, in the order of `ahead`. East if absent.
+  sides?: readonly ExitSide[];
 }
 
 /**
@@ -90,6 +103,9 @@ export interface Stage {
   biome: number;
   width: number;
   depth: number;
+  // Where its near corner lies once placed among other areas. 0 as built.
+  x0?: number;
+  z0?: number;
   entrance: Spot;
   // The first of `exits`
   exit: Spot;
@@ -127,10 +143,18 @@ export interface Stage {
   reward?: Spot;
   // A Horde's waves, in the order they come
   waves?: Wave[];
-  // A Labyrinth's traps, and where its far end begins, in x
+  // A Labyrinth's traps, and its hall at the far end, which is its goal
   hazards?: Hazard[];
-  goal?: number;
+  goal?: Rect;
 }
+
+/** The floor an area covers, where it lies. */
+export const rectOf = (stage: Stage): Rect => ({
+  x0: stage.x0 ?? 0,
+  z0: stage.z0 ?? 0,
+  x1: (stage.x0 ?? 0) + stage.width,
+  z1: (stage.z0 ?? 0) + stage.depth,
+});
 
 /**
  * A trap on a Labyrinth's floor. Every `period` seconds, from `phase`, it
@@ -160,31 +184,70 @@ const PLAIN: AreaPlan = { kind: 'combat', ahead: ['combat'] };
 
 type Add = (kind: PropKind, x: number, z: number) => Prop;
 
+// The way out across each edge, and along it
+const OUT: Record<ExitSide, Spot> = {
+  east: { x: 1, z: 0 },
+  north: { x: 0, z: -1 },
+  south: { x: 0, z: 1 },
+};
+
 /**
- * Lays out an area's exits on its east edge. One exit sits at `z`; two or
- * more spread along the edge. Each road on is marked by the Guild's signpost
- * and two torches; the way down by a stair between two braziers.
+ * Lays out an area's exits. Exits on the east edge sit at `z`, or spread
+ * along it when there are more. An exit on the north or south edge sits at
+ * `sideX` along it. Each road on is marked by the Guild's signpost and two
+ * torches; the way down by a stair between two braziers.
  */
-function placeExits(stage: Stage, add: Add, ahead: Ahead[], z: number): void {
-  const x = stage.width - 3;
-  stage.exits = ahead.map((a, k) => ({
-    x,
-    z: ahead.length === 1 ? z : stage.depth * (0.28 + (0.44 * k) / (ahead.length - 1)),
-    ahead: a,
-  }));
+function placeExits(
+  stage: Stage,
+  add: Add,
+  ahead: Ahead[],
+  z: number,
+  sides: readonly ExitSide[] = [],
+  sideX = stage.width * 0.75,
+): void {
+  const sideOf = (k: number): ExitSide => sides.at(k) ?? 'east';
+  const east = ahead.map((_, k) => k).filter((k) => sideOf(k) === 'east');
+  stage.exits = ahead.map((a, k) => {
+    const side = sideOf(k);
+    const out = OUT[side];
+    let at: Spot;
+    if (side === 'north') {
+      at = { x: sideX, z: 3 };
+    } else if (side === 'south') {
+      at = { x: sideX, z: stage.depth - 3 };
+    } else {
+      const n = east.indexOf(k);
+      at = {
+        x: stage.width - 3,
+        z: east.length === 1 ? z : stage.depth * (0.28 + (0.44 * n) / (east.length - 1)),
+      };
+    }
+    // Back from the edge, and to the left of the way out
+    const sign = { x: at.x - out.x * 2.2 + out.z * 2.2, z: at.z - out.z * 2.2 - out.x * 2.2 };
+    return { ...at, ahead: a, side, out, sign };
+  });
   stage.exit = stage.exits[0];
   for (const e of stage.exits) {
+    // Two lights beside it, a step back from the edge
+    const back = { x: e.x - e.out.x * 1.2, z: e.z - e.out.z * 1.2 };
+    const across = { x: -e.out.z * 1.6, z: e.out.x * 1.6 };
+    const light = e.ahead === 'down' ? 'brazier' : 'torch';
     if (e.ahead === 'down') {
       add('stair', e.x, e.z);
-      add('brazier', e.x - 1.2, e.z - 1.6);
-      add('brazier', e.x - 1.2, e.z + 1.6);
-    } else {
-      add('torch', e.x - 1.2, e.z - 1.6);
-      add('torch', e.x - 1.2, e.z + 1.6);
-      add('signpost', e.x - 2.2, e.z - 2.2);
+    }
+    add(light, back.x - across.x, back.z - across.z);
+    add(light, back.x + across.x, back.z + across.z);
+    if (e.ahead !== 'down') {
+      add('signpost', e.sign.x, e.sign.z);
     }
   }
 }
+
+/** Where the road from an exit leaves the area: a few tiles past its edge. */
+export const beyond = (e: Exit, far = 4): Spot => ({
+  x: e.x + e.out.x * far,
+  z: e.z + e.out.z * far,
+});
 
 // Whether a point is on any of the roads.
 const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
@@ -274,13 +337,13 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     return generateArena(rng, index, biome);
   }
   if (plan.kind === 'camp') {
-    return generateCamp(rng, index, plan.ahead, biome, hires);
+    return generateCamp(rng, index, plan.ahead, biome, hires, plan.sides);
   }
   if (plan.kind === 'town') {
-    return generateTown(rng, index, plan.ahead, biome, hires);
+    return generateTown(rng, index, plan.ahead, biome, hires, plan.sides);
   }
   if (plan.kind === 'event') {
-    return generateEvent(rng, index, plan.ahead, plan.scene ?? [], biome);
+    return generateEvent(rng, index, plan.ahead, plan.scene ?? [], biome, plan.sides);
   }
   if (plan.objective === 'maze') {
     return generateMaze(rng, index, plan, biome);
@@ -310,7 +373,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     stage.props.push(prop);
     return prop;
   };
-  placeExits(stage, add, plan.ahead, exitZ);
+  placeExits(stage, add, plan.ahead, exitZ, plan.sides, width * 0.78);
   stage.down = stage.exits.some((e) => e.ahead === 'down');
 
   // A ruined wall across the whole field, broken in one or two places: the
@@ -328,7 +391,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     { x: wallX - 3, z: breaches[0] },
     { x: wallX + 3, z: breaches[0] },
     e,
-    { x: width + 1, z: e.z },
+    beyond(e),
   ]);
   const wall: Spot[] = [];
   for (let z = 0.5; z < depth; z += 0.9) {
@@ -486,6 +549,7 @@ function smallField(
   kind: AreaPlan['kind'],
   ahead: Ahead[],
   biome: number,
+  sides?: readonly ExitSide[],
 ): { stage: Stage; add: Add } {
   const width = 28;
   const depth = 24;
@@ -511,8 +575,8 @@ function smallField(
     stage.props.push(prop);
     return prop;
   };
-  placeExits(stage, add, ahead, depth / 2);
-  stage.roads = stage.exits.map((e) => [entrance, e, { x: width + 1, z: e.z }]);
+  placeExits(stage, add, ahead, depth / 2, sides, width * 0.7);
+  stage.roads = stage.exits.map((e) => [entrance, e, beyond(e)]);
   return { stage, add };
 }
 
@@ -539,8 +603,9 @@ export function generateWaystation(
   index: number,
   ahead: Ahead[] = ['combat'],
   biome = layerIndexOf(index),
+  sides?: readonly ExitSide[],
 ): Stage {
-  const { stage, add } = smallField(rng, index, 'waystation', ahead, biome);
+  const { stage, add } = smallField(rng, index, 'waystation', ahead, biome, sides);
   const post = { x: stage.width / 2, z: stage.depth / 2 };
   stage.station = { x: post.x - 1.8, z: post.z };
   add('post', post.x, post.z);
@@ -559,8 +624,8 @@ export const GUILD_RECRUITS = 4;
  * wall, and buys potions at the quartermaster's stall, before the road east
  * to the first phase.
  */
-export function generateGuild(rng: RNG, ahead: Ahead[]): Stage {
-  const { stage, add } = smallField(rng, 0, 'guild', ahead, 0);
+export function generateGuild(rng: RNG, ahead: Ahead[], sides?: readonly ExitSide[]): Stage {
+  const { stage, add } = smallField(rng, 0, 'guild', ahead, 0, sides);
   const mid = { x: stage.width / 2, z: stage.depth / 2 };
   stage.recruits = Array.from({ length: GUILD_RECRUITS }, (_, i) => ({
     x: mid.x - 4.5 + i * 3,
@@ -588,8 +653,9 @@ function generateTown(
   ahead: Ahead[],
   biome: number,
   hires: boolean,
+  sides?: readonly ExitSide[],
 ): Stage {
-  const { stage, add } = smallField(rng, index, 'town', ahead, biome);
+  const { stage, add } = smallField(rng, index, 'town', ahead, biome, sides);
   const well = { x: stage.width / 2, z: stage.depth / 2 };
   add('well', well.x, well.z);
   stage.town = { x: well.x - 1.4, z: well.z };
@@ -617,8 +683,9 @@ function generateCamp(
   ahead: Ahead[],
   biome: number,
   hires: boolean,
+  sides?: readonly ExitSide[],
 ): Stage {
-  const { stage, add } = smallField(rng, index, 'camp', ahead, biome);
+  const { stage, add } = smallField(rng, index, 'camp', ahead, biome, sides);
   const fire = { x: stage.width / 2, z: stage.depth / 2 };
   add('campfire', fire.x, fire.z);
   stage.rest = fire;
@@ -639,8 +706,9 @@ function generateEvent(
   ahead: Ahead[],
   scene: readonly PropKind[],
   biome: number,
+  sides?: readonly ExitSide[],
 ): Stage {
-  const { stage, add } = smallField(rng, index, 'event', ahead, biome);
+  const { stage, add } = smallField(rng, index, 'event', ahead, biome, sides);
   const at = { x: stage.width / 2, z: stage.depth / 2 };
   stage.event = at;
   // An arc behind it, open to the west where the bearer comes from
@@ -734,7 +802,7 @@ function generateArena(rng: RNG, index: number, biome: number): Stage {
     depth,
     entrance,
     exit,
-    exits: [{ ...exit, ahead: 'down' }],
+    exits: [{ ...exit, ahead: 'down', side: 'east', out: OUT.east, sign: exit }],
     props: [],
     sigils: [boss],
     stains: [],
@@ -1067,7 +1135,7 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     roads: [],
     down: false,
     objective: 'maze',
-    goal: width - CELL,
+    goal: { x0: width - CELL, z0: 0, x1: width, z1: depth },
     hazards: [],
   };
   const add: Add = (kind, x, z) => {
@@ -1075,7 +1143,7 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     stage.props.push(prop);
     return prop;
   };
-  placeExits(stage, add, plan.ahead, depth / 2);
+  placeExits(stage, add, plan.ahead, depth / 2, plan.sides, width - CELL / 2);
   stage.reward = { x: width - CELL / 2, z: depth / 2 };
 
   // Walls east of each cell and south of each, all standing at first.

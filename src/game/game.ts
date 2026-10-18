@@ -11,6 +11,8 @@ import { Views } from '../render/view';
 import {
   type Ahead,
   type AreaPlan,
+  type Exit,
+  type ExitSide,
   type Prop,
   type Stage,
   generateGuild,
@@ -18,6 +20,7 @@ import {
   generateTomb,
   generateWaystation,
   monsterLevel,
+  rectOf,
   withObjectivesAhead,
 } from '../gen/stage';
 import { reveal } from '../content/creditor';
@@ -89,7 +92,17 @@ import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { FIGHTERS, type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
 import { MERCS, spawnMerc } from '../content/roster';
 import { applySets } from '../content/sets';
-import { START_LEVEL, carryParty, enterStage, spawnParty, wakeBoss } from './stage';
+import {
+  START_LEVEL,
+  carryParty,
+  dropStage,
+  enterStage,
+  joinStage,
+  spawnParty,
+  wakeBoss,
+} from './stage';
+import { placeBeyond } from '../gen/place';
+import { type Rect, inRect } from '../sim/nav';
 
 // Never simulate more than this much time in one frame, so a stalled tab
 // does not fast-forward the fight.
@@ -181,6 +194,14 @@ const MEET_REACH = 1.8;
 // Each Waystation lays out from its own stream, apart from the areas'.
 const WAYSTATION_STREAM = 1000;
 const AREA_ROW_STREAM = 100;
+// A rectangle a tile in from each edge, so crossing means being well inside
+const inner = (r: Rect): Rect => ({ x0: r.x0 + 1, z0: r.z0 + 1, x1: r.x1 - 1, z1: r.z1 - 1 });
+// Which edges each area's exits leave by, rolled apart from its layout
+const SIDES_STREAM = 20000;
+// How long the area behind waits for the party before it collapses, and
+// how long its floor takes to fade, in seconds
+const COLLAPSE_WAIT = 4;
+const COLLAPSE_FADE = 1.5;
 const TOMB_STREAM = 2000;
 const GUILD_STREAM = 3000;
 // Towns stand in the first two layers only.
@@ -249,6 +270,12 @@ export default class Game {
   private hoverExit: number | null = null;
   // What this area asks before its exits open, and whether it is done
   private objective: ObjectiveRun | null = null;
+  // The area joined beyond the exit the party took, with its boss, before
+  // the party crosses into it; and the area behind, until it collapses, and
+  // its floor as it fades
+  private ahead: { stage: Stage; boss: Unit | null } | null = null;
+  private behind: { stage: Stage; t: number } | null = null;
+  private fading: { stage: Stage; t: number } | null = null;
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
   private hurtHere = false;
@@ -695,6 +722,7 @@ export default class Game {
       this.stage = generateGuild(
         this.streams.area(1, Stream.Layout, GUILD_STREAM),
         this.aheadOf(null),
+        this.sidesFor(this.aheadOf(null).length, GUILD_STREAM),
       );
       withObjectivesAhead(this.stage, this.objectivesAhead(null));
     } else {
@@ -957,7 +985,6 @@ export default class Game {
     const node = this.here();
     const row = this.node?.row ?? 0;
     const area = this.stageIndex + AREA_ROW_STREAM * row;
-    this.rested = false;
     this.pendingEvent = null;
     const plan: AreaPlan = {
       kind: kind ?? node?.kind ?? 'combat',
@@ -967,6 +994,7 @@ export default class Game {
       biome: this.biome,
       endless: this.endless,
     };
+    plan.sides = this.sidesFor(plan.ahead.length, area);
     if (plan.kind === 'event') {
       const rng = this.streams.area(1, Stream.Events, area);
       const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
@@ -980,9 +1008,32 @@ export default class Game {
     return generateStage(this.streams.area(1, Stream.Layout, area), this.stageIndex, plan);
   }
 
-  // Lays out the current stage around the party.
-  private enter(): void {
-    this.boss = enterStage(this.sim, this.stage);
+  /**
+   * Which edge each of an area's exits leaves by, so the way on turns left
+   * and right as well as going straight. Exits stay in the map's order:
+   * the upper road on the left.
+   */
+  private sidesFor(count: number, area: number): ExitSide[] {
+    const rng = this.streams.area(1, Stream.Map, SIDES_STREAM + area);
+    if (count >= 3) {
+      return ['north', 'east', 'south'];
+    }
+    if (count === 2) {
+      return rng.pick<ExitSide[]>([
+        ['north', 'east'],
+        ['east', 'south'],
+        ['north', 'south'],
+      ]);
+    }
+    return [rng.pick<ExitSide>(['north', 'east', 'east', 'south'])];
+  }
+
+  // Lays out the current stage around the party. An area joined ahead was
+  // laid out and filled when it was joined.
+  private enter(joined = false): void {
+    if (!joined) {
+      this.boss = enterStage(this.sim, this.stage);
+    }
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
@@ -1180,20 +1231,29 @@ export default class Game {
     this.hooks.onEvent?.(null);
   }
 
-  // The bearer left by the exit: on to the next area, down to the next
-  // layer's Waystation, or from the Waystation into the layer's first area.
-  // Party and all.
-  private descend(exit: number): void {
+  // The party sets out by an exit. A road on joins the next area beyond it,
+  // to walk into. The way down to the next layer is taken at once.
+  private leave(exit: number): void {
     // Mercs whose morale broke stay behind.
     const gone = desert(this.sim);
     if (gone.length > 0) {
       this.say(`${names(gone)} ${gone.length > 1 ? 'desert' : 'deserts'} the party.`);
       this.hooks.onChange?.();
     }
+    if (this.stage.exits[exit]?.ahead === 'down') {
+      this.descend(exit);
+    } else {
+      this.joinArea(exit);
+    }
+  }
+
+  // Joins the area beyond an exit to the world: the other roads collapse,
+  // and the bearer walks on into it.
+  private joinArea(exit: number): void {
+    const way = this.stage.exits[exit];
     if (this.stage.kind === 'guild') {
       // From the Guild House, the road leads into the first phase.
       this.goTo(0, exit);
-      this.stage = this.buildStage();
     } else if (this.stage.station) {
       // The unpaid lose heart as the party takes the road on.
       const unpaid = this.payroll?.settle(this.sim) ?? [];
@@ -1202,8 +1262,123 @@ export default class Game {
       }
       this.payroll = null;
       this.goTo(0, exit);
-      this.stage = this.buildStage();
-    } else if (
+    } else {
+      const node = this.here();
+      this.goTo((this.node?.column ?? -1) + 1, node?.next[exit] ?? 0);
+    }
+    // Anything still behind is gone first: only two areas stand at once.
+    this.collapse();
+    const next = placeBeyond(this.buildStage(), way);
+    way.taken = true;
+    this.stage.exits.forEach((e, k) => {
+      if (k !== exit) {
+        e.closed = true;
+        this.blockRoad(e);
+      }
+    });
+    this.seam(next, way);
+    const boss = joinStage(this.sim, next, [rectOf(this.stage), rectOf(next)]);
+    this.ahead = { stage: next, boss };
+    // On into it, a few steps past its entrance
+    this.bearer.order = {
+      x: next.entrance.x + way.out.x * 2,
+      z: next.entrance.z + way.out.z * 2,
+    };
+    this.goFor();
+    this.views.snap(this.sim);
+  }
+
+  // A road not taken falls in: rubble across it, where its exit was.
+  private blockRoad(e: Exit): void {
+    const across = { x: -e.out.z, z: e.out.x };
+    for (const k of [-1.2, 0, 1.2]) {
+      const x = e.x + across.x * k;
+      const z = e.z + across.z * k;
+      this.stage.props.push({ kind: 'rubble', x, z, r: 0.6, seed: 0.3 + k * 0.1 });
+      this.sim.obstacles.push({ x, z, r: 0.6 });
+    }
+  }
+
+  // Rubble along the edge where two areas meet, but for the road across.
+  private seam(next: Stage, way: Exit): void {
+    const a = rectOf(this.stage);
+    const b = rectOf(next);
+    const along = way.out.x !== 0;
+    // The edge's line, and the stretch both areas share
+    let line = way.out.z > 0 ? a.z1 : a.z0;
+    if (along) {
+      line = way.out.x > 0 ? a.x1 : a.x0;
+    }
+    const from = along ? Math.max(a.z0, b.z0) : Math.max(a.x0, b.x0);
+    const to = along ? Math.min(a.z1, b.z1) : Math.min(a.x1, b.x1);
+    const road = along ? way.z : way.x;
+    for (let t = from + 0.5; t < to; t += 0.9) {
+      if (Math.abs(t - road) < 2.5) {
+        continue;
+      }
+      const x = along ? line : t;
+      const z = along ? t : line;
+      next.props.push({ kind: 'rubble', x, z, r: 0.45, seed: (t * 7.3) % 1 });
+    }
+  }
+
+  // The bearer has crossed into the area ahead: it becomes the area the
+  // party is in, and the one behind waits to collapse.
+  private cross(): void {
+    const ahead = this.ahead;
+    if (!ahead) {
+      return;
+    }
+    this.behind = { stage: this.stage, t: 0 };
+    this.stage = ahead.stage;
+    this.boss = ahead.boss;
+    this.ahead = null;
+    this.sim.area++;
+    this.rested = false;
+    this.hoverExit = null;
+    this.enter(true);
+    this.persist();
+  }
+
+  // Waits for the party to follow the bearer out of the area behind, then
+  // lets it collapse.
+  private settleBehind(): void {
+    const behind = this.behind;
+    if (!behind) {
+      return;
+    }
+    behind.t += TICK;
+    const r = rectOf(behind.stage);
+    const here = rectOf(this.stage);
+    const lagging = this.sim.living(Side.Party).some((u) => inRect(r, u) && !inRect(here, u));
+    if (!lagging || behind.t >= COLLAPSE_WAIT) {
+      this.collapse();
+    }
+  }
+
+  // The area behind collapses: what is in it is lost, and the party's own
+  // still in it are brought to the entrance of the area they are in.
+  private collapse(): void {
+    const behind = this.behind;
+    if (!behind) {
+      return;
+    }
+    this.behind = null;
+    dropStage(
+      this.sim,
+      behind.stage,
+      [this.stage, ...(this.ahead ? [this.ahead.stage] : [])],
+      this.stage.entrance,
+    );
+    const r = rectOf(behind.stage);
+    this.ground = this.ground.filter((g) => !inRect(r, g) || inRect(rectOf(this.stage), g));
+    this.fading = { stage: behind.stage, t: 0 };
+  }
+
+  // The bearer took the way down: down to the next layer's Waystation, or
+  // the tomb. Party and all, and nothing else.
+  private descend(exit: number): void {
+    if (
       this.stage.exits[exit]?.ahead === 'down' &&
       !this.endless &&
       layerIndexOf(this.stageIndex) === LAYERS.length - 1
@@ -1212,17 +1387,16 @@ export default class Game {
       this.stageIndex++;
       this.node = null;
       this.stage = generateTomb(this.streams.area(1, Stream.Layout, TOMB_STREAM), this.stageIndex);
-    } else if (this.stage.exits[exit]?.ahead === 'down') {
+    } else {
       this.stageIndex++;
       this.rollMap();
       this.node = null;
       this.stage = this.buildWaystation();
-    } else {
-      // The other roads on collapse behind the party.
-      const node = this.here();
-      this.goTo((this.node?.column ?? -1) + 1, node?.next[exit] ?? 0);
-      this.stage = this.buildStage();
     }
+    this.ahead = null;
+    this.behind = null;
+    this.fading = null;
+    this.rested = false;
     carryParty(this.sim, this.stage);
     this.effects.clear();
     // What was left on the old stage's floor is lost.
@@ -1245,6 +1419,7 @@ export default class Game {
         this.stageIndex,
         this.aheadOf(null),
         this.biome,
+        this.sidesFor(this.aheadOf(null).length, WAYSTATION_STREAM + this.stageIndex),
       ),
       this.objectivesAhead(null),
     );
@@ -1642,7 +1817,10 @@ export default class Game {
   private exitAt(clientX: number, clientY: number): number | null {
     const p = this.renderer.unproject(clientX, clientY);
     const i = this.stage.exits.findIndex(
-      (e) => Math.max(Math.abs(p.x - e.x), Math.abs(p.z - e.z)) <= EXIT_PLATE,
+      (e) =>
+        e.taken !== true &&
+        e.closed !== true &&
+        Math.max(Math.abs(p.x - e.x), Math.abs(p.z - e.z)) <= EXIT_PLATE,
     );
     return i >= 0 && this.renderer.known(this.stage.exits[i].x, this.stage.exits[i].z) ? i : null;
   }
@@ -1777,10 +1955,7 @@ export default class Game {
     }
     this.goFor({});
     const spot = this.renderer.unproject(e.clientX, e.clientY);
-    this.bearer.order = {
-      x: Math.min(this.stage.width - 0.5, Math.max(0.5, spot.x)),
-      z: Math.min(this.stage.depth - 0.5, Math.max(0.5, spot.z)),
-    };
+    this.bearer.order = this.sim.clamp(spot);
   };
 
   // What the bearer is walking over to do, replacing whatever it was before.
@@ -1890,9 +2065,23 @@ export default class Game {
             this.bearer.distanceTo(e) <= EXIT_REACH &&
             !(e.ahead === 'down' && this.boss?.alive),
         );
-        if (this.bearer.alive && exit >= 0) {
-          this.descend(exit);
+        if (this.bearer.alive && exit >= 0 && this.stage.exits[exit].taken !== true) {
+          this.leave(exit);
           this.acc = 0;
+        }
+        if (
+          this.ahead &&
+          this.bearer.alive &&
+          inRect(inner(rectOf(this.ahead.stage)), this.bearer)
+        ) {
+          this.cross();
+        }
+        this.settleBehind();
+        if (this.fading) {
+          this.fading.t += TICK;
+          if (this.fading.t >= COLLAPSE_FADE) {
+            this.fading = null;
+          }
         }
       }
     }
@@ -1906,6 +2095,14 @@ export default class Game {
     this.renderer.render({
       sim: this.sim,
       stage: this.stage,
+      areas: [
+        { stage: this.stage, alpha: 1 },
+        ...(this.ahead ? [{ stage: this.ahead.stage, alpha: 1 }] : []),
+        ...(this.behind ? [{ stage: this.behind.stage, alpha: 1 }] : []),
+        ...(this.fading
+          ? [{ stage: this.fading.stage, alpha: 1 - this.fading.t / COLLAPSE_FADE }]
+          : []),
+      ],
       views: this.views,
       effects: this.effects,
       alpha,

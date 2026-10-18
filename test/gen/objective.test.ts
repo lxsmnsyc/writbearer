@@ -153,7 +153,7 @@ describe('a Labyrinth', () => {
     const bearer = spawnParty(sim, stage, []);
     const run = new ObjectiveRun('maze', stage);
     expect(run.update(sim, 0.05, 7)).toBe(false);
-    bearer.x = stage.goal! + 0.5;
+    bearer.x = stage.goal!.x0 + 0.5;
     expect(run.update(sim, 0.05, 7)).toBe(true);
   });
 

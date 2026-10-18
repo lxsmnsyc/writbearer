@@ -1,6 +1,7 @@
 import { spawnBoss } from '../content/bosses';
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
-import { type Stage, monsterLevel, solidsOf } from '../gen/stage';
+import { type Stage, monsterLevel, rectOf, solidsOf } from '../gen/stage';
+import { type Rect, inRect } from '../sim/nav';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -13,7 +14,67 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
   sim.area++;
   sim.obstacles.length = 0;
   sim.obstacles.push(...solidsOf(stage));
-  sim.setFloor(stage.width, stage.depth);
+  sim.setWorld([rectOf(stage)]);
+  return spawnStage(sim, stage);
+}
+
+/**
+ * Joins a stage to the world beside the one the party is in: its obstacles
+ * join theirs, the floor becomes both, and its packs and boss wait in it.
+ * Returns the boss, if it has one.
+ */
+export function joinStage(sim: Sim, stage: Stage, floor: readonly Rect[]): Unit | null {
+  sim.obstacles.push(...solidsOf(stage));
+  sim.setWorld(floor);
+  return spawnStage(sim, stage);
+}
+
+/**
+ * Drops an area the party has left: what stands in it is gone, and the
+ * party's own, living or dead, are brought to `to`. The floor and obstacles
+ * become those of `kept`.
+ */
+export function dropStage(
+  sim: Sim,
+  gone: Stage,
+  kept: readonly Stage[],
+  to: { x: number; z: number },
+): void {
+  const r = rectOf(gone);
+  const elsewhere = (p: { x: number; z: number }): boolean =>
+    kept.some((k) => inRect(rectOf(k), p));
+  const left = (p: { x: number; z: number }): boolean => inRect(r, p) && !elsewhere(p);
+  let n = 0;
+  for (const u of sim.units) {
+    if (!left(u)) {
+      continue;
+    }
+    if (u.side === Side.Party) {
+      // Round the spot, so they do not land on each other
+      const a = n++ * 2.4;
+      u.x = to.x + Math.cos(a) * 0.8;
+      u.z = to.z + Math.sin(a) * 0.8;
+      u.order = null;
+    } else {
+      sim.units.delete(u);
+    }
+  }
+  for (const list of [sim.projectiles, sim.traps, sim.zones, sim.warnings]) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (left(list[i])) {
+        list.splice(i, 1);
+      }
+    }
+  }
+  sim.obstacles.length = 0;
+  for (const k of kept) {
+    sim.obstacles.push(...solidsOf(k));
+  }
+  sim.setWorld(kept.map(rectOf));
+}
+
+// Spawns a stage's packs, and its boss a level above them.
+function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
     pack.kinds.forEach((kind, i) => {
       const a = (i / pack.kinds.length) * Math.PI * 2;
