@@ -1,7 +1,13 @@
 import { For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type Game from '../game/game';
-import { type MapNode, type NodeKind, OBJECTIVE_NAME } from '../gen/graph';
+import {
+  type MapNode,
+  type NodeKind,
+  OBJECTIVE_NAME,
+  REWARD_NAME,
+  type Reward,
+} from '../gen/graph';
 import { ICONS, type IconName } from './icons';
 import { Panel } from './kit';
 
@@ -32,6 +38,15 @@ const KIND_COLOR: Record<NodeKind, string> = {
 
 // A fight by its objective, the rest by their kind
 const iconOf = (node: MapNode): IconName => node.objective ?? node.kind;
+
+// What a fight pays, by a small icon beside it
+const REWARD_ICON: Record<Reward, IconName> = {
+  gold: 'gold',
+  arms: 'armingSword',
+  cards: 'card',
+  materials: 'iron',
+  respite: 'heal',
+};
 
 // An area's name on the map: a fight by its objective.
 const nameOf = (node: MapNode): string => {
@@ -156,7 +171,9 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                 const size = node.kind === 'boss' ? 26 : 20;
                 const radius = node.kind === 'boss' ? R + 5 : R;
                 return (
-                  <g aria-label={`Area ${c() + 1}: ${nameOf(node)}`}>
+                  <g
+                    aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}`}
+                  >
                     <Show when={ahead(c(), r())}>
                       <circle
                         cx={p().x}
@@ -184,6 +201,29 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                       height={size}
                       fill={crossed(c(), r()) ? '#737373' : KIND_COLOR[node.kind]}
                     />
+                    <Show when={node.reward}>
+                      {(reward) => (
+                        <g>
+                          <title>{REWARD_NAME[reward()]}</title>
+                          <circle
+                            cx={p().x + radius * 0.75}
+                            cy={p().y - radius * 0.75}
+                            r={8}
+                            fill="#0d0f14"
+                            stroke="#e8b04a"
+                            stroke-width={1}
+                          />
+                          <Dynamic
+                            component={ICONS[REWARD_ICON[reward()]]}
+                            x={p().x + radius * 0.75 - 5.5}
+                            y={p().y - radius * 0.75 - 5.5}
+                            width={11}
+                            height={11}
+                            fill={crossed(c(), r()) ? '#737373' : '#e8b04a'}
+                          />
+                        </g>
+                      )}
+                    </Show>
                     <text
                       x={p().x}
                       y={p().y + radius + 14}
@@ -202,10 +242,11 @@ export default function LayerMapPanel(props: Props): JSX.Element {
       </svg>
       <p class="mt-2 max-w-[640px] text-xs leading-relaxed text-neutral-500">
         A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
-        Labyrinth once the way through is found; each pays its spoils when done. Elites are harder,
-        and pay better. At a Camp the party rests back to full. A Town has a smith, a bench, a
-        temple and a market. The roads not taken collapse behind the bearer.{' '}
-        <span class="kbd">M</span> or <span class="kbd">Esc</span> to close.
+        Labyrinth once the way through is found. The small mark beside a fight is what its chest
+        pays: gold, arms for the party, a card, materials, or a respite that heals the party and
+        keeps its dead whole. Elites are harder, and pay better. At a Camp the party rests back to
+        full. A Town has a smith, a bench, a temple and a market. The roads not taken collapse
+        behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span> to close.
       </p>
     </Panel>
   );

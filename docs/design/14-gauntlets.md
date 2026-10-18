@@ -30,6 +30,16 @@ As Hades's doors. Each signpost shows the objective and the reward.
 - The layer map shows each area's reward icon beside its objective.
 - No two roads from one fork offer the same reward.
 
+In the game so far (`src/gen/graph.ts`, `Game.spoilsOf`):
+
+- Every chest holds an elite's item, gold and two potions. The reward adds to that.
+- Gold: the pile is four times as large.
+- Arms: two more items, Magic or better, each made for the job of a living merc where a base of the level is.
+- Cards: the card of a monster in the area, or a gem if none has one.
+- Materials: 2 Iron, 1 each of Chitin, Bone and Rags, and 2 of one essence go in the pouch. From the Undercroft down, a Smith's Blessing too.
+- Respite: the party's dead are not torn apart while the party is in the area. When the objective is done, every living member is healed to full health and mana.
+- Lore is not in yet. No regalia or remains are placed so far.
+
 ### Bonus challenge
 
 As Aghanim's Labyrinth's room grades. Each gauntlet has one bonus challenge, shown in the objective badge from the start.
@@ -152,7 +162,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 
 ## Order to build in
 
-1. Rewards on the road. It changes how every fork is chosen, and needs only the chest and the signposts.
+1. Rewards on the road. It changes how every fork is chosen, and needs only the chest and the signposts. Done, without Lore.
 2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check.
 3. Wave warnings and the next wave in the Horde's badge.
 4. Arrows to marked monsters, and marked monsters that run.

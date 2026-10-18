@@ -203,6 +203,8 @@ export default class Sim extends EventEngine<SimEventMap> {
   z0 = 0;
   // The rectangles of floor, one per area while areas are joined
   floor: Rect[] = [];
+  // Whether the party's dead are kept whole, as a Respite area keeps them
+  spared = false;
 
   // Where units can walk, once the floor is set. Without it, they walk straight.
   nav: Nav | null = null;

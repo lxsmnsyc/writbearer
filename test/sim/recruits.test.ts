@@ -169,6 +169,16 @@ describe('the Cleric', () => {
     expect(vanguard.buildup.size).toBe(0);
   });
 
+  it('keeps the dead whole in a Respite area', () => {
+    const sim = new Sim(1);
+    sim.spared = true;
+    const ranger = spawnMerc(sim, 'ranger', 5, 0, 0);
+    const crawler = spawnMonster(sim, 'crawler', 4, 20, 0);
+    crawler.hit(ranger, { kind: DamageKind.True, fixed: 10000 });
+    expect(ranger.alive).toBe(false);
+    expect(ranger.torn).toBe(false);
+  });
+
   it('raises a fallen merc, but not one torn apart', () => {
     const sim = new Sim(1);
     const cleric = spawnMerc(sim, 'cleric', 5, 0, 0);

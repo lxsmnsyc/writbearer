@@ -1,4 +1,4 @@
-import type { Objective } from '../gen/graph';
+import type { Objective, Reward } from '../gen/graph';
 import { type Ahead, type Prop, type Stage, rectOf } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
@@ -65,6 +65,15 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   hunt: 'Hunt: slay the marked',
   horde: 'Horde: hold out against the waves',
   maze: 'Labyrinth: find the way through',
+};
+
+// What a signpost says the fight ahead pays.
+const REWARD_SIGN: Record<Reward, string> = {
+  gold: 'pays gold',
+  arms: 'pays arms',
+  cards: 'pays a card',
+  materials: 'pays materials',
+  respite: 'heals the party',
 };
 
 // Places lit through, and how far their light reaches from the middle
@@ -976,8 +985,9 @@ export default class Renderer {
         continue;
       }
       const b = this.iso(e.sign.x, e.sign.z);
+      const reward = e.reward ? ` · ${REWARD_SIGN[e.reward]}` : '';
       const text = e.objective
-        ? `${e.ahead === 'elite' ? 'Elite ' : ''}${OBJECTIVE_SIGN[e.objective]}`
+        ? `${e.ahead === 'elite' ? 'Elite ' : ''}${OBJECTIVE_SIGN[e.objective]}${reward}`
         : AHEAD_NAME[e.ahead];
       const x = b.x * SCALE - this.sub.x;
       const y = (b.y - 40 * look.zoom) * SCALE - this.sub.y;

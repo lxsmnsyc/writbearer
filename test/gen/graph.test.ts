@@ -132,3 +132,32 @@ describe('endless phases', () => {
     ).toBeDefined();
   });
 });
+
+describe('rewards on the map', () => {
+  it('are on every fight, and no two roads from one fork pay the same', () => {
+    for (const seed of SEEDS) {
+      const { columns } = generateLayerMap(new RNG(seed), 2, true);
+      for (const column of columns) {
+        for (const node of column) {
+          expect(node.reward !== undefined).toBe(node.objective !== undefined);
+        }
+      }
+      const forks = [
+        columns[0],
+        ...columns
+          .slice(0, -1)
+          .flatMap((column, c) => column.map((n) => n.next.map((row) => columns[c + 1][row]))),
+      ];
+      for (const fork of forks) {
+        const paid = fork.map((n) => n.reward).filter((r) => r !== undefined);
+        expect(new Set(paid).size).toBe(paid.length);
+      }
+    }
+  });
+
+  it('are the same for a seed', () => {
+    const rewards = (seed: number): unknown =>
+      generateLayerMap(new RNG(seed), 2).columns.map((c) => c.map((n) => n.reward));
+    expect(rewards(5)).toEqual(rewards(5));
+  });
+});

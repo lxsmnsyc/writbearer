@@ -40,9 +40,13 @@ describe('objectives on the map', () => {
     const stage = generateStage(new RNG(1), 2, {
       kind: 'combat',
       ahead: ['combat', 'elite'],
-      aheadObjectives: ['horde', 'hunt'],
+      aheadFights: [
+        { objective: 'horde', reward: 'gold' },
+        { objective: 'hunt', reward: 'respite' },
+      ],
     });
     expect(stage.exits.map((e) => e.objective)).toEqual(['horde', 'hunt']);
+    expect(stage.exits.map((e) => e.reward)).toEqual(['gold', 'respite']);
   });
 });
 

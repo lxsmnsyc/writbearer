@@ -17,13 +17,30 @@ export const OBJECTIVE_NAME: Record<Objective, string> = {
   maze: 'Labyrinth',
 };
 
+/**
+ * What a fight's chest holds once its objective is done, as Hades's doors.
+ * The signpost and the map show it before the party chooses the road.
+ */
+export type Reward = 'gold' | 'arms' | 'cards' | 'materials' | 'respite';
+
+export const REWARDS: readonly Reward[] = ['gold', 'arms', 'cards', 'materials', 'respite'];
+
+export const REWARD_NAME: Record<Reward, string> = {
+  gold: 'Gold',
+  arms: 'Arms',
+  cards: 'Cards',
+  materials: 'Materials',
+  respite: 'Respite',
+};
+
 /** One area on a layer's map. */
 export interface MapNode {
   // Which of its column's nodes this is, from the north edge
   row: number;
   kind: NodeKind;
-  // A fight's objective, Elite or not
+  // A fight's objective, Elite or not, and what it pays
   objective?: Objective;
+  reward?: Reward;
   // Rows of the next column this area's exits lead to, north first
   next: number[];
 }
@@ -115,7 +132,31 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap 
       }
     }
   });
+  rollRewards(rng, columns);
   return { columns };
+}
+
+// Gives every fight a reward. No two roads from one fork pay the same: the
+// first column's areas all lie beyond the one before the map, and each
+// later area differs from the others its roads in come from.
+function rollRewards(rng: RNG, columns: MapNode[][]): void {
+  columns.forEach((column, c) => {
+    for (const [j, node] of column.entries()) {
+      if (!node.objective) {
+        continue;
+      }
+      // The areas beside it beyond each fork it lies past
+      const forks =
+        c === 0
+          ? [column]
+          : columns[c - 1]
+              .filter((n) => n.next.includes(j))
+              .map((n) => n.next.map((row) => column[row]));
+      const taken = new Set(forks.flat().map((n) => n.reward));
+      const free = REWARDS.filter((r) => !taken.has(r));
+      node.reward = rng.pick(free.length > 0 ? free : REWARDS);
+    }
+  });
 }
 
 function kindFor(rng: RNG, column: number): NodeKind {

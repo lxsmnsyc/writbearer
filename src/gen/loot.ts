@@ -174,12 +174,14 @@ export function rollItem(
   rng: RNG,
   itemLevel: number,
   rank: Rank = Rank.Normal,
-  only: { types?: readonly ItemType[]; atLeast?: Quality } = {},
+  only: { types?: readonly ItemType[]; atLeast?: Quality; job?: string } = {},
 ): Item {
   const bases = BASES.filter(
     (b) => b.level <= itemLevel && (!only.types || only.types.includes(b.type)),
   );
-  const base = rng.pick(bases);
+  // Made for one job, if any base of the level is; otherwise any base.
+  const made = bases.filter((b) => only.job !== undefined && b.jobs?.includes(only.job));
+  const base = rng.pick(made.length > 0 ? made : bases);
   const quality = Math.max(weighted(rng, QUALITY_WEIGHTS[rank]), only.atLeast ?? 0) as Quality;
   const scale = BASE_SCALE[quality];
   const item: Item = {

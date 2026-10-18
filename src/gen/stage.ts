@@ -1,7 +1,7 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Rect, type Spot } from '../sim/nav';
-import type { NodeKind, Objective } from './graph';
+import type { MapNode, NodeKind, Objective, Reward } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
 
 export type PropKind =
@@ -37,8 +37,9 @@ export interface Prop {
   r?: number;
   // For drawing variations, such as a wall block's height
   seed: number;
-  // A chest the bearer has opened
+  // A chest the bearer has opened, and what a fight's chest holds
   open?: boolean;
+  holds?: Reward;
 }
 
 /** A pack to spawn: its monsters, where it stands, and which one is an elite. */
@@ -61,8 +62,9 @@ export type ExitSide = 'east' | 'north' | 'south';
 /** A way out of an area by one of its edges, and what lies beyond it. */
 export interface Exit extends Spot {
   ahead: Ahead;
-  // The objective of the fight beyond it
+  // The objective of the fight beyond it, and what it pays
   objective?: Objective;
+  reward?: Reward;
   // The edge it leaves by, and the way out across it, one tile long
   side: ExitSide;
   out: Spot;
@@ -83,9 +85,10 @@ export interface AreaPlan {
   // endless phase rolls; and whether merc are offered whatever the depth
   biome?: number;
   endless?: boolean;
-  // A fight's objective, and the objectives of the fights its exits lead to
+  // A fight's objective, and the objective and reward of each fight its
+  // exits lead to
   objective?: Objective;
-  aheadObjectives?: readonly (Objective | undefined)[];
+  aheadFights?: readonly (Fight | undefined)[];
   // The edge each exit leaves by, in the order of `ahead`. East if absent.
   sides?: readonly ExitSide[];
 }
@@ -315,16 +318,17 @@ const PACK_DISTANCE = 13;
  * everything can be reached, then packs from a threat budget.
  */
 export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): Stage {
-  return withObjectivesAhead(buildArea(rng, index, plan), plan.aheadObjectives);
+  return withFightsAhead(buildArea(rng, index, plan), plan.aheadFights);
 }
 
-/** Notes on each exit the objective of the fight it leads to, for its signpost. */
-export function withObjectivesAhead(
-  stage: Stage,
-  objectives: readonly (Objective | undefined)[] = [],
-): Stage {
+/** What a signpost tells of the fight beyond its road. */
+export type Fight = Pick<MapNode, 'objective' | 'reward'>;
+
+/** Notes on each exit the objective and reward of the fight it leads to, for its signpost. */
+export function withFightsAhead(stage: Stage, fights: readonly (Fight | undefined)[] = []): Stage {
   stage.exits.forEach((e, k) => {
-    e.objective = objectives[k];
+    e.objective = fights[k]?.objective;
+    e.reward = fights[k]?.reward;
   });
   return stage;
 }

@@ -13,6 +13,7 @@ import {
   type AreaPlan,
   type Exit,
   type ExitSide,
+  type Fight,
   type Prop,
   type Stage,
   generateGuild,
@@ -21,7 +22,7 @@ import {
   generateWaystation,
   monsterLevel,
   rectOf,
-  withObjectivesAhead,
+  withFightsAhead,
 } from '../gen/stage';
 import { reveal } from '../content/creditor';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
@@ -30,13 +31,24 @@ import {
   type MapNode,
   OBJECTIVE_NAME,
   type Objective,
+  REWARD_NAME,
+  type Reward,
   generateLayerMap,
 } from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
-import { type EquipSlot, type Item, isCard, isPotion, refinable } from '../sim/item';
+import {
+  type EquipSlot,
+  type Item,
+  type ItemBase,
+  Quality,
+  isCard,
+  isPotion,
+  refinable,
+} from '../sim/item';
 import { BASE_BY_ID, STARTER_PACK } from '../content/items';
 import {
   itemName,
+  plainItem,
   potionStack,
   rollCards,
   rollDrops,
@@ -84,7 +96,8 @@ import {
   salvageItem,
   sell,
 } from './town';
-import { gather, materialsFrom } from '../content/materials';
+import { CARD_OF, GEMS } from '../content/cards';
+import { MATERIAL_NAME, type Materials, gather, materialsFrom } from '../content/materials';
 import type { Recipe } from '../content/recipes';
 import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
@@ -118,6 +131,19 @@ const CHEST_PICK = 1.1;
 const CHEST_SOLID = 0.35;
 // A chest holds this many pieces of equipment, rolled as an elite's drop.
 const CHEST_ITEMS = 3;
+// A fight's chest holds one, and an Arms chest this many more, Magic or better.
+const ARMS_ITEMS = 2;
+// A Gold chest's pile is this many times a monster's.
+const GOLD_PILE = 4;
+// What a Materials chest puts in the pouch, and a Smith's Blessing from this layer down
+const MATERIALS_PAID: readonly [string, number][] = [
+  ['iron', 2],
+  ['chitin', 1],
+  ['bone', 1],
+  ['rag', 1],
+];
+const ESSENCES = ['venomEssence', 'occultEssence', 'radiantEssence'];
+const BLESSING_FROM_LAYER = 2;
 // How near a click must land to an item, in frame pixels, to pick it up.
 const PICK_PIXELS = 8;
 // Impact: hits at least this heavy freeze the world briefly and shake it.
@@ -279,6 +305,8 @@ export default class Game {
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
   private hurtHere = false;
+  // What this fight's chest holds once its objective is done
+  private prize: Reward | null = null;
   // Whether the title panel is up, before the run begins
   private title = false;
   // The recruits rolled for the Guild House at the start of the run
@@ -724,7 +752,7 @@ export default class Game {
         this.aheadOf(null),
         this.sidesFor(this.aheadOf(null).length, GUILD_STREAM),
       );
-      withObjectivesAhead(this.stage, this.objectivesAhead(null));
+      withFightsAhead(this.stage, this.fightsAhead(null));
     } else {
       this.goTo(this.stageIndex % AREAS_PER_LAYER, 0);
       this.stage = this.buildStage();
@@ -857,10 +885,52 @@ export default class Game {
         this.opening = null;
         const rng = this.streams.get(1, Stream.Loot);
         const level = 4 + this.stageIndex;
+        if (p.holds) {
+          this.scatter(this.spoilsOf(p.holds, rng, level), p);
+          continue;
+        }
         const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
         this.scatter([...items, rollGold(rng, level), rollPotion(rng, level, 2)], p);
       }
     }
+  }
+
+  // What a fight's chest holds: an item, gold and potions, and its reward.
+  private spoilsOf(reward: Reward, rng: RNG, level: number): Item[] {
+    const gold = rollGold(rng, level);
+    const out = [rollItem(rng, level, Rank.Elite), gold, rollPotion(rng, level, 2)];
+    if (reward === 'gold') {
+      gold.quantity *= GOLD_PILE;
+    } else if (reward === 'arms') {
+      const jobs = this.mercs()
+        .filter((m) => m.alive)
+        .map((m) => m.job.name);
+      for (let i = 0; i < ARMS_ITEMS; i++) {
+        const job = jobs.length > 0 ? rng.pick(jobs) : undefined;
+        out.push(rollItem(rng, level, Rank.Elite, { atLeast: Quality.Magic, job }));
+      }
+    } else if (reward === 'cards') {
+      out.push(plainItem(this.cardHere(rng)));
+    } else if (reward === 'materials') {
+      const found: Materials = new Map(MATERIALS_PAID);
+      found.set(rng.pick(ESSENCES), 2);
+      if (Math.floor(this.stageIndex / AREAS_PER_LAYER) >= BLESSING_FROM_LAYER) {
+        found.set('blessing', 1);
+      }
+      gather(this.pack.materials, found);
+      this.say(`The chest holds ${materialList(found)}. They go in the pouch.`);
+    }
+    return out;
+  }
+
+  // The card of a monster of this area, or a gem if none has one.
+  private cardHere(rng: RNG): ItemBase {
+    const kinds = [
+      ...this.stage.packs.flatMap((p) => p.kinds),
+      ...(this.stage.waves ?? []).flatMap((w) => w.kinds),
+    ];
+    const cards = kinds.map((k) => CARD_OF.get(k)).filter((c) => c !== undefined);
+    return cards.length > 0 ? rng.pick(cards) : rng.pick(GEMS);
   }
 
   private pickUp(g: GroundItem): void {
@@ -906,13 +976,13 @@ export default class Game {
     return node.next.map((row) => next[row].kind);
   }
 
-  // The objective of the fight beyond each of this area's exits.
-  private objectivesAhead(node: MapNode | null): (Objective | undefined)[] {
+  // The areas beyond each of this area's exits, for their signposts.
+  private fightsAhead(node: MapNode | null): (Fight | undefined)[] {
     if (!node) {
-      return this.map.columns[0].map((n) => n.objective);
+      return this.map.columns[0];
     }
     const next = this.map.columns[(this.node?.column ?? 0) + 1] ?? [];
-    return node.kind === 'boss' ? [] : node.next.map((row) => next[row]?.objective);
+    return node.kind === 'boss' ? [] : node.next.map((row) => next[row]);
   }
 
   // Rolls the map of the layer the current area is in.
@@ -989,7 +1059,7 @@ export default class Game {
     const plan: AreaPlan = {
       kind: kind ?? node?.kind ?? 'combat',
       ahead: this.aheadOf(node),
-      aheadObjectives: this.objectivesAhead(node),
+      aheadFights: this.fightsAhead(node),
       objective: node?.objective && (this.options.objective ?? node.objective),
       biome: this.biome,
       endless: this.endless,
@@ -1039,6 +1109,8 @@ export default class Game {
       : null;
     this.hazards = this.stage.hazards ? new Hazards(this.stage) : null;
     this.hurtHere = false;
+    this.prize = (this.stage.objective && this.here()?.reward) ?? null;
+    this.sim.spared = this.prize === 'respite';
     const camp = this.stage.recruit;
     const guild = this.stage.recruits ?? [];
     this.wanderers = guild.map((at, i) => ({ offer: this.starting[i], ...at, met: false }));
@@ -1086,12 +1158,24 @@ export default class Game {
       return;
     }
     this.views.snap(this.sim);
-    this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and the spoils lie before it.`);
+    const chest = this.prize ? `the ${REWARD_NAME[this.prize]} chest` : 'the spoils';
+    this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and ${chest} lies before it.`);
+    if (this.prize === 'respite') {
+      for (const m of this.sim.units) {
+        if (m.side === Side.Party && m.alive) {
+          m.hp = m.derived.maxHp;
+          m.mana = m.derived.maxMana;
+        }
+      }
+      this.say('A respite: the party is whole again.');
+    }
     const at = this.stage.reward;
     if (at) {
-      this.stage.props.push({ kind: 'chest', x: at.x, z: at.z, r: CHEST_SOLID, seed: 0.5 });
+      const holds = this.prize ?? undefined;
+      this.stage.props.push({ kind: 'chest', x: at.x, z: at.z, r: CHEST_SOLID, seed: 0.5, holds });
       this.sim.obstacles.push({ x: at.x, z: at.z, r: CHEST_SOLID });
-      this.sim.setFloor(this.stage.width, this.stage.depth);
+      // The floor stays as it is, with this area and any joined to it.
+      this.sim.setWorld(this.sim.floor);
       const loot = this.streams.get(1, Stream.Loot);
       const spoils = [rollGold(loot, 6 + this.stageIndex)];
       // A Labyrinth crossed without the bearer taking a scratch pays more.
@@ -1413,7 +1497,7 @@ export default class Game {
   private buildWaystation(): Stage {
     this.payroll = new Payroll();
     this.stationMet = false;
-    return withObjectivesAhead(
+    return withFightsAhead(
       generateWaystation(
         this.streams.area(1, Stream.Layout, WAYSTATION_STREAM + this.stageIndex),
         this.stageIndex,
@@ -1421,7 +1505,7 @@ export default class Game {
         this.biome,
         this.sidesFor(this.aheadOf(null).length, WAYSTATION_STREAM + this.stageIndex),
       ),
-      this.objectivesAhead(null),
+      this.fightsAhead(null),
     );
   }
 
@@ -2152,4 +2236,10 @@ export default class Game {
       })
       .join(';');
   }
+}
+
+// Materials as a reader would list them, such as "2 Iron and 1 Bone".
+function materialList(found: Materials): string {
+  const parts = [...found].map(([id, n]) => `${n} ${MATERIAL_NAME.get(id) ?? id}`);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts.join('');
 }
