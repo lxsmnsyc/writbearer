@@ -104,7 +104,7 @@ import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { FIGHTERS, type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
-import { MERCS, spawnMerc } from '../content/roster';
+import { MERCS, MONSTERS, type MonsterKind, spawnMerc } from '../content/roster';
 import { applySets } from '../content/sets';
 import {
   START_LEVEL,
@@ -154,6 +154,13 @@ const BONUS_PAYS: Record<Reward, string> = {
   materials: 'Twice the materials.',
   respite: 'The dead rise too.',
 };
+
+/** Monsters of one kind in a Horde's next wave, as the HUD shows them. */
+export interface ComingGroup {
+  kind: MonsterKind;
+  name: string;
+  count: number;
+}
 
 /** A fight's bonus challenge as the HUD shows it. */
 export interface BonusStatus {
@@ -1167,6 +1174,7 @@ export default class Game {
     detail: string;
     done: boolean;
     bonus: BonusStatus | null;
+    coming: ComingGroup[];
   } | null {
     const o = this.objective;
     if (!o) {
@@ -1185,7 +1193,17 @@ export default class Game {
       }
       bonus = { title: CHALLENGE_NAME[b.kind], detail, state };
     }
-    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done, bonus };
+    // A Horde's next wave, by kind, for the badge
+    const coming: ComingGroup[] = [];
+    for (const kind of o.coming()) {
+      const group = coming.find((g) => g.kind === kind);
+      if (group) {
+        group.count++;
+      } else {
+        coming.push({ kind, name: MONSTERS[kind].job.name, count: 1 });
+      }
+    }
+    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done, bonus, coming };
   }
 
   // Whether the exits are open: once the objective is done, if there is one,

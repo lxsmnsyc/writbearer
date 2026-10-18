@@ -115,6 +115,7 @@ Today: 4 to 6 waves from three edges, every 20 seconds, or 2 seconds after the l
 
 - **Warnings before each wave.** Its spawn points show on the ground 3 seconds before it arrives, as boss moves do.
 - **The next wave shows in the badge**, with icons for its monsters, so the party can set orders before it comes.
+- In the game so far: each wave's spawn point shows as a 2 tile circle 3 seconds before it comes. It harms no one, and mercs do not step out of it. A wave called early by the last one being beaten now comes 3 seconds later than before. The badge lists the next wave's monsters by kind, with a count.
 - **Hold the light.** The Horde gains a brazier near the middle. While the bearer stands within its light, waves come only from the edges. Away from it, they may come from anywhere.
 - **Call it early.** Between waves, the bearer can ring a bell to bring the next wave at once. Each early wave adds gold to the reward.
 - **A last wave with a leader.** The last wave is led by an elite in ordinary Hordes, and by a mini-boss in Elite Hordes.
@@ -174,7 +175,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 
 1. Rewards on the road. It changes how every fork is chosen, and needs only the chest and the signposts. Done, without Lore.
 2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check. Done, without Silent and In order.
-3. Wave warnings and the next wave in the Horde's badge.
+3. Wave warnings and the next wave in the Horde's badge. Done.
 4. Arrows to marked monsters, and marked monsters that run.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead.
 6. The Labyrinth's key, gates and new traps.

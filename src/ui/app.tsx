@@ -201,6 +201,21 @@ export default function App(): JSX.Element {
             <div class="min-w-0">
               <h2 class="text-sm font-semibold text-neutral-50">{o.title}</h2>
               <p class="text-xs text-neutral-400">{o.detail}</p>
+              <Show when={o.coming.length > 0}>
+                <ul class="mt-1.5 flex flex-wrap gap-1.5" aria-label="Next wave">
+                  <Index each={o.coming}>
+                    {(g) => (
+                      <li
+                        class="flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 text-xs text-neutral-300"
+                        title={g().name}
+                      >
+                        <Icon name={iconOr(g().kind, 'combat')} class="size-3.5" />
+                        <span aria-label={`${g().count} ${g().name}`}>×{g().count}</span>
+                      </li>
+                    )}
+                  </Index>
+                </ul>
+              </Show>
               <Show when={o.bonus}>
                 {(b) => (
                   <p

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import RNG from '../../src/core/rng';
-import ObjectiveRun from '../../src/game/objective';
+import ObjectiveRun, { WAVE_WARNING } from '../../src/game/objective';
 import { enterStage, spawnParty } from '../../src/game/stage';
 import { generateLayerMap } from '../../src/gen/graph';
 import { type Stage, generateStage, navFor } from '../../src/gen/stage';
@@ -94,12 +94,14 @@ describe('a Horde', () => {
     const monsters = (): Unit[] => sim.living(Side.Monster);
     for (let i = 0; i < 200; i++) {
       run.update(sim, 0.05, 7);
+      updateWarnings(sim, 0.05);
     }
     expect(monsters()).toHaveLength(0);
     bearer.x += 8;
     let beaten = 0;
     for (let t = 0; t < 2000 && !run.done; t++) {
       run.update(sim, 0.05, 7);
+      updateWarnings(sim, 0.05);
       if (monsters().length > 0) {
         expect(monsters().every((m) => m.aware)).toBe(true);
         killAll(monsters());
@@ -122,10 +124,43 @@ describe('a Horde', () => {
     bearer.x += 8;
     for (let t = 0; t < 20 * 25; t++) {
       run.update(sim, 0.05, 7);
+      updateWarnings(sim, 0.05);
     }
     const waves = stage.waves!;
     expect(sim.living(Side.Monster)).toHaveLength(waves[0].kinds.length + waves[1].kinds.length);
     expect(run.status(sim)).toMatch(/^Wave 2 of 4/);
+  });
+
+  it('shows where each wave comes on the ground first, and what it is in the badge', () => {
+    const stage = generateStage(new RNG(3), 5, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'horde',
+    });
+    const sim = new Sim(1);
+    const bearer = spawnParty(sim, stage, ['vanguard']);
+    const run = new ObjectiveRun('horde', stage);
+    const first = stage.waves![0];
+    expect(run.coming()).toEqual(first.kinds);
+    bearer.x += 8;
+    let warnedAt = -1;
+    let cameAt = -1;
+    for (let t = 0; t < 60 * 20 && cameAt < 0; t++) {
+      run.update(sim, 0.05, 7);
+      updateWarnings(sim, 0.05);
+      if (warnedAt < 0 && sim.warnings.length > 0) {
+        warnedAt = t;
+        expect(sim.warnings[0]).toMatchObject({ x: first.from.x, z: first.from.z });
+        expect(sim.living(Side.Monster)).toHaveLength(0);
+      }
+      if (sim.living(Side.Monster).length > 0) {
+        cameAt = t;
+      }
+    }
+    expect(warnedAt).toBeGreaterThanOrEqual(0);
+    expect((cameAt - warnedAt) * 0.05).toBeCloseTo(WAVE_WARNING, 1);
+    expect(bearer.hp).toBe(bearer.derived.maxHp);
+    expect(run.coming()).toEqual(stage.waves![1].kinds);
   });
 });
 
