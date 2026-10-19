@@ -3,7 +3,7 @@ import RNG from '../../src/core/rng';
 import ObjectiveRun, { WAVE_WARNING } from '../../src/game/objective';
 import { enterStage, spawnParty } from '../../src/game/stage';
 import { generateLayerMap } from '../../src/gen/graph';
-import { type Stage, generateStage, navFor, openGate } from '../../src/gen/stage';
+import { type Stage, THREAT, generateStage, navFor, openGate } from '../../src/gen/stage';
 import Hazards from '../../src/game/hazards';
 import { spawnMonster } from '../../src/content/roster';
 import { updateWarnings, warn } from '../../src/sim/warning';
@@ -101,7 +101,9 @@ describe('a Horde', () => {
     expect(stage.packs).toHaveLength(0);
     const waves = stage.waves!;
     expect(waves).toHaveLength(4);
-    expect(waves.at(-1)!.kinds.length).toBeGreaterThanOrEqual(waves[0].kinds.length);
+    const threat = (kinds: readonly (keyof typeof THREAT)[]): number =>
+      kinds.reduce((n, k) => n + THREAT[k], 0);
+    expect(threat(waves.at(-1)!.kinds)).toBeGreaterThanOrEqual(threat(waves[0].kinds));
     const sim = new Sim(1);
     const bearer = spawnParty(sim, stage, ['vanguard']);
     enterStage(sim, stage);

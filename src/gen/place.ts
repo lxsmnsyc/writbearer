@@ -81,6 +81,7 @@ export function placeStage(stage: Stage, facing: Spot, at: Spot): Stage {
     move(p);
   }
   stage.recruits?.forEach(move);
+  stage.chasm?.forEach(move);
   stage.waves?.forEach((w) => {
     move(w.from);
   });

@@ -114,14 +114,22 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
   - **Abbess** (the Undercroft): her Litany and her Penitents, as before, and now consecrated ground under the bearer and two of the party (1.5 seconds) and a beam of judgement through the bearer (1.7 seconds).
   - **Hollowed Saint** (the Sunken Crown): her Dread aura, a lunge that marks where the bearer stands and lands there a second later, and a nova of Dread around her (1.9 seconds, 5 tiles). At half health she goes for the bearer.
 - **Balance check:** with the test's bearer stepping out of warnings: three mercs four levels below each boss of the Rift Road and below win at least 11 of 12 fights, two at most 3 of 12. Two level 9 mercs beat the Brood Mother about half the time whatever their orders, three always, one never.
-- **Road:** outside the city, a road runs from the entrance through the wall's first breach to the exit. Trees, pillars and rubble keep off it.
-- **Size:** 54 to 62 tiles wide and 34 to 42 deep. The entrance is on the west edge and the exit on the east edge.
-- **Choke point:** what is left of a ruined wall runs across the field, about halfway: stretches of 3 to 7 tiles with gaps of 3 to 6 between, so it never cuts the field in two. The road runs through its first breach, which a pack watches from the far side.
+- **Size:** square, 46 to 54 tiles a side, after Aghanim's Labyrinth's rooms. The entrance is near a corner of the west edge and the exits are on the far side, so the way crosses the field.
+- **Ground plans:** each open field takes one, by its layer (`src/gen/fields.ts`). Obstacles stand as islands, or as walls with openings, so there is always a second way across.
+
+  | Plan | Layer | Layout |
+  |---|---|---|
+  | Grove | The Marches | Clumps of trees on a loose grid with paths looping between them, and lone trees between. |
+  | Cavern | The Rift Road, sometimes the Undercroft | Three by three chambers walled by ragged rock, one or two wide openings in each wall, a few loose rocks. |
+  | Bridges | The Rift Road, 40% | Islands over the chasm, one under the entrance and each exit and three or four between, joined by bridges 3 tiles wide: each island to its nearest, then one more for a loop. The chasm blocks bodies but not sight. |
+  | Halls | The Undercroft, the Sunken Crown | Three by three rooms with straight walls, a doorway between each two, and four pillars in each. |
+
+- **Road:** outside the city, a road follows the way a body walks from the entrance to each exit. A pack watches it halfway along.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
-  - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other side of the wall from the site.
+  - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other half of the field from the site.
   - A cache, a chest for now. It opens only when clicked: the bearer walks to it and opens it.
-- **Terrain from noise:** pillars where the noise runs high, rubble where it runs low, plus pikes and gibbets along the way. Every place keeps clear ground around it.
+- **Places on open ground:** each place stands where a body can walk around it, plus pikes and gibbets along the way.
 - **Guild House:** where every run begins, before the first phase. A small field, lit through, with four recruits along its north side, a quartermaster's stall and the Guild's strongbox. Its road east leads into the first area. The game is not saved here; the first save is on entering the first area. Waystations, Towns and Camps are lit through too.
 - **Sight:** mercs take as targets only enemies they or the bearer can see, and monsters notice and go for only the party members they can see. Walls, pillars and trees block sight as they block bodies. A monster that loses sight of its quarry walks to where it saw it last.
 - **Reachability:** loose obstacles between the entrance and any place it cannot reach are removed. Walls stay, since their breaches already make a way through.

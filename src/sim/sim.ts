@@ -198,6 +198,9 @@ export default class Sim extends EventEngine<SimEventMap> {
 
   // Solid round props, such as pillars. Units cannot stand inside them.
   readonly obstacles: { x: number; z: number; r: number }[] = [];
+  // Ground no body can stand on, such as a chasm. Unlike obstacles, it does
+  // not block sight.
+  readonly holes: { x: number; z: number; r: number }[] = [];
 
   // The floor's far edges and near edges, in tiles, along x and z. Units
   // stay on the floor's rectangles. Infinite means no bounds.
@@ -275,7 +278,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     this.depth = all.z1;
     this.x0 = all.x0;
     this.z0 = all.z0;
-    this.nav = new Nav(all.x1 - all.x0, all.z1 - all.z0, this.obstacles, {
+    this.nav = new Nav(all.x1 - all.x0, all.z1 - all.z0, [...this.obstacles, ...this.holes], {
       x0: all.x0,
       z0: all.z0,
       floor: floor.length > 1 ? floor : undefined,

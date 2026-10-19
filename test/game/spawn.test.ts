@@ -47,20 +47,3 @@ describe('a body shoved into a wall', () => {
     expect(sim.nav!.roomy(crawler.x, crawler.z)).toBe(true);
   });
 });
-
-describe('the ruined wall across an open field', () => {
-  it('stands in short stretches, never across the whole field', () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const stage = generateStage(new RNG(seed), 2, { kind: 'combat', ahead: ['combat'] });
-      const walls = stage.props.filter((p) => p.kind === 'wall').sort((a, b) => a.z - b.z);
-      let run = 0;
-      let longest = 0;
-      walls.forEach((w, i) => {
-        run = i > 0 && w.z - walls[i - 1].z < 1 ? run + 0.9 : 0.9;
-        longest = Math.max(longest, run);
-      });
-      expect(longest).toBeLessThanOrEqual(8);
-      expect(walls.length * 0.9).toBeLessThan(stage.depth * 0.75);
-    }
-  });
-});

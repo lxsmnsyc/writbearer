@@ -1,6 +1,6 @@
 import { spawnBoss } from '../content/bosses';
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
-import { type Stage, monsterLevel, rectOf, solidsOf } from '../gen/stage';
+import { type Stage, holesOf, monsterLevel, rectOf, solidsOf } from '../gen/stage';
 import { type Rect, inRect } from '../sim/nav';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
@@ -14,6 +14,8 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
   sim.area++;
   sim.obstacles.length = 0;
   sim.obstacles.push(...solidsOf(stage));
+  sim.holes.length = 0;
+  sim.holes.push(...holesOf(stage));
   sim.setWorld([rectOf(stage)]);
   return spawnStage(sim, stage);
 }
@@ -25,6 +27,7 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
  */
 export function joinStage(sim: Sim, stage: Stage, floor: readonly Rect[]): Unit | null {
   sim.obstacles.push(...solidsOf(stage));
+  sim.holes.push(...holesOf(stage));
   sim.setWorld(floor);
   return spawnStage(sim, stage);
 }
@@ -67,8 +70,10 @@ export function dropStage(
     }
   }
   sim.obstacles.length = 0;
+  sim.holes.length = 0;
   for (const k of kept) {
     sim.obstacles.push(...solidsOf(k));
+    sim.holes.push(...holesOf(k));
   }
   sim.setWorld(kept.map(rectOf));
 }

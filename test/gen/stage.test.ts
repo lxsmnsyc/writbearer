@@ -48,13 +48,12 @@ describe('stage generation', () => {
     expect(stageFor('ASHEN', 1)).not.toEqual(stageFor('ASHEN', 0));
   });
 
-  it('keeps a stage within the size the design gives', () => {
+  it('keeps a stage square, within the size the design gives', () => {
     for (const seed of SEEDS) {
       const s = stageFor(seed);
-      expect(s.width).toBeGreaterThanOrEqual(48);
-      expect(s.width).toBeLessThanOrEqual(64);
-      expect(s.depth).toBeGreaterThanOrEqual(32);
-      expect(s.depth).toBeLessThanOrEqual(48);
+      expect(s.width).toBeGreaterThanOrEqual(46);
+      expect(s.width).toBeLessThanOrEqual(54);
+      expect(s.depth).toBe(s.width);
       // The entrance and the exit sit on opposite sides.
       expect(s.exit.x - s.entrance.x).toBeGreaterThan(s.width * 0.8);
     }
@@ -68,19 +67,6 @@ describe('stage generation', () => {
         const end = nav.path(s.entrance, goal).at(-1);
         expect(end, `${seed}: ${goal.x},${goal.z}`).toBeDefined();
         expect(Math.hypot(end!.x - goal.x, end!.z - goal.z)).toBeLessThan(2.5);
-      }
-    }
-  });
-
-  it('breaks the field with stretches of ruined wall that block where they stand', () => {
-    for (const seed of SEEDS) {
-      const s = stageFor(seed);
-      const nav = navFor(s);
-      const wall = s.props.filter((p) => p.kind === 'wall');
-      expect(wall.length).toBeGreaterThan(3);
-      // No one walks straight across a stretch of wall where it stands.
-      for (const w of wall) {
-        expect(nav.clear(w.x - 1.5, w.z, w.x + 1.5, w.z)).toBe(false);
       }
     }
   });

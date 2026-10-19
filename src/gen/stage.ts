@@ -3,6 +3,7 @@ import type RNG from '../core/rng';
 import Nav, { type Rect, type Spot } from '../sim/nav';
 import type { MapNode, Mutator, NodeKind, Objective, Reward } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
+import { type Keep, type Plan, layOut, planFor } from './fields';
 
 export type PropKind =
   | 'pillar'
@@ -163,6 +164,10 @@ export interface Stage {
   // A Labyrinth's gates: across corridors, opened by levers, and into the
   // hall, opened by the key
   gates?: Gate[];
+  // An open field's ground plan, and its chasm: floor cells, one tile each,
+  // that cannot be crossed but can be seen across
+  layout?: Plan;
+  chasm?: Spot[];
 }
 
 /** A gate across a Labyrinth's corridor, and the lever that opens it. The hall's gates have none: the key opens them. */
@@ -325,9 +330,8 @@ const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
     road.slice(1).some((b, i) => distanceToSegment({ x, z }, road[i], b) < reach),
   );
 
-// How long a stretch of the ruined wall runs, and the gaps between, in tiles
-const WALL_RUN: [number, number] = [3, 7];
-const WALL_GAP: [number, number] = [3, 6];
+// An open field's side, in tiles: it is square
+const FIELD_SIZE: [number, number] = [46, 54];
 
 // Solid radius of each prop that blocks, in tiles.
 const SOLID: Partial<Record<PropKind, number>> = {
@@ -426,10 +430,13 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   if (plan.objective === 'maze') {
     return generateMaze(rng, index, plan, biome);
   }
-  const width = rng.int(54, 62);
-  const depth = rng.int(34, 42);
-  const entrance = { x: 2.5, z: depth / 2 + rng.range(-depth / 5, depth / 5) };
-  const exitZ = depth / 2 + rng.range(-depth / 4, depth / 4);
+  // A square field, entered near a corner of its west edge and left by the
+  // far side, so the way crosses it.
+  const size = rng.int(FIELD_SIZE[0], FIELD_SIZE[1]);
+  const width = size;
+  const depth = size;
+  const entrance = { x: 2.5, z: depth * (rng.chance(0.5) ? 0.22 : 0.78) };
+  const exitZ = depth / 2 + rng.range(-depth / 6, depth / 6);
   const stage: Stage = {
     index,
     kind: plan.kind,
@@ -454,63 +461,46 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   placeExits(stage, add, plan.ahead, exitZ, plan.sides, width * 0.78);
   stage.down = stage.exits.some((e) => e.ahead === 'down');
 
-  // What is left of a ruined wall across the field: short stretches with
-  // wide gaps, so it slows a crowd and gives cover without cutting the
-  // field in two. The road runs through the first breach.
-  const wallX = width * rng.range(0.45, 0.58);
-  const breaches = [rng.range(depth * 0.2, depth * 0.8)];
-  if (rng.chance(0.5)) {
-    const second = rng.range(3, depth - 3);
-    if (Math.abs(second - breaches[0]) > 8) {
-      breaches.push(second);
-    }
-  }
-  stage.roads = stage.exits.map((e) => [
-    entrance,
-    { x: wallX - 3, z: breaches[0] },
-    { x: wallX + 3, z: breaches[0] },
-    e,
-    beyond(e),
-  ]);
-  const wall: Spot[] = [];
-  let standing = rng.chance(0.5);
-  let left = rng.range(1, WALL_RUN[1]);
-  for (let z = 0.5; z < depth; z += 0.9) {
-    left -= 0.9;
-    if (left <= 0) {
-      standing = !standing;
-      left = standing ? rng.range(...WALL_RUN) : rng.range(...WALL_GAP);
-    }
-    if (!standing || breaches.some((b) => Math.abs(z - b) < 1.6)) {
-      continue;
-    }
-    const x = wallX + Math.sin(z * 0.35) * 0.8;
-    wall.push({ x, z });
-    add('wall', x, z);
-  }
-
-  // Places: the Church's sealing site, a lair, a cache.
-  const keep: { x: number; z: number; r: number }[] = [
+  // The ground plan: islands of trees, walled chambers or halls, or islands
+  // over the chasm. See fields.ts.
+  stage.layout = planFor(rng, biome);
+  const keep: Keep[] = [
     { ...entrance, r: KEEP_ENTRANCE },
-    ...stage.exits.map((e) => ({ ...e, r: KEEP_EXIT })),
+    ...stage.exits.map((e) => ({ x: e.x, z: e.z, r: KEEP_EXIT })),
   ];
-  const away = (x: number, z: number, gap: number): boolean =>
-    keep.every((k) => Math.hypot(k.x - x, k.z - z) >= k.r + gap) &&
-    wall.every((w) => Math.hypot(w.x - x, w.z - z) >= 2 + gap);
-  const spot = (x0: number, x1: number, gap: number): Spot => {
-    for (let i = 0; i < 60; i++) {
-      const x = rng.range(x0, x1);
-      const z = rng.range(4, depth - 4);
-      if (away(x, z, gap)) {
-        return { x, z };
+  const ground = layOut(rng, stage.layout, size, keep);
+  const tall = tallFor(biome);
+  for (const t of ground.trees) {
+    add(tall, t.x, t.z);
+  }
+  for (const w of ground.walls) {
+    add('wall', w.x, w.z).seed = stage.layout === 'halls' ? rng.random() * 0.3 + 0.5 : rng.random();
+  }
+  for (const p of ground.pillars) {
+    add(stage.layout === 'halls' ? 'pillar' : 'rubble', p.x, p.z);
+  }
+  stage.chasm = ground.chasm;
+
+  // Places stand on open ground, with room around them.
+  let nav = navFor(stage);
+  const roomFor = (p: Spot, r: number): boolean =>
+    nav.roomy(p.x, p.z) &&
+    Array.from({ length: 8 }, (_, k) => (k / 8) * Math.PI * 2).every((a) =>
+      nav.walkable(p.x + Math.cos(a) * r, p.z + Math.sin(a) * r),
+    );
+  const spot = (x0: number, x1: number, r: number, gap: number): Spot => {
+    for (let i = 0; i < 120; i++) {
+      const p = { x: rng.range(x0, x1), z: rng.range(4, depth - 4) };
+      if (roomFor(p, r) && !keep.some((k) => Math.hypot(k.x - p.x, k.z - p.z) < k.r + gap)) {
+        return p;
       }
     }
-    return { x: (x0 + x1) / 2, z: depth / 2 };
+    return nav.free((x0 + x1) / 2, depth / 2, size);
   };
-
-  // The site sits on whichever side of the wall the seed picks.
+  // The Church's site and the lair stand on opposite halves of the field.
+  const half = width / 2;
   const siteFirst = rng.chance(0.5);
-  const site = siteFirst ? spot(16, wallX - 6, 4) : spot(wallX + 6, width - 10, 4);
+  const site = siteFirst ? spot(12, half - 3, 3, 4) : spot(half + 3, width - 8, 3, 4);
   keep.push({ ...site, r: 5 });
   stage.sigils.push(site);
   add('altar', site.x, site.z);
@@ -520,57 +510,41 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   }
   add('banner', site.x - 2, site.z - 2.8);
 
-  const lair = siteFirst ? spot(wallX + 6, width - 8, 3) : spot(16, wallX - 6, 3);
+  const lair = siteFirst ? spot(half + 3, width - 8, 3, 3) : spot(12, half - 3, 3, 3);
   keep.push({ ...lair, r: 4 });
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
     add(i % 2 ? 'gibbet' : 'pike', lair.x + Math.cos(a) * 3.2, lair.z + Math.sin(a) * 3.2);
   }
 
-  const cache = spot(10, width - 8, 1);
+  const cache = spot(10, width - 8, 1, 1);
   keep.push({ ...cache, r: KEEP_PLACE });
   add('chest', cache.x, cache.z);
 
   // A wandering merc by its fire, only while there is still anyone to hire.
   if (index >= 1 && hires && rng.chance(RECRUIT_CHANCE)) {
-    const camp = spot(10, wallX - 4, 2);
+    const camp = spot(10, half, 2, 2);
     keep.push({ ...camp, r: 5 });
     add('campfire', camp.x, camp.z);
     stage.recruit = { x: camp.x + 1, z: camp.z };
   }
-
-  // Terrain from noise: trees or pillars where it runs high, rubble where it
-  // runs low. The road stays clear.
-  const tall = tallFor(biome);
-  const noise = valueNoise(rng, width, depth, 7);
-  const solids: Spot[] = [];
-  for (let i = 0; i < width * depth * 0.06; i++) {
-    const x = rng.range(1.5, width - 1.5);
-    const z = rng.range(1.5, depth - 1.5);
-    const n = noise(x, z);
-    if (
-      !away(x, z, 0) ||
-      onRoads(stage, x, z) ||
-      solids.some((s) => Math.hypot(s.x - x, s.z - z) < 2.2)
-    ) {
-      continue;
-    }
-    if (n > 0.68) {
-      add(tall, x, z);
-      solids.push({ x, z });
-    } else if (n < 0.3) {
-      const r = rng.range(0.35, 0.6);
-      add('rubble', x, z).r = r;
-      solids.push({ x, z });
-    }
-  }
   // Pikes and gibbets along the way: the Church's offerings.
   for (let i = 0; i < 6; i++) {
-    const s = spot(8, width - 6, 0.5);
+    const s = spot(8, width - 6, 0.5, 0.5);
     add(rng.chance(0.6) ? 'pike' : 'gibbet', s.x, s.z);
   }
 
   ensureReachable(stage, [...stage.exits, site, lair, cache]);
+
+  // The roads follow the way a body walks from the entrance to each exit.
+  nav = navFor(stage);
+  stage.roads = stage.exits.map((e) => {
+    const path = nav.path(entrance, e).filter((_, k, all) => k % 3 === 0 || k === all.length - 1);
+    return [entrance, ...path, e, beyond(e)];
+  });
+  const road = stage.roads[0];
+  // A pack watches the narrowest point of the way, halfway along the road.
+  const choke = road[Math.floor(road.length / 2)];
 
   for (let i = 0; i < 10; i++) {
     stage.stains.push({
@@ -584,18 +558,13 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   if (plan.objective === 'horde') {
     stage.waves = buildWaves(stage, rng, plan.kind === 'elite');
   } else {
-    placePacks(
-      stage,
-      rng,
-      { site, lair, breach: { x: wallX, z: breaches[0] } },
-      plan.kind === 'elite',
-    );
+    placePacks(stage, rng, { site, lair, breach: choke }, plan.kind === 'elite');
   }
   if (plan.objective) {
     stage.objective = plan.objective;
     // The spoils of a finished objective appear before the exits.
     const mid = stage.exits.reduce((n, e) => n + e.z, 0) / Math.max(1, stage.exits.length);
-    stage.reward = { x: width - 7, z: mid };
+    stage.reward = navFor(stage).free(width - 7, mid, size);
   }
   if (plan.objective === 'hunt') {
     markHunt(stage, rng, plan.kind === 'elite');
@@ -970,7 +939,15 @@ function ensureReachable(stage: Stage, places: Spot[]): void {
 
 /** Where units can walk on a stage. */
 export function navFor(stage: Stage): Nav {
-  return new Nav(stage.width, stage.depth, solidsOf(stage));
+  return new Nav(stage.width, stage.depth, [...solidsOf(stage), ...holesOf(stage)]);
+}
+
+// How far a chasm cell blocks bodies from its middle, so its corners do too
+const CHASM_R = 0.72;
+
+/** The chasm's cells, as places bodies cannot go. They do not block sight. */
+export function holesOf(stage: Stage): { x: number; z: number; r: number }[] {
+  return (stage.chasm ?? []).map((c) => ({ x: c.x, z: c.z, r: CHASM_R }));
 }
 
 /** The props that block bodies, as obstacles. */
@@ -1491,29 +1468,4 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     }
   }
   return stage;
-}
-
-// Smooth noise from 0 to 1: random values on a coarse lattice, blended.
-function valueNoise(
-  rng: RNG,
-  width: number,
-  depth: number,
-  cell: number,
-): (x: number, z: number) => number {
-  const cols = Math.ceil(width / cell) + 2;
-  const rows = Math.ceil(depth / cell) + 2;
-  const grid = Array.from({ length: cols * rows }, () => rng.random());
-  const at = (i: number, j: number): number => grid[j * cols + i];
-  const smooth = (t: number): number => t * t * (3 - 2 * t);
-  return (x, z) => {
-    const fx = x / cell;
-    const fz = z / cell;
-    const i = Math.floor(fx);
-    const j = Math.floor(fz);
-    const tx = smooth(fx - i);
-    const tz = smooth(fz - j);
-    const top = at(i, j) + (at(i + 1, j) - at(i, j)) * tx;
-    const bottom = at(i, j + 1) + (at(i + 1, j + 1) - at(i, j + 1)) * tx;
-    return top + (bottom - top) * tz;
-  };
 }

@@ -13,6 +13,9 @@ export interface FloorImage {
 const MORTAR = '#202020';
 const STONES = ['#3c3c3c', '#383838', '#414141', '#3a3938', '#353535', '#444343'];
 const PAD = 4;
+// The chasm's depths, and the rock lip along its far edges
+const CHASM = '#050505';
+const LIP = '#4e4c48';
 
 // Bare ground for the layers outside the city: earth on the surface, raw
 // rock on the chasm walls.
@@ -135,7 +138,37 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
     }
   }
 
+  // The chasm: tiles of black, with a lip of rock along the far edges, where
+  // the ground breaks off.
+  const holes = new Set((stage.chasm ?? []).map((c) => `${c.x - X0},${c.z - Z0}`));
+  const hole = (x: number, z: number): boolean => holes.has(`${x},${z}`);
+  for (const key of holes) {
+    const [x, z] = key.split(',').map(Number);
+    const corners = [
+      at(x - 0.5, z - 0.5),
+      at(x + 0.5, z - 0.5),
+      at(x + 0.5, z + 0.5),
+      at(x - 0.5, z + 0.5),
+    ];
+    poly(corners, CHASM);
+    ctx.strokeStyle = LIP;
+    ctx.lineWidth = zoom;
+    if (!hole(x, z - 1)) {
+      line(ctx, corners[0], corners[1]);
+    }
+    if (!hole(x - 1, z)) {
+      line(ctx, corners[3], corners[0]);
+    }
+  }
+
   return { canvas, ox, oy };
+}
+
+function line(ctx: CanvasRenderingContext2D, a: Pt, b: Pt): void {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
 }
 
 // Patches of earth or rock, and on the surface, tufts of dead grass.
