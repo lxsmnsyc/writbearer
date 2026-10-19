@@ -3,13 +3,13 @@ import { shiftDiscipline } from './morale';
 import type Unit from './unit';
 
 // First numbers for leveling. A run ends near level 25, as the skill-tree
-// design expects, after about 285 kills.
+// design expects. Areas swarm, so a plain kill is worth little.
 
 /** Stat points gained per level, to raise by hand. */
 export const STAT_POINTS = 3;
 // Experience for a kill, per monster level, by rank.
 const KILL_XP: Record<Rank, number> = {
-  [Rank.Normal]: 10,
+  [Rank.Normal]: 5,
   [Rank.Elite]: 35,
   [Rank.Boss]: 150,
 };

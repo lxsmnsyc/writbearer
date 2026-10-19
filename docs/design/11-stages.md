@@ -147,7 +147,9 @@ Not yet: water, ledges, grass, alarms, patrols, and Treasure and Shrine areas.
 
 ### Packs
 
-- Monsters stand in packs of 2 to 6.
+- Monsters stand in packs, as in Diablo, and an area can swarm. Each layer's factions set a pack's kinds and its size: swarms of fodder 6 to 12, mixed packs 4 to 8, packs of the strong 3 to 5. A pack stands as a crowd round its leader.
+- An area's monsters add up to a threat budget of 24, plus 6 per area, and 1.4 times that in an Elite area. A first Hunt holds about 18 monsters, a deep one about 65. A Labyrinth's dead end holds at most 6, a Horde's wave at most 15.
+- A plain monster is worth little: half the experience of before, and it drops equipment 15% of the time, gold 20%, a potion 15% and its card 3%.
 - A pack is idle, patrolling or alert.
 - An idle pack notices the party by sight, by light (the lantern) or by noise.
 - Noise comes from fights, explosions and alarm bells. A fight near another pack can pull it in.

@@ -47,7 +47,7 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 | Refine failure | Breaks the item and its cards. |
 | Vault | Storage for the current run. Opens only at the start of each phase. |
 | Crafting | Recipes and materials, based on Inotia 3. Unlimited Recipe Book. |
-| Card drops | 5% normal, 25% elite, 100% boss. |
+| Card drops | 3% normal, 25% elite, 100% boss. |
 | Between runs | Only the compendium and one suspended run are stored. No unlocks. |
 | Compendium | Hides monster, boss, card and unique details until discovered once. Only the UI hides them. |
 | Squad sets | Added after uniques are tested. |

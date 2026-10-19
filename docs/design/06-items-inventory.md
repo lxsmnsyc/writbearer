@@ -78,7 +78,7 @@ Equipment weight:
 - **The belt:** each merc has 3 belt slots of up to 5 potions. The Vanguard starts with 2 Healing Draughts, the Ranger with 2 and a Mana Tincture. Clicking a potion in the inventory puts it on the chosen merc's belt, under the same fight rule as gear. A merc drinks on its own: healing below its belt threshold, set in its orders at 50%, 30% or emergencies (15%), and mana below 25% in a fight if it has skills. One potion per second at most.
 - **The bearer drinks** a Healing Draught from the pack with Q.
 
-- **Cards and gems:** every monster kind but the Creditor drops its card: 5% of the time from a normal monster, 25% from an elite, always from a boss. Any monster may also drop a gem: 4%, 15% from an elite, 50% from a boss. In the pack, Socket beside a card sets it into the first item the chosen merc wears that it fits and that has a free socket, under the same fight rule as gear. It stays in that item for good, and works while the item is worn. Hovering an item lists its sockets and what is in them.
+- **Cards and gems:** every monster kind but the Creditor drops its card: 3% of the time from a normal monster, 25% from an elite, always from a boss. Any monster may also drop a gem: 2%, 15% from an elite, 50% from a boss. In the pack, Socket beside a card sets it into the first item the chosen merc wears that it fits and that has a free socket, under the same fight rule as gear. It stays in that item for good, and works while the item is worn. Hovering an item lists its sockets and what is in them.
 
 | Card | Fits | Effect |
 |---|---|---|
@@ -409,7 +409,7 @@ Based on Inotia 3's synthesis system, with crafted equipment as in Diablo 2.
 
 ## Loot budget
 
-A run has 4 phases of 8 nodes. About 19 of the nodes are fights, including 4 bosses, for about 285 kills. The party needs 32 equipment slots filled.
+A run has 4 phases of 8 nodes. About 19 of the nodes are fights, including 4 bosses, for about 700 kills now that areas swarm. The party needs 32 equipment slots filled.
 
 ### Sources
 

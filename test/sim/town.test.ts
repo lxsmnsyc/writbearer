@@ -154,8 +154,8 @@ describe('the Synthesis bench', () => {
     for (let i = 0; i < 400; i++) {
       bone += materialsFrom(rng, soldier).get('bone') ?? 0;
     }
-    expect(bone / 400).toBeGreaterThan(0.25);
-    expect(bone / 400).toBeLessThan(0.45);
+    expect(bone / 400).toBeGreaterThan(0.12);
+    expect(bone / 400).toBeLessThan(0.28);
   });
 });
 

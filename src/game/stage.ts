@@ -73,12 +73,19 @@ export function dropStage(
   sim.setWorld(kept.map(rectOf));
 }
 
+// How far apart a pack's monsters stand, and the turn between each, as a
+// sunflower's seeds
+const PACK_SPACING = 0.75;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
 // Spawns a stage's packs, and its boss a level above them.
 function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
     pack.kinds.forEach((kind, i) => {
-      const a = (i / pack.kinds.length) * Math.PI * 2;
-      const r = pack.kinds.length > 1 ? 1.1 : 0;
+      // Spread over a disc, the leader in the middle and the rest round it,
+      // so a big pack stands as a crowd and not a heap.
+      const a = i * GOLDEN_ANGLE;
+      const r = PACK_SPACING * Math.sqrt(i);
       // Never inside something solid, such as the altar at a sealing site,
       // where nothing could reach it.
       const x = pack.x + Math.cos(a) * r;

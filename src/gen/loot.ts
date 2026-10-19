@@ -75,8 +75,9 @@ const QUALITY_WEIGHTS: Record<Rank, [Quality, number][]> = {
 };
 
 // Chance that a monster drops equipment, and how many pieces, by rank.
+// Areas swarm, so a plain monster rarely drops anything.
 export const DROP_CHANCE: Record<Rank, number> = {
-  [Rank.Normal]: 0.3,
+  [Rank.Normal]: 0.15,
   [Rank.Elite]: 1,
   [Rank.Boss]: 1,
 };
@@ -86,7 +87,7 @@ export const DROP_COUNT: Record<Rank, number> = {
   [Rank.Boss]: 4,
 };
 // Chance of a pile of gold, apart from equipment.
-export const GOLD_CHANCE = 0.4;
+export const GOLD_CHANCE = 0.2;
 
 function weighted<T>(rng: RNG, entries: readonly [T, number][]): T {
   const total = entries.reduce((sum, [, w]) => sum + w, 0);
@@ -240,7 +241,7 @@ export function rollGold(rng: RNG, itemLevel: number): Item {
 }
 
 // Chance a monster drops a potion, apart from equipment and gold.
-export const POTION_CHANCE = 0.25;
+export const POTION_CHANCE = 0.15;
 
 /** A stack of potions, the strongest kind the item level allows half the time. */
 export function rollPotion(rng: RNG, itemLevel: number, quantity = 1): Item {
@@ -273,12 +274,12 @@ export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
 
 // Chance a monster drops its card, by rank, and a gem, from the items design.
 const CARD_CHANCE: Record<Rank, number> = {
-  [Rank.Normal]: 0.05,
+  [Rank.Normal]: 0.03,
   [Rank.Elite]: 0.25,
   [Rank.Boss]: 1,
 };
 const GEM_CHANCE: Record<Rank, number> = {
-  [Rank.Normal]: 0.04,
+  [Rank.Normal]: 0.02,
   [Rank.Elite]: 0.15,
   [Rank.Boss]: 0.5,
 };

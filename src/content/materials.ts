@@ -43,12 +43,12 @@ const BY_ELEMENT: Partial<Record<Element, string>> = {
 
 // Chance and count of a race's material, and of an element's essence, by rank
 const RACE_DROP: Record<Rank, [number, number]> = {
-  [Rank.Normal]: [0.35, 1],
+  [Rank.Normal]: [0.2, 1],
   [Rank.Elite]: [1, 2],
   [Rank.Boss]: [1, 4],
 };
 const ESSENCE_DROP: Record<Rank, [number, number]> = {
-  [Rank.Normal]: [0.1, 1],
+  [Rank.Normal]: [0.05, 1],
   [Rank.Elite]: [0.5, 1],
   [Rank.Boss]: [1, 2],
 };

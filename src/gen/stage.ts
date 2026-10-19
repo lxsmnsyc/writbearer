@@ -983,45 +983,65 @@ function distanceToSegment(p: Spot, a: Spot, b: Spot): number {
 // The packs a stage can field, by how deep it is: weak things near the
 // surface, the Church's mad and the Old King's guard further down.
 // Each layer's packs, as the lore lays the Hollow out. `from` is the first
-// area of the layer, from 0, a pack can appear in.
-const FACTIONS: { layer: number; from: number; kinds: MonsterKind[] }[] = [
+// area of the layer, from 0, a pack can appear in. A pack is its kinds over
+// and over until it is `size` strong: swarms of the weak, fewer of the
+// strong.
+interface Faction {
+  layer: number;
+  from: number;
+  kinds: MonsterKind[];
+  size: [number, number];
+}
+
+// Swarms of fodder, mixed packs, and packs of the strong
+const SWARM: [number, number] = [6, 12];
+const MIXED: [number, number] = [4, 8];
+const STRONG: [number, number] = [3, 5];
+
+const FACTIONS: Faction[] = [
   // The Marches: the Blight at the rim, the drowned, and the Church's first keepers
-  { layer: 0, from: 0, kinds: ['mite', 'mite', 'mite'] },
-  { layer: 0, from: 0, kinds: ['husk', 'husk', 'husk'] },
-  { layer: 0, from: 0, kinds: ['husk', 'mite', 'mite'] },
-  { layer: 0, from: 2, kinds: ['crawler', 'mite', 'mite'] },
-  { layer: 0, from: 2, kinds: ['hollowSoldier', 'husk', 'husk'] },
-  { layer: 0, from: 4, kinds: ['penitent', 'penitent', 'husk'] },
-  { layer: 0, from: 4, kinds: ['crawler', 'crawler', 'crawler'] },
-  { layer: 0, from: 4, kinds: ['hollowSoldier', 'hollowSoldier'] },
-  { layer: 0, from: 5, kinds: ['penitent', 'penitent', 'hollowed'] },
-  { layer: 0, from: 6, kinds: ['hollowed', 'hollowed'] },
+  { layer: 0, from: 0, kinds: ['mite'], size: SWARM },
+  { layer: 0, from: 0, kinds: ['husk'], size: SWARM },
+  { layer: 0, from: 0, kinds: ['husk', 'mite', 'mite'], size: MIXED },
+  { layer: 0, from: 2, kinds: ['crawler', 'mite', 'mite'], size: MIXED },
+  { layer: 0, from: 2, kinds: ['hollowSoldier', 'husk', 'husk', 'husk'], size: MIXED },
+  { layer: 0, from: 4, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
+  { layer: 0, from: 4, kinds: ['crawler'], size: MIXED },
+  { layer: 0, from: 4, kinds: ['hollowSoldier'], size: STRONG },
+  { layer: 0, from: 5, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
+  { layer: 0, from: 6, kinds: ['hollowed'], size: STRONG },
   // The Rift Road: the Old King's guard holds the road down
-  { layer: 1, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'husk'] },
-  { layer: 1, from: 0, kinds: ['hollowSoldier', 'husk', 'husk'] },
-  { layer: 1, from: 0, kinds: ['crawler', 'crawler', 'mite'] },
-  { layer: 1, from: 2, kinds: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'] },
-  { layer: 1, from: 4, kinds: ['hollowSoldier', 'hollowSoldier', 'penitent'] },
+  { layer: 1, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'husk'], size: MIXED },
+  { layer: 1, from: 0, kinds: ['hollowSoldier', 'husk', 'husk', 'husk'], size: MIXED },
+  { layer: 1, from: 0, kinds: ['crawler', 'mite', 'mite'], size: SWARM },
+  { layer: 1, from: 2, kinds: ['hollowSoldier'], size: STRONG },
+  { layer: 1, from: 4, kinds: ['penitent', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
   // The Drowned Undercroft: the Church's keepers and the drowned
-  { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'husk'] },
-  { layer: 2, from: 0, kinds: ['husk', 'husk', 'husk'] },
-  { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'cantor'] },
-  { layer: 2, from: 3, kinds: ['penitent', 'penitent', 'penitent'] },
-  { layer: 2, from: 4, kinds: ['penitent', 'hollowed'] },
+  { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
+  { layer: 2, from: 0, kinds: ['husk'], size: SWARM },
+  { layer: 2, from: 0, kinds: ['cantor', 'penitent', 'penitent', 'penitent'], size: MIXED },
+  { layer: 2, from: 3, kinds: ['penitent'], size: MIXED },
+  { layer: 2, from: 4, kinds: ['hollowed', 'penitent'], size: STRONG },
   // The Sunken Crown: the mad, and the last of the guard
-  { layer: 3, from: 0, kinds: ['hollowed', 'hollowed'] },
-  { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'] },
-  { layer: 3, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'cantor'] },
-  { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'hollowed'] },
+  { layer: 3, from: 0, kinds: ['hollowed'], size: STRONG },
+  { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
+  { layer: 3, from: 0, kinds: ['cantor', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
+  { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'husk', 'husk'], size: MIXED },
 ];
+
+/** A pack of a faction: its kinds over and over, as many as its size rolls, at most `cap`. */
+function packOf(rng: RNG, f: Faction, cap = Infinity): MonsterKind[] {
+  const n = Math.min(cap, rng.int(f.size[0], f.size[1]));
+  return Array.from({ length: n }, (_, i) => f.kinds[i % f.kinds.length]);
+}
 
 // A pack straying on the way to a boss: the Brood Mother's mites in
 // the Marches, the layer's own packs below.
 function approachPack(rng: RNG, layer: number): MonsterKind[] {
   if (layer === 0) {
-    return ['mite', 'mite', 'mite'];
+    return packOf(rng, FACTIONS[0]);
   }
-  return [...rng.pick(FACTIONS.filter((f) => f.layer === layer && f.from === 0)).kinds];
+  return packOf(rng, rng.pick(FACTIONS.filter((f) => f.layer === layer && f.from === 0)));
 }
 
 /** The level of a stage's monsters: low near the surface, one more each stage. */
@@ -1031,30 +1051,47 @@ export const monsterLevel = (index: number): number => 2 + index;
 // then more, then a Cantor to sing for them.
 function siteKeepers(index: number): MonsterKind[] {
   if (index < 2) {
-    return ['penitent'];
+    return ['penitent', 'penitent', 'penitent'];
   }
-  return index < 4 ? ['penitent', 'penitent'] : ['penitent', 'penitent', 'cantor'];
+  return index < 4
+    ? ['penitent', 'penitent', 'penitent', 'penitent']
+    : ['cantor', 'penitent', 'penitent', 'penitent', 'penitent'];
 }
 
 // What holds the lair, by depth, and below the Marches by layer.
 function lairPack(index: number, layer: number): MonsterKind[] {
+  // The leader first: an elite leads the lair from deep enough.
   if (layer === 2) {
-    return ['penitent', 'penitent', 'cantor'];
+    return ['cantor', 'penitent', 'penitent', 'penitent', 'penitent', 'husk', 'husk'];
   }
   if (layer === 3) {
-    return ['hollowed', 'hollowed', 'hollowed'];
+    return ['hollowed', 'hollowed', 'hollowed', 'hollowed', 'penitent', 'penitent'];
   }
   if (index < 2) {
-    return ['husk', 'husk', 'husk'];
+    return ['husk', 'husk', 'husk', 'husk', 'husk', 'husk'];
   }
   return index < 4
-    ? ['hollowSoldier', 'husk', 'husk']
-    : ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'];
+    ? ['hollowSoldier', 'husk', 'husk', 'husk', 'husk', 'husk']
+    : ['hollowSoldier', 'hollowSoldier', 'hollowSoldier', 'husk', 'husk', 'husk', 'husk'];
 }
 
 // An elite leads the lair's pack from this stage on.
 const ELITE_FROM = 4;
+const BUDGET_BASE = 24;
+const BUDGET_STEP = 6;
 const ELITE_BUDGET = 1.4;
+
+// The packs a stage's layer fields at its depth.
+const factionPool = (stage: Stage): Faction[] =>
+  FACTIONS.filter((f) => f.layer === stage.biome && f.from <= stage.index % AREAS_PER_LAYER);
+
+/**
+ * The threat an area's monsters add up to: much more than a few small packs,
+ * so the field can swarm, and more each area. An Elite area holds more.
+ */
+export function areaBudget(index: number, elite: boolean): number {
+  return (BUDGET_BASE + index * BUDGET_STEP) * (elite ? ELITE_BUDGET : 1);
+}
 
 function placePacks(
   stage: Stage,
@@ -1063,11 +1100,8 @@ function placePacks(
   eliteArea = false,
 ): void {
   // An Elite area holds more, and its lair always has an elite.
-  let budget = (9 + stage.index * 5) * (eliteArea ? ELITE_BUDGET : 1);
-  const layer = stage.biome;
-  const pool = FACTIONS.filter(
-    (f) => f.layer === layer && f.from <= stage.index % AREAS_PER_LAYER,
-  ).map((f) => f.kinds);
+  let budget = areaBudget(stage.index, eliteArea);
+  const pool = factionPool(stage);
   const cost = (kinds: MonsterKind[], elite: number): number =>
     kinds.reduce((sum, k) => sum + THREAT[k], 0) + (elite >= 0 ? ELITE_THREAT : 0);
   const push = (pack: Pack): void => {
@@ -1091,13 +1125,13 @@ function placePacks(
   });
   // A pack watches the first breach in the wall, from the far side.
   const breach = places.breach;
-  push({ kinds: [...rng.pick(pool)].slice(0, 2), x: breach.x + 2.5, z: breach.z, elite: -1 });
+  push({ kinds: packOf(rng, rng.pick(pool)), x: breach.x + 2.5, z: breach.z, elite: -1 });
   const nav = navFor(stage);
   for (let i = 0; i < 40; i++) {
     if (budget <= 0) {
       break;
     }
-    const kinds = [...rng.pick(pool)].slice(0, rng.int(2, 3));
+    const kinds = packOf(rng, rng.pick(pool));
     if (cost(kinds, -1) > budget) {
       break;
     }
@@ -1118,17 +1152,13 @@ function placePacks(
   }
 }
 
-// The packs a stage's layer fields at its depth.
-const factionPool = (stage: Stage): MonsterKind[][] =>
-  FACTIONS.filter((f) => f.layer === stage.biome && f.from <= stage.index % AREAS_PER_LAYER).map(
-    (f) => [...f.kinds],
-  );
-
 // A Horde's waves: 4, one more in an Elite area and one more below the
 // Marches, each a little stronger, 20 seconds apart unless beaten sooner.
 const HORDE_WAVES = 4;
 const WAVE_GAP = 20;
 const FIRST_WAVE = 3;
+// The most monsters in one wave
+const WAVE_MOST = 15;
 
 /**
  * A Horde's waves, from the threat budget a stage's packs would have had,
@@ -1138,7 +1168,7 @@ const FIRST_WAVE = 3;
  */
 function buildWaves(stage: Stage, rng: RNG, elite: boolean): Wave[] {
   const count = HORDE_WAVES + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0);
-  const total = (9 + stage.index * 5) * (elite ? ELITE_BUDGET : 1) * 1.2;
+  const total = areaBudget(stage.index, elite);
   const pool = factionPool(stage);
   const nav = navFor(stage);
   const edge = (): Spot => {
@@ -1157,9 +1187,8 @@ function buildWaves(stage: Stage, rng: RNG, elite: boolean): Wave[] {
     // Later waves are stronger: shares rising from 0.6 to 1.4 of the mean
     let budget = (total / count) * (0.6 + (0.8 * w) / Math.max(1, count - 1));
     const kinds: MonsterKind[] = [];
-    while (budget > 0 && kinds.length < 9) {
-      const group = rng.pick(pool);
-      for (const k of group) {
+    while (budget > 0 && kinds.length < WAVE_MOST) {
+      for (const k of packOf(rng, rng.pick(pool), WAVE_MOST - kinds.length)) {
         kinds.push(k);
         budget -= THREAT[k];
       }
@@ -1181,6 +1210,8 @@ const MAZE_COLUMNS = 14;
 const MAZE_ROWS = 9;
 // Walls taken down at random after the maze is carved, so it has loops
 const MAZE_LOOPS = 0.12;
+// The most monsters a dead end holds
+const MAZE_PACK = 6;
 
 /**
  * A Labyrinth: a maze of ruined walls cut into square cells, carved from
@@ -1312,7 +1343,7 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     z: j * CELL + CELL / 2,
   });
   const elite = plan.kind === 'elite';
-  let budget = (9 + index * 5) * (elite ? ELITE_BUDGET : 1) * 0.8;
+  let budget = areaBudget(index, elite) * 0.8;
   const pool = factionPool(stage);
   const used = new Set<number>();
   for (const [i, j] of cells) {
@@ -1322,7 +1353,8 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     if (walls(i, j) < 3 || i < 2) {
       continue;
     }
-    const kinds = [...rng.pick(pool)].slice(0, rng.int(2, 3));
+    // A dead end holds no more than this many
+    const kinds = packOf(rng, rng.pick(pool), MAZE_PACK);
     const at = middle(i, j);
     const lead = stage.packs.length === 0 && (elite || index >= ELITE_FROM) ? 0 : -1;
     stage.packs.push({ kinds, x: at.x, z: at.z, elite: lead });

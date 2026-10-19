@@ -25,7 +25,7 @@ describe('card drops', () => {
     }
   });
 
-  it('come 5% of the time from normal monsters, always from bosses', () => {
+  it('come 3% of the time from normal monsters, always from bosses', () => {
     const rng = new RNG(7);
     let cards = 0;
     for (let i = 0; i < 4000; i++) {
@@ -33,8 +33,8 @@ describe('card drops', () => {
         (c) => c.base === CARD_BY_MONSTER.husk,
       ).length;
     }
-    expect(cards / 4000).toBeGreaterThan(0.035);
-    expect(cards / 4000).toBeLessThan(0.065);
+    expect(cards / 4000).toBeGreaterThan(0.02);
+    expect(cards / 4000).toBeLessThan(0.04);
     const boss = rollCards(rng, 'gatekeeper', Rank.Boss);
     expect(boss.some((c) => c.base === CARD_BY_MONSTER.gatekeeper)).toBe(true);
   });
