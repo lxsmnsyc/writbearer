@@ -3,7 +3,7 @@ import RNG from '../../src/core/rng';
 import ObjectiveRun, { WAVE_WARNING } from '../../src/game/objective';
 import { enterStage, spawnParty } from '../../src/game/stage';
 import { generateLayerMap } from '../../src/gen/graph';
-import { type Stage, generateStage, navFor } from '../../src/gen/stage';
+import { type Stage, generateStage, navFor, openGate } from '../../src/gen/stage';
 import Hazards from '../../src/game/hazards';
 import { spawnMonster } from '../../src/content/roster';
 import { updateWarnings, warn } from '../../src/sim/warning';
@@ -189,6 +189,26 @@ describe('a Labyrinth', () => {
       expect(stage.props.filter((p) => p.kind === 'wall').length).toBeGreaterThan(150);
       expect(stage.hazards!.length).toBeGreaterThanOrEqual(10);
       expect(stage.packs.length).toBeGreaterThan(0);
+      // Shut, the gates keep the party from the hall, but not from the levers.
+      const shut = navFor(stage);
+      for (const e of stage.exits) {
+        const end = shut.path(stage.entrance, e).at(-1);
+        expect(end === undefined || Math.hypot(end.x - e.x, end.z - e.z) > 1).toBe(true);
+      }
+      const levers = stage.gates!.filter((g) => g.lever);
+      expect(levers.length).toBeGreaterThan(0);
+      for (const g of levers) {
+        const end = shut.path(stage.entrance, g.lever!).at(-1)!;
+        expect(Math.hypot(end.x - g.lever!.x, end.z - g.lever!.z)).toBeLessThan(1.5);
+      }
+      expect(stage.packs.filter((p) => p.key !== undefined)).toHaveLength(1);
+      // Even with every floor fallen in, the way through stays once the gates open.
+      for (const h of stage.hazards!.filter((x) => x.kind === 'floor')) {
+        stage.props.push({ kind: 'pit', x: h.x, z: h.z, r: 1, seed: 0 });
+      }
+      for (const g of stage.gates!) {
+        openGate(g);
+      }
       const nav = navFor(stage);
       for (const e of stage.exits) {
         const end = nav.path(stage.entrance, e).at(-1)!;
@@ -233,6 +253,80 @@ describe('a Labyrinth', () => {
     expect(sim.warnings).toHaveLength(0);
     expect(bearer.hp).toBe(hp - Math.round(bearer.derived.maxHp * 0.12));
     expect(mite.hp).toBeLessThan(mite.derived.maxHp);
+  });
+});
+
+describe('a deep Labyrinth', () => {
+  const deep = (seed: number): Stage =>
+    generateStage(new RNG(seed), 12, { kind: 'combat', ahead: ['combat'], objective: 'maze' });
+
+  it('holds the new traps, and two gates with levers', () => {
+    const kinds = new Set<string>();
+    for (let seed = 1; seed <= 12; seed++) {
+      const stage = deep(seed);
+      for (const h of stage.hazards!) {
+        kinds.add(h.kind);
+      }
+      expect(stage.gates!.filter((g) => g.lever).length).toBeLessThanOrEqual(2);
+    }
+    expect([...kinds].sort((a, b) => a.localeCompare(b))).toEqual([
+      'arrows',
+      'blade',
+      'floor',
+      'spikes',
+      'vent',
+    ]);
+  });
+
+  it('fires its arrows down the corridor, and swings its blade side to side', () => {
+    const stage = deep(1);
+    const arrows = { kind: 'arrows', x: 10, z: 10, period: 4, phase: 0, axis: 'x' } as const;
+    const blade = { kind: 'blade', x: 30, z: 10, period: 2, phase: 0, axis: 'x' } as const;
+    stage.hazards = [arrows, blade];
+    const sim = new Sim(1);
+    const traps = new Hazards(stage);
+    traps.update(sim, 4.01);
+    const shapes = sim.warnings.map((w) => w.shape);
+    expect(shapes[0]).toMatchObject({ kind: 'line', z2: 10 });
+    expect(sim.warnings[0].z).toBe(10);
+    // The blade runs across the corridor, off to one side of the middle.
+    expect(sim.warnings[1].x).not.toBe(30);
+    expect(shapes[1].kind === 'line' && shapes[1].x2).toBe(sim.warnings[1].x);
+  });
+
+  it('drops a floor under the party, which stays a pit', () => {
+    const stage = deep(1);
+    stage.hazards = [{ kind: 'floor', x: 10, z: 10, period: 0, phase: 0 }];
+    const sim = new Sim(1);
+    const bearer = spawnParty(sim, stage, []);
+    const pits: unknown[] = [];
+    const traps = new Hazards(stage, (h) => {
+      pits.push(h);
+    });
+    bearer.x = 30;
+    traps.update(sim, 0.05);
+    expect(sim.warnings).toHaveLength(0);
+    bearer.x = 10;
+    bearer.z = 10;
+    traps.update(sim, 0.05);
+    expect(sim.warnings).toHaveLength(1);
+    const hp = bearer.hp;
+    sim.run(1);
+    expect(bearer.hp).toBeLessThan(hp);
+    expect(pits).toHaveLength(1);
+    traps.update(sim, 0.05);
+    expect(sim.warnings).toHaveLength(0);
+  });
+
+  it('keeps the hall locked until the key is taken', () => {
+    const stage = deep(2);
+    const run = new ObjectiveRun('maze', stage);
+    const sim = new Sim(1);
+    expect(run.status(sim)).toMatch(/locked/);
+    for (const g of stage.gates!.filter((x) => !x.lever)) {
+      expect(openGate(g).length).toBeGreaterThan(0);
+    }
+    expect(run.status(sim)).toMatch(/far end/);
   });
 });
 

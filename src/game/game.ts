@@ -14,6 +14,7 @@ import {
   type Exit,
   type ExitSide,
   type Fight,
+  type Gate,
   type Prop,
   type Stage,
   generateGuild,
@@ -21,6 +22,7 @@ import {
   generateTomb,
   generateWaystation,
   monsterLevel,
+  openGate,
   rectOf,
   withFightsAhead,
 } from '../gen/stage';
@@ -130,6 +132,8 @@ const EXIT_REACH = 1.2;
 // The bearer picks up an item, or opens a chest, from this close.
 const PICK_REACH = 0.8;
 const CHEST_REACH = 1.3;
+// The bearer pulls a lever from this close.
+const LEVER_REACH = 1.3;
 // How near a click must land to a chest, in tiles, to open it
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
@@ -825,6 +829,12 @@ export default class Game {
       applySets(this.sim);
     });
     this.sim.on(SimEvents.UnitDies, EventPriority.Post, (event) => {
+      // The key to a Labyrinth's hall falls where its bearer dies.
+      if (event.source.bearsKey) {
+        const { x, z } = event.source;
+        this.stage.props.push({ kind: 'key', x, z, seed: 0.5 });
+        this.say('The key to the hall falls from the dead.');
+      }
       if (event.source.side === Side.Monster) {
         this.slain++;
         this.compendium.beat(event.source.kind);
@@ -1149,7 +1159,16 @@ export default class Game {
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
-    this.hazards = this.stage.hazards ? new Hazards(this.stage) : null;
+    const here = this.stage;
+    this.hazards = here.hazards
+      ? new Hazards(here, (h) => {
+          // A floor that gave way stays a pit.
+          const pit: Prop = { kind: 'pit', x: h.x, z: h.z, r: 1, seed: 0.5 };
+          here.props.push(pit);
+          this.sim.obstacles.push({ x: pit.x, z: pit.z, r: 1 });
+          this.sim.setWorld(this.sim.floor);
+        })
+      : null;
     const node = this.stage.objective ? this.here() : null;
     this.prize = node?.reward ?? null;
     this.sim.spared = this.prize === 'respite';
@@ -1291,6 +1310,46 @@ export default class Game {
       const loot = this.streams.get(1, Stream.Loot);
       this.scatter([rollGold(loot, 6 + this.stageIndex)], { x: at.x - 1, z: at.z });
     }
+  }
+
+  // In a Labyrinth, the bearer picks up the key a slain monster dropped,
+  // which opens the hall's gates, and pulls the levers it walks up to.
+  private workMaze(): void {
+    const b = this.bearer;
+    const gates = this.stage.gates;
+    if (!b.alive || !gates) {
+      return;
+    }
+    const key = this.stage.props.find(
+      (p) => p.kind === 'key' && !p.open && b.distanceTo(p) <= PICK_REACH + 0.4,
+    );
+    if (key) {
+      key.open = true;
+      this.stage.props.splice(this.stage.props.indexOf(key), 1);
+      this.openGates(gates.filter((g) => !g.lever));
+      this.say('The bearer takes the key. The gates of the hall open.');
+    }
+    for (const g of gates) {
+      if (g.lever && !g.open && b.distanceTo(g.lever) <= LEVER_REACH) {
+        this.openGates([g]);
+        this.say('The bearer pulls the lever. A gate in the maze grinds open.');
+      }
+    }
+  }
+
+  // Opens gates, and takes their bars out of the way.
+  private openGates(list: Gate[]): void {
+    const gone = list.flatMap((g) => openGate(g));
+    if (gone.length === 0) {
+      return;
+    }
+    const obstacles = this.sim.obstacles;
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      if (gone.some((g) => g.x === obstacles[i].x && g.z === obstacles[i].z)) {
+        obstacles.splice(i, 1);
+      }
+    }
+    this.sim.setWorld(this.sim.floor);
   }
 
   // Monsters awake are seen, for the compendium.
@@ -2234,6 +2293,7 @@ export default class Game {
         this.visitStation();
         this.visitTown();
         this.visitEvent();
+        this.workMaze();
         this.noteMonsters();
         this.hazards?.update(this.sim, TICK);
         this.mutators.update(TICK);

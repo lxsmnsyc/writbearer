@@ -79,7 +79,7 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
     pack.kinds.forEach((kind, i) => {
       const a = (i / pack.kinds.length) * Math.PI * 2;
       const r = pack.kinds.length > 1 ? 1.1 : 0;
-      spawnMonster(
+      const u = spawnMonster(
         sim,
         kind,
         monsterLevel(stage.index),
@@ -88,7 +88,9 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
         {
           elite: i === pack.elite,
         },
-      ).marked = i === pack.marked;
+      );
+      u.marked = i === pack.marked;
+      u.bearsKey = i === pack.key;
     });
   }
   // A boss stands a level above the layer's last packs would.

@@ -261,10 +261,10 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         Labyrinth once the way through is found. The small mark beside a fight is what its chest
         pays: gold, arms for the party, a card, materials, or a respite that heals the party and
         keeps its dead whole. A fight's mutators, in red under its name, make it harder and add an
-        item to its chest. Elites are harder, always have one, and pay better. At a Camp the
-        party rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
-        taken collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span>{' '}
-        to close.
+        item to its chest. Elites are harder, always have one, and pay better. At a Camp the party
+        rests back to full. A Town has a smith, a bench, a temple and a market. The roads not taken
+        collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span> to
+        close.
       </p>
     </Panel>
   );

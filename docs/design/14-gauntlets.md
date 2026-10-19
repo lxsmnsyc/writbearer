@@ -153,6 +153,11 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 | Falling floor | A square of floor that drops away after it is stepped on, shown first. It stays open, which can cut a route. |
 | Gas vent | Leaves a Venom cloud that lasts a few seconds. |
 
+- In the game so far:
+  - One pack's leader carries the key, shown as a gold key over its head. It drops where it dies, and the bearer picks it up by walking over it. The hall's gates then open.
+  - One inner gate, two from area 9 down, each cuts off part of the maze. Its lever stands in a cell the party can reach with every gate shut. The bearer pulls a lever by walking up to it. Shortcut levers are not in yet.
+  - Arrow slits, swinging blades and falling floors are in. Gas vents are not, since zones need an owner. The Marches have spikes, vents and arrow slits. Blades and falling floors come from the Rift Road down.
+  - A floor falls in only in a cell the maze stays connected without, so a pit never cuts the only way.
 - **The stalker.** From the Rift Road down, some Labyrinths hold a mini-boss that walks the maze toward the bearer from the start. It cannot be killed until the hall. It can be slowed with snares and doors.
 - **Darkness.** The maze's walls block light as they block sight. Lanterns on the walls light parts of it.
 - **Kinds of maze.** Each Labyrinth rolls one:
@@ -190,7 +195,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 3. Wave warnings and the next wave in the Horde's badge. Done.
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
-6. The Labyrinth's key, gates and new traps.
+6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
 7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush.
 
 ## Open questions

@@ -157,6 +157,10 @@ export default class ObjectiveRun {
       const soon = Math.max(0, Math.ceil(wave.delay - this.clock));
       return `Wave ${this.next} of ${waves.length} · next in ${soon}s · ${left} left`;
     }
+    const locked = (this.stage.gates ?? []).some((g) => !g.lever && g.open !== true);
+    if (locked) {
+      return 'The hall is locked. One of the maze’s monsters carries the key.';
+    }
     return 'Find the way through to the hall at the far end.';
   }
 }

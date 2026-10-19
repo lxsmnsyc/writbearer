@@ -177,6 +177,8 @@ export default class Unit {
   marked = false;
   runningTo: { x: number; z: number } | null = null;
   ran = false;
+  // A Labyrinth's monster that carries the key to its hall
+  bearsKey = false;
   // Where a monster last saw whom it was after, to look for it there
   lastSeen: { x: number; z: number } | null = null;
   toggles: Toggles | undefined;

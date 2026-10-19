@@ -737,6 +737,15 @@ export default class Renderer {
     const { ctx } = this;
     for (const u of f.sim.living()) {
       const r = f.views.rig(u, f.alpha);
+      // The key to a Labyrinth's hall glints over whoever carries it.
+      if (u.bearsKey) {
+        const b = this.iso(r.x, r.z);
+        const top = b.y - Math.round((barHeight(u) + 10) * look.zoom);
+        ctx.fillStyle = C.gold;
+        ctx.fillRect(b.x - 3, top, 3, 3);
+        ctx.fillRect(b.x, top + 1, 4, 1);
+        ctx.fillRect(b.x + 3, top + 2, 1, 2);
+      }
       // A Hunt's quarry is marked even in the dark, so the party can find it.
       if (u.marked) {
         const b = this.iso(r.x, r.z);
@@ -1606,6 +1615,46 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     block(ctx, pt(base.x - 4, base.y - 1), r * 0.6, 6 + p.seed * 6, p.seed);
     block(ctx, pt(base.x + 5, base.y + 2), r * 0.5, 4 + p.seed * 4, 1 - p.seed);
     block(ctx, pt(base.x, base.y + 4), r * 0.4, 3, p.seed * 0.5);
+  } else if (p.kind === 'gate') {
+    // Iron bars between the maze's walls. Open, only their stubs show.
+    const h = p.open === true ? 2 : 22;
+    for (const dx of [-3, 0, 3]) {
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(base.x + dx, base.y - h, 1, h);
+    }
+    if (p.open !== true) {
+      ctx.fillStyle = C.stoneLine;
+      ctx.fillRect(base.x - 4, base.y - h, 9, 1);
+      ctx.fillRect(base.x - 4, base.y - 10, 9, 1);
+    }
+  } else if (p.kind === 'lever') {
+    // A lever in a stone socket, leaning one way until it is pulled.
+    block(ctx, base, 0.25, 4, 0.5);
+    const lean = p.open === true ? 5 : -5;
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(base.x + 0.5, base.y - 4);
+    ctx.lineTo(base.x + 0.5 + lean, base.y - 13);
+    ctx.stroke();
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(base.x + lean - 1, base.y - 15, 3, 3);
+  } else if (p.kind === 'key') {
+    // The hall's key on the floor, in gold.
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(base.x - 3, base.y - 2, 3, 3);
+    ctx.fillRect(base.x, base.y - 1, 4, 1);
+    ctx.fillRect(base.x + 3, base.y, 1, 2);
+  } else if (p.kind === 'pit') {
+    // Where the floor fell in.
+    const corner = (dx: number, dz: number): Pt =>
+      pt(base.x + (dx - dz) * 16, base.y + (dx + dz) * 8);
+    fillPoly(
+      ctx,
+      [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)],
+      C.void,
+      C.stoneLine,
+    );
   } else if (p.kind === 'chest') {
     block(ctx, base, 0.32, 9, 0.5, C.wood);
     ctx.fillStyle = C.gold;

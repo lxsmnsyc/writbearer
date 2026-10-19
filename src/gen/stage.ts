@@ -27,7 +27,11 @@ export type PropKind =
   | 'bench'
   | 'chapel'
   | 'stall'
-  | 'campfire';
+  | 'campfire'
+  | 'gate'
+  | 'lever'
+  | 'key'
+  | 'pit';
 
 export interface Prop {
   kind: PropKind;
@@ -53,6 +57,8 @@ export interface Pack {
   z: number;
   // Index into `kinds` of the elite, or -1
   elite: number;
+  // Index into `kinds` of a Labyrinth's key-bearer, if the pack has one
+  key?: number;
   // Index into `kinds` of a Hunt's marked monster, if the pack has one
   marked?: number;
 }
@@ -154,6 +160,35 @@ export interface Stage {
   // A Labyrinth's traps, and its hall at the far end, which is its goal
   hazards?: Hazard[];
   goal?: Rect;
+  // A Labyrinth's gates: across corridors, opened by levers, and into the
+  // hall, opened by the key
+  gates?: Gate[];
+}
+
+/** A gate across a Labyrinth's corridor, and the lever that opens it. The hall's gates have none: the key opens them. */
+export interface Gate {
+  blocks: Prop[];
+  lever?: Prop;
+  open?: boolean;
+}
+
+/**
+ * Opens a gate: its bars drop, so they no longer block. Returns where they
+ * stood, to take them out of the simulation's obstacles.
+ */
+export function openGate(gate: Gate): Spot[] {
+  if (gate.open === true) {
+    return [];
+  }
+  gate.open = true;
+  if (gate.lever) {
+    gate.lever.open = true;
+  }
+  for (const b of gate.blocks) {
+    b.r = undefined;
+    b.open = true;
+  }
+  return gate.blocks.map((b) => ({ x: b.x, z: b.z }));
 }
 
 /** The floor an area covers, where it lies. */
@@ -170,12 +205,39 @@ export const rectOf = (stage: Stage): Rect => ({
  * Spikes are quick and small; fire vents slow, wide and hard.
  */
 export interface Hazard {
-  kind: 'spikes' | 'vent';
+  kind: HazardKind;
   x: number;
   z: number;
   period: number;
   phase: number;
+  // The way a corridor runs through it, for arrow slits and blades
+  axis?: 'x' | 'z';
 }
+
+/**
+ * A Labyrinth's traps, from the gauntlets design. Each keeps a fixed beat.
+ *
+ * - Spikes: a square that strikes, quick and small.
+ * - Vent: a circle of fire, slow, wide and hard.
+ * - Arrows: a bolt along the corridor, shown as a line first.
+ * - Blade: sweeps across the corridor, one side of the cell then the other.
+ * - Floor: drops away once the party steps on it, and stays a pit.
+ */
+export type HazardKind = 'spikes' | 'vent' | 'arrows' | 'blade' | 'floor';
+
+// The traps a Labyrinth may hold, by how deep it is: the new kinds come in
+// after the first layer.
+const TRAPS_SHALLOW: readonly HazardKind[] = ['spikes', 'spikes', 'vent', 'arrows'];
+const TRAPS_DEEP: readonly HazardKind[] = ['spikes', 'vent', 'arrows', 'blade', 'floor'];
+const TRAP_PERIOD: Record<HazardKind, number> = {
+  spikes: 3,
+  vent: 5,
+  arrows: 4,
+  blade: 2,
+  floor: 0,
+};
+// Inner gates in a Labyrinth: one, and two deeper in
+const GATES_DEEP_FROM = 8;
 
 /** One wave of a Horde: what comes, from where on the edge, and how long after the last. */
 export interface Wave {
@@ -283,6 +345,8 @@ const SOLID: Partial<Record<PropKind, number>> = {
   chapel: 1.1,
   stall: 0.6,
   strongbox: 0.4,
+  gate: 0.5,
+  pit: 1,
 };
 
 // Threat each monster costs from a stage's budget. An elite costs more.
@@ -1272,17 +1336,115 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     add('chest', at.x, at.z);
     used.add(key(...cache));
   }
+  // The cells the party reaches from the entrance with some passages shut
+  // and some cells fallen in
+  const pits = new Set<number>();
+  const reachable = (
+    shut: ReadonlySet<string>,
+    fallen: ReadonlySet<number> = pits,
+  ): Set<number> => {
+    const seen2 = new Set([key(0, startRow)]);
+    const todo: [number, number][] = [[0, startRow]];
+    for (let next = todo.pop(); next; next = todo.pop()) {
+      const [i, j] = next;
+      const ways: [number, number, boolean][] = [
+        [i + 1, j, i < hall - 1 && !east[i][j]],
+        [i - 1, j, i > 0 && !east[i - 1][j]],
+        [i, j + 1, j < MAZE_ROWS - 1 && !south[i][j]],
+        [i, j - 1, j > 0 && !south[i][j - 1]],
+      ];
+      for (const [a, b, open] of ways) {
+        const id = [Math.min(i, a), Math.min(j, b), Math.max(i, a), Math.max(j, b)].join();
+        if (open && !shut.has(id) && !seen2.has(key(a, b)) && !fallen.has(key(a, b))) {
+          seen2.add(key(a, b));
+          todo.push([a, b]);
+        }
+      }
+    }
+    return seen2;
+  };
   const traps = 8 + Math.floor(index / 2) + (elite ? 3 : 0);
+  const kinds = index >= AREAS_PER_LAYER ? TRAPS_DEEP : TRAPS_SHALLOW;
   for (const [i, j] of cells.filter(([a, b]) => !used.has(key(a, b))).slice(0, traps)) {
     const at = middle(i, j);
-    const vent = rng.chance(0.35);
-    stage.hazards?.push({
-      kind: vent ? 'vent' : 'spikes',
-      x: at.x,
-      z: at.z,
-      period: vent ? 5 : 3,
-      phase: rng.range(0, vent ? 5 : 3),
-    });
+    // The way the corridor runs: along x if both its east and west are open
+    const axis = !east[i][j] && !east[i - 1][j] ? 'x' : 'z';
+    let kind = rng.pick(kinds);
+    // A floor falls in only where the maze stays whole without the cell.
+    if (kind === 'floor') {
+      const all = reachable(new Set()).size;
+      const without = new Set([...pits, key(i, j)]);
+      if (reachable(new Set(), without).size === all - 1) {
+        pits.add(key(i, j));
+      } else {
+        kind = 'spikes';
+      }
+    }
+    used.add(key(i, j));
+    const period = TRAP_PERIOD[kind];
+    stage.hazards?.push({ kind, x: at.x, z: at.z, period, phase: rng.range(0, period), axis });
+  }
+
+  // Passages between cells, as the cells on either side
+  const passages: [number, number, number, number][] = [];
+  for (let i = 1; i < hall; i++) {
+    for (let j = 0; j < MAZE_ROWS; j++) {
+      if (i < hall - 1 && !east[i][j]) {
+        passages.push([i, j, i + 1, j]);
+      }
+      if (j < MAZE_ROWS - 1 && !south[i][j]) {
+        passages.push([i, j, i, j + 1]);
+      }
+    }
+  }
+  // A gate's bars along the wall between two cells
+  const bars = ([i, j, a, b]: [number, number, number, number]): Prop[] => {
+    const out: Prop[] = [];
+    for (let t = STEP / 2; t < CELL; t += STEP) {
+      const x = a > i ? (i + 1) * CELL : i * CELL + t;
+      const z = b > j ? (j + 1) * CELL : j * CELL + t;
+      out.push(add('gate', x, z));
+    }
+    return out;
+  };
+  stage.gates = [];
+  // Inner gates that each cut off part of the maze, with levers before them
+  const shut = new Set<string>();
+  const want = index >= GATES_DEEP_FROM ? 2 : 1;
+  for (const passage of rng.shuffle(passages)) {
+    if (shut.size >= want) {
+      break;
+    }
+    const id = passage.join();
+    const before = reachable(shut).size;
+    shut.add(id);
+    if (reachable(shut).size === before) {
+      shut.delete(id);
+    }
+  }
+  const open = reachable(shut);
+  const leverCells = rng.shuffle(
+    cells.filter(([i, j]) => open.has(key(i, j)) && !used.has(key(i, j)) && i > 0),
+  );
+  for (const passage of passages.filter((x) => shut.has(x.join()))) {
+    const cell = leverCells.pop();
+    if (!cell) {
+      break;
+    }
+    const at = middle(...cell);
+    used.add(key(...cell));
+    const lever = add('lever', at.x, at.z);
+    stage.gates.push({ blocks: bars(passage), lever });
+  }
+  // The hall's gates, and the key one of the packs carries
+  const keyPack = stage.packs.length > 0 ? rng.pick(stage.packs) : undefined;
+  if (keyPack) {
+    keyPack.key = 0;
+    for (let j = 0; j < MAZE_ROWS; j++) {
+      if (!east[hall - 1][j]) {
+        stage.gates.push({ blocks: bars([hall - 1, j, hall, j]) });
+      }
+    }
   }
   return stage;
 }
