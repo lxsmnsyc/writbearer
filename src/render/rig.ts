@@ -159,19 +159,34 @@ interface Projected extends Pt {
   depth: number;
 }
 
+// Half a tile across and down on the screen, before zoom
+const HALF_W = 16;
+const HALF_H = 8;
+
+/**
+ * Projects a figure's points. Only its feet are snapped to the pixel grid;
+ * each point is a whole-pixel offset from them. So as the figure walks, it
+ * moves as one block and keeps its shape, instead of each joint snapping on
+ * its own and the figure shimmering.
+ */
 function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
   const size = sizeOf(u);
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
   const fallen = topple(u);
+  const base = iso(u.x, u.z);
+  const z = look.zoom;
   return (raw) => {
     const p = fallen(raw);
     const f = p[0] * size;
     const r = p[1] * size;
-    const X = u.x + (f * c - r * s) * FLOOR_K;
-    const Z = u.z + (f * s + r * c) * FLOOR_K;
-    const o = iso(X, Z);
-    return { x: o.x, y: o.y - p[2] * size * HEIGHT_K * look.zoom, depth: X + Z };
+    const dx = (f * c - r * s) * FLOOR_K;
+    const dz = (f * s + r * c) * FLOOR_K;
+    return {
+      x: base.x + Math.round((dx - dz) * HALF_W * z),
+      y: base.y + Math.round((dx + dz) * HALF_H * z - p[2] * size * HEIGHT_K * z),
+      depth: u.x + dx + u.z + dz,
+    };
   };
 }
 

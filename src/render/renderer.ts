@@ -206,10 +206,11 @@ export default class Renderer {
   private readonly out: CanvasRenderingContext2D;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly small: HTMLCanvasElement;
-  // The camera in frame pixels: `cam` is the whole part the frame is drawn
-  // at, and `sub` the rest, in screen pixels, applied when the frame is
-  // scaled up. So the view glides a third of a frame pixel at a time instead
-  // of stepping a whole one, with a stall every few frames.
+  // The camera in frame pixels: `glide` is where it is, easing after the
+  // bearer, and `cam` that place in whole pixels, which the ground is drawn
+  // at. Moving figures are drawn against `glide`, so the one the camera
+  // follows holds still. `sub` is a share of a pixel the frame could be
+  // shifted by when it is scaled up. It stays 0: figures cannot follow it.
   private readonly cam = { x: 0, y: 0 };
   private readonly sub = { x: 0, y: 0 };
   private readonly glide = { x: 0, y: 0 };
@@ -240,10 +241,23 @@ export default class Renderer {
     this.scratch = scratch.getContext('2d')!;
   }
 
+  /** Where a floor point is on the small canvas, for the ground and what stands still on it. */
   readonly iso = (x: number, z: number): Pt =>
     pt(
       Math.round((x - z) * (tw() / 2) - this.cam.x - this.jolt.x),
       Math.round((x + z) * (th() / 2) - this.cam.y - this.jolt.y),
+    );
+
+  /**
+   * Where a moving figure stands on the small canvas: snapped against the
+   * camera's exact place, not its whole pixel. A figure the camera follows
+   * then holds still on the screen, instead of stepping back and forth a
+   * pixel as the two round at different moments.
+   */
+  readonly body = (x: number, z: number): Pt =>
+    pt(
+      Math.round((x - z) * (tw() / 2) - this.glide.x - this.jolt.x),
+      Math.round((x + z) * (th() / 2) - this.glide.y - this.jolt.y),
     );
 
   /**
@@ -296,12 +310,13 @@ export default class Renderer {
       this.camReady = true;
       this.glide.x += (tx - this.glide.x) * k;
       this.glide.y += (ty - this.glide.y) * k;
-      const sx = Math.round(this.glide.x * SCALE);
-      const sy = Math.round(this.glide.y * SCALE);
-      this.cam.x = Math.floor(sx / SCALE);
-      this.cam.y = Math.floor(sy / SCALE);
-      this.sub.x = sx - this.cam.x * SCALE;
-      this.sub.y = sy - this.cam.y * SCALE;
+      // Whole pixels of the small canvas only: scrolling by a share of a
+      // pixel moves the ground smoothly but not the figures on it, which
+      // shook against it.
+      this.cam.x = Math.round(this.glide.x);
+      this.cam.y = Math.round(this.glide.y);
+      this.sub.x = 0;
+      this.sub.y = 0;
     }
     this.jolt.x = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
     this.jolt.y = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
@@ -339,7 +354,7 @@ export default class Renderer {
     for (const t of focused) {
       if (t) {
         const r = f.views.rig(t, f.alpha);
-        const b = iso(r.x, r.z);
+        const b = this.body(r.x, r.z);
         ctx.strokeStyle = C.blood;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -351,7 +366,7 @@ export default class Renderer {
     // A gold ring marks the merc whose orders are open.
     if (f.selected?.alive) {
       const r = f.views.rig(f.selected, f.alpha);
-      const b = iso(r.x, r.z);
+      const b = this.body(r.x, r.z);
       ctx.strokeStyle = C.gold;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -394,7 +409,7 @@ export default class Renderer {
           depth: r.x + r.z,
           draw: () => {
             ctx.globalAlpha = shown;
-            drawUnit(ctx, r, iso, C, f.time, f.views.get(u).hurt < 0.12);
+            drawUnit(ctx, r, this.body, C, f.time, f.views.get(u).hurt < 0.12);
             ctx.globalAlpha = 1;
           },
         });
@@ -490,7 +505,7 @@ export default class Renderer {
       if (seen(fog, u, r.x, r.z) >= 0.5) {
         this.sighted.add(u);
       }
-      const b = this.iso(r.x, r.z);
+      const b = this.body(r.x, r.z);
       const x = b.x * SCALE - this.sub.x;
       const y = b.y * SCALE - this.sub.y;
       if (!this.sighted.has(u) || (x >= 0 && x <= w && y >= 0 && y <= h)) {
@@ -741,7 +756,7 @@ export default class Renderer {
       const r = f.views.rig(u, f.alpha);
       // The key to a Labyrinth's hall glints over whoever carries it.
       if (u.bearsKey) {
-        const b = this.iso(r.x, r.z);
+        const b = this.body(r.x, r.z);
         const top = b.y - Math.round((barHeight(u) + 10) * look.zoom);
         ctx.fillStyle = C.gold;
         ctx.fillRect(b.x - 3, top, 3, 3);
@@ -750,7 +765,7 @@ export default class Renderer {
       }
       // A Hunt's quarry is marked even in the dark, so the party can find it.
       if (u.marked) {
-        const b = this.iso(r.x, r.z);
+        const b = this.body(r.x, r.z);
         const top = b.y - Math.round((barHeight(u) + 12) * look.zoom);
         const bob = Math.round(Math.sin(f.time * 4) * 1.5);
         fillPoly(
@@ -764,7 +779,7 @@ export default class Renderer {
         continue;
       }
       this.drawStatuses(u, r.x, r.z, f.time);
-      for (const e of emissives(r, this.iso, f.time)) {
+      for (const e of emissives(r, this.body, f.time)) {
         if (e.color === 'teal') {
           ctx.fillStyle = C.teal;
         } else if (e.color === 'blood') {
@@ -1077,7 +1092,7 @@ export default class Renderer {
     }
     if (f.callout && f.sim.bearer) {
       const r = f.views.rig(f.sim.bearer, f.alpha);
-      const b = this.iso(r.x, r.z);
+      const b = this.body(r.x, r.z);
       out.font = '600 17px Inter, system-ui, sans-serif';
       out.fillStyle = C.gold;
       out.fillText(
@@ -1107,7 +1122,7 @@ export default class Renderer {
   // Marks for each status, in its element's color. They shine through the dark.
   private drawStatuses(u: Unit, x: number, z: number, time: number): void {
     const { ctx } = this;
-    const b = this.iso(x, z);
+    const b = this.body(x, z);
     const top = b.y - Math.round((barHeight(u) + 5) * look.zoom);
     for (const s of u.statuses.values()) {
       const color = STATUS_COLOR[s.def.id] ?? C.bone;
@@ -1212,7 +1227,7 @@ export default class Renderer {
       if (seen(fog, u, r.x, r.z) < 0.5) {
         continue;
       }
-      const b = this.iso(r.x, r.z);
+      const b = this.body(r.x, r.z);
       const y = b.y - Math.round(barHeight(u) * look.zoom);
       ctx.fillStyle = C.ink;
       ctx.fillRect(b.x - 7, y, 14, 2);
