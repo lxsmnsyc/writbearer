@@ -30,6 +30,9 @@ const RES = 2;
 const CLEARANCE = 0.25;
 // A search gives up after this many cells, and the unit walks straight.
 const MAX_SEARCH = 8000;
+// Open cells joined to fewer than this many others are a pocket shut in by
+// obstacles, such as the gap between two wall blocks. Nothing is placed there.
+const POCKET = 24;
 const SQRT2 = Math.SQRT2;
 
 // A binary min-heap of cells by priority.
@@ -151,13 +154,63 @@ export default class Nav {
     return k >= 0 && this.blocked[k] === 0;
   }
 
+  // Each open cell's region of cells joined to it, and each region's size,
+  // worked out the first time they are asked for
+  private regions: Int32Array | null = null;
+  private readonly regionSize: number[] = [];
+
   /**
-   * The point nearest to one given where a body can stand, searched in rings
-   * out to `reach`. The point itself if a body can stand there, or if
-   * nowhere near is free.
+   * Whether a body can stand at a point and walk on from it: open, and not
+   * in a pocket shut in by obstacles.
+   */
+  roomy(x: number, z: number): boolean {
+    const k = this.cell(x, z);
+    if (k < 0 || this.blocked[k] === 1) {
+      return false;
+    }
+    this.regions ??= this.label();
+    return this.regionSize[this.regions[k]] >= POCKET;
+  }
+
+  // Labels the open cells by region, joined side to side.
+  private label(): Int32Array {
+    const regions = new Int32Array(this.cols * this.rows).fill(-1);
+    for (let start = 0; start < regions.length; start++) {
+      if (this.blocked[start] === 1 || regions[start] >= 0) {
+        continue;
+      }
+      const id = this.regionSize.length;
+      let size = 0;
+      const todo = [start];
+      regions[start] = id;
+      for (let k = todo.pop(); k !== undefined; k = todo.pop()) {
+        size++;
+        const i = k % this.cols;
+        const near = [
+          i > 0 ? k - 1 : -1,
+          i < this.cols - 1 ? k + 1 : -1,
+          k - this.cols,
+          k + this.cols,
+        ];
+        for (const n of near) {
+          if (n >= 0 && n < regions.length && this.blocked[n] === 0 && regions[n] < 0) {
+            regions[n] = id;
+            todo.push(n);
+          }
+        }
+      }
+      this.regionSize.push(size);
+    }
+    return regions;
+  }
+
+  /**
+   * The point nearest to one given where a body can stand and walk on from,
+   * searched in rings out to `reach`. The point itself if it is such a
+   * place, or if nowhere near is.
    */
   free(x: number, z: number, reach = 5): Spot {
-    if (this.walkable(x, z)) {
+    if (this.roomy(x, z)) {
       return { x, z };
     }
     for (let r = 0.5; r <= reach; r += 0.5) {
@@ -165,7 +218,7 @@ export default class Nav {
       for (let s = 0; s < steps; s++) {
         const a = (s / steps) * Math.PI * 2;
         const p = { x: x + Math.cos(a) * r, z: z + Math.sin(a) * r };
-        if (this.walkable(p.x, p.z)) {
+        if (this.roomy(p.x, p.z)) {
           return p;
         }
       }

@@ -344,6 +344,11 @@ export function spawnMonster(
   options: { elite?: boolean } = {},
 ): Unit {
   const t: Template = MONSTERS[kind];
+  // Never inside something solid or shut in among it, where nothing could
+  // reach it.
+  const at = sim.nav?.free(x, z) ?? { x, z };
+  x = at.x;
+  z = at.z;
   if (!options.elite) {
     return spawn(sim, kind, t, Side.Monster, level, x, z);
   }

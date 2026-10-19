@@ -86,12 +86,9 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
       // so a big pack stands as a crowd and not a heap.
       const a = i * GOLDEN_ANGLE;
       const r = PACK_SPACING * Math.sqrt(i);
-      // Never inside something solid, such as the altar at a sealing site,
-      // where nothing could reach it.
       const x = pack.x + Math.cos(a) * r;
       const z = pack.z + Math.sin(a) * r;
-      const at = sim.nav?.free(x, z) ?? { x, z };
-      const u = spawnMonster(sim, kind, monsterLevel(stage.index), at.x, at.z, {
+      const u = spawnMonster(sim, kind, monsterLevel(stage.index), x, z, {
         elite: i === pack.elite,
       });
       u.marked = i === pack.marked;

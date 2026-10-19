@@ -18,6 +18,10 @@ export const TICK = 0.05;
 const RECOVERY = 0.2;
 // Units closer than this push apart.
 const BODY = 0.5;
+// How long a body may stand in a closed cell before it is moved out, and how
+// far it may be moved
+const STUCK_TIME = 1;
+const STUCK_REACH = 3;
 // Arrows fly this fast, in tiles per second.
 export const ARROW_SPEED = 14;
 // A homing projectile lands once this close to its target.
@@ -205,6 +209,8 @@ export default class Sim extends EventEngine<SimEventMap> {
   floor: Rect[] = [];
   // Whether the party's dead are kept whole, as a Respite area keeps them
   spared = false;
+  // How long each body has stood in a closed cell
+  private readonly stuck = new WeakMap<Unit, number>();
 
   // Where units can walk, once the floor is set. Without it, they walk straight.
   nav: Nav | null = null;
@@ -467,6 +473,22 @@ export default class Sim extends EventEngine<SimEventMap> {
           u.x = o.x + ((u.x - o.x) / d) * o.r;
           u.z = o.z + ((u.z - o.z) / d) * o.r;
         }
+      }
+      // A crowd can shove a body out of one wall block into the next, where
+      // it can neither walk nor be reached. One left there a while goes
+      // back to the nearest open ground. A body only brushing an obstacle
+      // stands in a closed cell too, so it is given time to step out.
+      if (this.nav && !this.nav.walkable(u.x, u.z)) {
+        const held = (this.stuck.get(u) ?? 0) + TICK;
+        this.stuck.set(u, held);
+        if (held >= STUCK_TIME) {
+          const at = this.nav.free(u.x, u.z, STUCK_REACH);
+          u.x = at.x;
+          u.z = at.z;
+          this.stuck.delete(u);
+        }
+      } else {
+        this.stuck.delete(u);
       }
       if (this.floor.length > 0) {
         const at = this.clamp(u);

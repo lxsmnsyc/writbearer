@@ -325,6 +325,10 @@ const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
     road.slice(1).some((b, i) => distanceToSegment({ x, z }, road[i], b) < reach),
   );
 
+// How long a stretch of the ruined wall runs, and the gaps between, in tiles
+const WALL_RUN: [number, number] = [3, 7];
+const WALL_GAP: [number, number] = [3, 6];
+
 // Solid radius of each prop that blocks, in tiles.
 const SOLID: Partial<Record<PropKind, number>> = {
   pillar: 0.45,
@@ -450,8 +454,9 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   placeExits(stage, add, plan.ahead, exitZ, plan.sides, width * 0.78);
   stage.down = stage.exits.some((e) => e.ahead === 'down');
 
-  // A ruined wall across the whole field, broken in one or two places: the
-  // choke point the design asks for on every main route.
+  // What is left of a ruined wall across the field: short stretches with
+  // wide gaps, so it slows a crowd and gives cover without cutting the
+  // field in two. The road runs through the first breach.
   const wallX = width * rng.range(0.45, 0.58);
   const breaches = [rng.range(depth * 0.2, depth * 0.8)];
   if (rng.chance(0.5)) {
@@ -468,8 +473,15 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     beyond(e),
   ]);
   const wall: Spot[] = [];
+  let standing = rng.chance(0.5);
+  let left = rng.range(1, WALL_RUN[1]);
   for (let z = 0.5; z < depth; z += 0.9) {
-    if (breaches.some((b) => Math.abs(z - b) < 1.6)) {
+    left -= 0.9;
+    if (left <= 0) {
+      standing = !standing;
+      left = standing ? rng.range(...WALL_RUN) : rng.range(...WALL_GAP);
+    }
+    if (!standing || breaches.some((b) => Math.abs(z - b) < 1.6)) {
       continue;
     }
     const x = wallX + Math.sin(z * 0.35) * 0.8;

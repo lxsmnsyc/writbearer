@@ -72,13 +72,13 @@ describe('stage generation', () => {
     }
   });
 
-  it('blocks the field with a wall, so the way through is a choke point', () => {
+  it('breaks the field with stretches of ruined wall that block where they stand', () => {
     for (const seed of SEEDS) {
       const s = stageFor(seed);
       const nav = navFor(s);
       const wall = s.props.filter((p) => p.kind === 'wall');
-      expect(wall.length).toBeGreaterThan(20);
-      // No one walks straight across the wall, except through a breach.
+      expect(wall.length).toBeGreaterThan(3);
+      // No one walks straight across a stretch of wall where it stands.
       for (const w of wall) {
         expect(nav.clear(w.x - 1.5, w.z, w.x + 1.5, w.z)).toBe(false);
       }

@@ -116,7 +116,7 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Balance check:** with the test's bearer stepping out of warnings: three mercs four levels below each boss of the Rift Road and below win at least 11 of 12 fights, two at most 3 of 12. Two level 9 mercs beat the Brood Mother about half the time whatever their orders, three always, one never.
 - **Road:** outside the city, a road runs from the entrance through the wall's first breach to the exit. Trees, pillars and rubble keep off it.
 - **Size:** 54 to 62 tiles wide and 34 to 42 deep. The entrance is on the west edge and the exit on the east edge.
-- **Choke point:** a ruined wall runs across the whole field, about halfway. It has one breach, and sometimes a second. A pack watches the first one from the far side.
+- **Choke point:** what is left of a ruined wall runs across the field, about halfway: stretches of 3 to 7 tiles with gaps of 3 to 6 between, so it never cuts the field in two. The road runs through its first breach, which a pack watches from the far side.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
   - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other side of the wall from the site.
