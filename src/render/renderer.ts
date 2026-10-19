@@ -32,7 +32,8 @@ import { type FloorImage, buildFloor } from './floor';
 import { Fogs } from './fog';
 import { type Light, Lighting } from './light';
 import { C, quantize } from './palette';
-import { drawUnit, emissives, isKind, look } from './rig';
+import { type Iso, type RigUnit, drawShadow, drawUnit, emissives, isKind, look } from './rig';
+import { drawSprite, isSprited, spriteLantern } from './sprites';
 import type { Views } from './view';
 
 // The frame is drawn small and scaled up with no smoothing.
@@ -409,7 +410,7 @@ export default class Renderer {
           depth: r.x + r.z,
           draw: () => {
             ctx.globalAlpha = shown;
-            drawUnit(ctx, r, this.body, C, f.time, f.views.get(u).hurt < 0.12);
+            this.drawFigure(r, this.body, f.time, f.views.get(u).hurt < 0.12);
             ctx.globalAlpha = 1;
           },
         });
@@ -427,8 +428,7 @@ export default class Renderer {
         depth: w.x + w.z,
         draw: () => {
           ctx.globalAlpha = fog.visible(w.x, w.z);
-          drawUnit(
-            ctx,
+          this.drawFigure(
             {
               kind,
               x: w.x,
@@ -443,7 +443,6 @@ export default class Renderer {
               alert: false,
             },
             iso,
-            C,
             f.time,
             false,
           );
@@ -749,6 +748,30 @@ export default class Renderer {
     ctx.stroke();
   }
 
+  // A figure: the party from its sprite sheet, the rest cut from paper.
+  private drawFigure(r: RigUnit, iso: Iso, time: number, flash: boolean): void {
+    if (isSprited(r.kind)) {
+      drawShadow(this.ctx, r, iso);
+      drawSprite(this.ctx, r, iso(r.x, r.z), C, time, flash);
+    } else {
+      drawUnit(this.ctx, r, iso, C, time, flash);
+    }
+  }
+
+  // What glows on a figure: the bearer's lantern from its sprite, eyes and
+  // growths from the paper figures.
+  private glowsOf(r: RigUnit, time: number): ReturnType<typeof emissives> {
+    if (!isSprited(r.kind)) {
+      return emissives(r, this.body, time);
+    }
+    const lamp = spriteLantern(r, C, time);
+    if (!lamp) {
+      return [];
+    }
+    const b = this.body(r.x, r.z);
+    return [{ p: pt(Math.round(b.x) + lamp.x, Math.round(b.y) + lamp.y), color: 'flame' }];
+  }
+
   // Eyes, growths and flames are drawn after the darkness, so they shine through it.
   private drawGlow(f: Frame, fog: Fogs): void {
     const { ctx } = this;
@@ -779,7 +802,7 @@ export default class Renderer {
         continue;
       }
       this.drawStatuses(u, r.x, r.z, f.time);
-      for (const e of emissives(r, this.body, f.time)) {
+      for (const e of this.glowsOf(r, f.time)) {
         if (e.color === 'teal') {
           ctx.fillStyle = C.teal;
         } else if (e.color === 'blood') {

@@ -109,16 +109,16 @@ export interface Palette {
 }
 
 // Local space: f forward, s to the right, h up. A figure is about 100 units tall.
-type V3 = [number, number, number];
-const v = (f: number, s: number, h: number): V3 => [f, s, h];
-const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const scale = (a: V3, k: number): V3 => [a[0] * k, a[1] * k, a[2] * k];
+export type V3 = [number, number, number];
+export const v = (f: number, s: number, h: number): V3 => [f, s, h];
+export const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+export const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+export const scale = (a: V3, k: number): V3 => [a[0] * k, a[1] * k, a[2] * k];
 const len = (a: V3): number => Math.hypot(a[0], a[1], a[2]);
-const norm = (a: V3): V3 => scale(a, 1 / (len(a) || 1));
-const lerp = (a: V3, b: V3, t: number): V3 => add(a, scale(sub(b, a), t));
-const ease = (t: number): number => t * t * (3 - 2 * t);
-const clamp01 = (t: number): number => Math.max(0, Math.min(1, t));
+export const norm = (a: V3): V3 => scale(a, 1 / (len(a) || 1));
+export const lerp = (a: V3, b: V3, t: number): V3 => add(a, scale(sub(b, a), t));
+export const ease = (t: number): number => t * t * (3 - 2 * t);
+export const clamp01 = (t: number): number => Math.max(0, Math.min(1, t));
 
 // Tiles per figure unit on the floor, and screen pixels per unit of height.
 const FLOOR_K = 0.011;
@@ -155,7 +155,7 @@ const sizeOf = (u: RigUnit): number => u.size ?? KIND_SIZE[u.kind] * (u.elite ? 
 // ---------- projection ----------
 export type Iso = (x: number, z: number) => Pt;
 
-interface Projected extends Pt {
+export interface Projected extends Pt {
   depth: number;
 }
 
@@ -169,7 +169,7 @@ const HALF_H = 8;
  * moves as one block and keeps its shape, instead of each joint snapping on
  * its own and the figure shimmering.
  */
-function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
+export function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
   const size = sizeOf(u);
   const c = Math.cos(u.angle);
   const s = Math.sin(u.angle);
@@ -215,7 +215,7 @@ function topple(u: RigUnit): (p: V3) => V3 {
 }
 
 // ---------- skeleton ----------
-interface Skeleton {
+export interface Skeleton {
   pelvis: V3;
   hipL: V3;
   hipR: V3;
@@ -258,7 +258,7 @@ const SHIN = 24;
 const UPPER = 17;
 const FORE = 17;
 
-function skeleton(u: RigUnit, time: number): Skeleton {
+export function skeleton(u: RigUnit, time: number): Skeleton {
   const st = u.stride;
   const p = u.walk;
   const bob = st * Math.cos(p * 2) * 1.5;
@@ -325,7 +325,7 @@ function skeleton(u: RigUnit, time: number): Skeleton {
 }
 
 // Moves one arm so its hand reaches `target`.
-function reach(sk: Skeleton, side: 'L' | 'R', target: V3, bend: V3 = v(-1, 0, -0.5)): void {
+export function reach(sk: Skeleton, side: 'L' | 'R', target: V3, bend: V3 = v(-1, 0, -0.5)): void {
   const sh = side === 'L' ? sk.shoulderL : sk.shoulderR;
   const r = ik(sh, target, UPPER, FORE, bend);
   if (side === 'L') {
@@ -339,7 +339,7 @@ function reach(sk: Skeleton, side: 'L' | 'R', target: V3, bend: V3 = v(-1, 0, -0
 
 // A hand's path through an attack: from rest up to the windup pose, down to
 // the strike pose, then back to rest.
-function handPath(
+export function handPath(
   ph: { windup: number; strike: number; recover: number },
   rest: V3,
   up: V3,
@@ -355,7 +355,7 @@ function handPath(
 }
 
 // The paper color of each figure. Mercs are pale, monsters are dark.
-function paperColor(kind: Kind, C: Palette): string {
+export function paperColor(kind: Kind, C: Palette): string {
   if (kind === 'bearer') {
     return C.bearer;
   }
@@ -369,7 +369,7 @@ function paperColor(kind: Kind, C: Palette): string {
 }
 
 // Keyframes for an attack: windup until `w`, strike until `s`, then recover.
-function phases(
+export function phases(
   t: number,
   w: number,
   s: number,
@@ -382,7 +382,7 @@ function phases(
 }
 
 // ---------- drawing ----------
-interface Part {
+export interface Part {
   depth: number;
   draw: (ctx: CanvasRenderingContext2D) => void;
 }
@@ -404,7 +404,12 @@ function trace(ctx: CanvasRenderingContext2D, pts: Pt[], dx: number, dy: number)
   ctx.closePath();
 }
 
-function fill(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, ink: string | null): void {
+export function fill(
+  ctx: CanvasRenderingContext2D,
+  pts: Pt[],
+  color: string,
+  ink: string | null,
+): void {
   // A hard shadow under each piece, as layered paper casts.
   trace(ctx, pts, look.zoom, look.zoom);
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -419,7 +424,7 @@ function fill(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, ink: stri
   }
 }
 
-function taper(a: Pt, b: Pt, wideA: number, wideB: number): Pt[] {
+export function taper(a: Pt, b: Pt, wideA: number, wideB: number): Pt[] {
   const k = look.zoom * 1.5;
   const wa = wideA * k;
   const wb = wideB * k;
@@ -436,7 +441,7 @@ function taper(a: Pt, b: Pt, wideA: number, wideB: number): Pt[] {
   ];
 }
 
-function hexAt(c: Pt, radius: number): Pt[] {
+export function hexAt(c: Pt, radius: number): Pt[] {
   const r = radius * look.zoom * 1.15;
   return [0, 1, 2, 3, 4, 5].map((i) => ({
     x: c.x + r * Math.cos((i * Math.PI) / 3 + 0.5),
@@ -445,7 +450,7 @@ function hexAt(c: Pt, radius: number): Pt[] {
 }
 
 // Convex hull, for paper shapes built from several projected points.
-function hull(pts: Pt[]): Pt[] {
+export function hull(pts: Pt[]): Pt[] {
   const p = [...pts].sort((a, b) => a.x - b.x || a.y - b.y);
   const cross = (o: Pt, a: Pt, b: Pt): number =>
     (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
@@ -466,79 +471,19 @@ function hull(pts: Pt[]): Pt[] {
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-const avg = (...ps: Projected[]): number => ps.reduce((s, p) => s + p.depth, 0) / ps.length;
+export const avg = (...ps: Projected[]): number => ps.reduce((s, p) => s + p.depth, 0) / ps.length;
 
 // What a unit's hands and gear are doing this frame.
 interface Gear {
-  bowGrip?: V3;
-  stringHand?: V3;
-  drawn?: number;
-  sword?: { hand: V3; dir: V3; mace?: boolean };
   spear?: { back: V3; tip: V3 };
   knife?: { hand: V3; dir: V3 };
-  lantern?: V3;
-  shield?: { center: V3 };
-  // `sun` tops it with the Cleric's gold sunburst instead of the Church's eye
-  staff?: { hand: V3; sun?: boolean };
+  staff?: { hand: V3 };
   claws?: { hand: V3; dir: V3 }[];
 }
 
 function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
   const g: Gear = {};
   const a = u.atk;
-  if (u.kind === 'vanguard') {
-    // The shield arm holds the shield out in front.
-    const shield = u.held?.shield ?? true;
-    reach(sk, 'L', add(sk.chest, shield ? v(16, -6, -6) : v(6, -10, -20)), v(-1, -1, 0));
-    const center = add(sk.handL, v(5, 2, 0));
-    if (shield) {
-      g.shield = { center };
-    }
-    if (u.shout >= 0) {
-      // Sword raised high, then brought down flat on the shield's face.
-      const ph = phases(u.shout, 0.45, 0.5);
-      const up = add(sk.head, v(-6, 10, 20));
-      const bang = add(center, v(-2, 4, 6));
-      reach(sk, 'R', handPath(ph, v(10, 14, 56), up, bang), v(-1, 1, 0));
-    } else if (a >= 0) {
-      const ph = phases(a, 0.5, 0.65);
-      const up = v(-8, 12, 108);
-      const down = v(30, 6, 52);
-      const hand = handPath(ph, v(10, 14, 56), up, down);
-      reach(sk, 'R', hand, v(-1, 1, 0));
-    }
-    const weapon = u.held ? u.held.weapon : 'sword';
-    if (weapon) {
-      g.sword = { hand: sk.handR, dir: norm(sub(sk.handR, sk.elbowR)), mace: weapon === 'mace' };
-    }
-  }
-  if (u.kind === 'ranger') {
-    // Without a bow it only raises its fists.
-    const ready = (u.alert || a >= 0) && (u.held?.weapon ?? 'bow') === 'bow';
-    if (ready) {
-      // Bow arm out toward the target; the string hand pulls back to the cheek.
-      const grip = add(sk.shoulderL, v(30, 6, 0));
-      reach(sk, 'L', grip, v(0, -1, -0.3));
-      let pull = 0;
-      if (a >= 0) {
-        const ph = phases(a, 0.7, 0.78);
-        pull = ph.strike > 0 ? 1 - ph.strike : ph.windup;
-        if (ph.recover > 0) {
-          pull = 0;
-        }
-      }
-      const nocked = add(grip, v(-4, 0, 0));
-      const cheek = add(sk.neck, v(2, 6, 2));
-      const released = a >= 0.7 && a < 0.9 ? add(cheek, v(-8, 8, 4)) : null;
-      reach(sk, 'R', released ?? lerp(nocked, cheek, pull), v(-1, 1, 0));
-      g.bowGrip = sk.handL;
-      g.stringHand = sk.handR;
-      g.drawn = a >= 0 && a < 0.7 ? pull : 0;
-    } else if ((u.held?.weapon ?? 'bow') === 'bow') {
-      // Bow held low while walking.
-      g.bowGrip = sk.handL;
-    }
-  }
   if (u.kind === 'hollowSoldier') {
     // Both hands on the spear. Windup pulls it back, the strike lunges.
     let push = 0;
@@ -570,17 +515,6 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'R', hand, v(-1, 1, 0));
     const dir = a >= 0 && a < 0.5 ? v(0, 0, 1) : norm(sub(sk.handR, sk.elbowR));
     g.knife = { hand: sk.handR, dir };
-  }
-  if (u.kind === 'cleric') {
-    // The sunburst staff, held upright. A prayer lifts it high, then plants it.
-    let hand = add(sk.chest, v(10, 10, -4));
-    if (a >= 0) {
-      const ph = phases(a, HIT_FRACTION.cleric, HIT_FRACTION.cleric + 0.08);
-      hand = handPath(ph, hand, add(sk.head, v(6, 8, 18)), hand);
-      reach(sk, 'L', add(sk.head, v(10, -4, 4)), v(-1, -1, 0));
-    }
-    reach(sk, 'R', hand, v(-1, 1, 0));
-    g.staff = { hand: sk.handR, sun: true };
   }
   if (u.kind === 'cantor') {
     // The staff of the eye, held upright. The hymn lifts it high, then plants it.
@@ -623,24 +557,11 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
       { hand: sk.handR, dir: norm(sub(sk.handR, sk.elbowR)) },
     ];
   }
-  if (u.kind === 'bearer') {
-    // The lantern swings on its handle as the bearer walks.
-    reach(sk, 'R', add(sk.chest, v(14, 10, -14)), v(-1, 1, -0.5));
-    const sway = Math.sin(u.walk) * 3 * u.stride + Math.sin(time * 1.7) * 0.6;
-    g.lantern = add(sk.handR, v(sway, 0, -12));
-  }
   return g;
 }
 
-export function drawUnit(
-  ctx: CanvasRenderingContext2D,
-  u: RigUnit,
-  iso: Iso,
-  C: Palette,
-  time: number,
-  flash: boolean,
-): void {
-  const proj = projector(u, iso);
+/** The shadow under a figure's feet. */
+export function drawShadow(ctx: CanvasRenderingContext2D, u: RigUnit, iso: Iso): void {
   const base = iso(u.x, u.z);
   ctx.fillStyle = 'rgba(0,0,0,0.35)';
   ctx.beginPath();
@@ -654,6 +575,18 @@ export function drawUnit(
     Math.PI * 2,
   );
   ctx.fill();
+}
+
+export function drawUnit(
+  ctx: CanvasRenderingContext2D,
+  u: RigUnit,
+  iso: Iso,
+  C: Palette,
+  time: number,
+  flash: boolean,
+): void {
+  const proj = projector(u, iso);
+  drawShadow(ctx, u, iso);
 
   if (isCrawler(u.kind)) {
     drawCrawler(ctx, u, proj, C, flash);
@@ -702,7 +635,7 @@ export function drawUnit(
         fill(c, rags, color, ink);
       },
     });
-  } else if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'cleric') {
+  } else if (u.kind === 'penitent' || u.kind === 'cantor') {
     // A robe to the ground instead of legs.
     const hem = [
       v(14, 0, 0),
@@ -754,13 +687,7 @@ export function drawUnit(
   });
 
   // Hoods, crowns and the Writ.
-  if (
-    u.kind === 'ranger' ||
-    u.kind === 'bearer' ||
-    u.kind === 'penitent' ||
-    u.kind === 'cantor' ||
-    u.kind === 'hollowed'
-  ) {
+  if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'hollowed') {
     const hood = [
       add(sk.head, v(-6, -5, -2)),
       add(sk.head, v(-6, 5, -2)),
@@ -771,20 +698,6 @@ export function drawUnit(
       depth: H.depth + 0.0005,
       draw: (c) => {
         fill(c, hull(hood), color, ink);
-      },
-    });
-  }
-  if (u.kind === 'bearer') {
-    const writ = [
-      add(sk.chest, v(-7, -5, 8)),
-      add(sk.chest, v(-7, 5, 8)),
-      add(sk.chest, v(-7, 5, -10)),
-      add(sk.chest, v(-7, -5, -10)),
-    ].map(proj);
-    parts.push({
-      depth: avg(...writ),
-      draw: (c) => {
-        fill(c, hull(writ), C.skin, ink);
       },
     });
   }
@@ -803,82 +716,6 @@ export function drawUnit(
   }
 
   // Gear.
-  if (gear.shield) {
-    const c0 = gear.shield.center;
-    // The shield has thickness, so it still reads as a slab when seen edge-on.
-    const face = [v(3, -10, 26), v(3, 10, 26), v(3, 10, -38), v(3, -10, -38)];
-    const slab = [...face, ...face.map((o) => add(o, v(-6, 0, 0)))].map((o) => proj(add(c0, o)));
-    const front = face.map((o) => proj(add(c0, o)));
-    const boss = proj(add(c0, v(4, 0, -4)));
-    const showsFace = Math.cos(u.angle) + Math.sin(u.angle) > -0.2;
-    parts.push({
-      depth: avg(...front) + 0.0008,
-      draw: (c) => {
-        fill(c, hull(slab), color, ink);
-        if (showsFace) {
-          fill(c, hexAt(boss, 1.6), C.gold, null);
-        }
-      },
-    });
-  }
-  if (gear.sword) {
-    const { hand, dir, mace } = gear.sword;
-    const a = proj(hand);
-    const b = proj(add(hand, scale(dir, mace ? 24 : 30)));
-    parts.push({
-      depth: avg(a, b) + 0.0003,
-      draw: (c) => {
-        if (mace) {
-          // A wooden haft and a flanged iron head.
-          fill(c, taper(a, b, 0.6, 0.6), C.wood, ink);
-          fill(c, hexAt(b, 3), C.bone, ink);
-        } else {
-          fill(c, taper(a, b, 0.9, 0.4), C.bone, ink);
-        }
-      },
-    });
-  }
-  if (gear.bowGrip) {
-    const g = gear.bowGrip;
-    const drawn = gear.drawn ?? 0;
-    const top = add(g, v(-3 - drawn * 4, 0, 38));
-    const bottom = add(g, v(-3 - drawn * 4, 0, -38));
-    const bulge = add(g, v(14 + drawn * 2, 0, 0));
-    const T = proj(top);
-    const Bm = proj(bottom);
-    const M = proj(bulge);
-    const S = gear.stringHand && drawn > 0 ? proj(gear.stringHand) : null;
-    parts.push({
-      depth: avg(T, Bm, M) + 0.0007,
-      draw: (c) => {
-        c.strokeStyle = C.gold;
-        c.lineWidth = 1.5 * look.zoom;
-        c.beginPath();
-        c.moveTo(T.x, T.y);
-        c.quadraticCurveTo(2 * M.x - (T.x + Bm.x) / 2, 2 * M.y - (T.y + Bm.y) / 2, Bm.x, Bm.y);
-        c.stroke();
-        c.strokeStyle = C.bone;
-        c.lineWidth = 0.6 * look.zoom;
-        c.beginPath();
-        c.moveTo(T.x, T.y);
-        if (S) {
-          c.lineTo(S.x, S.y);
-        }
-        c.lineTo(Bm.x, Bm.y);
-        c.stroke();
-        if (S) {
-          // The nocked arrow, from the string to past the bow.
-          const tip = proj(add(g, v(14, 0, 0)));
-          c.strokeStyle = C.bone;
-          c.lineWidth = 0.8 * look.zoom;
-          c.beginPath();
-          c.moveTo(S.x, S.y);
-          c.lineTo(tip.x, tip.y);
-          c.stroke();
-        }
-      },
-    });
-  }
   if (gear.spear) {
     const a = proj(gear.spear.back);
     const b = proj(gear.spear.tip);
@@ -910,32 +747,15 @@ export function drawUnit(
     const h = gear.staff.hand;
     const a = proj(add(h, v(0, 0, -40)));
     const b = proj(add(h, v(0, 0, 44)));
-    // The Church's eye on top, a pale disc with a red pupil, or the
-    // Cleric's sunburst: a gold disc ringed with rays.
+    // The Church's eye on top: a pale disc with a red pupil.
     const eye = proj(add(h, v(0, 0, 50)));
-    const sun = gear.staff.sun === true;
     parts.push({
       depth: avg(a, b) + 0.0006,
       draw: (c) => {
         fill(c, taper(a, b, 0.7, 0.7), C.wood, null);
-        if (sun) {
-          const r = 6 * look.zoom;
-          c.fillStyle = C.gold;
-          for (let i = 0; i < 8; i++) {
-            const t = (i / 8) * Math.PI * 2;
-            c.fillRect(
-              Math.round(eye.x + Math.cos(t) * r),
-              Math.round(eye.y + Math.sin(t) * r),
-              1,
-              1,
-            );
-          }
-          fill(c, hexAt(eye, 3), C.gold, ink);
-        } else {
-          fill(c, hexAt(eye, 3.4), C.bone, ink);
-          c.fillStyle = C.blood;
-          c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
-        }
+        fill(c, hexAt(eye, 3.4), C.bone, ink);
+        c.fillStyle = C.blood;
+        c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
       },
     });
   }
@@ -954,23 +774,6 @@ export function drawUnit(
       },
     });
   }
-  if (gear.lantern) {
-    const hand = proj(sk.handR);
-    const L = proj(gear.lantern);
-    parts.push({
-      depth: L.depth + 0.0006,
-      draw: (c) => {
-        c.strokeStyle = C.ink;
-        c.lineWidth = 0.8 * look.zoom;
-        c.beginPath();
-        c.moveTo(hand.x, hand.y);
-        c.lineTo(L.x, L.y);
-        c.stroke();
-        fill(c, hexAt(L, 2), C.flame, C.ink);
-      },
-    });
-  }
-
   parts
     .sort((a, b) => a.depth - b.depth)
     .forEach((p) => {
@@ -1092,14 +895,6 @@ export function emissives(
     }
     return out;
   }
-  if (u.kind === 'bearer') {
-    const sk = skeleton(u, time);
-    const g = animate(u, sk, time);
-    if (g.lantern) {
-      out.push({ p: proj(g.lantern), color: 'flame' });
-    }
-    return out;
-  }
   const eyed = ['hollowSoldier', 'penitent', 'cantor', 'hollowed', 'husk'];
   if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
@@ -1110,11 +905,4 @@ export function emissives(
     out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }
   return out;
-}
-
-// Where the lantern hangs, for the light rings.
-export function lanternSpot(u: RigUnit, iso: Iso, time: number): Pt {
-  const sk = skeleton(u, time);
-  const g = animate(u, sk, time);
-  return projector(u, iso)(g.lantern ?? sk.chest);
 }

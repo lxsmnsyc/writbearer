@@ -62,6 +62,7 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 | Visual tone | Greyscale and mature, with the Church's blood rites and gore. Color is information: red for blood and danger, gold for light and the bearer, teal for the dead and magic. |
 | Pixel art | Drawn at 384×216, snapped to the palette, scaled up 3×. The lantern lights hard rings. |
 | Rendering | Canvas 2D. A move to Three.js is to be weighed later. |
+| Party sprites | As Ragnarok Online's: one shared body with its actions in 8 facings, and attachments for gear. Each look is baked once into a sheet and copied whole each frame. See `src/render/sprites.ts`. Monsters are still cut from paper each frame. |
 | Item stats | Randomized per copy, in the style of Diablo 2. |
 | Equipment and inventory | Based on rAthena: slots, refine, sockets for monster cards, weight limits. |
 
