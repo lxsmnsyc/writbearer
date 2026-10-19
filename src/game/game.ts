@@ -29,6 +29,8 @@ import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../conten
 import {
   CHALLENGE_NAME,
   type LayerMap,
+  MUTATOR_NAME,
+  MUTATOR_TEXT,
   type MapNode,
   OBJECTIVE_NAME,
   type Objective,
@@ -117,6 +119,7 @@ import {
 } from './stage';
 import { placeBeyond } from '../gen/place';
 import Bonus, { type BonusState } from './bonus';
+import MutatorRun from './mutators';
 import { type Rect, inRect } from '../sim/nav';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -333,6 +336,8 @@ export default class Game {
   private prize: Reward | null = null;
   private bonus: Bonus | null = null;
   private bonusMet: boolean | null = null;
+  // The rules this fight's mutators change
+  private mutators!: MutatorRun;
   // Whether the title panel is up, before the run begins
   private title = false;
   // The recruits rolled for the Guild House at the start of the run
@@ -743,6 +748,7 @@ export default class Game {
       }
     }
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
+    this.mutators = new MutatorRun(this.sim, () => monsterLevel(this.stageIndex));
     this.stageIndex = save?.stageIndex ?? Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
     this.mapOpen = false;
@@ -913,7 +919,10 @@ export default class Game {
         const rng = this.streams.get(1, Stream.Loot);
         const level = 4 + this.stageIndex;
         if (p.holds) {
-          this.scatter(this.spoilsOf(p.holds, rng, level, p.better === true), p);
+          const extra = Array.from({ length: p.extra ?? 0 }, () =>
+            rollItem(rng, level, Rank.Elite),
+          );
+          this.scatter([...this.spoilsOf(p.holds, rng, level, p.better === true), ...extra], p);
           continue;
         }
         const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
@@ -1026,6 +1035,7 @@ export default class Game {
       this.streams.area(1, Stream.Map, layer),
       layer === 0 ? 1 : 2,
       this.endless || layer < TOWN_LAYERS,
+      layer,
     );
     this.path = [];
   }
@@ -1148,6 +1158,7 @@ export default class Game {
         ? new Bonus(node.challenge, this.stage.objective, rectOf(this.stage))
         : null;
     this.bonusMet = null;
+    this.mutators.set(node?.mutators ?? []);
     const camp = this.stage.recruit;
     const guild = this.stage.recruits ?? [];
     this.wanderers = guild.map((at, i) => ({ offer: this.starting[i], ...at, met: false }));
@@ -1175,6 +1186,7 @@ export default class Game {
     done: boolean;
     bonus: BonusStatus | null;
     coming: ComingGroup[];
+    mutators: { name: string; text: string }[];
   } | null {
     const o = this.objective;
     if (!o) {
@@ -1203,7 +1215,19 @@ export default class Game {
         coming.push({ kind, name: MONSTERS[kind].job.name, count: 1 });
       }
     }
-    return { kind: o.kind, title, detail: o.status(this.sim), done: o.done, bonus, coming };
+    const mutators = (this.here()?.mutators ?? []).map((m) => ({
+      name: MUTATOR_NAME[m],
+      text: MUTATOR_TEXT[m],
+    }));
+    return {
+      kind: o.kind,
+      title,
+      detail: o.status(this.sim),
+      done: o.done,
+      bonus,
+      coming,
+      mutators,
+    };
   }
 
   // Whether the exits are open: once the objective is done, if there is one,
@@ -1259,6 +1283,7 @@ export default class Game {
         seed: 0.5,
         holds,
         better,
+        extra: this.here()?.mutators?.length,
       });
       this.sim.obstacles.push({ x: at.x, z: at.z, r: CHEST_SOLID });
       // The floor stays as it is, with this area and any joined to it.
@@ -2211,6 +2236,7 @@ export default class Game {
         this.visitEvent();
         this.noteMonsters();
         this.hazards?.update(this.sim, TICK);
+        this.mutators.update(TICK);
         this.checkObjective();
         this.acc -= TICK;
         if (wakeBoss(this.sim, this.boss)) {
@@ -2280,6 +2306,7 @@ export default class Game {
       region: this.region,
       hoverExit: this.hoverExit,
       exitsShut: !this.exitsOpen,
+      dark: this.mutators.has('darkness'),
       leaving: this.leaving,
       seed: this.streams.seed,
       paused: this.paused,

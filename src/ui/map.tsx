@@ -2,6 +2,7 @@ import { For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type Game from '../game/game';
 import {
+  MUTATOR_NAME,
   type MapNode,
   type NodeKind,
   OBJECTIVE_NAME,
@@ -56,6 +57,10 @@ const nameOf = (node: MapNode): string => {
   const objective = OBJECTIVE_NAME[node.objective];
   return node.kind === 'elite' ? `Elite ${objective.toLowerCase()}` : objective;
 };
+
+// A fight's mutators, as a line under its name
+const mutatorsOf = (node: MapNode): string =>
+  (node.mutators ?? []).map((m) => MUTATOR_NAME[m]).join(' · ');
 
 // Where each area sits on the drawing, by column and row.
 const COLUMN = 84;
@@ -172,7 +177,7 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                 const radius = node.kind === 'boss' ? R + 5 : R;
                 return (
                   <g
-                    aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}`}
+                    aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}${mutatorsOf(node) === '' ? '' : `, ${mutatorsOf(node)}`}`}
                   >
                     <Show when={ahead(c(), r())}>
                       <circle
@@ -233,6 +238,17 @@ export default function LayerMapPanel(props: Props): JSX.Element {
                     >
                       {nameOf(node)}
                     </text>
+                    <Show when={mutatorsOf(node) !== ''}>
+                      <text
+                        x={p().x}
+                        y={p().y + radius + 26}
+                        text-anchor="middle"
+                        class="text-[9px]"
+                        fill="#f87171"
+                      >
+                        {mutatorsOf(node)}
+                      </text>
+                    </Show>
                   </g>
                 );
               }}
@@ -244,9 +260,11 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
         Labyrinth once the way through is found. The small mark beside a fight is what its chest
         pays: gold, arms for the party, a card, materials, or a respite that heals the party and
-        keeps its dead whole. Elites are harder, and pay better. At a Camp the party rests back to
-        full. A Town has a smith, a bench, a temple and a market. The roads not taken collapse
-        behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span> to close.
+        keeps its dead whole. A fight's mutators, in red under its name, make it harder and add an
+        item to its chest. Elites are harder, always have one, and pay better. At a Camp the
+        party rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
+        taken collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span>{' '}
+        to close.
       </p>
     </Panel>
   );

@@ -1,4 +1,4 @@
-import type { Objective, Reward } from '../gen/graph';
+import { MUTATOR_NAME, type Objective, type Reward } from '../gen/graph';
 import { type Ahead, type Prop, type Stage, rectOf } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
@@ -91,6 +91,8 @@ const th = (): number => TH * look.zoom;
 // How far the party sees: the bearer by the lantern, mercs by their own light.
 const BEARER_SIGHT = 7;
 const MERC_SIGHT = 4.5;
+// How much of the party's sight and light the Darkness mutator leaves
+const DARK_SHARE = 0.5;
 
 // Each status's color: its element's, or bone for plain ones like Stun.
 const STATUS_COLOR: Record<string, string> = {
@@ -185,6 +187,8 @@ export interface Frame {
   leaving: number | null;
   // Whether the area's objective still holds every exit shut
   exitsShut: boolean;
+  // Whether the Darkness mutator halves the party's light
+  dark: boolean;
   // The run's seed, shown when it ends so it can be shared
   seed: string;
   // How the final fight ended: the Creditor sealed again, or risen
@@ -522,7 +526,8 @@ export default class Renderer {
     this.fog.sync(f.areas.map((a) => a.stage));
     const viewers = f.sim.living(Side.Party).map((u) => {
       const r = f.views.rig(u, f.alpha);
-      return { x: r.x, z: r.z, radius: u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT };
+      const radius = u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT;
+      return { x: r.x, z: r.z, radius: f.dark ? radius * DARK_SHARE : radius };
     });
     // The safe places are lit: the Guild House, Waystations, Towns and Camps.
     for (const { stage } of f.areas) {
@@ -649,7 +654,7 @@ export default class Renderer {
       lights.push({
         x: b.x,
         z: b.z,
-        radius: 6.5 + flicker,
+        radius: (f.dark ? 6.5 * DARK_SHARE : 6.5) + flicker,
         color: [255, 196, 120],
         strength: 1.05,
       });
@@ -1049,6 +1054,15 @@ export default class Renderer {
       out.fillRect(x - width / 2, y - 14, width, 18);
       out.fillStyle = e.ahead === 'elite' || e.ahead === 'boss' ? '#d47a6a' : '#d6d0c4';
       out.fillText(text, x, y);
+      // Its mutators, on a line under it
+      const mutators = (e.mutators ?? []).map((m) => MUTATOR_NAME[m]).join(' · ');
+      if (mutators !== '') {
+        const under = out.measureText(mutators).width + 8;
+        out.fillStyle = 'rgba(0,0,0,0.65)';
+        out.fillRect(x - under / 2, y + 4, under, 18);
+        out.fillStyle = '#d47a6a';
+        out.fillText(mutators, x, y + 18);
+      }
     }
     if (f.callout && f.sim.bearer) {
       const r = f.views.rig(f.sim.bearer, f.alpha);

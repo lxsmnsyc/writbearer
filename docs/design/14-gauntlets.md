@@ -87,6 +87,17 @@ As Aghanim's Labyrinth's room modifiers. From the Rift Road down, a gauntlet may
 - A mutator raises the area's reward by one step, so a harder road can be chosen on purpose.
 - Mutators come from the `map` stream.
 
+In the game so far (`src/game/mutators.ts`):
+
+- Darkness, Blood moon, Volatile and Restless dead are in. The other six are not yet.
+- An ordinary fight from the Rift Road down has one 30% of the time. An Elite always has one, from the first layer. From the Sunken Crown down, an Elite has two.
+- The signpost shows them on a line under the objective. The map shows them in red under the area's name. The badge shows them as chips, with what each does on hover.
+- Each mutator adds one elite's item to the chest.
+- Darkness halves the party's sight and the bearer's lantern.
+- Blood moon: a monster below half health deals 30% more damage to the party.
+- Volatile: a dying monster leaves a 1.6 tile warning that strikes the party for 15% of health after 1 second.
+- Restless dead: a body not torn apart rises as an aware Husk after 10 seconds, and can no longer be raised. A Husk that rose does not rise again. A Respite keeps the party's dead from rising.
+
 ### Mini-bosses
 
 Elite gauntlets end on a mini-boss. Ordinary gauntlets have one about one time in four, from the Rift Road down. See [mini-bosses](13-bestiary.md#mini-bosses).
@@ -178,7 +189,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check. Done, without Silent and In order.
 3. Wave warnings and the next wave in the Horde's badge. Done.
 4. Arrows to marked monsters, and marked monsters that run. Done.
-5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead.
+5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps.
 7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush.
 

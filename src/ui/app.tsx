@@ -200,6 +200,20 @@ export default function App(): JSX.Element {
             </span>
             <div class="min-w-0">
               <h2 class="text-sm font-semibold text-neutral-50">{o.title}</h2>
+              <Show when={o.mutators.length > 0}>
+                <ul class="mt-0.5 flex flex-wrap gap-1" aria-label="Mutators">
+                  <Index each={o.mutators}>
+                    {(m) => (
+                      <li
+                        class="rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] text-red-300"
+                        title={m().text}
+                      >
+                        {m().name}
+                      </li>
+                    )}
+                  </Index>
+                </ul>
+              </Show>
               <p class="text-xs text-neutral-400">{o.detail}</p>
               <Show when={o.coming.length > 0}>
                 <ul class="mt-1.5 flex flex-wrap gap-1.5" aria-label="Next wave">

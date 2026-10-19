@@ -1,7 +1,7 @@
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Nav, { type Rect, type Spot } from '../sim/nav';
-import type { MapNode, NodeKind, Objective, Reward } from './graph';
+import type { MapNode, Mutator, NodeKind, Objective, Reward } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
 
 export type PropKind =
@@ -42,6 +42,8 @@ export interface Prop {
   open?: boolean;
   holds?: Reward;
   better?: boolean;
+  // Items added for the fight's mutators
+  extra?: number;
 }
 
 /** A pack to spawn: its monsters, where it stands, and which one is an elite. */
@@ -64,9 +66,10 @@ export type ExitSide = 'east' | 'north' | 'south';
 /** A way out of an area by one of its edges, and what lies beyond it. */
 export interface Exit extends Spot {
   ahead: Ahead;
-  // The objective of the fight beyond it, and what it pays
+  // The objective of the fight beyond it, what it pays, and its mutators
   objective?: Objective;
   reward?: Reward;
+  mutators?: readonly Mutator[];
   // The edge it leaves by, and the way out across it, one tile long
   side: ExitSide;
   out: Spot;
@@ -324,13 +327,14 @@ export function generateStage(rng: RNG, index: number, plan: AreaPlan = PLAIN): 
 }
 
 /** What a signpost tells of the fight beyond its road. */
-export type Fight = Pick<MapNode, 'objective' | 'reward'>;
+export type Fight = Pick<MapNode, 'objective' | 'reward' | 'mutators'>;
 
 /** Notes on each exit the objective and reward of the fight it leads to, for its signpost. */
 export function withFightsAhead(stage: Stage, fights: readonly (Fight | undefined)[] = []): Stage {
   stage.exits.forEach((e, k) => {
     e.objective = fights[k]?.objective;
     e.reward = fights[k]?.reward;
+    e.mutators = fights[k]?.mutators;
   });
   return stage;
 }

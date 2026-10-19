@@ -53,6 +53,34 @@ export const CHALLENGE_NAME: Record<Challenge, string> = {
   thorough: 'Thorough',
 };
 
+/**
+ * A rule that changes a fight, as Aghanim's Labyrinth's room modifiers.
+ * Each makes the fight harder and adds an item to its chest.
+ */
+export type Mutator = 'darkness' | 'bloodMoon' | 'volatile' | 'restless';
+
+export const MUTATORS: readonly Mutator[] = ['darkness', 'bloodMoon', 'volatile', 'restless'];
+
+export const MUTATOR_NAME: Record<Mutator, string> = {
+  darkness: 'Darkness',
+  bloodMoon: 'Blood moon',
+  volatile: 'Volatile',
+  restless: 'Restless dead',
+};
+
+export const MUTATOR_TEXT: Record<Mutator, string> = {
+  darkness: 'The party sees half as far.',
+  bloodMoon: 'Monsters below half health deal more damage.',
+  volatile: 'Monsters burst when they die.',
+  restless: 'The whole dead rise as Husks.',
+};
+
+// From this layer down, an ordinary fight may roll a mutator; from the
+// last, an Elite rolls two.
+const MUTATE_FROM = 1;
+const MUTATE_CHANCE = 0.3;
+const TWO_MUTATORS_FROM = 3;
+
 /** One area on a layer's map. */
 export interface MapNode {
   // Which of its column's nodes this is, from the north edge
@@ -62,6 +90,7 @@ export interface MapNode {
   objective?: Objective;
   reward?: Reward;
   challenge?: Challenge;
+  mutators?: Mutator[];
   // Rows of the next column this area's exits lead to, north first
   next: number[];
 }
@@ -93,9 +122,10 @@ const TOWN_COLUMNS = [3, 4];
 /**
  * Rolls a layer's map from the `map` stream. `opening` is how many areas
  * its first column has: 2 below a Waystation, 1 where the run begins. A
- * layer with a `town` has one Town, in its fourth or fifth column.
+ * layer with a `town` has one Town, in its fourth or fifth column. `depth`
+ * is the layer, or the endless phase, counting from 0.
  */
-export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap {
+export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0): LayerMap {
   const last = AREAS_PER_LAYER - 1;
   const columns: MapNode[][] = [];
   for (let c = 0; c <= last; c++) {
@@ -159,7 +189,29 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false): LayerMap 
       node.challenge = rng.pick(CHALLENGES[node.objective]);
     }
   }
+  rollMutators(rng, columns, depth);
   return { columns };
+}
+
+// An Elite always has a mutator, two from the last layer down. An ordinary
+// fight has one by chance, from the second layer down.
+function rollMutators(rng: RNG, columns: MapNode[][], depth: number): void {
+  for (const node of columns.flat()) {
+    if (!node.objective) {
+      continue;
+    }
+    let count = 0;
+    if (node.kind === 'elite') {
+      count = depth >= TWO_MUTATORS_FROM ? 2 : 1;
+    } else if (depth >= MUTATE_FROM && rng.chance(MUTATE_CHANCE)) {
+      count = 1;
+    }
+    const pool = [...MUTATORS];
+    node.mutators = Array.from(
+      { length: count },
+      () => pool.splice(rng.int(0, pool.length - 1), 1)[0],
+    );
+  }
 }
 
 // Gives every fight a reward. No two roads from one fork pay the same: the
