@@ -66,7 +66,47 @@ const PALETTE: RGB[] = [
   ].map(hex),
 ];
 
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+/**
+ * The pixelating filter: averages each `block` by `block` square of a
+ * sharp frame into one pixel of a small one, snapped to the palette.
+ */
+export function pixelate(
+  from: CanvasRenderingContext2D,
+  to: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  block: number,
+): void {
+  const src = from.getImageData(0, 0, w * block, h * block).data;
+  const img = to.createImageData(w, h);
+  const d = img.data;
+  const row = w * block * 4;
+  const n = block * block;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      for (let dy = 0; dy < block; dy++) {
+        let i = (y * block + dy) * row + x * block * 4;
+        for (let dx = 0; dx < block; dx++) {
+          r += src[i];
+          g += src[i + 1];
+          b += src[i + 2];
+          i += 4;
+        }
+      }
+      const c = PALETTE[nearest(r / n, g / n, b / n)];
+      const o = (y * w + x) * 4;
+      d[o] = c[0];
+      d[o + 1] = c[1];
+      d[o + 2] = c[2];
+      d[o + 3] = 255;
+    }
+  }
+  to.putImageData(img, 0, 0);
+}
+
 const nearestCache = new Map<number, number>();
 
 function nearest(r: number, g: number, b: number): number {
@@ -87,36 +127,4 @@ function nearest(r: number, g: number, b: number): number {
   }
   nearestCache.set(key, best);
   return best;
-}
-
-/**
- * Snaps every pixel to the palette, with a light ordered dither. The dither
- * pattern is fixed to the world through the camera offset, so it does not
- * crawl over the floor as the camera moves.
- */
-export function quantize(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  dither = 6,
-  ox = 0,
-  oy = 0,
-): void {
-  const img = ctx.getImageData(0, 0, w, h);
-  const d = img.data;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const t = (BAYER[((y + oy) & 3) * 4 + ((x + ox) & 3)] / 16 - 0.5) * dither;
-      const c =
-        PALETTE[
-          nearest(Math.max(0, d[i] + t), Math.max(0, d[i + 1] + t), Math.max(0, d[i + 2] + t))
-        ];
-      d[i] = c[0];
-      d[i + 1] = c[1];
-      d[i + 2] = c[2];
-      d[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
 }

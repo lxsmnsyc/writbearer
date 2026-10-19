@@ -126,8 +126,13 @@ const HEIGHT_K = 0.3;
 
 /**
  * How figures are drawn. `zoom` scales every pixel size with the camera.
+ * `fine` is how many sharp pixels make a frame pixel: figures' points snap
+ * to those before the frame is pixelated.
  */
-export const look = { zoom: 1 };
+export const look = { zoom: 1, fine: 1 };
+
+/** A length in frame pixels, snapped to the sharp canvas's pixels. */
+export const snap = (n: number): number => Math.round(n * look.fine) / look.fine;
 
 // Small fixed offsets per corner, so cut edges look hand cut.
 const CUT = [0.3, -0.4, 0.5, -0.2, 0.1, -0.5, 0.4, -0.3, 0.2, -0.1];
@@ -164,10 +169,10 @@ const HALF_W = 16;
 const HALF_H = 8;
 
 /**
- * Projects a figure's points. Only its feet are snapped to the pixel grid;
- * each point is a whole-pixel offset from them. So as the figure walks, it
- * moves as one block and keeps its shape, instead of each joint snapping on
- * its own and the figure shimmering.
+ * Projects a figure's points. Only its feet are snapped to the grid; each
+ * point is a snapped offset from them. So as the figure walks, it moves as
+ * one block and keeps its shape, instead of each joint snapping on its own
+ * and the figure shimmering.
  */
 function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
   const size = sizeOf(u);
@@ -183,8 +188,8 @@ function projector(u: RigUnit, iso: Iso): (p: V3) => Projected {
     const dx = (f * c - r * s) * FLOOR_K;
     const dz = (f * s + r * c) * FLOOR_K;
     return {
-      x: base.x + Math.round((dx - dz) * HALF_W * z),
-      y: base.y + Math.round((dx + dz) * HALF_H * z - p[2] * size * HEIGHT_K * z),
+      x: base.x + snap((dx - dz) * HALF_W * z),
+      y: base.y + snap((dx + dz) * HALF_H * z - p[2] * size * HEIGHT_K * z),
       depth: u.x + dx + u.z + dz,
     };
   };

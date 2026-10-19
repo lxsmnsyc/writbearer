@@ -31,8 +31,8 @@ import { Shout } from '../sim/shout';
 import { type FloorImage, buildFloor } from './floor';
 import { Fogs } from './fog';
 import { type Light, Lighting } from './light';
-import { C, quantize } from './palette';
-import { drawUnit, emissives, isKind, look } from './rig';
+import { C, pixelate } from './palette';
+import { drawUnit, emissives, isKind, look, snap } from './rig';
 import type { Views } from './view';
 
 // The frame is drawn small and scaled up with no smoothing.
@@ -204,8 +204,11 @@ const focusOf = (f: Frame): Unit | null => f.sim.bearer ?? (f.stage.tomb ? f.bos
 
 export default class Renderer {
   private readonly out: CanvasRenderingContext2D;
+  // The world is drawn sharp at the screen's size into `ctx`, in frame
+  // pixels through a scale, then pixelated into `small` and scaled back up.
   private readonly ctx: CanvasRenderingContext2D;
   private readonly small: HTMLCanvasElement;
+  private readonly smallCtx: CanvasRenderingContext2D;
   // The camera in frame pixels: `glide` is where it is, easing after the
   // bearer, and `cam` that place in whole pixels, which the ground is drawn
   // at. Moving figures are drawn against `glide`, so the one the camera
@@ -227,17 +230,22 @@ export default class Renderer {
   private readonly scratch: CanvasRenderingContext2D;
 
   constructor(private readonly screen: HTMLCanvasElement) {
+    look.fine = SCALE;
     screen.width = W * SCALE;
     screen.height = H * SCALE;
     this.out = screen.getContext('2d')!;
     this.out.imageSmoothingEnabled = false;
+    const world = document.createElement('canvas');
+    world.width = W * SCALE;
+    world.height = H * SCALE;
+    this.ctx = world.getContext('2d', { willReadFrequently: true })!;
     this.small = document.createElement('canvas');
     this.small.width = W;
     this.small.height = H;
-    this.ctx = this.small.getContext('2d', { willReadFrequently: true })!;
+    this.smallCtx = this.small.getContext('2d')!;
     const scratch = document.createElement('canvas');
-    scratch.width = W;
-    scratch.height = H;
+    scratch.width = W * SCALE;
+    scratch.height = H * SCALE;
     this.scratch = scratch.getContext('2d')!;
   }
 
@@ -256,8 +264,8 @@ export default class Renderer {
    */
   readonly body = (x: number, z: number): Pt =>
     pt(
-      Math.round((x - z) * (tw() / 2) - this.glide.x - this.jolt.x),
-      Math.round((x + z) * (th() / 2) - this.glide.y - this.jolt.y),
+      snap((x - z) * (tw() / 2) - this.glide.x - this.jolt.x),
+      snap((x + z) * (th() / 2) - this.glide.y - this.jolt.y),
     );
 
   /**
@@ -321,6 +329,11 @@ export default class Renderer {
     this.jolt.x = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
     this.jolt.y = f.shake > 0 ? Math.round((Math.random() * 2 - 1) * f.shake) : 0;
 
+    // Drawn in frame pixels, each SCALE pixels of the sharp canvas
+    for (const c of [ctx, this.scratch]) {
+      c.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+      c.imageSmoothingEnabled = false;
+    }
     ctx.fillStyle = C.void;
     ctx.fillRect(0, 0, W, H);
     this.drawStoneFloor(f);
@@ -475,10 +488,9 @@ export default class Renderer {
     this.drawLight(f);
     this.drawGlow(f, fog);
     this.drawHealth(f, fog);
-    // Snapped to the palette with no dither. A dither pattern fixed to the
-    // floor shimmers over anything that moves across it, and the light has
-    // hard steps of its own.
-    quantize(ctx, W, H, 0);
+    // The pixelating filter: each block of the sharp frame becomes one
+    // pixel, snapped to the palette.
+    pixelate(ctx, this.smallCtx, W, H, SCALE);
 
     // The frame is shifted by the camera's leftover screen pixels, so up to
     // two columns at the right and bottom edge show the void.
@@ -635,7 +647,7 @@ export default class Renderer {
     s.globalCompositeOperation = 'source-atop';
     s.fillStyle = `rgba(0,0,0,${amount})`;
     s.fillRect(x, y, w, h);
-    this.ctx.drawImage(s.canvas, x, y, w, h, x, y, w, h);
+    this.ctx.drawImage(s.canvas, x * SCALE, y * SCALE, w * SCALE, h * SCALE, x, y, w, h);
   }
 
   // The worn stone floor, drawn once per stage and zoom, then copied.
