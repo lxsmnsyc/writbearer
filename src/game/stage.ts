@@ -79,16 +79,14 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
     pack.kinds.forEach((kind, i) => {
       const a = (i / pack.kinds.length) * Math.PI * 2;
       const r = pack.kinds.length > 1 ? 1.1 : 0;
-      const u = spawnMonster(
-        sim,
-        kind,
-        monsterLevel(stage.index),
-        pack.x + Math.cos(a) * r,
-        pack.z + Math.sin(a) * r,
-        {
-          elite: i === pack.elite,
-        },
-      );
+      // Never inside something solid, such as the altar at a sealing site,
+      // where nothing could reach it.
+      const x = pack.x + Math.cos(a) * r;
+      const z = pack.z + Math.sin(a) * r;
+      const at = sim.nav?.free(x, z) ?? { x, z };
+      const u = spawnMonster(sim, kind, monsterLevel(stage.index), at.x, at.z, {
+        elite: i === pack.elite,
+      });
       u.marked = i === pack.marked;
       u.bearsKey = i === pack.key;
     });

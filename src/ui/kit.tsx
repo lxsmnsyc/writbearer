@@ -5,6 +5,7 @@ import {
   flip,
   offset,
   shift,
+  size,
   useFloating,
   useFocus,
   useHover,
@@ -278,6 +279,10 @@ interface TooltipProps {
   children: (anchor: Anchor) => JSX.Element;
 }
 
+// How close a tooltip comes to the screen's edge, and how wide it grows, in pixels
+const EDGE = 8;
+const TOOLTIP_WIDTH = 320;
+
 /** A card that floats beside its anchor while it is hovered or focused. */
 export function Tooltip(props: TooltipProps): JSX.Element {
   const [open, setOpen] = createSignal(false);
@@ -291,7 +296,24 @@ export function Tooltip(props: TooltipProps): JSX.Element {
     get placement() {
       return props.placement ?? 'top';
     },
-    middleware: [offset(10), flip(), shift({ padding: 8 })],
+    // It flips to any side with room, slides along the screen's edges, and
+    // never grows past the room it has, so it is never cut off.
+    middleware: [
+      offset(10),
+      flip({ fallbackAxisSideDirection: 'end', padding: EDGE }),
+      shift({ padding: EDGE, crossAxis: true }),
+      size({
+        padding: EDGE,
+        apply({ availableWidth, availableHeight, elements }) {
+          Object.assign(elements.floating.style, {
+            maxWidth: `${Math.min(TOOLTIP_WIDTH, availableWidth)}px`,
+            maxHeight: `${availableHeight}px`,
+          });
+        },
+      }),
+    ],
+    // Fixed to the screen, so it never stretches the page and scrolls the game
+    strategy: 'fixed',
     whileElementsMounted: autoUpdate,
   });
   const interactions = useInteractions([
@@ -315,7 +337,7 @@ export function Tooltip(props: TooltipProps): JSX.Element {
               floating.refs.setFloating(el);
             }}
             style={floating.floatingStyles}
-            class="pointer-events-none z-50 max-w-xs rounded-xl bg-raised/95 px-3 py-2.5 text-xs text-neutral-300 shadow-2xl ring-1 shadow-black/70 ring-white/10 backdrop-blur"
+            class="pointer-events-none z-50 overflow-hidden rounded-xl bg-raised/95 px-3 py-2.5 text-xs text-neutral-300 shadow-2xl ring-1 shadow-black/70 ring-white/10 backdrop-blur"
           >
             {props.content()}
           </div>

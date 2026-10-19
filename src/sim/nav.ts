@@ -151,6 +151,28 @@ export default class Nav {
     return k >= 0 && this.blocked[k] === 0;
   }
 
+  /**
+   * The point nearest to one given where a body can stand, searched in rings
+   * out to `reach`. The point itself if a body can stand there, or if
+   * nowhere near is free.
+   */
+  free(x: number, z: number, reach = 5): Spot {
+    if (this.walkable(x, z)) {
+      return { x, z };
+    }
+    for (let r = 0.5; r <= reach; r += 0.5) {
+      const steps = Math.ceil(r * 8);
+      for (let s = 0; s < steps; s++) {
+        const a = (s / steps) * Math.PI * 2;
+        const p = { x: x + Math.cos(a) * r, z: z + Math.sin(a) * r };
+        if (this.walkable(p.x, p.z)) {
+          return p;
+        }
+      }
+    }
+    return { x, z };
+  }
+
   /** Whether a body can walk straight from one point to the other. */
   clear(ax: number, az: number, bx: number, bz: number): boolean {
     const d = Math.hypot(bx - ax, bz - az);

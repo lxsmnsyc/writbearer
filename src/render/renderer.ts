@@ -460,8 +460,10 @@ export default class Renderer {
     this.drawLight(f);
     this.drawGlow(f, fog);
     this.drawHealth(f, fog);
-    // The light has hard steps of its own, so it needs little dither.
-    quantize(ctx, W, H, 3, this.cam.x + this.jolt.x, this.cam.y + this.jolt.y);
+    // Snapped to the palette with no dither. A dither pattern fixed to the
+    // floor shimmers over anything that moves across it, and the light has
+    // hard steps of its own.
+    quantize(ctx, W, H, 0);
 
     // The frame is shifted by the camera's leftover screen pixels, so up to
     // two columns at the right and bottom edge show the void.
