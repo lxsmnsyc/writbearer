@@ -173,7 +173,10 @@ export default class Unit {
   // Monsters stand idle until they notice the party.
   aware = false;
   // A Hunt's quarry: the exits open once every marked monster is dead.
+  // Badly hurt, it runs once to a pack still unaware, to wake it.
   marked = false;
+  runningTo: { x: number; z: number } | null = null;
+  ran = false;
   // Where a monster last saw whom it was after, to look for it there
   lastSeen: { x: number; z: number } | null = null;
   toggles: Toggles | undefined;

@@ -368,6 +368,45 @@ function lureFor(sim: Sim, u: Unit): Zone | undefined {
     .at(0);
 }
 
+// A marked monster runs for help once its health falls below this share.
+const RUN_AT = 0.5;
+
+// Wakes every monster within a pack's reach of a spot.
+function wakePack(sim: Sim, at: { x: number; z: number }): void {
+  for (const m of sim.living(Side.Monster)) {
+    if (Math.hypot(m.x - at.x, m.z - at.z) <= PACK_RADIUS) {
+      m.aware = true;
+    }
+  }
+}
+
+/**
+ * A Hunt's marked monster, badly hurt, runs once to the nearest pack still
+ * unaware and wakes it. A taunt stops it. Returns whether it is running.
+ */
+function runForHelp(sim: Sim, u: Unit, dt: number, taunted: boolean): boolean {
+  if (u.marked && !u.ran && u.hp < u.derived.maxHp * RUN_AT) {
+    u.ran = true;
+    const help = sim
+      .living(Side.Monster)
+      .filter((m) => !m.aware && m.distanceTo(u) > PACK_RADIUS)
+      .sort((a, b) => u.distanceTo(a) - u.distanceTo(b))
+      .at(0);
+    u.runningTo = help ? { x: help.x, z: help.z } : null;
+  }
+  const to = u.runningTo;
+  if (!to || taunted) {
+    u.runningTo = null;
+    return false;
+  }
+  u.target = null;
+  if (u.travel(to.x, to.z, dt, PACK_RADIUS - 1)) {
+    wakePack(sim, to);
+    u.runningTo = null;
+  }
+  return true;
+}
+
 function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   const party = sim.living(Side.Party);
   if (!u.aware) {
@@ -378,15 +417,14 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
     if (!noticed) {
       return;
     }
-    for (const m of sim.living(Side.Monster)) {
-      if (m.distanceTo(u) <= PACK_RADIUS) {
-        m.aware = true;
-      }
-    }
+    wakePack(sim, u);
   }
   const bearer = sim.bearer?.alive ? sim.bearer : null;
   // A taunted monster goes for whoever taunted it.
   const taunt = u.statuses.get(TAUNTED.id);
+  if (runForHelp(sim, u, dt, taunt !== undefined)) {
+    return;
+  }
   // A decoy draws in what is not taunted, bosses aside.
   const bait = taunt || u.rank === Rank.Boss ? undefined : lureFor(sim, u);
   if (bait) {

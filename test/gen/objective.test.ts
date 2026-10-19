@@ -74,6 +74,21 @@ describe('a Hunt', () => {
       expect(stage.reward).toBeDefined();
     }
   });
+
+  it('marks a quarry that runs, badly hurt, to wake the nearest pack', () => {
+    const sim = new Sim(1);
+    sim.setFloor(40, 20);
+    const quarry = spawnMonster(sim, 'hollowSoldier', 4, 5, 10);
+    quarry.marked = true;
+    quarry.aware = true;
+    const near = spawnMonster(sim, 'husk', 4, 20, 10);
+    const far = spawnMonster(sim, 'husk', 4, 36, 10);
+    quarry.hp = Math.floor(quarry.derived.maxHp * 0.4);
+    sim.run(20, () => near.aware);
+    expect(near.aware).toBe(true);
+    expect(far.aware).toBe(false);
+    expect(quarry.runningTo).toBeNull();
+  });
 });
 
 describe('a Horde', () => {

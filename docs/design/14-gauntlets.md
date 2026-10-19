@@ -103,6 +103,7 @@ Today: kill 3 to 5 marked monsters anywhere on the open field.
 
 - **Arrows at the screen's edge** point to each marked monster the party has seen, so the field does not need to be searched blind.
 - **Marked monsters react.** A marked monster that drops below half health runs to its nearest pack and wakes it. The Snare and Pin Down skills gain a use.
+- In the game so far: the arrows are drawn for marked monsters once any of them has been in sight, and only while they are off the screen. A marked monster runs once, to the nearest monster still unaware, and wakes every monster within 3 tiles of it. If none is unaware, it fights on. A taunt stops the run.
 - **Kinds of quarry.** Each Hunt rolls one:
   - **Leaders:** today's Hunt. The leaders of the farthest packs.
   - **Heralds:** the marked are Horn-Bearers. Each one that reaches a horn post calls a pack before it can be killed.
@@ -176,7 +177,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 1. Rewards on the road. It changes how every fork is chosen, and needs only the chest and the signposts. Done, without Lore.
 2. The bonus challenge. Most checks already exist, such as the Labyrinth's no-hit check. Done, without Silent and In order.
 3. Wave warnings and the next wave in the Horde's badge. Done.
-4. Arrows to marked monsters, and marked monsters that run.
+4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead.
 6. The Labyrinth's key, gates and new traps.
 7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush.

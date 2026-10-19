@@ -57,6 +57,9 @@ const AHEAD_NAME: Record<Exclude<Ahead, 'down'>, string> = {
   boss: 'The walled ring',
 };
 
+// How far in from the screen's edge the arrows to marked monsters stand, in pixels
+const QUARRY_INSET = 26;
+
 /** How far an exit's plate reaches from its middle, in tiles. Clicks within it choose it. */
 export const EXIT_PLATE = 0.9;
 
@@ -214,6 +217,8 @@ export default class Renderer {
   private readonly atmosphere = new Atmosphere(W, H);
   private readonly floors = new Map<Stage, { zoom: number; image: FloorImage }>();
   private readonly fog = new Fogs();
+  // A Hunt's marked monsters the party has seen, which arrows point to
+  private readonly sighted = new WeakSet<Unit>();
   private readonly scratch: CanvasRenderingContext2D;
 
   constructor(private readonly screen: HTMLCanvasElement) {
@@ -461,7 +466,55 @@ export default class Renderer {
     this.out.drawImage(this.small, -this.sub.x, -this.sub.y, W * SCALE, H * SCALE);
     drawVignette(this.out);
     this.drawLabels(f, fog);
+    this.drawQuarry(f, fog);
     this.drawHud(f);
+  }
+
+  // An arrow at the screen's edge toward each marked monster the party has
+  // seen that is off the screen, so a Hunt's field need not be searched blind.
+  private drawQuarry(f: Frame, fog: Fogs): void {
+    const { out } = this;
+    const w = W * SCALE;
+    const h = H * SCALE;
+    for (const u of f.sim.living(Side.Monster)) {
+      if (!u.marked) {
+        continue;
+      }
+      const r = f.views.rig(u, f.alpha);
+      if (seen(fog, u, r.x, r.z) >= 0.5) {
+        this.sighted.add(u);
+      }
+      const b = this.iso(r.x, r.z);
+      const x = b.x * SCALE - this.sub.x;
+      const y = b.y * SCALE - this.sub.y;
+      if (!this.sighted.has(u) || (x >= 0 && x <= w && y >= 0 && y <= h)) {
+        continue;
+      }
+      // Along the line from the middle of the screen, stopped at the edge
+      const dx = x - w / 2;
+      const dy = y - h / 2;
+      const k = Math.min(
+        (w / 2 - QUARRY_INSET) / Math.abs(dx || 1),
+        (h / 2 - QUARRY_INSET) / Math.abs(dy || 1),
+      );
+      const ax = w / 2 + dx * k;
+      const ay = h / 2 + dy * k;
+      const a = Math.atan2(dy, dx);
+      const tip = (t: number, d: number): [number, number] => [
+        ax + Math.cos(a + t) * d,
+        ay + Math.sin(a + t) * d,
+      ];
+      out.beginPath();
+      out.moveTo(...tip(0, 14));
+      out.lineTo(...tip(2.5, 11));
+      out.lineTo(...tip(-2.5, 11));
+      out.closePath();
+      out.fillStyle = C.blood;
+      out.strokeStyle = '#f2d8c9';
+      out.lineWidth = 2;
+      out.fill();
+      out.stroke();
+    }
   }
 
   // What the party sees this frame. Solid props block sight; bodies do not.
