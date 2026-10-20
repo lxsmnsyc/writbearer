@@ -80,6 +80,7 @@ import {
 import { type Due, Payroll, desert } from './wages';
 import { Compendium, type Ending } from './compendium';
 import ObjectiveRun from './objective';
+import Captains from './captains';
 import Footing, { BLOSSOM_REACH } from './footing';
 import Hazards from './hazards';
 import {
@@ -337,6 +338,7 @@ export default class Game {
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
   private readonly footing = new Footing();
+  private readonly captains = new Captains();
   // What this fight's chest holds once its objective is done, its bonus
   // challenge, and whether that was met once the objective was done
   private prize: Reward | null = null;
@@ -2317,6 +2319,9 @@ export default class Game {
         this.noteMonsters();
         this.hazards?.update(this.sim, TICK);
         this.workGround();
+        for (const c of this.captains.update(this.sim, TICK)) {
+          this.say(`The ${c.name} captain calls more of its pack. Kill it to stop the calls.`);
+        }
         this.mutators.update(TICK);
         this.checkObjective();
         this.acc -= TICK;

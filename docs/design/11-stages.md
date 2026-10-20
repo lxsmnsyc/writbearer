@@ -140,6 +140,10 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
   - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other half of the field from the site.
+- **Captains:** from the third area, and in any Elite area, the lair's leader is a captain. Below the Marches, one roaming pack of four or more may have one too, half the time. A captain carries a red pennant over its head that shows even in the dark (`src/game/captains.ts`).
+  - Once it is in the fight, it calls more of its pack: first after 4 seconds, then every 12 seconds, 3 times at most.
+  - Each call brings the cheapest half of its pack, 3 monsters plus 1 per layer down. They come 4 tiles behind it, away from the bearer, already in the fight.
+  - A red circle shows where they will come for 1.2 seconds first. If the captain dies before then, no one comes, and it never calls again. So it is the one to kill first.
   - A cache, a chest for now. It opens only when clicked: the bearer walks to it and opens it.
 - **Places on open ground:** each place stands where a body can walk around it, plus pikes and gibbets along the way.
 - **Guild House:** where every run begins, before the first phase. A small field, lit through, with four recruits along its north side, a quartermaster's stall and the Guild's strongbox. Its road east leads into the first area. The game is not saved here; the first save is on entering the first area. Waystations, Towns and Camps are lit through too.

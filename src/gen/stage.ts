@@ -69,6 +69,8 @@ export interface Pack {
   key?: number;
   // Index into `kinds` of a Hunt's marked monster, if the pack has one
   marked?: number;
+  // Index into `kinds` of its captain, who calls more of the pack while it lives
+  captain?: number;
 }
 
 /** Where an area's exit leads: an area of the layer's map, or down. */
@@ -1205,6 +1207,25 @@ function placePacks(
       continue;
     }
     push({ kinds, x, z, elite: -1 });
+  }
+  appointCaptains(stage, rng, eliteArea);
+}
+
+// The lair's leader is a captain from this area on, or in an Elite area;
+// below the Marches, another pack's leader may be one too.
+const CAPTAIN_FROM = 2;
+const SECOND_CAPTAIN = 0.5;
+
+// Makes the leaders of some packs captains: the lair's, and below the
+// Marches, sometimes one of the packs roaming the field.
+function appointCaptains(stage: Stage, rng: RNG, eliteArea: boolean): void {
+  // The lair's pack is the second placed, after the Church's site.
+  if (stage.packs.length > 1 && (stage.index >= CAPTAIN_FROM || eliteArea)) {
+    stage.packs[1].captain = 0;
+  }
+  const roaming = stage.packs.slice(3).filter((p) => p.kinds.length >= 4);
+  if (stage.index >= AREAS_PER_LAYER && roaming.length > 0 && rng.chance(SECOND_CAPTAIN)) {
+    rng.pick(roaming).captain = 0;
   }
 }
 

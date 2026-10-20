@@ -179,6 +179,9 @@ export default class Unit {
   ran = false;
   // A Labyrinth's monster that carries the key to its hall
   bearsKey = false;
+  // A captain's followers: the kinds it calls to its side while it lives.
+  // Empty for any other unit.
+  calls: readonly string[] = [];
   // Where a monster last saw whom it was after, to look for it there
   lastSeen: { x: number; z: number } | null = null;
   toggles: Toggles | undefined;

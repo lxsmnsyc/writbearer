@@ -803,6 +803,16 @@ export default class Renderer {
         ctx.fillRect(b.x, top + 1, 4, 1);
         ctx.fillRect(b.x + 3, top + 2, 1, 2);
       }
+      // A captain carries a red pennant, even in the dark, so it can be picked out.
+      if (u.calls.length > 0) {
+        const b = this.body(r.x, r.z);
+        const top = b.y - Math.round((barHeight(u) + 16) * look.zoom);
+        ctx.fillStyle = C.ink;
+        ctx.fillRect(b.x - 4, top, 1, 9);
+        ctx.fillStyle = C.blood;
+        ctx.fillRect(b.x - 3, top, 5, 2);
+        ctx.fillRect(b.x - 3, top + 2, 3, 2);
+      }
       // A Hunt's quarry is marked even in the dark, so the party can find it.
       if (u.marked) {
         const b = this.body(r.x, r.z);

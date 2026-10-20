@@ -1,6 +1,14 @@
 import { spawnBoss } from '../content/bosses';
 import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
-import { type Stage, holesOf, monsterLevel, rectOf, solidsOf } from '../gen/stage';
+import {
+  type Pack,
+  type Stage,
+  THREAT,
+  holesOf,
+  monsterLevel,
+  rectOf,
+  solidsOf,
+} from '../gen/stage';
 import { type Rect, inRect } from '../sim/nav';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
@@ -83,6 +91,21 @@ export function dropStage(
 const PACK_SPACING = 0.75;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
+// How many a captain calls each time: three, one more each layer down
+const FOLLOWERS = 3;
+
+// The followers a captain calls: the cheapest of its pack, as many as it
+// calls at once.
+function followersOf(pack: Pack, layer: number): string[] {
+  const rest = pack.kinds.filter((_, i) => i !== pack.captain);
+  const cheap = [...rest].sort((a, b) => THREAT[a] - THREAT[b]);
+  const pool = cheap.slice(0, Math.ceil(cheap.length / 2));
+  if (pool.length === 0) {
+    return [];
+  }
+  return Array.from({ length: FOLLOWERS + layer }, (_, i) => pool[i % pool.length]);
+}
+
 // Spawns a stage's packs, and its boss a level above them.
 function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
@@ -98,6 +121,9 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
       });
       u.marked = i === pack.marked;
       u.bearsKey = i === pack.key;
+      if (i === pack.captain) {
+        u.calls = followersOf(pack, stage.biome);
+      }
     });
   }
   // A boss stands a level above the layer's last packs would.
