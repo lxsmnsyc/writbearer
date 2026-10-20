@@ -2,6 +2,7 @@ import { For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type Game from '../game/game';
 import {
+  type Cell,
   MUTATOR_NAME,
   type MapNode,
   type NodeKind,
@@ -62,25 +63,58 @@ const nameOf = (node: MapNode): string => {
 const mutatorsOf = (node: MapNode): string =>
   (node.mutators ?? []).map((m) => MUTATOR_NAME[m]).join(' · ');
 
-// Where each area sits on the drawing, by column and row.
-const COLUMN = 84;
-const ROW = 72;
-const LEFT = 104;
-const MIDDLE = 116;
-const R = 17;
+// A road taken in gold, one that can be taken now in faint gold, the rest grey
+function roadColor(road: { took: boolean; open: boolean }): string {
+  if (road.took) {
+    return '#e8b04a';
+  }
+  return road.open ? '#e8b04a99' : '#ffffff26';
+}
+
+// A room's edge: thickest where the party is, thicker where it can go next
+function edgeOf(here: boolean, next: boolean): number {
+  if (here) {
+    return 3;
+  }
+  return next ? 2 : 1.2;
+}
+
+// Half a room across and down on the drawing: rooms are drawn as the game
+// sees the ground, from its corner, so east runs down to the right.
+const HW = 58;
+const HH = 29;
+// How much of its cell a room fills, and the room kept round the plan
+const ROOM = 0.66;
+const PAD = 26;
 
 /**
- * The layer's map: its areas column by column, the roads between them, the
- * way the party came and where it is now. The game is paused while it is
- * open.
+ * The layer's map: its areas as rooms where they lie, the roads between
+ * them as doors, the way the party came and where it is now. A road that
+ * leaves a room north on the map leaves it north in the world. The game is
+ * paused while it is open.
  */
 export default function LayerMapPanel(props: Props): JSX.Element {
   const state = props.game.layerMap();
-  const { columns } = state.map;
-  const at = (column: number, row: number): { x: number; y: number } => ({
-    x: LEFT + column * COLUMN,
-    y: MIDDLE + (row - (columns[column].length - 1) / 2) * ROW,
-  });
+  const { columns, start } = state.map;
+  const cells = [start, ...columns.flat().map((n) => n.cell)];
+  const sx = (c: Cell): number => (c.x - c.y) * HW;
+  const sy = (c: Cell): number => (c.x + c.y) * HH;
+  const left = Math.min(...cells.map(sx)) - HW - PAD;
+  const top = Math.min(...cells.map(sy)) - HH - PAD;
+  const width = Math.max(...cells.map(sx)) + HW + PAD - left;
+  const height = Math.max(...cells.map(sy)) + HH + PAD - top;
+  const at = (c: Cell): { x: number; y: number } => ({ x: sx(c) - left, y: sy(c) - top });
+  const diamond = (c: Cell, k = ROOM): string => {
+    const p = at(c);
+    return [
+      [p.x, p.y - HH * k],
+      [p.x + HW * k, p.y],
+      [p.x, p.y + HH * k],
+      [p.x - HW * k, p.y],
+    ]
+      .map(([x, y]) => `${x},${y}`)
+      .join(' ');
+  };
   const crossed = (column: number, row: number): boolean =>
     state.path.some((p) => p.column === column && p.row === row);
   const here = (column: number, row: number): boolean =>
@@ -104,7 +138,25 @@ export default function LayerMapPanel(props: Props): JSX.Element {
       (columns[state.at.column]?.[state.at.row]?.next.includes(row) ?? false)
     );
   };
-  const width = LEFT + (columns.length - 1) * COLUMN + 60;
+  // Every road, from the start's room or an area to the next
+  const roads = [
+    ...columns[0].map((n, row) => ({
+      a: start,
+      b: n.cell,
+      took: crossed(0, row),
+      open: !state.at,
+    })),
+    ...columns.flatMap((column, c) =>
+      column.flatMap((n, r) =>
+        n.next.map((j) => ({
+          a: n.cell,
+          b: columns[c + 1][j].cell,
+          took: taken(c, r, j),
+          open: here(c, r),
+        })),
+      ),
+    ),
+  ];
 
   return (
     <Panel
@@ -115,139 +167,76 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         props.onClose();
       }}
     >
-      <svg width={width} height={240} role="img" aria-label="The layer's areas and roads">
-        <g>
-          <circle cx={44} cy={MIDDLE} r={R} fill="#ffffff0d" stroke="#ffffff33" />
+      <svg width={width} height={height} role="img" aria-label="The layer's areas and roads">
+        <For each={roads}>
+          {(road) => (
+            <line
+              x1={at(road.a).x}
+              y1={at(road.a).y}
+              x2={at(road.b).x}
+              y2={at(road.b).y}
+              stroke={roadColor(road)}
+              stroke-width={road.took ? 7 : 5}
+              stroke-dasharray={road.open && !road.took ? '5 3' : undefined}
+            />
+          )}
+        </For>
+        <g aria-label={state.layer === 0 ? 'Start' : 'Waystation'}>
+          <polygon points={diamond(start)} fill="#1b1d22" stroke="#ffffff40" />
           <Dynamic
             component={ICONS[state.layer === 0 ? 'start' : 'waystation']}
-            x={44 - 10}
-            y={MIDDLE - 10}
+            x={at(start).x - 10}
+            y={at(start).y - 10}
             width={20}
             height={20}
             fill="#d4d4d4"
           />
-          <text
-            x={44}
-            y={MIDDLE + R + 14}
-            text-anchor="middle"
-            class="fill-neutral-500 text-[10px]"
-          >
-            {state.layer === 0 ? 'Start' : 'Waystation'}
-          </text>
         </g>
-        <For each={columns[0]}>
-          {(_, row) => (
-            <line
-              x1={44 + R}
-              y1={MIDDLE}
-              x2={at(0, row()).x}
-              y2={at(0, row()).y}
-              stroke={crossed(0, row()) ? '#e8b04a' : '#ffffff22'}
-              stroke-width={crossed(0, row()) ? 2.5 : 1.5}
-            />
-          )}
-        </For>
-        <For each={columns}>
-          {(column, c) => (
-            <For each={column}>
-              {(node, r) => (
-                <For each={node.next}>
-                  {(next) => (
-                    <line
-                      x1={at(c(), r()).x}
-                      y1={at(c(), r()).y}
-                      x2={at(c() + 1, next).x}
-                      y2={at(c() + 1, next).y}
-                      stroke={taken(c(), r(), next) ? '#e8b04a' : '#ffffff22'}
-                      stroke-width={taken(c(), r(), next) ? 2.5 : 1.5}
-                      stroke-dasharray={ahead(c() + 1, next) && here(c(), r()) ? '4 3' : undefined}
-                    />
-                  )}
-                </For>
-              )}
-            </For>
-          )}
-        </For>
         <For each={columns}>
           {(column, c) => (
             <For each={column}>
               {(node, r) => {
-                const p = (): { x: number; y: number } => at(c(), r());
-                const size = node.kind === 'boss' ? 26 : 20;
-                const radius = node.kind === 'boss' ? R + 5 : R;
+                const p = at(node.cell);
+                const boss = node.kind === 'boss';
+                const size = boss ? 24 : 18;
+                const label = `Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}${mutatorsOf(node) === '' ? '' : `, ${mutatorsOf(node)}`}`;
                 return (
-                  <g
-                    aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}${mutatorsOf(node) === '' ? '' : `, ${mutatorsOf(node)}`}`}
-                  >
-                    <Show when={ahead(c(), r())}>
-                      <circle
-                        cx={p().x}
-                        cy={p().y}
-                        r={radius + 5}
-                        fill="none"
-                        stroke={KIND_COLOR[node.kind]}
-                        stroke-opacity={0.35}
-                        stroke-width={2}
-                      />
-                    </Show>
-                    <circle
-                      cx={p().x}
-                      cy={p().y}
-                      r={radius}
+                  <g aria-label={label}>
+                    <title>{label}</title>
+                    <polygon
+                      points={diamond(node.cell)}
                       fill={crossed(c(), r()) ? '#2a2a2a' : '#0d0f14'}
                       stroke={crossed(c(), r()) ? '#e8b04a' : KIND_COLOR[node.kind]}
-                      stroke-width={here(c(), r()) ? 3 : 1.5}
+                      stroke-width={edgeOf(here(c(), r()), ahead(c(), r()))}
+                      stroke-dasharray={mutatorsOf(node) === '' ? undefined : '6 2'}
                     />
+                    <Show when={here(c(), r())}>
+                      <polygon
+                        points={diamond(node.cell, ROOM * 0.72)}
+                        fill="none"
+                        stroke="#e8b04a"
+                        stroke-opacity={0.5}
+                      />
+                    </Show>
                     <Dynamic
                       component={ICONS[iconOf(node)]}
-                      x={p().x - size / 2}
-                      y={p().y - size / 2}
+                      x={p.x - size / 2}
+                      y={p.y - size / 2}
                       width={size}
                       height={size}
                       fill={crossed(c(), r()) ? '#737373' : KIND_COLOR[node.kind]}
                     />
                     <Show when={node.reward}>
                       {(reward) => (
-                        <g>
-                          <title>{REWARD_NAME[reward()]}</title>
-                          <circle
-                            cx={p().x + radius * 0.75}
-                            cy={p().y - radius * 0.75}
-                            r={8}
-                            fill="#0d0f14"
-                            stroke="#e8b04a"
-                            stroke-width={1}
-                          />
-                          <Dynamic
-                            component={ICONS[REWARD_ICON[reward()]]}
-                            x={p().x + radius * 0.75 - 5.5}
-                            y={p().y - radius * 0.75 - 5.5}
-                            width={11}
-                            height={11}
-                            fill={crossed(c(), r()) ? '#737373' : '#e8b04a'}
-                          />
-                        </g>
+                        <Dynamic
+                          component={ICONS[REWARD_ICON[reward()]]}
+                          x={p.x + HW * 0.38}
+                          y={p.y - 6}
+                          width={12}
+                          height={12}
+                          fill={crossed(c(), r()) ? '#737373' : '#e8b04a'}
+                        />
                       )}
-                    </Show>
-                    <text
-                      x={p().x}
-                      y={p().y + radius + 14}
-                      text-anchor="middle"
-                      class="text-[10px]"
-                      fill={here(c(), r()) ? '#e8b04a' : '#a3a3a3'}
-                    >
-                      {nameOf(node)}
-                    </text>
-                    <Show when={mutatorsOf(node) !== ''}>
-                      <text
-                        x={p().x}
-                        y={p().y + radius + 26}
-                        text-anchor="middle"
-                        class="text-[9px]"
-                        fill="#f87171"
-                      >
-                        {mutatorsOf(node)}
-                      </text>
                     </Show>
                   </g>
                 );
@@ -257,14 +246,14 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         </For>
       </svg>
       <p class="mt-2 max-w-[640px] text-xs leading-relaxed text-neutral-500">
-        A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
-        Labyrinth once the way through is found. The small mark beside a fight is what its chest
-        pays: gold, arms for the party, a card, materials, or a respite that heals the party and
-        keeps its dead whole. A fight's mutators, in red under its name, make it harder and add an
-        item to its chest. Elites are harder, always have one, and pay better. At a Camp the party
-        rests back to full. A Town has a smith, a bench, a temple and a market. The roads not taken
-        collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span> to
-        close.
+        The layer’s areas as rooms, where they lie in the world, and its roads as doors between
+        them: a road that leaves a room north here leaves it north on the ground. A Hunt opens once
+        its marked monsters are slain, a Horde once its waves are beaten, a Labyrinth once the way
+        through is found. The small gold mark is what a fight’s chest pays; a dashed edge means
+        mutators, which make it harder and add an item. Hover a room for its name. At a Camp the
+        party rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
+        taken collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span>{' '}
+        to close.
       </p>
     </Panel>
   );

@@ -30,6 +30,7 @@ import { reveal } from '../content/creditor';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import {
   CHALLENGE_NAME,
+  type Cell,
   type LayerMap,
   MUTATOR_NAME,
   MUTATOR_TEXT,
@@ -254,7 +255,6 @@ const AREA_ROW_STREAM = 100;
 // A rectangle a tile in from each edge, so crossing means being well inside
 const inner = (r: Rect): Rect => ({ x0: r.x0 + 1, z0: r.z0 + 1, x1: r.x1 - 1, z1: r.z1 - 1 });
 // Which edges each area's exits leave by, rolled apart from its layout
-const SIDES_STREAM = 20000;
 // How long the area behind waits for the party before it collapses, and
 // how long its floor takes to fade, in seconds
 const COLLAPSE_WAIT = 4;
@@ -381,7 +381,7 @@ export default class Game {
   private notice: { text: string; until: number } | null = null;
   // This layer's map, the area the party is in (null at a Waystation) and
   // the areas it has crossed
-  private map: LayerMap = { columns: [] };
+  private map: LayerMap = { columns: [], start: { x: 0, y: 0 } };
   private node: { column: number; row: number } | null = null;
   private path: { column: number; row: number }[] = [];
   private mapOpen = false;
@@ -786,7 +786,7 @@ export default class Game {
       this.stage = generateGuild(
         this.streams.area(1, Stream.Layout, GUILD_STREAM),
         this.aheadOf(null),
-        this.sidesFor(this.aheadOf(null).length, GUILD_STREAM),
+        this.sidesAhead(),
       );
       withFightsAhead(this.stage, this.fightsAhead(null));
     } else {
@@ -1116,7 +1116,7 @@ export default class Game {
       biome: this.biome,
       endless: this.endless,
     };
-    plan.sides = this.sidesFor(plan.ahead.length, area);
+    plan.sides = this.sidesAhead();
     if (plan.kind === 'event') {
       const rng = this.streams.area(1, Stream.Events, area);
       const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
@@ -1131,23 +1131,32 @@ export default class Game {
   }
 
   /**
-   * Which edge each of an area's exits leaves by, so the way on turns left
-   * and right as well as going straight. Exits stay in the map's order:
-   * the upper road on the left.
+   * Which edge each of the current area's exits leaves by, from the layer's
+   * plan: toward the room each road leads to, ahead, left or right of the
+   * way the party came in. So the world turns as the map shows it.
    */
-  private sidesFor(count: number, area: number): ExitSide[] {
-    const rng = this.streams.area(1, Stream.Map, SIDES_STREAM + area);
-    if (count >= 3) {
-      return ['north', 'east', 'south'];
+  private sidesAhead(): ExitSide[] {
+    const node = this.here();
+    const { columns, start } = this.map;
+    if (!node) {
+      return sidesToward(
+        start,
+        { x: 1, y: 0 },
+        columns[0].map((n) => n.cell),
+      );
     }
-    if (count === 2) {
-      return rng.pick<ExitSide[]>([
-        ['north', 'east'],
-        ['east', 'south'],
-        ['north', 'south'],
-      ]);
+    if (node.kind === 'boss') {
+      return [];
     }
-    return [rng.pick<ExitSide>(['north', 'east', 'east', 'south'])];
+    const before = this.path.at(-2);
+    const from = before ? (columns[before.column]?.[before.row]?.cell ?? start) : start;
+    const facing = { x: node.cell.x - from.x, y: node.cell.y - from.y };
+    const next = columns[(this.node?.column ?? 0) + 1] ?? [];
+    return sidesToward(
+      node.cell,
+      facing,
+      node.next.map((row) => next[row].cell),
+    );
   }
 
   // Lays out the current stage around the party. An area joined ahead was
@@ -1668,7 +1677,7 @@ export default class Game {
         this.stageIndex,
         this.aheadOf(null),
         this.biome,
-        this.sidesFor(this.aheadOf(null).length, WAYSTATION_STREAM + this.stageIndex),
+        this.sidesAhead(),
       ),
       this.fightsAhead(null),
     );
@@ -2410,4 +2419,20 @@ export default class Game {
 function materialList(found: Materials): string {
   const parts = [...found].map(([id, n]) => `${n} ${MATERIAL_NAME.get(id) ?? id}`);
   return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts.join('');
+}
+
+/**
+ * The edge of an area each road leaves by, for rooms on the layer's plan:
+ * the one straight on from the way in is ahead, east as the area is built;
+ * the one to its left north, and to its right south.
+ */
+export function sidesToward(from: Cell, facing: Cell, rooms: readonly Cell[]): ExitSide[] {
+  return rooms.map((r) => {
+    const d = { x: r.x - from.x, y: r.y - from.y };
+    if (d.x === facing.x && d.y === facing.y) {
+      return 'east';
+    }
+    // Left of the way in, as an area turned to face it has its north
+    return d.x === facing.y && d.y === -facing.x ? 'north' : 'south';
+  });
 }

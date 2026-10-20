@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import RNG from '../../src/core/rng';
 import { generateLayerMap } from '../../src/gen/graph';
 import { AREAS_PER_LAYER } from '../../src/gen/layers';
-import { THREAT, generateStage, navFor } from '../../src/gen/stage';
+import { THREAT, generateStage, navFor, rectOf } from '../../src/gen/stage';
+import { placeBeyond } from '../../src/gen/place';
+import { sidesToward } from '../../src/game/game';
 
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1);
 
@@ -17,22 +19,28 @@ describe('a layer map', () => {
     }
   });
 
-  it('gives every area a way in and at most two ways out, and no roads cross', () => {
+  it('gives every area a way in and at most two ways out, each to a room beside it', () => {
     for (const seed of SEEDS) {
-      const { columns } = generateLayerMap(new RNG(seed));
+      const { columns, start } = generateLayerMap(new RNG(seed));
+      const cells = [start, ...columns.flat().map((n) => n.cell)];
+      expect(new Set(cells.map((c) => `${c.x},${c.y}`)).size).toBe(cells.length);
+      for (const node of columns[0]) {
+        expect(Math.abs(node.cell.x - start.x) + Math.abs(node.cell.y - start.y)).toBe(1);
+      }
       for (let c = 0; c < columns.length - 1; c++) {
         const from = columns[c];
         const to = columns[c + 1];
         for (const node of from) {
           expect(node.next.length).toBeGreaterThanOrEqual(1);
           expect(node.next.length).toBeLessThanOrEqual(2);
+          for (const j of node.next) {
+            const d = Math.abs(to[j].cell.x - node.cell.x) + Math.abs(to[j].cell.y - node.cell.y);
+            expect(d).toBe(1);
+          }
         }
         to.forEach((_, j) => {
           expect(from.some((n) => n.next.includes(j))).toBe(true);
         });
-        for (let i = 1; i < from.length; i++) {
-          expect(Math.max(...from[i - 1].next)).toBeLessThanOrEqual(Math.min(...from[i].next));
-        }
       }
     }
   });
@@ -63,6 +71,48 @@ describe('a layer map', () => {
 
   it('is the same for the same stream', () => {
     expect(generateLayerMap(new RNG(9))).toEqual(generateLayerMap(new RNG(9)));
+  });
+});
+
+describe('the world', () => {
+  it('turns as the layer’s plan shows: each area lies the way its room does', () => {
+    for (const seed of SEEDS.slice(0, 12)) {
+      const map = generateLayerMap(new RNG(seed));
+      const { columns, start } = map;
+      // From the Waystation's room, facing east, down the first road each time
+      let from = start;
+      let rooms = columns[0].map((n) => n.cell);
+      let stage = generateStage(new RNG(seed), 1, {
+        kind: 'combat',
+        ahead: rooms.map(() => 'combat'),
+        sides: sidesToward(from, { x: 1, y: 0 }, rooms),
+      });
+      let row = 0;
+      for (let c = 0; c < columns.length - 1; c++) {
+        const node = columns[c][row];
+        const next = node.next.map((r) => columns[c + 1][r].cell);
+        const area = generateStage(new RNG(seed + c), 2, {
+          kind: 'combat',
+          ahead: next.map(() => 'combat'),
+          sides: sidesToward(node.cell, { x: node.cell.x - from.x, y: node.cell.y - from.y }, next),
+        });
+        placeBeyond(area, stage.exits[rooms.indexOf(rooms.find((r) => r === node.cell)!)]);
+        const a = rectOf(stage);
+        const b = rectOf(area);
+        const step = {
+          x: Math.sign(Math.round((b.x0 + b.x1 - a.x0 - a.x1) / 2)),
+          y: Math.sign(Math.round((b.z0 + b.z1 - a.z0 - a.z1) / 2)),
+        };
+        const want = { x: node.cell.x - from.x, y: node.cell.y - from.y };
+        // The area lies past the one before, the way the plan steps.
+        expect(want.x === 0 ? true : step.x === want.x).toBe(true);
+        expect(want.y === 0 ? true : step.y === want.y).toBe(true);
+        from = node.cell;
+        rooms = next;
+        stage = area;
+        row = node.next[0];
+      }
+    }
   });
 });
 

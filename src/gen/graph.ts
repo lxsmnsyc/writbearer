@@ -93,14 +93,194 @@ export interface MapNode {
   mutators?: Mutator[];
   // Rows of the next column this area's exits lead to, north first
   next: number[];
+  // Where it lies on the layer's plan
+  cell: Cell;
 }
 
 /**
- * A layer's map, as Slay the Spire's: one column per area, the last the
- * boss's arena. The Waystation leads into every node of the first column.
+ * A layer's map: its areas as rooms on a plan, a column for each step from
+ * the start, the last the boss's arena. Each road joins two rooms side by
+ * side on the plan, so the map shows the world as it lies: a road that
+ * leaves north on the map leaves north in the world. The Waystation, or
+ * the Guild House, stands on `start` and leads into every room of the first
+ * column.
  */
 export interface LayerMap {
   columns: MapNode[][];
+  start: Cell;
+}
+
+/** A room's place on a layer's plan. +x is east and +y south, as the world's x and z. */
+export interface Cell {
+  x: number;
+  y: number;
+}
+
+// Where every layer's plan begins. The way in is to its west.
+const PLAN_START: Cell = { x: 0, y: 0 };
+// The four ways from a room to the next
+const STEPS: readonly Cell[] = [
+  { x: 1, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: -1 },
+  { x: -1, y: 0 },
+];
+const keyOf = (c: Cell): string => `${c.x},${c.y}`;
+const near = (a: Cell, b: Cell): boolean => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
+// Tries to lay a plan before falling back to a straight road
+const PLAN_TRIES = 400;
+// The most rooms a column has, and ways out of a room
+const MOST_ROOMS = 3;
+const MOST_WAYS = 2;
+
+/** The rooms of each column on the plan, and the rows each room's roads lead to. */
+interface Plan {
+  cells: Cell[][];
+  next: number[][][];
+}
+
+/**
+ * Lays a layer's plan out from the start: each column's rooms beside rooms
+ * of the column before, none on a room already laid, every room with a way
+ * in and one or two ways out, and the last column a single room beside
+ * every room before it. Rooms lean east, the way the run goes, so the plan
+ * rarely boxes itself in; a plan that does is laid again.
+ */
+function layPlan(rng: RNG, opening: number): Plan {
+  for (let t = 0; t < PLAN_TRIES; t++) {
+    const plan = tryPlan(rng, opening);
+    if (plan) {
+      return plan;
+    }
+  }
+  // A straight road east, which always fits
+  const cells = Array.from({ length: AREAS_PER_LAYER }, (_, c) => [{ x: c + 1, y: 0 }]);
+  return { cells, next: cells.slice(1).map(() => [[0]]) };
+}
+
+function tryPlan(rng: RNG, opening: number): Plan | null {
+  const last = AREAS_PER_LAYER - 1;
+  const taken = new Set([keyOf(PLAN_START), keyOf({ x: -1, y: 0 })]);
+  const free = (c: Cell): boolean => !taken.has(keyOf(c));
+  const around = (c: Cell): Cell[] =>
+    STEPS.map((d) => ({ x: c.x + d.x, y: c.y + d.y })).filter(free);
+  const cells: Cell[][] = [];
+  const next: number[][][] = [];
+  let prev: Cell[] = [PLAN_START];
+  for (let c = 0; c <= last; c++) {
+    let chosen: Cell[] | null;
+    if (c === last) {
+      // The boss's room, beside every room before it
+      const before = prev;
+      const common = around(before[0]).filter((b) => before.every((p) => near(p, b)));
+      chosen = common.length > 0 ? [rng.pick(common)] : null;
+    } else if (c === last - 1) {
+      chosen = roomsBeforeBoss(rng, prev, around, free);
+    } else {
+      const want = c === 0 ? opening : rng.int(2, MOST_ROOMS);
+      chosen = grow(rng, prev, around, Math.min(want, MOST_WAYS * prev.length));
+    }
+    if (!chosen || chosen.length > MOST_ROOMS) {
+      return null;
+    }
+    // North first, as the exits are listed
+    chosen.sort((a, b) => a.y - b.y || a.x - b.x);
+    if (c > 0) {
+      const links = linkRooms(rng, prev, chosen);
+      if (!links) {
+        return null;
+      }
+      next.push(links);
+    }
+    for (const cell of chosen) {
+      taken.add(keyOf(cell));
+    }
+    cells.push(chosen);
+    prev = chosen;
+  }
+  return { cells, next };
+}
+
+// Rooms for a column: one beside each room before it, then more beside any
+// of them, up to `want`. East is favoured.
+function grow(
+  rng: RNG,
+  prev: readonly Cell[],
+  around: (c: Cell) => Cell[],
+  want: number,
+): Cell[] | null {
+  const chosen: Cell[] = [];
+  const has = (c: Cell): boolean => chosen.some((o) => o.x === c.x && o.y === c.y);
+  const eastward = (cs: Cell[]): Cell[] =>
+    cs
+      .map((cell) => ({ cell, w: cell.x + rng.random() * 1.5 }))
+      .sort((a, b) => b.w - a.w)
+      .map((o) => o.cell);
+  for (const p of rng.shuffle([...prev])) {
+    const options = around(p);
+    if (options.length === 0) {
+      return null;
+    }
+    if (!options.some(has)) {
+      chosen.push(eastward(options)[0]);
+    }
+  }
+  const more = eastward(prev.flatMap(around).filter((c) => !has(c)));
+  for (const c of more) {
+    if (chosen.length >= want) {
+      break;
+    }
+    if (!has(c)) {
+      chosen.push(c);
+    }
+  }
+  return chosen;
+}
+
+// The column before the boss: rooms round one free room, the boss's, each
+// beside a room before it, and every room before beside one of them.
+function roomsBeforeBoss(
+  rng: RNG,
+  prev: readonly Cell[],
+  around: (c: Cell) => Cell[],
+  free: (c: Cell) => boolean,
+): Cell[] | null {
+  const spots = rng.shuffle(
+    [...new Set(prev.flatMap(around).flatMap(around).map(keyOf))].map((k) => {
+      const [x, y] = k.split(',').map(Number);
+      return { x, y };
+    }),
+  );
+  for (const boss of spots) {
+    if (!free(boss) || prev.some((p) => near(p, boss))) {
+      continue;
+    }
+    const rooms = around(boss).filter((r) => prev.some((p) => near(p, r)));
+    if (rooms.length >= 1 && prev.every((p) => rooms.some((r) => near(p, r)))) {
+      return rng.shuffle(rooms).slice(0, Math.max(1, Math.min(MOST_ROOMS, rooms.length)));
+    }
+  }
+  return null;
+}
+
+// Joins each room before to the rooms beside it, at most two each, so that
+// every new room keeps a way in. Null if a room before would have no way out.
+function linkRooms(rng: RNG, prev: readonly Cell[], rooms: readonly Cell[]): number[][] | null {
+  const links = prev.map((p) => rooms.flatMap((r, j) => (near(p, r) ? [j] : [])));
+  if (links.some((l) => l.length === 0)) {
+    return null;
+  }
+  // Too many ways out: drop one whose room has another way in.
+  for (const l of links) {
+    while (l.length > MOST_WAYS) {
+      const spare = rng.shuffle([...l]).find((j) => links.filter((o) => o.includes(j)).length > 1);
+      if (spare === undefined) {
+        return null;
+      }
+      l.splice(l.indexOf(spare), 1);
+    }
+  }
+  return rooms.every((_, j) => links.some((l) => l.includes(j))) ? links : null;
 }
 
 // Elites from the third column, Camps from the fourth. The column before
@@ -127,24 +307,15 @@ const TOWN_COLUMNS = [3, 4];
  */
 export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0): LayerMap {
   const last = AREAS_PER_LAYER - 1;
-  const columns: MapNode[][] = [];
-  for (let c = 0; c <= last; c++) {
-    let count = rng.int(2, 3);
-    if (c === 0) {
-      count = opening;
-    } else if (c === last) {
-      count = 1;
-    } else {
-      // Each area has at most two ways out.
-      count = Math.min(count, 2 * columns[c - 1].length);
-    }
-    columns.push(
-      Array.from({ length: count }, (_, row) => ({ row, kind: kindFor(rng, c), next: [] })),
-    );
-  }
-  for (let c = 0; c < last; c++) {
-    link(rng, columns[c], columns[c + 1]);
-  }
+  const plan = layPlan(rng, opening);
+  const columns: MapNode[][] = plan.cells.map((cells, c) =>
+    cells.map((cell, row) => ({
+      row,
+      kind: kindFor(rng, c),
+      next: c < last ? plan.next[c][row] : [],
+      cell,
+    })),
+  );
   // No road joins two Camps, two Elites or two Events: a fight comes between them.
   for (let c = 1; c < last; c++) {
     for (const [j, node] of columns[c].entries()) {
@@ -190,7 +361,7 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0)
     }
   }
   rollMutators(rng, columns, depth);
-  return { columns };
+  return { columns, start: PLAN_START };
 }
 
 // An Elite always has a mutator, two from the last layer down. An ordinary
@@ -248,37 +419,4 @@ function kindFor(rng: RNG, column: number): NodeKind {
     return 'event';
   }
   return 'combat';
-}
-
-// Joins two columns without crossing paths: a staircase from the north
-// corner to the south one that steps down one column, the other or both.
-// Every node gets at least one way in and one way out, and at most two out.
-function link(rng: RNG, from: MapNode[], to: MapNode[]): void {
-  let i = 0;
-  let j = 0;
-  for (;;) {
-    from[i].next.push(j);
-    const lastFrom = i === from.length - 1;
-    const lastTo = j === to.length - 1;
-    if (lastFrom && lastTo) {
-      return;
-    }
-    // Whether the nodes left in `from` can still reach every node left in
-    // `to` from (i2, j2): the next one adds one more, each after it two.
-    const room = (i2: number, j2: number): boolean =>
-      to.length - 1 - j2 <= 1 + 2 * (from.length - 1 - i2);
-    const steps: [number, number][] = [];
-    if (!lastFrom && room(i + 1, j)) {
-      steps.push([1, 0]);
-    }
-    if (!lastTo && from[i].next.length < 2) {
-      steps.push([0, 1]);
-    }
-    if (!lastFrom && !lastTo && room(i + 1, j + 1)) {
-      steps.push([1, 1]);
-    }
-    const [di, dj] = rng.pick(steps);
-    i += di;
-    j += dj;
-  }
 }
