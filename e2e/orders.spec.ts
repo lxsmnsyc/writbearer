@@ -59,11 +59,9 @@ test('target priorities can be removed, added and reordered', async ({ page }) =
   await expect(list.getByRole('listitem')).toHaveText([/Elites and bosses/, /Nearest enemy/]);
 });
 
-test('clicking a merc on the canvas opens its orders', async ({ page }) => {
-  // Open the Ranger's sheet, which pauses the game, then click the Vanguard
-  // where the game says it stands: the sheet switches to it.
-  await page.keyboard.press('2');
-  await expect(page.getByRole('complementary', { name: 'Orders for Ranger' })).toBeVisible();
+test('clicking a merc on the canvas does not open its orders', async ({ page }) => {
+  // Orders open from the party's plates and number keys only, so a click
+  // meant for the ground or an item never lands on a merc instead.
   const canvas = page.locator('canvas');
   const mercs = (await canvas.getAttribute('data-mercs')) ?? '';
   const spot = mercs
@@ -78,7 +76,8 @@ test('clicking a merc on the canvas opens its orders', async ({ page }) => {
   }
   // A little above the feet, on the body.
   await page.mouse.click(box.x + box.width * spot[0], box.y + box.height * spot[1] - 20);
-  await expect(page.getByRole('complementary', { name: 'Orders for Vanguard' })).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.getByRole('complementary', { name: /Orders for/ })).toHaveCount(0);
 });
 
 test('each skill can be set to Auto, Elites or Off, and the setting stays', async ({ page }) => {

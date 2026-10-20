@@ -715,28 +715,6 @@ export default class Game {
     this.hooks.onSelect?.(unit);
   }
 
-  // The merc drawn under a point on the screen, if any.
-  private pickMerc(clientX: number, clientY: number): Unit | null {
-    const s = this.renderer.toSmall(clientX, clientY);
-    let best: Unit | null = null;
-    let bestD = Infinity;
-    for (const u of this.mercs()) {
-      if (!u.alive) {
-        continue;
-      }
-      const r = this.views.rig(u, 1);
-      const b = this.renderer.iso(r.x, r.z);
-      const z = look.zoom;
-      const inside = Math.abs(s.x - b.x) <= 8 * z && s.y >= b.y - 36 * z && s.y <= b.y + 4 * z;
-      const d = Math.hypot(s.x - b.x, s.y - (b.y - 16 * z));
-      if (inside && d < bestD) {
-        best = u;
-        bestD = d;
-      }
-    }
-    return best;
-  }
-
   /** Starts a new run, or resumes a saved one at its area's entrance. */
   reset(save: RunSave | null = null, seed = this.options.seed): void {
     this.streams = save
@@ -2181,25 +2159,20 @@ export default class Game {
     if (this.over) {
       return;
     }
+    // A merc's orders open from its plate or its number key, never from a
+    // click on the field, which only closes them or walks the bearer.
     if (this.finale) {
-      this.select(this.pickMerc(e.clientX, e.clientY));
+      this.select(null);
       return;
     }
-    // Clicking a merc opens its orders. Clicking anywhere else closes them,
-    // or walks the bearer there.
     if (this.inventory) {
       return;
     }
-    // An item's label comes first: it may sit right over a merc.
+    // An item's label comes first.
     const labelled = this.paused ? null : this.renderer.labelAt(e.clientX, e.clientY);
     if (labelled) {
       this.goFor({ fetching: labelled });
       this.bearer.order = { x: labelled.x, z: labelled.z };
-      return;
-    }
-    const merc = this.pickMerc(e.clientX, e.clientY);
-    if (merc) {
-      this.select(merc);
       return;
     }
     if (this.paused) {

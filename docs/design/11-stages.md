@@ -285,7 +285,7 @@ There is no supplies resource. A shortcut costs what the party skips.
 
 - The citizen can move by clicking, as in Ragnarok Online and Diablo, or with WASD. Both work at once.
 - Every key can be rebound. The settings screen encourages players to set their own bindings.
-- Clicking a merc inspects it.
+- A merc opens from its plate or its number key. Clicking it on the field does nothing, so a click meant for the ground or an item never lands on it.
 - Shouts and the lantern have their own keys.
 
 ## Pausing

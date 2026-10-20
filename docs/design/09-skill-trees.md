@@ -30,7 +30,7 @@ In the lists below, **A** marks an active skill and **P** marks a passive.
 
 - **Experience:** each kill is worth 10 per monster level, 35 for an elite and 150 for a boss. It is shared evenly by the living mercs. A level needs `20 × level^1.5` experience: 224 from level 5, 632 from level 10.
 - **Points:** each level gives 1 skill point and 3 stat points. Recruits arrive with one skill point per level past the first, unspent, and nothing learned.
-- **Learning:** open a merc (click it, or 1 and 2), then the Skills tab. A node needs its tier's level and a rank in the node before it in its branch. Skills have 5 ranks; capstones have 1.
+- **Learning:** open a merc (its plate, or 1 and 2), then the Skills tab. A node needs its tier's level and a rank in the node before it in its branch. Skills have 5 ranks; capstones have 1.
 - **Stats:** the Stats tab spends stat points on the six base stats and shows experience to the next level.
 - A merc with points to spend shows a + on its party card. A level up shows a gold ring and rising light.
 

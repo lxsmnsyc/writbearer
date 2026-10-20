@@ -99,7 +99,7 @@ Each clue is true from the start. The player only understands them at the end.
 - The last node of the Sunken Crown is the Creditor's tomb.
 - The seal breaks. The citizen becomes the Creditor.
 - From this point the player cannot move or act. The Creditor is run by the AI.
-- The player can still click a merc to inspect it, as at any time in the game. Nothing else.
+- The player can still open a merc from its plate or number key to inspect it, as at any time in the game. Nothing else.
 - The mercs fight on their own, as they always have, with the gear, cards, skills and toggles the player gave them.
 
 ### Who fights on which side
@@ -184,7 +184,7 @@ His regalia lies scattered across the Hollow:
 
 Decided:
 
-- During the final fight, the player can only click mercs to inspect them.
+- During the final fight, the player can only open mercs from their plates or number keys to inspect them.
 - Endless mode is outside the story. See [overview](01-overview.md#endless-mode).
 - The Creditor grows from souls fed by the player's choices.
 - The Old King's ghost appears only if the party carries his regalia.
