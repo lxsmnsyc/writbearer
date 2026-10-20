@@ -41,6 +41,7 @@ import {
   REWARD_NAME,
   type Reward,
   generateLayerMap,
+  seenAs,
 } from '../gen/graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf } from '../gen/layers';
 import {
@@ -1006,22 +1007,22 @@ export default class Game {
   // What lies beyond each of this area's exits.
   private aheadOf(node: MapNode | null): Ahead[] {
     if (!node) {
-      return this.map.columns[0].map((n) => n.kind);
+      return this.map.columns[0].map((n) => seenAs(n).kind);
     }
     if (node.kind === 'boss') {
       return ['down'];
     }
     const next = this.map.columns[(this.node?.column ?? 0) + 1];
-    return node.next.map((row) => next[row].kind);
+    return node.next.map((row) => seenAs(next[row]).kind);
   }
 
   // The areas beyond each of this area's exits, for their signposts.
   private fightsAhead(node: MapNode | null): (Fight | undefined)[] {
     if (!node) {
-      return this.map.columns[0];
+      return this.map.columns[0].map(seenAs);
     }
     const next = this.map.columns[(this.node?.column ?? 0) + 1] ?? [];
-    return node.kind === 'boss' ? [] : node.next.map((row) => next[row]);
+    return node.kind === 'boss' ? [] : node.next.map((row) => seenAs(next[row]));
   }
 
   // Rolls the map of the layer the current area is in.
@@ -1205,7 +1206,9 @@ export default class Game {
     mutators: { name: string; text: string }[];
   } | null {
     const o = this.objective;
-    if (!o) {
+    // An Ambush that has not sprung shows nothing: it is a Camp, as far as
+    // anyone can tell.
+    if (!o || o.hidden()) {
       return null;
     }
     const elite = this.stage.kind === 'elite' ? 'Elite ' : '';
@@ -1262,7 +1265,13 @@ export default class Game {
     if (o && !o.done) {
       this.bonus?.tick(TICK);
     }
-    if (!o || !this.bearer.alive || !o.update(this.sim, TICK, monsterLevel(this.stageIndex))) {
+    const hidden = o?.hidden() === true;
+    const done = o?.update(this.sim, TICK, monsterLevel(this.stageIndex)) === true;
+    if (hidden && !o.hidden()) {
+      this.shake = Math.max(this.shake, 3);
+      this.say('It was no camp. They close in from every side!');
+    }
+    if (!o || !this.bearer.alive || !done) {
       return;
     }
     this.views.snap(this.sim);
@@ -1703,8 +1712,10 @@ export default class Game {
   // health and mana. The dead stay dead.
   private rest(): void {
     const fire = this.stage.rest;
+    // An Ambush's fire is a Camp's only once the fight is won.
     if (
       !fire ||
+      this.objective?.done === false ||
       this.rested ||
       Math.hypot(this.bearer.x - fire.x, this.bearer.z - fire.z) > REST_REACH
     ) {
@@ -1737,7 +1748,15 @@ export default class Game {
     title: string;
   } {
     return {
-      map: this.map,
+      // An Ambush shows as a Camp until the party has been there.
+      map: {
+        ...this.map,
+        columns: this.map.columns.map((column, c) =>
+          column.map((n, row) =>
+            this.path.some((p) => p.column === c && p.row === row) ? n : seenAs(n),
+          ),
+        ),
+      },
       path: [...this.path],
       at: this.node,
       layer: Math.floor(this.stageIndex / AREAS_PER_LAYER),
@@ -2203,7 +2222,7 @@ export default class Game {
         return;
       }
       const o = this.objective;
-      if (o && !o.done) {
+      if (o && !o.done && !o.hidden()) {
         this.say(`The way on opens once the ${OBJECTIVE_NAME[o.kind]} is done.`);
         return;
       }
@@ -2389,7 +2408,7 @@ export default class Game {
       ending: this.finale?.ending ?? null,
       region: this.region,
       hoverExit: this.hoverExit,
-      exitsShut: !this.exitsOpen,
+      exitsShut: !this.exitsOpen && this.objective?.hidden() !== true,
       dark: this.mutators.has('darkness'),
       leaving: this.leaving,
       seed: this.streams.seed,

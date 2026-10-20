@@ -9,9 +9,18 @@ export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
  * Labyrinth's rooms: slay the marked monsters, hold out against waves,
  * find the way through a maze of traps, see refugees across the field, or
  * take a key from the lair to open a vault, break three sigils in turn
- * while waves come, or outrun a falling floor to an exit.
+ * while waves come, outrun a falling floor to an exit, or live through an
+ * ambush at what looked like a Camp.
  */
-export type Objective = 'hunt' | 'horde' | 'maze' | 'escort' | 'vault' | 'ritual' | 'collapse';
+export type Objective =
+  | 'hunt'
+  | 'horde'
+  | 'maze'
+  | 'escort'
+  | 'vault'
+  | 'ritual'
+  | 'collapse'
+  | 'ambush';
 
 export const OBJECTIVE_NAME: Record<Objective, string> = {
   hunt: 'Hunt',
@@ -21,6 +30,7 @@ export const OBJECTIVE_NAME: Record<Objective, string> = {
   vault: 'Vault',
   ritual: 'Ritual',
   collapse: 'Collapse',
+  ambush: 'Ambush',
 };
 
 /**
@@ -54,6 +64,7 @@ export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   vault: ['untouched', 'noLosses', 'swift', 'thorough'],
   ritual: ['untouched', 'noLosses', 'swift'],
   collapse: ['untouched', 'noLosses', 'swift', 'thorough'],
+  ambush: ['untouched', 'noLosses'],
 };
 
 export const CHALLENGE_NAME: Record<Challenge, string> = {
@@ -312,6 +323,7 @@ export const OBJECTIVES: readonly Objective[] = [
   'vault',
   'ritual',
   'collapse',
+  'ambush',
 ];
 
 // The layers that have Escorts: refugees flee down the Marches and the
@@ -328,8 +340,52 @@ export const objectivesFor = (depth: number): readonly Objective[] =>
     (o) =>
       (o !== 'escort' || depth < ESCORT_LAYERS) &&
       (o !== 'ritual' || depth >= RITUAL_FROM) &&
-      (o !== 'collapse' || depth === COLLAPSE_LAYER),
+      (o !== 'collapse' || depth === COLLAPSE_LAYER) &&
+      // An Ambush is never rolled as a fight: it is laid as a Camp.
+      o !== 'ambush',
   );
+
+// How often a fight that could pass for a Camp is an Ambush
+const AMBUSH_CHANCE = 0.12;
+
+/**
+ * Makes some fights Ambushes: areas that look like Camps on the map and
+ * their signposts. Only where a Camp could stand, and never on a road from
+ * or to a Camp, so the map never shows two Camps joined.
+ */
+function layAmbushes(rng: RNG, columns: MapNode[][]): void {
+  columns.forEach((column, c) => {
+    if (c < CAMP_FROM || c >= columns.length - 1) {
+      return;
+    }
+    column.forEach((node, j) => {
+      const before = columns[c - 1].filter((n) => n.next.includes(j));
+      const after = node.next.map((r) => columns[c + 1][r]);
+      const nearCamp = [...before, ...after].some((n) => n.kind === 'camp');
+      if (node.kind === 'combat' && !nearCamp && rng.chance(AMBUSH_CHANCE)) {
+        node.objective = 'ambush';
+      }
+    });
+  });
+}
+
+/**
+ * How an area shows on the map and on its signpost: as it is, but an
+ * Ambush shows as a Camp until the party has been there.
+ */
+export function seenAs(node: MapNode): MapNode {
+  if (node.objective !== 'ambush') {
+    return node;
+  }
+  return {
+    ...node,
+    kind: 'camp',
+    objective: undefined,
+    reward: undefined,
+    mutators: undefined,
+    challenge: undefined,
+  };
+}
 
 // The columns a layer's Town may stand in.
 const TOWN_COLUMNS = [3, 4];
@@ -389,6 +445,7 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0)
       }
     }
   });
+  layAmbushes(rng, columns);
   rollRewards(rng, columns);
   for (const node of columns.flat()) {
     if (node.objective) {
@@ -403,7 +460,8 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0)
 // fight has one by chance, from the second layer down.
 function rollMutators(rng: RNG, columns: MapNode[][], depth: number): void {
   for (const node of columns.flat()) {
-    if (!node.objective) {
+    // An Ambush has none: it would give it away.
+    if (!node.objective || node.objective === 'ambush') {
       continue;
     }
     let count = 0;

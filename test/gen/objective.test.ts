@@ -34,6 +34,7 @@ describe('objectives on the map', () => {
       }
     }
     expect([...seen].sort((a, b) => a.localeCompare(b))).toEqual([
+      'ambush',
       'escort',
       'horde',
       'hunt',

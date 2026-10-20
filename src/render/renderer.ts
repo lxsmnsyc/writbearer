@@ -74,6 +74,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   vault: 'Vault: take the key, open the vault',
   ritual: 'Ritual: break the three sigils',
   collapse: 'Collapse: outrun the falling floor',
+  ambush: 'Camp',
 };
 
 // What a signpost says the fight ahead pays.

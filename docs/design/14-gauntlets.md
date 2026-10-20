@@ -207,6 +207,13 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
   - A monster on ground that falls is lost. One of the party is hurt for 20% of its health and scrambles back onto standing ground. The party's dead are carried along.
   - Done once the bearer is within 4 tiles of an exit. The floor stops falling then.
   - It rolls Untouched, No losses, Swift (90 seconds) or Thorough.
+- The Ambush is in too:
+  - It is never rolled as an objective. Instead, from the fourth column on, a fight has a 12% chance to be an Ambush, unless a road joins it to a Camp. So the map never shows two Camps joined.
+  - On the map and on its signpost it is a Camp: no objective, reward, bonus or mutators. It rolls no mutators. Once the party has been there, the map shows it as it was.
+  - It is laid out as a Camp: a small field with a fire in the middle. There is no badge and the exits look open, but they are shut.
+  - Once the bearer comes within 6 tiles of the fire or 5 of an exit, it springs: three groups, four in an Elite area, come from all round the fire, 9 tiles out, shown on the ground for 1.2 seconds. They hold most of a fight's threat.
+  - Done once every one of them is dead. The chest appears by the fire, and the fire then rests the party as a Camp's does.
+  - It rolls Untouched or No losses, shown once it springs.
 - Silence is not in yet. It needs Horn-Bearers and horn posts the party can destroy.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
@@ -227,7 +234,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault, Ritual and Collapse are done.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault, Ritual, Collapse and Ambush are done. Silence waits for Horn-Bearers.
 
 ## Open questions
 

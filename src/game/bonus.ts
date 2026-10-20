@@ -19,6 +19,7 @@ export const SWIFT_TIME: Record<Objective, number> = {
   vault: 150,
   ritual: 150,
   collapse: 90,
+  ambush: Infinity,
 };
 
 export type BonusState = 'open' | 'met' | 'failed';

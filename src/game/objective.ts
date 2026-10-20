@@ -25,6 +25,9 @@ import { warn } from '../sim/warning';
 //   moves on, toward the exits. It is done once the bearer reaches an exit.
 //   Whoever the floor falls under falls: a monster is lost, and one of the
 //   party is hurt and scrambles back onto the ground still standing.
+// - An Ambush looks like a Camp until the bearer comes near its fire or an
+//   exit. Then its groups close in from all round, shown on the ground a
+//   moment first. It is done once every one of them is dead.
 // - A Ritual is done once the bearer has stood on each of its three sigils
 //   in turn for long enough. A wave comes as it steps onto each, and
 //   another halfway through. Stepping off pauses the sigil, but keeps what
@@ -48,6 +51,12 @@ const FALL_SHARE = 0.2;
 // How far onto standing ground one of the party scrambles
 const SCRAMBLE = 1.5;
 
+// How near the fire, or an exit, the bearer comes before an Ambush springs,
+// and how long the ground shows where its groups come
+const AMBUSH_FIRE = 6;
+const AMBUSH_EXIT = 5;
+const AMBUSH_WARNING = 1.2;
+
 // How near the vault's door the bearer comes with the key to open it
 const VAULT_REACH = 1.6;
 
@@ -57,6 +66,8 @@ export default class ObjectiveRun {
   failed = false;
   // An Escort's refugees, as they were when it began
   private wards: Unit[] | null = null;
+  // How many of a Ritual's or an Ambush's waves have come
+  private arrived = 0;
   // A Horde's clock since the last wave, the next wave and who came so far
   private started = false;
   private clock = 0;
@@ -87,6 +98,9 @@ export default class ObjectiveRun {
     if (this.kind === 'collapse') {
       this.collapse(sim, dt);
     }
+    if (this.kind === 'ambush') {
+      this.ambush(sim, level);
+    }
     if (this.kind === 'escort') {
       this.wards ??= sim.living(Side.Ward);
       this.failed = this.wards.filter((u) => u.alive).length < this.needed();
@@ -107,6 +121,10 @@ export default class ObjectiveRun {
   }
 
   private met(sim: Sim): boolean {
+    if (this.kind === 'ambush') {
+      const waves = this.stage.waves ?? [];
+      return this.started && this.arrived >= waves.length && this.came.every((u) => !u.alive);
+    }
     if (this.kind === 'collapse') {
       const bearer = sim.bearer;
       return (
@@ -158,6 +176,29 @@ export default class ObjectiveRun {
     const bearer = sim.bearer;
     const goal = this.stage.goal;
     return goal !== undefined && bearer !== null && bearer.alive && inRect(goal, bearer);
+  }
+
+  /** Whether this is an Ambush that has not sprung: it still passes for a Camp. */
+  hidden(): boolean {
+    return this.kind === 'ambush' && !this.started;
+  }
+
+  // The bearer comes near the fire or an exit, and the Ambush springs.
+  private ambush(sim: Sim, level: number): void {
+    const bearer = sim.bearer;
+    if (this.started || !bearer?.alive) {
+      return;
+    }
+    const fire = this.stage.rest;
+    const nearFire = fire !== undefined && bearer.distanceTo(fire) <= AMBUSH_FIRE;
+    const nearExit = this.stage.exits.some((e) => bearer.distanceTo(e) <= AMBUSH_EXIT);
+    if (!nearFire && !nearExit) {
+      return;
+    }
+    this.started = true;
+    for (const wave of this.stage.waves ?? []) {
+      this.summon(sim, wave, level, AMBUSH_WARNING);
+    }
   }
 
   // The floor falls a little further, a tile at a time, once the bearer
@@ -282,16 +323,17 @@ export default class ObjectiveRun {
   }
 
   // A Ritual's wave: where it comes shows first, then it comes for the bearer.
-  private summon(sim: Sim, wave: Wave, level: number): void {
+  private summon(sim: Sim, wave: Wave, level: number, windup = WAVE_WARNING): void {
     warn(sim, {
       x: wave.from.x,
       z: wave.from.z,
       shape: { kind: 'circle', r: WAVE_MARK },
-      windup: WAVE_WARNING,
+      windup,
       spare: Side.Party,
       strike: () => undefined,
       source: null,
       done: () => {
+        this.arrived++;
         this.bring(sim, wave, level);
       },
     });
@@ -336,6 +378,10 @@ export default class ObjectiveRun {
     }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'ambush') {
+      const left = this.came.filter((u) => u.alive).length;
+      return `It was no camp. Kill every one of them: ${left} left.`;
     }
     if (this.kind === 'collapse') {
       if (!this.started) {

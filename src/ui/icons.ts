@@ -269,6 +269,7 @@ export const ICONS = {
   vault: GiLockedChest,
   ritual: GiPentagramRose,
   collapse: GiFallingRocks,
+  ambush: GiCampfire,
   compendium: GiOpenBook,
   points: GiUpgrade,
   drop: GiTrashCan,
