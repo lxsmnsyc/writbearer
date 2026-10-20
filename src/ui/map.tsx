@@ -1,4 +1,4 @@
-import { For, type JSX, Show, createSignal } from 'solid-js';
+import { For, type JSX, Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type Game from '../game/game';
 import {
@@ -10,11 +10,7 @@ import {
   type Reward,
 } from '../gen/graph';
 import { ICONS, type IconName } from './icons';
-import { Panel, Tabs } from './kit';
-import WorldMap from './automap';
-
-// The map's views: the world as walked, or the layer's graph of areas
-type MapTab = 'world' | 'layer';
+import { Panel } from './kit';
 
 interface Props {
   game: Game;
@@ -109,7 +105,6 @@ export default function LayerMapPanel(props: Props): JSX.Element {
     );
   };
   const width = LEFT + (columns.length - 1) * COLUMN + 60;
-  const [tab, setTab] = createSignal<MapTab>('world');
 
   return (
     <Panel
@@ -120,181 +115,157 @@ export default function LayerMapPanel(props: Props): JSX.Element {
         props.onClose();
       }}
     >
-      <Tabs<MapTab>
-        label="Map"
-        tabs={[
-          { value: 'world', name: 'World', icon: 'map' },
-          { value: 'layer', name: 'Layer', icon: 'waystation' },
-        ]}
-        value={tab()}
-        onChange={(v) => {
-          setTab(v);
-        }}
-      />
-      <Show when={tab() === 'world'}>
-        <WorldMap map={props.game.automap()} />
-        <p class="mt-2 max-w-[680px] text-xs leading-relaxed text-neutral-500">
-          The areas walked in this layer, where they lie, as far as the party has seen them. The
-          gold dot is the bearer. Each mark past an exit is what lies beyond it; hover it for its
-          objective, reward and mutators. <span class="kbd">M</span> or <span class="kbd">Esc</span>{' '}
-          to close.
-        </p>
-      </Show>
-      <Show when={tab() === 'layer'}>
-        <svg width={width} height={240} role="img" aria-label="The layer's areas and roads">
-          <g>
-            <circle cx={44} cy={MIDDLE} r={R} fill="#ffffff0d" stroke="#ffffff33" />
-            <Dynamic
-              component={ICONS[state.layer === 0 ? 'start' : 'waystation']}
-              x={44 - 10}
-              y={MIDDLE - 10}
-              width={20}
-              height={20}
-              fill="#d4d4d4"
+      <svg width={width} height={240} role="img" aria-label="The layer's areas and roads">
+        <g>
+          <circle cx={44} cy={MIDDLE} r={R} fill="#ffffff0d" stroke="#ffffff33" />
+          <Dynamic
+            component={ICONS[state.layer === 0 ? 'start' : 'waystation']}
+            x={44 - 10}
+            y={MIDDLE - 10}
+            width={20}
+            height={20}
+            fill="#d4d4d4"
+          />
+          <text
+            x={44}
+            y={MIDDLE + R + 14}
+            text-anchor="middle"
+            class="fill-neutral-500 text-[10px]"
+          >
+            {state.layer === 0 ? 'Start' : 'Waystation'}
+          </text>
+        </g>
+        <For each={columns[0]}>
+          {(_, row) => (
+            <line
+              x1={44 + R}
+              y1={MIDDLE}
+              x2={at(0, row()).x}
+              y2={at(0, row()).y}
+              stroke={crossed(0, row()) ? '#e8b04a' : '#ffffff22'}
+              stroke-width={crossed(0, row()) ? 2.5 : 1.5}
             />
-            <text
-              x={44}
-              y={MIDDLE + R + 14}
-              text-anchor="middle"
-              class="fill-neutral-500 text-[10px]"
-            >
-              {state.layer === 0 ? 'Start' : 'Waystation'}
-            </text>
-          </g>
-          <For each={columns[0]}>
-            {(_, row) => (
-              <line
-                x1={44 + R}
-                y1={MIDDLE}
-                x2={at(0, row()).x}
-                y2={at(0, row()).y}
-                stroke={crossed(0, row()) ? '#e8b04a' : '#ffffff22'}
-                stroke-width={crossed(0, row()) ? 2.5 : 1.5}
-              />
-            )}
-          </For>
-          <For each={columns}>
-            {(column, c) => (
-              <For each={column}>
-                {(node, r) => (
-                  <For each={node.next}>
-                    {(next) => (
-                      <line
-                        x1={at(c(), r()).x}
-                        y1={at(c(), r()).y}
-                        x2={at(c() + 1, next).x}
-                        y2={at(c() + 1, next).y}
-                        stroke={taken(c(), r(), next) ? '#e8b04a' : '#ffffff22'}
-                        stroke-width={taken(c(), r(), next) ? 2.5 : 1.5}
-                        stroke-dasharray={
-                          ahead(c() + 1, next) && here(c(), r()) ? '4 3' : undefined
-                        }
-                      />
-                    )}
-                  </For>
-                )}
-              </For>
-            )}
-          </For>
-          <For each={columns}>
-            {(column, c) => (
-              <For each={column}>
-                {(node, r) => {
-                  const p = (): { x: number; y: number } => at(c(), r());
-                  const size = node.kind === 'boss' ? 26 : 20;
-                  const radius = node.kind === 'boss' ? R + 5 : R;
-                  return (
-                    <g
-                      aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}${mutatorsOf(node) === '' ? '' : `, ${mutatorsOf(node)}`}`}
-                    >
-                      <Show when={ahead(c(), r())}>
-                        <circle
-                          cx={p().x}
-                          cy={p().y}
-                          r={radius + 5}
-                          fill="none"
-                          stroke={KIND_COLOR[node.kind]}
-                          stroke-opacity={0.35}
-                          stroke-width={2}
-                        />
-                      </Show>
+          )}
+        </For>
+        <For each={columns}>
+          {(column, c) => (
+            <For each={column}>
+              {(node, r) => (
+                <For each={node.next}>
+                  {(next) => (
+                    <line
+                      x1={at(c(), r()).x}
+                      y1={at(c(), r()).y}
+                      x2={at(c() + 1, next).x}
+                      y2={at(c() + 1, next).y}
+                      stroke={taken(c(), r(), next) ? '#e8b04a' : '#ffffff22'}
+                      stroke-width={taken(c(), r(), next) ? 2.5 : 1.5}
+                      stroke-dasharray={ahead(c() + 1, next) && here(c(), r()) ? '4 3' : undefined}
+                    />
+                  )}
+                </For>
+              )}
+            </For>
+          )}
+        </For>
+        <For each={columns}>
+          {(column, c) => (
+            <For each={column}>
+              {(node, r) => {
+                const p = (): { x: number; y: number } => at(c(), r());
+                const size = node.kind === 'boss' ? 26 : 20;
+                const radius = node.kind === 'boss' ? R + 5 : R;
+                return (
+                  <g
+                    aria-label={`Area ${c() + 1}: ${nameOf(node)}${node.reward ? `, pays ${REWARD_NAME[node.reward].toLowerCase()}` : ''}${mutatorsOf(node) === '' ? '' : `, ${mutatorsOf(node)}`}`}
+                  >
+                    <Show when={ahead(c(), r())}>
                       <circle
                         cx={p().x}
                         cy={p().y}
-                        r={radius}
-                        fill={crossed(c(), r()) ? '#2a2a2a' : '#0d0f14'}
-                        stroke={crossed(c(), r()) ? '#e8b04a' : KIND_COLOR[node.kind]}
-                        stroke-width={here(c(), r()) ? 3 : 1.5}
+                        r={radius + 5}
+                        fill="none"
+                        stroke={KIND_COLOR[node.kind]}
+                        stroke-opacity={0.35}
+                        stroke-width={2}
                       />
-                      <Dynamic
-                        component={ICONS[iconOf(node)]}
-                        x={p().x - size / 2}
-                        y={p().y - size / 2}
-                        width={size}
-                        height={size}
-                        fill={crossed(c(), r()) ? '#737373' : KIND_COLOR[node.kind]}
-                      />
-                      <Show when={node.reward}>
-                        {(reward) => (
-                          <g>
-                            <title>{REWARD_NAME[reward()]}</title>
-                            <circle
-                              cx={p().x + radius * 0.75}
-                              cy={p().y - radius * 0.75}
-                              r={8}
-                              fill="#0d0f14"
-                              stroke="#e8b04a"
-                              stroke-width={1}
-                            />
-                            <Dynamic
-                              component={ICONS[REWARD_ICON[reward()]]}
-                              x={p().x + radius * 0.75 - 5.5}
-                              y={p().y - radius * 0.75 - 5.5}
-                              width={11}
-                              height={11}
-                              fill={crossed(c(), r()) ? '#737373' : '#e8b04a'}
-                            />
-                          </g>
-                        )}
-                      </Show>
+                    </Show>
+                    <circle
+                      cx={p().x}
+                      cy={p().y}
+                      r={radius}
+                      fill={crossed(c(), r()) ? '#2a2a2a' : '#0d0f14'}
+                      stroke={crossed(c(), r()) ? '#e8b04a' : KIND_COLOR[node.kind]}
+                      stroke-width={here(c(), r()) ? 3 : 1.5}
+                    />
+                    <Dynamic
+                      component={ICONS[iconOf(node)]}
+                      x={p().x - size / 2}
+                      y={p().y - size / 2}
+                      width={size}
+                      height={size}
+                      fill={crossed(c(), r()) ? '#737373' : KIND_COLOR[node.kind]}
+                    />
+                    <Show when={node.reward}>
+                      {(reward) => (
+                        <g>
+                          <title>{REWARD_NAME[reward()]}</title>
+                          <circle
+                            cx={p().x + radius * 0.75}
+                            cy={p().y - radius * 0.75}
+                            r={8}
+                            fill="#0d0f14"
+                            stroke="#e8b04a"
+                            stroke-width={1}
+                          />
+                          <Dynamic
+                            component={ICONS[REWARD_ICON[reward()]]}
+                            x={p().x + radius * 0.75 - 5.5}
+                            y={p().y - radius * 0.75 - 5.5}
+                            width={11}
+                            height={11}
+                            fill={crossed(c(), r()) ? '#737373' : '#e8b04a'}
+                          />
+                        </g>
+                      )}
+                    </Show>
+                    <text
+                      x={p().x}
+                      y={p().y + radius + 14}
+                      text-anchor="middle"
+                      class="text-[10px]"
+                      fill={here(c(), r()) ? '#e8b04a' : '#a3a3a3'}
+                    >
+                      {nameOf(node)}
+                    </text>
+                    <Show when={mutatorsOf(node) !== ''}>
                       <text
                         x={p().x}
-                        y={p().y + radius + 14}
+                        y={p().y + radius + 26}
                         text-anchor="middle"
-                        class="text-[10px]"
-                        fill={here(c(), r()) ? '#e8b04a' : '#a3a3a3'}
+                        class="text-[9px]"
+                        fill="#f87171"
                       >
-                        {nameOf(node)}
+                        {mutatorsOf(node)}
                       </text>
-                      <Show when={mutatorsOf(node) !== ''}>
-                        <text
-                          x={p().x}
-                          y={p().y + radius + 26}
-                          text-anchor="middle"
-                          class="text-[9px]"
-                          fill="#f87171"
-                        >
-                          {mutatorsOf(node)}
-                        </text>
-                      </Show>
-                    </g>
-                  );
-                }}
-              </For>
-            )}
-          </For>
-        </svg>
-        <p class="mt-2 max-w-[640px] text-xs leading-relaxed text-neutral-500">
-          A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
-          Labyrinth once the way through is found. The small mark beside a fight is what its chest
-          pays: gold, arms for the party, a card, materials, or a respite that heals the party and
-          keeps its dead whole. A fight's mutators, in red under its name, make it harder and add an
-          item to its chest. Elites are harder, always have one, and pay better. At a Camp the party
-          rests back to full. A Town has a smith, a bench, a temple and a market. The roads not
-          taken collapse behind the bearer. <span class="kbd">M</span> or{' '}
-          <span class="kbd">Esc</span> to close.
-        </p>
-      </Show>
+                    </Show>
+                  </g>
+                );
+              }}
+            </For>
+          )}
+        </For>
+      </svg>
+      <p class="mt-2 max-w-[640px] text-xs leading-relaxed text-neutral-500">
+        A Hunt opens once its marked monsters are slain, a Horde once its waves are beaten, a
+        Labyrinth once the way through is found. The small mark beside a fight is what its chest
+        pays: gold, arms for the party, a card, materials, or a respite that heals the party and
+        keeps its dead whole. A fight's mutators, in red under its name, make it harder and add an
+        item to its chest. Elites are harder, always have one, and pay better. At a Camp the party
+        rests back to full. A Town has a smith, a bench, a temple and a market. The roads not taken
+        collapse behind the bearer. <span class="kbd">M</span> or <span class="kbd">Esc</span> to
+        close.
+      </p>
     </Panel>
   );
 }

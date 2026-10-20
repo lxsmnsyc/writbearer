@@ -150,7 +150,6 @@ Not yet: water, ledges, grass, alarms, patrols, and Treasure and Shrine areas.
 - The darkness hides unexplored ground.
 - Explored ground stays on a map, as Diablo 2's automap.
 - The map shows terrain and points of interest the party has seen. It does not show monsters outside light.
-- In the game so far: the map's World tab draws the areas walked in this layer where they lie, as the game sees them, with only the ground the party has seen: floor, walls, trees, pillars, chests and the chasm. A gold dot marks the bearer. Past each exit of the area the party is in, a mark points the way the road leaves, with what lies beyond it; hovering it names the objective, reward and mutators. The Layer tab keeps the graph of the layer's areas. The walked areas are forgotten on the way down.
 
 ## Monsters
 

@@ -225,16 +225,9 @@ export interface FogArea {
  */
 export class Fogs {
   private list: { area: FogArea; fog: Fog }[] = [];
-  // The grids of areas left behind, kept for the map until forgotten
-  private readonly memory = new Map<FogArea, Fog>();
 
-  /** Keeps a grid for each of these areas. The rest are remembered for the map. */
+  /** Keeps a grid for each of these areas, and drops the rest. */
   sync(areas: readonly FogArea[]): void {
-    for (const f of this.list) {
-      if (!areas.includes(f.area)) {
-        this.memory.set(f.area, f.fog);
-      }
-    }
     this.list = areas.map(
       (area) =>
         this.list.find((f) => f.area === area) ?? {
@@ -242,21 +235,6 @@ export class Fogs {
           fog: new Fog(area.width, area.depth, area.x0 ?? 0, area.z0 ?? 0),
         },
     );
-  }
-
-  /** Whether the party has seen a point of an area, in play or left behind. */
-  knownIn(area: FogArea, x: number, z: number): boolean {
-    const fog = this.list.find((f) => f.area === area)?.fog ?? this.memory.get(area);
-    return fog?.known(x, z) ?? false;
-  }
-
-  /** Forgets the areas left behind, but for these. */
-  forget(keep: readonly FogArea[]): void {
-    for (const area of this.memory.keys()) {
-      if (!keep.includes(area)) {
-        this.memory.delete(area);
-      }
-    }
   }
 
   update(dt: number, viewers: Viewer[], blockers: Blocker[]): void {

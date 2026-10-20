@@ -169,15 +169,6 @@ export interface ComingGroup {
   count: number;
 }
 
-/** The world as the map draws it. See `Game.automap`. */
-export interface Automap {
-  areas: Stage[];
-  here: Stage;
-  bearer: { x: number; z: number };
-  known: (stage: Stage, x: number, z: number) => boolean;
-  exits: { exit: Exit; shut: boolean }[];
-}
-
 /** A fight's bonus challenge as the HUD shows it. */
 export interface BonusStatus {
   title: string;
@@ -761,8 +752,6 @@ export default class Game {
       }
     }
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
-    this.walked = [];
-    this.renderer.forgetAreas([]);
     this.mutators = new MutatorRun(this.sim, () => monsterLevel(this.stageIndex));
     this.stageIndex = save?.stageIndex ?? Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
@@ -1021,29 +1010,6 @@ export default class Game {
     return best;
   }
 
-  // The areas walked in this layer, in order, for the map
-  private walked: Stage[] = [];
-
-  /**
-   * The world as the map draws it: the areas walked in this layer and the
-   * one joined ahead, where they lie, the bearer, and the exits of the
-   * area it is in, each with what lies beyond.
-   */
-  automap(): Automap {
-    const ahead = this.ahead?.stage;
-    const areas =
-      ahead && !this.walked.includes(ahead) ? [...this.walked, ahead] : [...this.walked];
-    return {
-      areas,
-      here: this.stage,
-      bearer: { x: this.bearer.x, z: this.bearer.z },
-      known: (stage, x, z) => this.renderer.knownIn(stage, x, z),
-      exits: this.stage.exits
-        .filter((e) => e.closed !== true)
-        .map((e) => ({ exit: e, shut: !this.exitsOpen })),
-    };
-  }
-
   // The area the party is in on the layer's map.
   private here(): MapNode | null {
     return this.node ? (this.map.columns[this.node.column]?.[this.node.row] ?? null) : null;
@@ -1189,9 +1155,6 @@ export default class Game {
   private enter(joined = false): void {
     if (!joined) {
       this.boss = enterStage(this.sim, this.stage);
-    }
-    if (!this.walked.includes(this.stage)) {
-      this.walked.push(this.stage);
     }
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
@@ -1683,9 +1646,6 @@ export default class Game {
     this.behind = null;
     this.fading = null;
     this.rested = false;
-    // A new layer, a new map.
-    this.walked = [];
-    this.renderer.forgetAreas([]);
     carryParty(this.sim, this.stage);
     this.effects.clear();
     // What was left on the old stage's floor is lost.

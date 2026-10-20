@@ -570,16 +570,6 @@ export default class Renderer {
     return pt((b.x * SCALE - this.sub.x) / (W * SCALE), (b.y * SCALE - this.sub.y) / (H * SCALE));
   }
 
-  /** Whether the party has seen a point of an area, for the map. */
-  knownIn(stage: Stage, x: number, z: number): boolean {
-    return this.fog.knownIn(stage, x, z);
-  }
-
-  /** Forgets the explored ground of areas left behind, but for these. */
-  forgetAreas(keep: readonly Stage[]): void {
-    this.fog.forget(keep);
-  }
-
   /** Whether the party has seen a floor point. */
   known(x: number, z: number): boolean {
     return this.fog.known(x, z);
