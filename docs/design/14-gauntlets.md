@@ -200,6 +200,13 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
   - The next sigil has a gold ring that pulses and shows through the dark, filling with flame as it breaks. An arrow at the screen's edge points to it when it is off the screen. A broken sigil is wiped dull.
   - Done once the third sigil breaks. Monsters still standing are left to the party.
   - It rolls Untouched, No losses or Swift, 150 seconds.
+- The Collapse is in too:
+  - It is rolled on the Rift Road only, as often as the others.
+  - The open field with its packs. 3 seconds after the bearer walks 6 tiles from the entrance, the floor starts falling away from the entrance's edge toward the exits, half a tile a second, a fifth faster in an Elite area. It falls a whole tile at a time and stops at 68% of the way across, short of every exit.
+  - The fallen floor is black whatever the light, with a ragged lip of rock at its edge. The next tile to fall is washed red, with a pulsing crack where it will break.
+  - A monster on ground that falls is lost. One of the party is hurt for 20% of its health and scrambles back onto standing ground. The party's dead are carried along.
+  - Done once the bearer is within 4 tiles of an exit. The floor stops falling then.
+  - It rolls Untouched, No losses, Swift (90 seconds) or Thorough.
 - Silence is not in yet. It needs Horn-Bearers and horn posts the party can destroy.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
@@ -220,7 +227,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault and Ritual are done.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault, Ritual and Collapse are done.
 
 ## Open questions
 

@@ -187,6 +187,20 @@ export interface Stage {
   vault?: Vault;
   // A Ritual's sigils, in the order the bearer breaks them
   rites?: Rite[];
+  // A Collapse's falling floor
+  collapse?: Collapse;
+}
+
+/**
+ * A Collapse's floor, falling away from the entrance's edge toward the
+ * exits: the way it falls, how far it has fallen, where it stops, and how
+ * fast it goes, in tiles a second.
+ */
+export interface Collapse {
+  dir: Spot;
+  front: number;
+  stop: number;
+  speed: number;
 }
 
 /** How long the bearer stands on a Ritual's sigil to break it, and how near its middle. */
@@ -239,6 +253,29 @@ export const rectOf = (stage: Stage): Rect => ({
   x1: (stage.x0 ?? 0) + stage.width,
   z1: (stage.z0 ?? 0) + stage.depth,
 });
+
+/**
+ * The floor of an area still standing: all of it, but what a Collapse has
+ * taken. The floor falls a whole tile at a time.
+ */
+export function floorOf(stage: Stage): Rect {
+  const r = rectOf(stage);
+  const fallen = Math.floor(stage.collapse?.front ?? 0);
+  const dir = stage.collapse?.dir;
+  if (!dir || fallen <= 0) {
+    return r;
+  }
+  if (dir.x > 0) {
+    return { ...r, x0: r.x0 + fallen };
+  }
+  if (dir.x < 0) {
+    return { ...r, x1: r.x1 - fallen };
+  }
+  if (dir.z > 0) {
+    return { ...r, z0: r.z0 + fallen };
+  }
+  return { ...r, z1: r.z1 - fallen };
+}
 
 /**
  * A trap on a Labyrinth's floor. Every `period` seconds, from `phase`, it
@@ -365,6 +402,12 @@ const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
   stage.roads.some((road) =>
     road.slice(1).some((b, i) => distanceToSegment({ x, z }, road[i], b) < reach),
   );
+
+// How far across a Collapse's floor falls, as a share of its width, how
+// fast in tiles a second, and how much faster in an Elite area
+const COLLAPSE_STOP = 0.68;
+const COLLAPSE_SPEED = 0.5;
+const COLLAPSE_ELITE = 1.2;
 
 // How far round a Vault's strongroom nothing else stands, and how far its
 // door is from its middle
@@ -661,6 +704,15 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   }
   if (plan.objective === 'escort') {
     stage.refugees = refugeesAt(stage, plan.kind === 'elite');
+  }
+  if (plan.objective === 'collapse') {
+    // The floor falls from the entrance's edge, and stops short of the exits.
+    stage.collapse = {
+      dir: { x: 1, z: 0 },
+      front: 0,
+      stop: width * COLLAPSE_STOP,
+      speed: COLLAPSE_SPEED * (plan.kind === 'elite' ? COLLAPSE_ELITE : 1),
+    };
   }
   if (plan.objective === 'vault') {
     // The lair's leader holds the key. The spoils wait at the vault's door.

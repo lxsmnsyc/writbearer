@@ -10,6 +10,7 @@ import {
   type Pack,
   type Stage,
   THREAT,
+  floorOf,
   holesOf,
   monsterLevel,
   rectOf,
@@ -30,7 +31,7 @@ export function enterStage(sim: Sim, stage: Stage): Unit | null {
   sim.obstacles.push(...solidsOf(stage));
   sim.holes.length = 0;
   sim.holes.push(...holesOf(stage));
-  sim.setWorld([rectOf(stage)]);
+  sim.setWorld([floorOf(stage)]);
   return spawnStage(sim, stage);
 }
 
@@ -89,7 +90,7 @@ export function dropStage(
     sim.obstacles.push(...solidsOf(k));
     sim.holes.push(...holesOf(k));
   }
-  sim.setWorld(kept.map(rectOf));
+  sim.setWorld(kept.map(floorOf));
 }
 
 // How far apart a pack's monsters stand, and the turn between each, as a

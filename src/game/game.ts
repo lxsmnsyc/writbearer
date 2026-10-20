@@ -17,6 +17,7 @@ import {
   type Gate,
   type Prop,
   type Stage,
+  floorOf,
   generateGuild,
   generateStage,
   generateTomb,
@@ -1541,7 +1542,7 @@ export default class Game {
       }
     });
     this.seam(next, way);
-    const boss = joinStage(this.sim, next, [rectOf(this.stage), rectOf(next)]);
+    const boss = joinStage(this.sim, next, [floorOf(this.stage), rectOf(next)]);
     this.ahead = { stage: next, boss };
     // On into it, a few steps past its entrance
     this.bearer.order = {

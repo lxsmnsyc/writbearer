@@ -39,6 +39,7 @@ import GiEarthCrack from '~icons/game-icons/earth-crack';
 import GiEarthSpit from '~icons/game-icons/earth-spit';
 import GiElectric from '~icons/game-icons/electric';
 import GiEnergyShield from '~icons/game-icons/energy-shield';
+import GiFallingRocks from '~icons/game-icons/falling-rocks';
 import GiFeather from '~icons/game-icons/feather';
 import GiFireRay from '~icons/game-icons/fire-ray';
 import GiFlagObjective from '~icons/game-icons/flag-objective';
@@ -267,6 +268,7 @@ export const ICONS = {
   market: GiShoppingBag,
   vault: GiLockedChest,
   ritual: GiPentagramRose,
+  collapse: GiFallingRocks,
   compendium: GiOpenBook,
   points: GiUpgrade,
   drop: GiTrashCan,

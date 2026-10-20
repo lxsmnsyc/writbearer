@@ -1,5 +1,5 @@
 import { MUTATOR_NAME, type Objective, type Reward } from '../gen/graph';
-import { type Ahead, type Prop, RITE_TIME, type Stage, rectOf } from '../gen/stage';
+import { type Ahead, type Prop, RITE_TIME, type Stage, floorOf, rectOf } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
@@ -73,6 +73,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   escort: 'Escort: see the refugees through',
   vault: 'Vault: take the key, open the vault',
   ritual: 'Ritual: break the three sigils',
+  collapse: 'Collapse: outrun the falling floor',
 };
 
 // What a signpost says the fight ahead pays.
@@ -87,6 +88,9 @@ const REWARD_SIGN: Record<Reward, string> = {
 // Places lit through, and how far their light reaches from the middle
 const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
 const LIT_RADIUS = 13;
+// How far ahead of a Collapse's edge the ground shows it will fall, in
+// tiles: the next tile to go
+const FALL_WARN = 1;
 // A broken sigil, wiped dull
 const BROKEN_SIGIL = '#3a3a3a';
 // Each side's health bar
@@ -488,6 +492,9 @@ export default class Renderer {
       this.atmosphere.drawLit(ctx, iso, z, this.cam);
     }
     this.drawLight(f);
+    // A Collapse's fallen floor is black whatever the light, and hides what
+    // stood on it.
+    this.drawCollapse(f);
     this.drawEmbers(f, fog);
     // A Ritual's next sigil shines through the dark, so it can be found.
     this.drawRites(f);
@@ -775,6 +782,74 @@ export default class Renderer {
   }
 
   // The Church's sealing sigil, painted in blood on the floor.
+  // A Collapse's fallen floor: the void, with a ragged lip of rock where
+  // the ground breaks off, and the strip about to fall flashing red.
+  private drawCollapse(f: Frame): void {
+    const { ctx, iso } = this;
+    for (const stage of f.areas.map((a) => a.stage)) {
+      const c = stage.collapse;
+      if (!c || c.front >= c.stop + 1) {
+        continue;
+      }
+      const all = rectOf(stage);
+      const standing = floorOf(stage);
+      // The edge runs across the field; `at` places a point by how far
+      // along the edge it is and how far from it toward the fall.
+      const across = c.dir.x === 0 ? { x: 1, z: 0 } : { x: 0, z: 1 };
+      const span = c.dir.x === 0 ? all.x1 - all.x0 : all.z1 - all.z0;
+      let edge: { x: number; z: number };
+      if (c.dir.x > 0) {
+        edge = { x: standing.x0, z: all.z0 };
+      } else if (c.dir.x < 0) {
+        edge = { x: standing.x1, z: all.z0 };
+      } else if (c.dir.z > 0) {
+        edge = { x: all.x0, z: standing.z0 };
+      } else {
+        edge = { x: all.x0, z: standing.z1 };
+      }
+      const at = (t: number, back: number): Pt =>
+        iso(edge.x + across.x * t - c.dir.x * back, edge.z + across.z * t - c.dir.z * back);
+      const steps = Math.ceil(span);
+      const ragged = (k: number): number =>
+        ((((Math.sin(k * 12.9898) * 43758.5) % 1) + 1) % 1) * 0.5;
+      if (c.front >= 1) {
+        const lip = Array.from({ length: steps + 1 }, (_, k) => at(k, ragged(k)));
+        const fallen = Math.floor(c.front);
+        fillPoly(ctx, [...lip, at(span, fallen), at(0, fallen)], C.void, null);
+        ctx.strokeStyle = '#4e4c48';
+        ctx.lineWidth = look.zoom;
+        ctx.beginPath();
+        lip.forEach((p, k) => {
+          if (k) {
+            ctx.lineTo(p.x, p.y);
+          } else {
+            ctx.moveTo(p.x, p.y);
+          }
+        });
+        ctx.stroke();
+      }
+      if (c.front < c.stop) {
+        // The next strip to go: a red wash, and a pulsing crack where it
+        // will break off
+        const next = FALL_WARN;
+        ctx.globalAlpha = 0.25;
+        fillPoly(ctx, [at(0, 0), at(span, 0), at(span, -next), at(0, -next)], C.blood, null);
+        ctx.globalAlpha = 0.6 + 0.4 * Math.sin(f.time * 6);
+        ctx.strokeStyle = C.blood;
+        ctx.lineWidth = look.zoom;
+        ctx.setLineDash([4 * look.zoom, 3 * look.zoom]);
+        ctx.beginPath();
+        const a = at(0, -next);
+        const b = at(span, -next);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
   // A Ritual's sigils: one broken is wiped dull, and the one the bearer
   // must stand on next fills with gold as it breaks.
   private drawRites(f: Frame): void {

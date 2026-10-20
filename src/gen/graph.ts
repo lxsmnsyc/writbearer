@@ -8,10 +8,10 @@ export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
  * What a fight area asks of the party before its exits open, as Aghanim's
  * Labyrinth's rooms: slay the marked monsters, hold out against waves,
  * find the way through a maze of traps, see refugees across the field, or
- * take a key from the lair to open a vault, or break three sigils in turn
- * while waves come.
+ * take a key from the lair to open a vault, break three sigils in turn
+ * while waves come, or outrun a falling floor to an exit.
  */
-export type Objective = 'hunt' | 'horde' | 'maze' | 'escort' | 'vault' | 'ritual';
+export type Objective = 'hunt' | 'horde' | 'maze' | 'escort' | 'vault' | 'ritual' | 'collapse';
 
 export const OBJECTIVE_NAME: Record<Objective, string> = {
   hunt: 'Hunt',
@@ -20,6 +20,7 @@ export const OBJECTIVE_NAME: Record<Objective, string> = {
   escort: 'Escort',
   vault: 'Vault',
   ritual: 'Ritual',
+  collapse: 'Collapse',
 };
 
 /**
@@ -52,6 +53,7 @@ export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   escort: ['untouched', 'noLosses', 'swift'],
   vault: ['untouched', 'noLosses', 'swift', 'thorough'],
   ritual: ['untouched', 'noLosses', 'swift'],
+  collapse: ['untouched', 'noLosses', 'swift', 'thorough'],
 };
 
 export const CHALLENGE_NAME: Record<Challenge, string> = {
@@ -309,18 +311,24 @@ export const OBJECTIVES: readonly Objective[] = [
   'escort',
   'vault',
   'ritual',
+  'collapse',
 ];
 
 // The layers that have Escorts: refugees flee down the Marches and the
 // Rift Road, and no one lives below to flee. Rituals come from the
-// Undercroft down, where the Church's sigils are.
+// Undercroft down, where the Church's sigils are. Collapses are the Rift
+// Road's, where the road clings to the chasm's walls.
 const ESCORT_LAYERS = 2;
 const RITUAL_FROM = 2;
+const COLLAPSE_LAYER = 1;
 
 /** The objectives a layer's fights roll from, each as often as the others. */
 export const objectivesFor = (depth: number): readonly Objective[] =>
   OBJECTIVES.filter(
-    (o) => (o !== 'escort' || depth < ESCORT_LAYERS) && (o !== 'ritual' || depth >= RITUAL_FROM),
+    (o) =>
+      (o !== 'escort' || depth < ESCORT_LAYERS) &&
+      (o !== 'ritual' || depth >= RITUAL_FROM) &&
+      (o !== 'collapse' || depth === COLLAPSE_LAYER),
   );
 
 // The columns a layer's Town may stand in.

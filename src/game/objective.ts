@@ -1,10 +1,10 @@
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
-import { RITE_REACH, RITE_TIME, type Stage, type Wave } from '../gen/stage';
+import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
 import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
-import { inRect } from '../sim/nav';
-import { Side } from '../sim/types';
+import { type Rect, inRect } from '../sim/nav';
+import { DamageFlags, DamageKind, Side } from '../sim/types';
 import { warn } from '../sim/warning';
 
 // A fight area's objective as it plays out, from the stages design: the
@@ -21,6 +21,10 @@ import { warn } from '../sim/warning';
 //   but nothing is paid.
 // - A Vault is done once the bearer brings the key, which the lair's leader
 //   holds, to the vault's door. The vault opens on its spoils.
+// - A Collapse's floor falls away from the entrance's edge once the bearer
+//   moves on, toward the exits. It is done once the bearer reaches an exit.
+//   Whoever the floor falls under falls: a monster is lost, and one of the
+//   party is hurt and scrambles back onto the ground still standing.
 // - A Ritual is done once the bearer has stood on each of its three sigils
 //   in turn for long enough. A wave comes as it steps onto each, and
 //   another halfway through. Stepping off pauses the sigil, but keeps what
@@ -37,6 +41,13 @@ const WAVE_MARK = 2;
 // they must be to count as brought
 const ESCORT_EXIT = 4;
 const ESCORT_NEAR = 7;
+// How long a Collapse waits once the bearer moves on, and what a fall costs
+// one of the party, as a share of its health
+const COLLAPSE_GRACE = 3;
+const FALL_SHARE = 0.2;
+// How far onto standing ground one of the party scrambles
+const SCRAMBLE = 1.5;
+
 // How near the vault's door the bearer comes with the key to open it
 const VAULT_REACH = 1.6;
 
@@ -73,6 +84,9 @@ export default class ObjectiveRun {
     if (this.kind === 'ritual') {
       this.ritual(sim, dt, level);
     }
+    if (this.kind === 'collapse') {
+      this.collapse(sim, dt);
+    }
     if (this.kind === 'escort') {
       this.wards ??= sim.living(Side.Ward);
       this.failed = this.wards.filter((u) => u.alive).length < this.needed();
@@ -93,6 +107,13 @@ export default class ObjectiveRun {
   }
 
   private met(sim: Sim): boolean {
+    if (this.kind === 'collapse') {
+      const bearer = sim.bearer;
+      return (
+        bearer?.alive === true &&
+        this.stage.exits.some((e) => Math.hypot(e.x - bearer.x, e.z - bearer.z) <= ESCORT_EXIT)
+      );
+    }
     if (this.kind === 'ritual') {
       return (this.stage.rites ?? []).every((r) => r.broken === true);
     }
@@ -137,6 +158,68 @@ export default class ObjectiveRun {
     const bearer = sim.bearer;
     const goal = this.stage.goal;
     return goal !== undefined && bearer !== null && bearer.alive && inRect(goal, bearer);
+  }
+
+  // The floor falls a little further, a tile at a time, once the bearer
+  // has moved on from the entrance.
+  private collapse(sim: Sim, dt: number): void {
+    const c = this.stage.collapse;
+    const bearer = sim.bearer;
+    if (!c || !bearer) {
+      return;
+    }
+    if (!this.started) {
+      const e = this.stage.entrance;
+      if (Math.hypot(bearer.x - e.x, bearer.z - e.z) < HORDE_START) {
+        return;
+      }
+      this.started = true;
+    }
+    this.clock += dt;
+    if (this.clock < COLLAPSE_GRACE) {
+      return;
+    }
+    const was = Math.floor(c.front);
+    c.front = Math.min(c.stop, c.front + c.speed * dt);
+    if (Math.floor(c.front) === was) {
+      return;
+    }
+    // The area's floor in the world shrinks to what still stands.
+    const all = rectOf(this.stage);
+    const within = (r: Rect): boolean =>
+      r.x0 >= all.x0 - 0.01 &&
+      r.z0 >= all.z0 - 0.01 &&
+      r.x1 <= all.x1 + 0.01 &&
+      r.z1 <= all.z1 + 0.01;
+    const standing = floorOf(this.stage);
+    sim.setWorld(sim.floor.map((r) => (within(r) ? standing : r)));
+    for (const u of sim.units) {
+      if (!inRect(all, u) || inRect(standing, u)) {
+        continue;
+      }
+      if (u.side === Side.Monster) {
+        sim.units.delete(u);
+        continue;
+      }
+      // The party's dead are carried along, and the living hurt by the fall.
+      if (u.alive) {
+        u.hit(u, {
+          kind: DamageKind.True,
+          fixed: Math.max(1, Math.round(u.derived.maxHp * FALL_SHARE)),
+          flags: DamageFlags.Redirected,
+        });
+      }
+      const across = { x: u.x, z: u.z };
+      if (c.dir.x === 0) {
+        across.z = c.dir.z > 0 ? standing.z0 + SCRAMBLE : standing.z1 - SCRAMBLE;
+      } else {
+        across.x = c.dir.x > 0 ? standing.x0 + SCRAMBLE : standing.x1 - SCRAMBLE;
+      }
+      const to = sim.nav?.free(across.x, across.z) ?? across;
+      u.x = to.x;
+      u.z = to.z;
+      u.order = null;
+    }
   }
 
   // The bearer stands on the next sigil, and the waves come for it.
@@ -253,6 +336,12 @@ export default class ObjectiveRun {
     }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'collapse') {
+      if (!this.started) {
+        return 'Reach an exit before the floor gives way. It falls once the bearer moves on.';
+      }
+      return 'Run for an exit. The floor is falling away behind.';
     }
     if (this.kind === 'ritual') {
       const rites = this.stage.rites ?? [];
