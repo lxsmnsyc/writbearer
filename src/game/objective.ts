@@ -19,6 +19,8 @@ import { warn } from '../sim/warning';
 // - An Escort is done once the bearer brings at least half its refugees to
 //   an exit. It fails once fewer than half are left alive: the exits open,
 //   but nothing is paid.
+// - A Vault is done once the bearer brings the key, which the lair's leader
+//   holds, to the vault's door. The vault opens on its spoils.
 
 // How far the bearer walks from the entrance before a Horde begins
 const HORDE_START = 6;
@@ -31,6 +33,8 @@ const WAVE_MARK = 2;
 // they must be to count as brought
 const ESCORT_EXIT = 4;
 const ESCORT_NEAR = 7;
+// How near the vault's door the bearer comes with the key to open it
+const VAULT_REACH = 1.6;
 
 export default class ObjectiveRun {
   done = false;
@@ -82,6 +86,23 @@ export default class ObjectiveRun {
   }
 
   private met(sim: Sim): boolean {
+    if (this.kind === 'vault') {
+      const vault = this.stage.vault;
+      const bearer = sim.bearer;
+      if (!vault?.key || !bearer?.alive) {
+        return false;
+      }
+      if (Math.hypot(vault.door.x - bearer.x, vault.door.z - bearer.z) > VAULT_REACH) {
+        return false;
+      }
+      vault.open = true;
+      for (const p of this.stage.props) {
+        if (p.kind === 'vault') {
+          p.open = true;
+        }
+      }
+      return true;
+    }
     if (this.kind === 'escort') {
       const bearer = sim.bearer;
       if (!bearer?.alive) {
@@ -178,6 +199,11 @@ export default class ObjectiveRun {
     }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'vault') {
+      return this.stage.vault?.key === true
+        ? 'Bring the key to the vault’s door.'
+        : 'The lair’s leader holds the vault’s key. Take it.';
     }
     if (this.kind === 'escort') {
       const all = this.wards ?? sim.living(Side.Ward);

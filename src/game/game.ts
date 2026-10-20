@@ -141,6 +141,8 @@ const LEVER_REACH = 1.3;
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
+// The items a Vault adds to its chest, beyond what the area pays
+const VAULT_EXTRA = 2;
 // A chest holds this many pieces of equipment, rolled as an elite's drop.
 const CHEST_ITEMS = 3;
 // A fight's chest holds one, and an Arms chest this many more, Magic or better.
@@ -1327,22 +1329,27 @@ export default class Game {
         seed: 0.5,
         holds,
         better,
-        extra: this.here()?.mutators?.length,
+        extra: (this.here()?.mutators?.length ?? 0) + (o.kind === 'vault' ? VAULT_EXTRA : 0),
       });
       this.sim.obstacles.push({ x: at.x, z: at.z, r: CHEST_SOLID });
       // The floor stays as it is, with this area and any joined to it.
       this.sim.setWorld(this.sim.floor);
       const loot = this.streams.get(1, Stream.Loot);
-      this.scatter([rollGold(loot, 6 + this.stageIndex)], { x: at.x - 1, z: at.z });
+      const gold = Array.from({ length: o.kind === 'vault' ? 2 : 1 }, () =>
+        rollGold(loot, 6 + this.stageIndex),
+      );
+      this.scatter(gold, { x: at.x - 1, z: at.z });
     }
   }
 
   // In a Labyrinth, the bearer picks up the key a slain monster dropped,
   // which opens the hall's gates, and pulls the levers it walks up to.
+  // In a Vault, the key is the vault's, and opens it at its door.
   private workMaze(): void {
     const b = this.bearer;
     const gates = this.stage.gates;
-    if (!b.alive || !gates) {
+    const vault = this.stage.vault;
+    if (!b.alive) {
       return;
     }
     const key = this.stage.props.find(
@@ -1351,10 +1358,15 @@ export default class Game {
     if (key) {
       key.open = true;
       this.stage.props.splice(this.stage.props.indexOf(key), 1);
-      this.openGates(gates.filter((g) => !g.lever));
-      this.say('The bearer takes the key. The gates of the hall open.');
+      if (gates) {
+        this.openGates(gates.filter((g) => !g.lever));
+        this.say('The bearer takes the key. The gates of the hall open.');
+      } else if (vault) {
+        vault.key = true;
+        this.say('The bearer takes the key. Bring it to the vault.');
+      }
     }
-    for (const g of gates) {
+    for (const g of gates ?? []) {
       if (g.lever && !g.open && b.distanceTo(g.lever) <= LEVER_REACH) {
         this.openGates([g]);
         this.say('The bearer pulls the lever. A gate in the maze grinds open.');

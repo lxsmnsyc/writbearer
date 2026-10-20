@@ -185,6 +185,13 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
   - Done once the bearer is within 4 tiles of an exit with at least half the refugees, rounded up, within 7 tiles of it. The refugees then go on their way.
   - It fails once fewer than half are left alive. The exits open, but there is no chest, no gold and no bonus.
   - It rolls Untouched, No losses or Swift, 150 seconds.
+- The Vault is in too:
+  - It is rolled on every layer, as often as the others.
+  - A stone strongroom stands on the half of the field away from the lair, on cleared ground. Its door faces the way in where it can.
+  - Six traps ring it 3.6 tiles out, eight from the Undercroft down: spike grates and fire vents in turn, each on its own beat, so there is a way through.
+  - The lair's leader carries the key, shown over its head. It drops where it dies, and the bearer takes it by walking over it.
+  - Done once the bearer brings the key to the door. The vault opens, and its chest stands at the door with two more items than the reward would give, and twice the gold.
+  - Mini-bosses are not in yet, so the key is on the lair's leader instead of one.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
 ## Kinds by layer
@@ -204,7 +211,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort is done.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort and Vault are done.
 
 ## Open questions
 

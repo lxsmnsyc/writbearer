@@ -71,6 +71,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   horde: 'Horde: hold out against the waves',
   maze: 'Labyrinth: find the way through',
   escort: 'Escort: see the refugees through',
+  vault: 'Vault: take the key, open the vault',
 };
 
 // What a signpost says the fight ahead pays.
@@ -1529,6 +1530,43 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     // The paymaster's window, lit from inside.
     ctx.fillStyle = C.flame;
     ctx.fillRect(base.x + 10, base.y - 12, 8, 5);
+  } else if (p.kind === 'vault') {
+    // A Vault's strongroom: a squat stone block bound in iron, its door
+    // locked with gold until opened, then black.
+    block(ctx, base, 1, 26, 0.5, C.stoneA);
+    for (const y of [8, 18]) {
+      fillPoly(
+        ctx,
+        [
+          pt(base.x - 32, base.y - y),
+          pt(base.x, base.y + 16 - y),
+          pt(base.x, base.y + 14 - y),
+          pt(base.x - 32, base.y - y - 2),
+        ],
+        C.ink,
+      );
+      fillPoly(
+        ctx,
+        [
+          pt(base.x, base.y + 16 - y),
+          pt(base.x + 32, base.y - y),
+          pt(base.x + 32, base.y - y - 2),
+          pt(base.x, base.y + 14 - y),
+        ],
+        C.ink,
+      );
+    }
+    const door = [
+      pt(base.x - 20, base.y + 6),
+      pt(base.x - 10, base.y + 11),
+      pt(base.x - 10, base.y - 6),
+      pt(base.x - 20, base.y - 11),
+    ];
+    fillPoly(ctx, door, p.open === true ? C.void : C.wood, C.ink);
+    if (p.open !== true) {
+      ctx.fillStyle = C.gold;
+      ctx.fillRect(base.x - 16, base.y - 2, 3, 3);
+    }
   } else if (p.kind === 'strongbox') {
     // The vault: the Guild's iron-bound strongbox.
     block(ctx, base, 0.38, 11, 0.5, C.stoneA);

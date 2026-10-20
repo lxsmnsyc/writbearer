@@ -7,15 +7,17 @@ export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
 /**
  * What a fight area asks of the party before its exits open, as Aghanim's
  * Labyrinth's rooms: slay the marked monsters, hold out against waves,
- * find the way through a maze of traps, or see refugees across the field.
+ * find the way through a maze of traps, see refugees across the field, or
+ * take a key from the lair to open a vault.
  */
-export type Objective = 'hunt' | 'horde' | 'maze' | 'escort';
+export type Objective = 'hunt' | 'horde' | 'maze' | 'escort' | 'vault';
 
 export const OBJECTIVE_NAME: Record<Objective, string> = {
   hunt: 'Hunt',
   horde: 'Horde',
   maze: 'Labyrinth',
   escort: 'Escort',
+  vault: 'Vault',
 };
 
 /**
@@ -46,6 +48,7 @@ export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   horde: ['untouched', 'noLosses'],
   maze: ['untouched', 'noLosses', 'swift', 'thorough'],
   escort: ['untouched', 'noLosses', 'swift'],
+  vault: ['untouched', 'noLosses', 'swift', 'thorough'],
 };
 
 export const CHALLENGE_NAME: Record<Challenge, string> = {
@@ -296,7 +299,7 @@ const EVENT_FROM = 1;
 const EVENT_CHANCE = 0.16;
 
 // Every objective
-export const OBJECTIVES: readonly Objective[] = ['hunt', 'horde', 'maze', 'escort'];
+export const OBJECTIVES: readonly Objective[] = ['hunt', 'horde', 'maze', 'escort', 'vault'];
 
 // The layers that have Escorts: refugees flee down the Marches and the
 // Rift Road, and no one lives below to flee

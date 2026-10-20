@@ -33,7 +33,8 @@ export type PropKind =
   | 'lever'
   | 'key'
   | 'pit'
-  | 'blossom';
+  | 'blossom'
+  | 'vault';
 
 export interface Prop {
   kind: PropKind;
@@ -181,6 +182,16 @@ export interface Stage {
   patches?: Patch[];
   // Where an Escort's refugees wait at the start, one spot each
   refugees?: Spot[];
+  // A Vault's strongroom: where its door is, whether the bearer holds its
+  // key, and whether it is open
+  vault?: Vault;
+}
+
+/** A Vault's strongroom, from the gauntlets design. */
+export interface Vault extends Spot {
+  door: Spot;
+  key?: boolean;
+  open?: boolean;
 }
 
 /** A gate across a Labyrinth's corridor, and the lever that opens it. The hall's gates have none: the key opens them. */
@@ -343,6 +354,12 @@ const onRoads = (stage: Stage, x: number, z: number, reach = 1.6): boolean =>
     road.slice(1).some((b, i) => distanceToSegment({ x, z }, road[i], b) < reach),
   );
 
+// How far round a Vault's strongroom nothing else stands, and how far its
+// door is from its middle
+const VAULT_KEEP = 6;
+const VAULT_DOOR = 2;
+const VAULT_CLEAR = 5.5;
+
 // An open field's side, in tiles: it is square
 const FIELD_SIZE: [number, number] = [46, 54];
 
@@ -368,6 +385,7 @@ const SOLID: Partial<Record<PropKind, number>> = {
   strongbox: 0.4,
   gate: 0.5,
   pit: 1,
+  vault: 1.3,
 };
 
 // Threat each monster costs from a stage's budget. An elite costs more.
@@ -530,6 +548,32 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     add(i % 2 ? 'gibbet' : 'pike', lair.x + Math.cos(a) * 3.2, lair.z + Math.sin(a) * 3.2);
   }
 
+  // A Vault's strongroom stands on the site's half, away from the lair
+  // whose leader holds its key, ringed by traps.
+  if (plan.objective === 'vault') {
+    const at = siteFirst ? spot(12, half - 3, 4, 4) : spot(half + 3, width - 8, 4, 4);
+    keep.push({ ...at, r: VAULT_KEEP });
+    // The ground round it is cleared of trees and loose rock, so its traps
+    // stand in the open.
+    stage.props = stage.props.filter(
+      (p) =>
+        !(p.kind === 'tree' || p.kind === 'rubble' || p.kind === 'pillar') ||
+        Math.hypot(p.x - at.x, p.z - at.z) > VAULT_CLEAR,
+    );
+    add('vault', at.x, at.z);
+    // Its door faces the way in, or failing that, another open side.
+    const open = navFor(stage);
+    const sides = [
+      { x: -1, z: 0 },
+      { x: 0, z: Math.sign(entrance.z - at.z) || 1 },
+      { x: 0, z: -(Math.sign(entrance.z - at.z) || 1) },
+      { x: 1, z: 0 },
+    ].map((d) => ({ x: at.x + d.x * VAULT_DOOR, z: at.z + d.z * VAULT_DOOR }));
+    const door = sides.find((d) => open.roomy(d.x, d.z)) ?? open.free(sides[0].x, sides[0].z);
+    stage.vault = { ...at, door };
+    stage.hazards = vaultTraps(at, stage.biome);
+  }
+
   const cache = spot(10, width - 8, 1, 1);
   keep.push({ ...cache, r: KEEP_PLACE });
   add('chest', cache.x, cache.z);
@@ -547,7 +591,13 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     add(rng.chance(0.6) ? 'pike' : 'gibbet', s.x, s.z);
   }
 
-  ensureReachable(stage, [...stage.exits, site, lair, cache]);
+  ensureReachable(stage, [
+    ...stage.exits,
+    site,
+    lair,
+    cache,
+    ...(stage.vault ? [stage.vault.door] : []),
+  ]);
 
   // The roads follow the way a body walks from the entrance to each exit.
   nav = navFor(stage);
@@ -585,6 +635,11 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   }
   if (plan.objective === 'escort') {
     stage.refugees = refugeesAt(stage, plan.kind === 'elite');
+  }
+  if (plan.objective === 'vault') {
+    // The lair's leader holds the key. The spoils wait at the vault's door.
+    stage.packs[1].key = 0;
+    stage.reward = { ...stage.vault!.door };
   }
   return stage;
 }
@@ -643,6 +698,27 @@ function layGround(stage: Stage, rng: RNG, nav: Nav, keep: readonly Keep[]): voi
       grown++;
     }
   }
+}
+
+// The ring of traps round a Vault's strongroom: how far out, how many
+const VAULT_RING = 3.6;
+const VAULT_TRAPS = 6;
+
+// Traps ringing a Vault's strongroom: spike grates and fire vents in turn,
+// each on its own beat, so there is a way through for whoever watches.
+function vaultTraps(at: Spot, layer: number): Hazard[] {
+  const n = VAULT_TRAPS + (layer >= 2 ? 2 : 0);
+  return Array.from({ length: n }, (_, i): Hazard => {
+    const a = (i / n) * Math.PI * 2 + Math.PI / n;
+    const kind: HazardKind = i % 2 === 0 ? 'spikes' : 'vent';
+    return {
+      kind,
+      x: at.x + Math.cos(a) * VAULT_RING,
+      z: at.z + Math.sin(a) * VAULT_RING,
+      period: TRAP_PERIOD[kind],
+      phase: (i / n) * TRAP_PERIOD[kind],
+    };
+  });
 }
 
 // How many refugees an Escort has, one more in an Elite area, and how far
@@ -1018,6 +1094,7 @@ function ensureReachable(stage: Stage, places: Spot[]): void {
       stage.props = stage.props.filter(
         (prop) =>
           prop.kind === 'wall' ||
+          prop.kind === 'vault' ||
           prop.r === undefined ||
           distanceToSegment(prop, stage.entrance, p) > prop.r + 1.2,
       );
