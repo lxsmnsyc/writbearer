@@ -179,6 +179,8 @@ export interface Stage {
   chasm?: Spot[];
   // An open field's pools of water and patches of embers
   patches?: Patch[];
+  // Where an Escort's refugees wait at the start, one spot each
+  refugees?: Spot[];
 }
 
 /** A gate across a Labyrinth's corridor, and the lever that opens it. The hall's gates have none: the key opens them. */
@@ -581,6 +583,9 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   if (plan.objective === 'hunt') {
     markHunt(stage, rng, plan.kind === 'elite');
   }
+  if (plan.objective === 'escort') {
+    stage.refugees = refugeesAt(stage, plan.kind === 'elite');
+  }
   return stage;
 }
 
@@ -638,6 +643,21 @@ function layGround(stage: Stage, rng: RNG, nav: Nav, keep: readonly Keep[]): voi
       grown++;
     }
   }
+}
+
+// How many refugees an Escort has, one more in an Elite area, and how far
+// from the entrance they wait
+const REFUGEES = 5;
+const REFUGEE_RING = 1.4;
+
+// An Escort's refugees wait in a ring just inside the entrance.
+function refugeesAt(stage: Stage, elite: boolean): Spot[] {
+  const n = REFUGEES + (elite ? 1 : 0);
+  const at = { x: stage.entrance.x + 2.5, z: stage.entrance.z };
+  return Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return { x: at.x + Math.cos(a) * REFUGEE_RING, z: at.z + Math.sin(a) * REFUGEE_RING };
+  });
 }
 
 // How many marked monsters a Hunt has: 3, one more in an Elite area and one

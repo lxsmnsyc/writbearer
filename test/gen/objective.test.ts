@@ -33,7 +33,7 @@ describe('objectives on the map', () => {
         }
       }
     }
-    expect([...seen].sort((a, b) => a.localeCompare(b))).toEqual(['horde', 'hunt', 'maze']);
+    expect([...seen].sort((a, b) => a.localeCompare(b))).toEqual(['escort', 'horde', 'hunt', 'maze']);
   });
 
   it('show on the signposts of the roads to them', () => {

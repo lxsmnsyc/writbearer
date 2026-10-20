@@ -16,7 +16,8 @@ export type Kind =
   | 'husk'
   | 'mite'
   | 'crawler'
-  | 'broodMother';
+  | 'broodMother'
+  | 'refugee';
 
 // Where in each drawn attack (0 to 1) the blow lands or the arrow leaves.
 // The view lines the simulation's hit frame up with it.
@@ -33,6 +34,7 @@ const KINDS = new Set<string>([
   'mite',
   'crawler',
   'broodMother',
+  'refugee',
 ]);
 
 export function isKind(kind: string): kind is Kind {
@@ -56,6 +58,7 @@ export const HIT_FRACTION: Record<Kind, number> = {
   mite: 0.5,
   crawler: 0.5,
   broodMother: 0.5,
+  refugee: 1,
 };
 
 export interface Pt {
@@ -102,6 +105,7 @@ export interface Palette {
   wood: string;
   skin: string;
   bone: string;
+  cloth: string;
   blood: string;
   gold: string;
   flame: string;
@@ -147,6 +151,7 @@ const KIND_SIZE: Record<Kind, number> = {
   mite: 0.55,
   crawler: 1,
   broodMother: 2.1,
+  refugee: 0.78,
 };
 
 // How big a figure is drawn: its own size if it has one, else its kind's.
@@ -364,6 +369,9 @@ export function paperColor(kind: Kind, C: Palette): string {
   }
   if (kind === 'penitent' || kind === 'cantor' || kind === 'hollowed') {
     return C.penitent;
+  }
+  if (kind === 'refugee') {
+    return C.cloth;
   }
   return C.monster;
 }

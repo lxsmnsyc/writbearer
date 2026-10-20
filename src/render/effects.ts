@@ -77,6 +77,9 @@ export function bodyColor(u: Unit): string {
   if (u.side === Side.Party) {
     return C.merc;
   }
+  if (u.side === Side.Ward) {
+    return C.cloth;
+  }
   if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'hollowed') {
     return C.penitent;
   }

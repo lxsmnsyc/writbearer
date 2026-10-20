@@ -106,7 +106,8 @@ export type Attachment =
   | 'hood'
   | 'writ'
   | 'lantern'
-  | 'robe';
+  | 'robe'
+  | 'sash';
 
 /** A body and what is attached to it. */
 export interface Look {
@@ -371,7 +372,7 @@ const ATTACH: Record<Attachment, (g: Gear, parts: Part[]) => void> = {
     });
   },
   robe(g, parts) {
-    // A robe to the ground over the legs, and a red sash.
+    // A robe to the ground over the legs.
     const { sk } = g.pose;
     const torso = [
       sk.shoulderL,
@@ -390,6 +391,16 @@ const ATTACH: Record<Attachment, (g: Gear, parts: Part[]) => void> = {
       v(-8, -13, 0),
     ].map(g.proj);
     const robe = hull([...torso, ...hem]);
+    parts.push({
+      depth: avg(...torso) - 0.001,
+      draw: (c) => {
+        fill(c, robe, g.paper, g.ink);
+      },
+    });
+  },
+  sash(g, parts) {
+    // A red sash at the waist, the Cleric's.
+    const { sk } = g.pose;
     const sash = hull(
       [
         add(sk.pelvis, v(0, -12, 8)),
@@ -398,20 +409,13 @@ const ATTACH: Record<Attachment, (g: Gear, parts: Part[]) => void> = {
         add(sk.pelvis, v(0, -12, 2)),
       ].map(g.proj),
     );
-    parts.push(
-      {
-        depth: avg(...torso) - 0.001,
-        draw: (c) => {
-          fill(c, robe, g.paper, g.ink);
-        },
+    const torso = [sk.shoulderL, sk.shoulderR, sk.hipR, sk.hipL].map(g.proj);
+    parts.push({
+      depth: avg(...torso) + 0.0005,
+      draw: (c) => {
+        fill(c, sash, g.C.blood, null);
       },
-      {
-        depth: avg(...torso) + 0.0005,
-        draw: (c) => {
-          fill(c, sash, g.C.blood, null);
-        },
-      },
-    );
+    });
   },
 };
 
@@ -567,9 +571,13 @@ function sheetOf(l: Look, C: Palette): Sheet {
   return sheet;
 }
 
-/** The kinds drawn from sprites: the bearer and the mercs. */
+/** The kinds drawn from sprites: the bearer, the mercs and the refugees. */
 export const isSprited = (kind: Kind): boolean =>
-  kind === 'bearer' || kind === 'vanguard' || kind === 'ranger' || kind === 'cleric';
+  kind === 'bearer' ||
+  kind === 'vanguard' ||
+  kind === 'ranger' ||
+  kind === 'cleric' ||
+  kind === 'refugee';
 
 // A weapon as an attachment
 type Weapon = NonNullable<NonNullable<RigUnit['held']>['weapon']>;
@@ -600,6 +608,10 @@ export function lookOf(u: RigUnit): Look {
       attack: 'slash',
     };
   }
+  // A refugee: small, hooded and robed, in plain cloth, carrying nothing
+  if (u.kind === 'refugee') {
+    return { paper: 'cloth', size: 0.78, attachments: ['hood', 'robe'], attack: 'slash' };
+  }
   const paper = 'merc';
   if (u.kind === 'ranger') {
     const weapon = u.held ? u.held.weapon : 'bow';
@@ -615,7 +627,7 @@ export function lookOf(u: RigUnit): Look {
     return {
       paper,
       size: 1,
-      attachments: ['robe', ...held(weapon, 'sunStaff')],
+      attachments: ['robe', 'sash', ...held(weapon, 'sunStaff')],
       attack: 'cast',
     };
   }

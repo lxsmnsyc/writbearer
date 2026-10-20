@@ -287,6 +287,20 @@ function spawn(
   );
 }
 
+// A refugee on the road: it cannot fight, only follow the bearer and run.
+const REFUGEE: Template = {
+  job: job('Refugee', 110, 6, 0, Range.Melee),
+  base: stats(1, 4, 4, 1, 4, 1),
+  weapon: { min: 0, max: 0, matk: 0 },
+  kit: { reach: 0, interval: 0, moveSpeed: 2.3 },
+};
+
+/** A refugee, one of those an Escort keeps safe. */
+export function spawnRefugee(sim: Sim, level: number, x: number, z: number): Unit {
+  const at = sim.nav?.free(x, z) ?? { x, z };
+  return spawn(sim, 'refugee', REFUGEE, Side.Ward, level, at.x, at.z);
+}
+
 export function spawnBearer(sim: Sim, x: number, z: number): Unit {
   const unit = spawn(sim, 'bearer', MERCS.bearer, Side.Party, 1, x, z);
   sim.bearer = unit;

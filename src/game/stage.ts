@@ -1,5 +1,11 @@
 import { spawnBoss } from '../content/bosses';
-import { type MercKind, spawnBearer, spawnMerc, spawnMonster } from '../content/roster';
+import {
+  type MercKind,
+  spawnBearer,
+  spawnMerc,
+  spawnMonster,
+  spawnRefugee,
+} from '../content/roster';
 import {
   type Pack,
   type Stage,
@@ -125,6 +131,10 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
         u.calls = followersOf(pack, stage.biome);
       }
     });
+  }
+  // An Escort's refugees wait by the entrance, as hardy as the area is deep.
+  for (const r of stage.refugees ?? []) {
+    spawnRefugee(sim, monsterLevel(stage.index), r.x, r.z);
   }
   // A boss stands a level above the layer's last packs would.
   return stage.boss

@@ -177,6 +177,14 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 | Ambush | The area looks like a safe Camp. Packs surround the party once the bearer reaches the fire. | All | The Ambush node. |
 
 - Each new kind keeps the rules above: a reward on the road, a bonus challenge, mutators and mini-bosses.
+- In the game so far, the Escort is in (`src/game/objective.ts`, `thinkWard` in `src/sim/ai.ts`):
+  - It is rolled as often as the other three in the Marches and on the Rift Road, and never below.
+  - Five refugees wait in a ring just inside the entrance, six in an Elite area. They are on a side of their own, so nothing that counts the party's mercs counts them. They are drawn small, hooded and robed in plain cloth, with a pale health bar.
+  - A refugee waits until the bearer comes within 6 tiles, then follows it. With an aware monster within 2.5 tiles, it moves to the far side of the bearer from it. It steps out of warnings and never fights.
+  - Monsters go for refugees as they go for the party.
+  - Done once the bearer is within 4 tiles of an exit with at least half the refugees, rounded up, within 7 tiles of it. The refugees then go on their way.
+  - It fails once fewer than half are left alive. The exits open, but there is no chest, no gold and no bonus.
+  - It rolls Untouched, No losses or Swift, 150 seconds.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
 ## Kinds by layer
@@ -196,7 +204,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort is done.
 
 ## Open questions
 

@@ -6,15 +6,16 @@ export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
 
 /**
  * What a fight area asks of the party before its exits open, as Aghanim's
- * Labyrinth's rooms: slay the marked monsters, hold out against waves, or
- * find the way through a maze of traps.
+ * Labyrinth's rooms: slay the marked monsters, hold out against waves,
+ * find the way through a maze of traps, or see refugees across the field.
  */
-export type Objective = 'hunt' | 'horde' | 'maze';
+export type Objective = 'hunt' | 'horde' | 'maze' | 'escort';
 
 export const OBJECTIVE_NAME: Record<Objective, string> = {
   hunt: 'Hunt',
   horde: 'Horde',
   maze: 'Labyrinth',
+  escort: 'Escort',
 };
 
 /**
@@ -44,6 +45,7 @@ export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   hunt: ['untouched', 'noLosses', 'swift', 'thorough'],
   horde: ['untouched', 'noLosses'],
   maze: ['untouched', 'noLosses', 'swift', 'thorough'],
+  escort: ['untouched', 'noLosses', 'swift'],
 };
 
 export const CHALLENGE_NAME: Record<Challenge, string> = {
@@ -293,8 +295,16 @@ const CAMP_CHANCE = 0.18;
 const EVENT_FROM = 1;
 const EVENT_CHANCE = 0.16;
 
-// Each objective as often as the others
-export const OBJECTIVES: readonly Objective[] = ['hunt', 'horde', 'maze'];
+// Every objective
+export const OBJECTIVES: readonly Objective[] = ['hunt', 'horde', 'maze', 'escort'];
+
+// The layers that have Escorts: refugees flee down the Marches and the
+// Rift Road, and no one lives below to flee
+const ESCORT_LAYERS = 2;
+
+/** The objectives a layer's fights roll from, each as often as the others. */
+export const objectivesFor = (depth: number): readonly Objective[] =>
+  depth < ESCORT_LAYERS ? OBJECTIVES : OBJECTIVES.filter((o) => o !== 'escort');
 
 // The columns a layer's Town may stand in.
 const TOWN_COLUMNS = [3, 4];
@@ -350,7 +360,7 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0)
   columns.forEach((column, c) => {
     for (const node of column) {
       if (node.kind === 'combat' || node.kind === 'elite') {
-        node.objective = c === 0 && opening === 1 ? 'hunt' : rng.pick(OBJECTIVES);
+        node.objective = c === 0 && opening === 1 ? 'hunt' : rng.pick(objectivesFor(depth));
       }
     }
   });

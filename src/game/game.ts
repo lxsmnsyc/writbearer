@@ -866,6 +866,9 @@ export default class Game {
       } else if (event.source.side === Side.Party) {
         this.souls++;
         this.bonus?.lost();
+      } else if (event.source.side === Side.Ward) {
+        const left = this.sim.living(Side.Ward).length;
+        this.say(`A refugee falls. ${left} ${left === 1 ? 'is' : 'are'} left.`);
       }
     });
     this.slain = save?.slain ?? 0;
@@ -1281,9 +1284,18 @@ export default class Game {
     if (!o || !this.bearer.alive || !o.update(this.sim, TICK, monsterLevel(this.stageIndex))) {
       return;
     }
+    this.views.snap(this.sim);
+    if (o.failed) {
+      // A failed Escort opens the way on, and pays nothing.
+      this.bonusMet = this.bonus ? false : null;
+      this.say('Too many refugees were lost. The way on is open, but nothing is owed.');
+      return;
+    }
+    if (o.kind === 'escort') {
+      this.say('The refugees go on their way, thankful.');
+    }
     const better = this.bonus?.met(this.sim) ?? false;
     this.bonusMet = this.bonus ? better : null;
-    this.views.snap(this.sim);
     const chest = this.prize ? `the ${REWARD_NAME[this.prize]} chest` : 'the spoils';
     this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and ${chest} lies before it.`);
     if (this.prize === 'respite') {

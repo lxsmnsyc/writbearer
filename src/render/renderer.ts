@@ -70,6 +70,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   hunt: 'Hunt: slay the marked',
   horde: 'Horde: hold out against the waves',
   maze: 'Labyrinth: find the way through',
+  escort: 'Escort: see the refugees through',
 };
 
 // What a signpost says the fight ahead pays.
@@ -84,6 +85,13 @@ const REWARD_SIGN: Record<Reward, string> = {
 // Places lit through, and how far their light reaches from the middle
 const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
 const LIT_RADIUS = 13;
+// Each side's health bar
+const BAR: Record<Side, string> = {
+  [Side.Party]: C.gold,
+  [Side.Monster]: C.blood,
+  [Side.Ward]: C.bone,
+};
+
 // The turn between each ember of a patch, so they spread evenly over it
 const GOLDEN_TURN = Math.PI * (3 - Math.sqrt(5));
 
@@ -1294,11 +1302,11 @@ export default class Renderer {
     });
   }
 
-  // Health bars: gold for the party, red for monsters.
+  // Health bars: gold for the party, pale for its wards, red for monsters.
   private drawHealth(f: Frame, fog: Fogs): void {
     const { ctx } = this;
     for (const u of f.sim.living()) {
-      if (u.side === Side.Party && u.hp >= u.derived.maxHp && u.buildup.size === 0) {
+      if (u.side !== Side.Monster && u.hp >= u.derived.maxHp && u.buildup.size === 0) {
         continue;
       }
       if (u.side === Side.Monster && !u.aware) {
@@ -1312,7 +1320,7 @@ export default class Renderer {
       const y = b.y - Math.round(barHeight(u) * look.zoom);
       ctx.fillStyle = C.ink;
       ctx.fillRect(b.x - 7, y, 14, 2);
-      ctx.fillStyle = u.side === Side.Party ? C.gold : C.blood;
+      ctx.fillStyle = BAR[u.side];
       ctx.fillRect(b.x - 7, y, Math.max(0, Math.round((14 * u.hp) / u.derived.maxHp)), 2);
       this.drawBuildup(u, b.x, y);
     }
@@ -1428,9 +1436,9 @@ function barHeight(u: Unit): number {
   return 44 * elite;
 }
 
-// How visible a unit is, 0 to 1. The party is always seen.
+// How visible a unit is, 0 to 1. The party and its wards are always seen.
 function seen(fog: Fogs, u: Unit, x: number, z: number): number {
-  if (u.side === Side.Party) {
+  if (u.side !== Side.Monster) {
     return 1;
   }
   return fog.visible(x, z);

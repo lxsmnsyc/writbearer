@@ -16,6 +16,9 @@ import { warn } from '../sim/warning';
 //   when its time is up, or as soon as the wave before it is beaten. Where
 //   it comes shows on the ground a few seconds first. It is done once the
 //   last wave is dead.
+// - An Escort is done once the bearer brings at least half its refugees to
+//   an exit. It fails once fewer than half are left alive: the exits open,
+//   but nothing is paid.
 
 // How far the bearer walks from the entrance before a Horde begins
 const HORDE_START = 6;
@@ -24,9 +27,17 @@ const WAVE_MIN_GAP = 2;
 // How long a wave's spawn point shows on the ground before it comes, and how wide
 export const WAVE_WARNING = 3;
 const WAVE_MARK = 2;
+// How near an exit the bearer brings the refugees, and how near the bearer
+// they must be to count as brought
+const ESCORT_EXIT = 4;
+const ESCORT_NEAR = 7;
 
 export default class ObjectiveRun {
   done = false;
+  // An Escort that lost too many of its refugees: done, but owed nothing
+  failed = false;
+  // An Escort's refugees, as they were when it began
+  private wards: Unit[] | null = null;
   // A Horde's clock since the last wave, the next wave and who came so far
   private started = false;
   private clock = 0;
@@ -51,11 +62,39 @@ export default class ObjectiveRun {
     if (this.kind === 'horde') {
       this.horde(sim, dt, level);
     }
-    this.done = this.met(sim);
+    if (this.kind === 'escort') {
+      this.wards ??= sim.living(Side.Ward);
+      this.failed = this.wards.filter((u) => u.alive).length < this.needed();
+    }
+    this.done = this.failed || this.met(sim);
+    if (this.done && this.kind === 'escort') {
+      // The refugees go on their way, or scatter.
+      for (const u of this.wards ?? []) {
+        sim.units.delete(u);
+      }
+    }
     return this.done;
   }
 
+  // How many refugees an Escort must bring through: half, rounded up
+  private needed(): number {
+    return Math.ceil((this.wards?.length ?? 0) / 2);
+  }
+
   private met(sim: Sim): boolean {
+    if (this.kind === 'escort') {
+      const bearer = sim.bearer;
+      if (!bearer?.alive) {
+        return false;
+      }
+      const atExit = this.stage.exits.some(
+        (e) => Math.hypot(e.x - bearer.x, e.z - bearer.z) <= ESCORT_EXIT,
+      );
+      const brought = (this.wards ?? []).filter(
+        (u) => u.alive && u.distanceTo(bearer) <= ESCORT_NEAR,
+      );
+      return atExit && brought.length >= this.needed();
+    }
     if (this.kind === 'hunt') {
       return ![...sim.units].some((u) => u.marked && u.alive);
     }
@@ -134,8 +173,17 @@ export default class ObjectiveRun {
 
   /** How far along it is, in a line. */
   status(sim: Sim): string {
+    if (this.failed) {
+      return 'Too many refugees were lost. The way on is open, but nothing is owed.';
+    }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'escort') {
+      const all = this.wards ?? sim.living(Side.Ward);
+      const alive = all.filter((u) => u.alive).length;
+      const need = Math.ceil(all.length / 2);
+      return `Bring the refugees to an exit: ${alive} of ${all.length} alive, ${need} needed`;
     }
     if (this.kind === 'hunt') {
       const marked = [...sim.units].filter((u) => u.marked);

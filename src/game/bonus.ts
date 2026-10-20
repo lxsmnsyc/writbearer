@@ -15,6 +15,7 @@ export const SWIFT_TIME: Record<Objective, number> = {
   hunt: 150,
   horde: Infinity,
   maze: 120,
+  escort: 150,
 };
 
 export type BonusState = 'open' | 'met' | 'failed';

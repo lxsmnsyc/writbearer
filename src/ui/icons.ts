@@ -119,6 +119,7 @@ import GiSupersonicArrow from '~icons/game-icons/supersonic-arrow';
 import GiTargetDummy from '~icons/game-icons/target-dummy';
 import GiTargeted from '~icons/game-icons/targeted';
 import GiTargeting from '~icons/game-icons/targeting';
+import GiThreeFriends from '~icons/game-icons/three-friends';
 import GiTowerFlag from '~icons/game-icons/tower-flag';
 import GiTrashCan from '~icons/game-icons/trash-can';
 import GiTreasureMap from '~icons/game-icons/treasure-map';
@@ -247,6 +248,7 @@ export const ICONS = {
   hunt: GiTargeted,
   horde: GiDervishSwords,
   maze: GiMaze,
+  escort: GiThreeFriends,
   // The interface
   close: GiCrossMark,
   locked: GiPadlock,

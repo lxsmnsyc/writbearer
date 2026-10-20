@@ -45,6 +45,9 @@ export const enum Rank {
 export const enum Side {
   Party = 0,
   Monster = 1,
+  // Those the party keeps safe, such as an Escort's refugees. Monsters go
+  // for them as for the party; they never fight.
+  Ward = 2,
 }
 
 export const enum DamageFlags {

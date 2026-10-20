@@ -129,7 +129,7 @@ function flyHoming(p: Projectile, dt: number): void {
 
 // A straight projectile hits each enemy it passes, in small steps.
 function flyStraight(sim: Sim, p: Projectile, dt: number): void {
-  const enemies = sim.living(p.source.side === Side.Party ? Side.Monster : Side.Party);
+  const enemies = sim.foes(p.source.side);
   let travel = Math.min(p.left, p.speed * dt);
   while (travel > 0 && !p.done) {
     const step = Math.min(SUBSTEP, travel);
@@ -314,6 +314,14 @@ export default class Sim extends EventEngine<SimEventMap> {
     return unit;
   }
 
+  /** Whom a side fights: monsters fight the party and its wards, and both fight monsters. */
+  foes(side: Side): Unit[] {
+    if (side !== Side.Monster) {
+      return this.living(Side.Monster);
+    }
+    return this.living().filter((u) => u.side !== Side.Monster);
+  }
+
   living(side?: Side): Unit[] {
     const out: Unit[] = [];
     for (const u of this.units) {
@@ -419,7 +427,7 @@ export default class Sim extends EventEngine<SimEventMap> {
   private springTraps(dt: number): void {
     for (const trap of this.traps) {
       trap.life -= dt;
-      const foes = this.living(trap.owner.side === Side.Party ? Side.Monster : Side.Party);
+      const foes = this.foes(trap.owner.side);
       const victim = foes.find((u) => Math.hypot(u.x - trap.x, u.z - trap.z) <= trap.radius);
       if (victim) {
         victim.aware = true;
