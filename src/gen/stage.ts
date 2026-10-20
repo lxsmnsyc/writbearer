@@ -32,7 +32,8 @@ export type PropKind =
   | 'gate'
   | 'lever'
   | 'key'
-  | 'pit';
+  | 'pit'
+  | 'blossom';
 
 export interface Prop {
   kind: PropKind;
@@ -49,6 +50,12 @@ export interface Prop {
   better?: boolean;
   // Items added for the fight's mutators
   extra?: number;
+}
+
+/** A patch of ground that works on whoever stands in it: shallow water slows, embers burn. */
+export interface Patch extends Spot {
+  kind: 'water' | 'embers';
+  r: number;
 }
 
 /** A pack to spawn: its monsters, where it stands, and which one is an elite. */
@@ -168,6 +175,8 @@ export interface Stage {
   // that cannot be crossed but can be seen across
   layout?: Plan;
   chasm?: Spot[];
+  // An open field's pools of water and patches of embers
+  patches?: Patch[];
 }
 
 /** A gate across a Labyrinth's corridor, and the lever that opens it. The hall's gates have none: the key opens them. */
@@ -542,6 +551,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     const path = nav.path(entrance, e).filter((_, k, all) => k % 3 === 0 || k === all.length - 1);
     return [entrance, ...path, e, beyond(e)];
   });
+  layGround(stage, rng, nav, keep);
   const road = stage.roads[0];
   // A pack watches the narrowest point of the way, halfway along the road.
   const choke = road[Math.floor(road.length / 2)];
@@ -570,6 +580,62 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     markHunt(stage, rng, plan.kind === 'elite');
   }
   return stage;
+}
+
+// What lies on each layer's open fields, as counts to roll between: pools
+// of shallow water, patches of embers and healing blossoms.
+const GROUND: readonly {
+  water: [number, number];
+  embers: [number, number];
+  blossoms: [number, number];
+}[] = [
+  { water: [1, 2], embers: [0, 0], blossoms: [2, 2] },
+  { water: [0, 0], embers: [2, 3], blossoms: [1, 1] },
+  { water: [2, 3], embers: [0, 0], blossoms: [1, 2] },
+  { water: [1, 2], embers: [1, 2], blossoms: [1, 1] },
+];
+const WATER_R: [number, number] = [2.5, 4];
+const EMBERS_R: [number, number] = [1.5, 2.5];
+// How far embers keep from the roads, past their own edge, so the way on
+// never has to cross them
+const EMBERS_OFF_ROAD = 1.2;
+
+/**
+ * Lays an open field's water, embers and blossoms on open ground, clear of
+ * the entrance, the exits and the places. Water may lie across a road;
+ * embers keep off them.
+ */
+function layGround(stage: Stage, rng: RNG, nav: Nav, keep: readonly Keep[]): void {
+  const counts = GROUND[stage.biome] ?? GROUND[0];
+  const { width, depth } = stage;
+  const clear = (p: Spot, r: number): boolean =>
+    nav.roomy(p.x, p.z) && !keep.some((k) => Math.hypot(k.x - p.x, k.z - p.z) < k.r + r);
+  const patches: Patch[] = [];
+  const lay = (kind: Patch['kind'], n: number, radius: [number, number]): void => {
+    let laid = 0;
+    for (let tries = 0; tries < 60 && laid < n; tries++) {
+      const r = rng.range(...radius);
+      const p = { x: rng.range(r + 2, width - r - 2), z: rng.range(r + 2, depth - r - 2) };
+      const apart = patches.every((o) => Math.hypot(o.x - p.x, o.z - p.z) > o.r + r + 2);
+      const offRoad = kind === 'water' || !onRoads(stage, p.x, p.z, r + EMBERS_OFF_ROAD);
+      if (clear(p, r) && apart && offRoad) {
+        patches.push({ kind, ...p, r });
+        laid++;
+      }
+    }
+  };
+  lay('water', rng.int(...counts.water), WATER_R);
+  lay('embers', rng.int(...counts.embers), EMBERS_R);
+  stage.patches = patches;
+  const want = rng.int(...counts.blossoms);
+  let grown = 0;
+  for (let tries = 0; tries < 60 && grown < want; tries++) {
+    const p = { x: rng.range(6, width - 6), z: rng.range(4, depth - 4) };
+    if (clear(p, 1) && patches.every((o) => Math.hypot(o.x - p.x, o.z - p.z) > o.r + 1)) {
+      stage.props.push({ kind: 'blossom', ...p, seed: rng.random() });
+      grown++;
+    }
+  }
 }
 
 // How many marked monsters a Hunt has: 3, one more in an Elite area and one
@@ -1112,10 +1178,11 @@ function placePacks(
     z: places.lair.z,
     elite: stage.index >= ELITE_FROM || eliteArea ? 0 : -1,
   });
-  // A pack watches the first breach in the wall, from the far side.
-  const breach = places.breach;
-  push({ kinds: packOf(rng, rng.pick(pool)), x: breach.x + 2.5, z: breach.z, elite: -1 });
+  // A pack watches the narrowest point of the way, from a little past it,
+  // on open ground.
   const nav = navFor(stage);
+  const watch = nav.free(places.breach.x + 2.5, places.breach.z);
+  push({ kinds: packOf(rng, rng.pick(pool)), ...watch, elite: -1 });
   for (let i = 0; i < 40; i++) {
     if (budget <= 0) {
       break;
@@ -1132,7 +1199,7 @@ function placePacks(
       (stage.recruit !== undefined && Math.hypot(stage.recruit.x - x, stage.recruit.z - z) < 9);
     if (
       tooNear ||
-      !nav.walkable(x, z) ||
+      !nav.roomy(x, z) ||
       Math.hypot(x - stage.entrance.x, z - stage.entrance.z) < PACK_DISTANCE
     ) {
       continue;

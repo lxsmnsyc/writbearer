@@ -318,6 +318,15 @@ export const SLOWED: StatusDef = {
   slow: 0.5,
 };
 
+/** Wading through shallow water. Refreshed while it stands in it. */
+export const WADING: StatusDef = {
+  id: 'wading',
+  name: 'Wading',
+  duration: 0.25,
+  immunity: 0,
+  slow: 0.6,
+};
+
 /** Bleeding: a share of max health each second, 1% per point of power. */
 export const BLEED: StatusDef = {
   id: 'bleed',

@@ -80,6 +80,7 @@ import {
 import { type Due, Payroll, desert } from './wages';
 import { Compendium, type Ending } from './compendium';
 import ObjectiveRun from './objective';
+import Footing, { BLOSSOM_REACH } from './footing';
 import Hazards from './hazards';
 import {
   type RunSave,
@@ -335,6 +336,7 @@ export default class Game {
   private fading: { stage: Stage; t: number } | null = null;
   // A Labyrinth's traps, and whether the bearer was hurt in this area
   private hazards: Hazards | null = null;
+  private readonly footing = new Footing();
   // What this fight's chest holds once its objective is done, its bonus
   // challenge, and whether that was met once the objective was done
   private prize: Reward | null = null;
@@ -1546,6 +1548,15 @@ export default class Game {
     this.views.snap(this.sim);
   }
 
+  // The water, embers and blossoms of the areas standing.
+  private workGround(): void {
+    const standing = this.ahead ? [this.stage, this.ahead.stage] : [this.stage];
+    for (const b of this.footing.update(this.sim, TICK, standing)) {
+      this.effects.bloom(b, BLOSSOM_REACH);
+      this.say('A blossom bursts, and the party is mended.');
+    }
+  }
+
   // A road not taken falls in: rubble across it, where its exit was.
   private blockRoad(e: Exit): void {
     const across = { x: -e.out.z, z: e.out.x };
@@ -2305,6 +2316,7 @@ export default class Game {
         this.workMaze();
         this.noteMonsters();
         this.hazards?.update(this.sim, TICK);
+        this.workGround();
         this.mutators.update(TICK);
         this.checkObjective();
         this.acc -= TICK;

@@ -53,7 +53,7 @@ The terrain gives the player positioning choices.
 | Choke points | Narrow passes, bridges and gaps between ruins. A Vanguard can hold one while the citizen waits behind. |
 | Ledges | Raised ground reached by ramps. Melee monsters must go around. |
 | Obstacles | Rocks, rubble, ruined walls, pillars. They block movement, sight and projectiles. |
-| Water | Shallow water slows units. Deep water blocks them until Frost freezes it. |
+| Water | Shallow water slows units. Deep water blocks them until Frost freezes it. Shallow water is in. |
 | Tall grass and fungus | The citizen can hide in it. |
 | Chasm edges | The border of the stage. Some edges are drops into darkness. |
 
@@ -124,7 +124,19 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
   | Bridges | The Rift Road, 40% | Islands over the chasm, one under the entrance and each exit and three or four between, joined by bridges 3 tiles wide: each island to its nearest, then one more for a loop. The chasm blocks bodies but not sight. |
   | Halls | The Undercroft, the Sunken Crown | Three by three rooms with straight walls, a doorway between each two, and four pillars in each. |
 
-- **Road:** outside the city, a road follows the way a body walks from the entrance to each exit. A pack watches it halfway along.
+- **Ground features:** open fields also hold patches that work on anyone standing in them, party and monsters alike (`src/game/footing.ts`). None lies on the entrance, the exits or the places.
+  - **Water:** shallow pools, 2.5 to 4 tiles across their middle. Wading slows a unit to 60% speed. Pools may lie across a road. The Marches have 1 or 2, the Undercroft 2 or 3, the Sunken Crown 1 or 2.
+  - **Embers:** charred ground, 1.5 to 2.5 tiles across their middle, with sparks that glow in the dark. They burn 4% of maximum health each second stood in them. They never touch a road, so the way on never has to cross them. The Rift Road has 2 or 3, the Sunken Crown 1 or 2.
+  - **Blossoms:** pale flowers with a teal heart that shows in the dark, 1 or 2 on every field. The first of the party to walk into one bursts it, and every party member within 4 tiles is mended by 30% of maximum health. Each bursts once.
+
+  | Layer | Water | Embers | Blossoms |
+  |---|---|---|---|
+  | The Marches | 1 to 2 | none | 2 |
+  | The Rift Road | none | 2 to 3 | 1 |
+  | The Undercroft | 2 to 3 | none | 1 to 2 |
+  | The Sunken Crown | 1 to 2 | 1 to 2 | 1 |
+
+- **Road:** outside the city, a road follows the way a body walks from the entrance to each exit. A pack watches it from a little past halfway along, on open ground.
 - **Places:**
   - The Church's sealing site: an altar on a blood sigil with candles and a banner, kept by Penitents and a Cantor.
   - A lair ringed with pikes and gibbets, holding an elite and its pack. It is on the other half of the field from the site.
@@ -143,7 +155,7 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Collapse:** once the bearer is in the new area, the one behind waits up to 4 seconds for the party to follow, then collapses and its floor fades. What is left in it is lost. Mercs still in it, living or dead, are brought to the new area's entrance.
 - **The way down:** the stair from a boss's field to the next layer's Waystation, and down to the tomb, stays a cut.
 
-Not yet: water, ledges, grass, alarms, patrols, and Treasure and Shrine areas.
+Not yet: deep water, ledges, grass, alarms, patrols, and Treasure and Shrine areas.
 
 ### Map
 

@@ -95,3 +95,50 @@ describe('an open field', () => {
     }
   });
 });
+
+describe('the ground of an open field', () => {
+  it('has water above and below, embers on the Rift Road and in the Crown, blossoms on every layer', () => {
+    for (const [layer, want] of [
+      [0, { water: true, embers: false }],
+      [1, { water: false, embers: true }],
+      [2, { water: true, embers: false }],
+      [3, { water: true, embers: true }],
+    ] as const) {
+      const fields = SEEDS.map((seed) => field(seed, layer));
+      const has = (kind: string): boolean =>
+        fields.some((s) => (s.patches ?? []).some((p) => p.kind === kind));
+      expect(has('water')).toBe(want.water);
+      expect(has('embers')).toBe(want.embers);
+      expect(fields.every((s) => s.props.some((p) => p.kind === 'blossom'))).toBe(true);
+    }
+  });
+
+  it('keeps embers off the roads, and the entrance and exits clear', () => {
+    for (const layer of [0, 1, 2, 3]) {
+      for (const seed of SEEDS) {
+        const stage = field(seed, layer);
+        for (const p of stage.patches ?? []) {
+          for (const e of [stage.entrance, ...stage.exits]) {
+            expect(Math.hypot(e.x - p.x, e.z - p.z)).toBeGreaterThan(p.r);
+          }
+          const roads = p.kind === 'embers' ? stage.roads.flat() : [];
+          for (const q of roads) {
+            expect(Math.hypot(q.x - p.x, q.z - p.z)).toBeGreaterThan(p.r);
+          }
+        }
+      }
+    }
+  });
+
+  it('grows its blossoms where the party can walk to them', () => {
+    for (const layer of [0, 1, 2, 3]) {
+      for (const seed of SEEDS) {
+        const stage = field(seed, layer);
+        const nav = navFor(stage);
+        for (const b of stage.props.filter((p) => p.kind === 'blossom')) {
+          expect(reaches(nav, stage.entrance, b, 0.9)).toBe(true);
+        }
+      }
+    }
+  });
+});

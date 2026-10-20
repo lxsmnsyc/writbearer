@@ -16,6 +16,13 @@ const PAD = 4;
 // The chasm's depths, and the rock lip along its far edges
 const CHASM = '#050505';
 const LIP = '#4e4c48';
+// Shallow water: dark, cold, with pale glints and a lighter far shore
+const WATER = '#26303a';
+const GLINT = '#6a7684';
+const SHORE = '#7a828c';
+// Ground the embers have charred, and the dull red of its cracks
+const CHAR = '#141210';
+const CRACK = '#3a0808';
 
 // Bare ground for the layers outside the city: earth on the surface, raw
 // rock on the chasm walls.
@@ -135,6 +142,45 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
       ctx.moveTo(c.x - Math.cos(a) * l, c.y - Math.sin(a) * l * 0.5);
       ctx.lineTo(c.x + Math.cos(a) * l, c.y + Math.sin(a) * l * 0.5);
       ctx.stroke();
+    }
+  }
+
+  // Pools of water and charred ground under the embers, with ragged edges.
+  for (const p of stage.patches ?? []) {
+    const x = p.x - X0;
+    const z = p.z - Z0;
+    const wobble = Array.from({ length: 20 }, () => rng.range(0.85, 1.05));
+    const edge = wobble.map((w, k) => {
+      const a = (k / wobble.length) * Math.PI * 2;
+      return at(x + Math.cos(a) * p.r * w, z + Math.sin(a) * p.r * w);
+    });
+    poly(edge, p.kind === 'water' ? WATER : CHAR);
+    ctx.lineWidth = zoom;
+    if (p.kind === 'water') {
+      ctx.strokeStyle = SHORE;
+      ctx.beginPath();
+      edge.slice(10, 16).forEach((q, k) => {
+        if (k) {
+          ctx.lineTo(q.x, q.y);
+        } else {
+          ctx.moveTo(q.x, q.y);
+        }
+      });
+      ctx.stroke();
+      ctx.fillStyle = GLINT;
+      for (let i = 0; i < p.r * 4; i++) {
+        const a = rng.range(0, Math.PI * 2);
+        const c = at(x + Math.cos(a) * p.r * rng.range(0, 0.7), z + Math.sin(a) * p.r * 0.7);
+        ctx.fillRect(Math.round(c.x), Math.round(c.y), Math.ceil(rng.range(2, 5) * zoom), 1);
+      }
+    } else {
+      ctx.strokeStyle = CRACK;
+      for (let i = 0; i < p.r * 3; i++) {
+        const a = rng.range(0, Math.PI * 2);
+        const from = at(x + Math.cos(a) * p.r * 0.2, z + Math.sin(a) * p.r * 0.2);
+        const to = at(x + Math.cos(a) * p.r * 0.85, z + Math.sin(a) * p.r * 0.85);
+        line(ctx, from, to);
+      }
     }
   }
 

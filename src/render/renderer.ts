@@ -19,6 +19,7 @@ import {
   STUN,
   SUNDERED,
   TAUNTED,
+  WADING,
 } from '../sim/statuses';
 import type Sim from '../sim/sim';
 import { Element, Rank, Side } from '../sim/types';
@@ -83,6 +84,8 @@ const REWARD_SIGN: Record<Reward, string> = {
 // Places lit through, and how far their light reaches from the middle
 const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
 const LIT_RADIUS = 13;
+// The turn between each ember of a patch, so they spread evenly over it
+const GOLDEN_TURN = Math.PI * (3 - Math.sqrt(5));
 
 // A tile is 32 by 16 pixels on screen, times the zoom.
 const TW = 32;
@@ -110,6 +113,7 @@ const STATUS_COLOR: Record<string, string> = {
   [SEAR.id]: C.flame,
   [BLEED.id]: C.blood,
   [SLOWED.id]: C.bone,
+  [WADING.id]: C.frost,
   [SHIELD_WALL.id]: C.gold,
 };
 
@@ -472,6 +476,7 @@ export default class Renderer {
       this.atmosphere.drawLit(ctx, iso, z, this.cam);
     }
     this.drawLight(f);
+    this.drawEmbers(f, fog);
     this.drawGlow(f, fog);
     this.drawHealth(f, fog);
     // Snapped to the palette with no dither. A dither pattern fixed to the
@@ -675,6 +680,18 @@ export default class Renderer {
         strength: 1.05,
       });
     }
+    // Embers give a low red light over their ground.
+    for (const p of f.areas.flatMap((a) => a.stage.patches ?? [])) {
+      if (p.kind === 'embers') {
+        lights.push({
+          x: p.x,
+          z: p.z,
+          radius: p.r + 0.6 + flicker * 0.3,
+          color: [255, 110, 60],
+          strength: 0.4,
+        });
+      }
+    }
     for (const p of propsOf(f)) {
       if (p.kind === 'candle') {
         lights.push({
@@ -825,6 +842,12 @@ export default class Renderer {
           const lick = Math.round(Math.sin(f.time * 9 + i * 2.1) * 1.5);
           ctx.fillRect(b.x - 2 + i * 2 + lick, b.y - Math.round((4 + i) * look.zoom), 1, 2 + i);
         }
+      } else if (p.kind === 'blossom' && p.open !== true && fog.known(p.x, p.z)) {
+        // A blossom's heart glows, so it can be found in the dark.
+        const b = this.iso(p.x, p.z);
+        ctx.fillStyle = C.teal;
+        ctx.fillRect(b.x - 1, b.y - Math.round(11 * look.zoom), 2, 2);
+        ctx.fillStyle = C.flame;
       } else if (p.kind === 'brazier' && fog.known(p.x, p.z)) {
         const b = this.iso(p.x, p.z);
         const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9) * 1.5);
@@ -835,6 +858,31 @@ export default class Renderer {
         const lick = Math.round(Math.sin(f.time * 11 + p.seed * 9));
         ctx.fillRect(b.x - 1, b.y - Math.round(30 * look.zoom), 3, 2);
         ctx.fillRect(b.x + lick, b.y - Math.round(33 * look.zoom), 1, 3);
+      }
+    }
+  }
+
+  // Embers flicker on their charred ground, red and gold, shining through
+  // the dark.
+  private drawEmbers(f: Frame, fog: Fogs): void {
+    const { ctx } = this;
+    for (const p of f.areas.flatMap((a) => a.stage.patches ?? [])) {
+      if (p.kind !== 'embers' || !fog.known(p.x, p.z)) {
+        continue;
+      }
+      const n = Math.round(p.r * 10);
+      for (let i = 0; i < n; i++) {
+        // Fixed places in the patch, each lit on its own beat
+        const a = i * GOLDEN_TURN;
+        const d = p.r * 0.85 * Math.sqrt((i + 0.5) / n);
+        const glow = Math.sin(f.time * (2 + (i % 3)) + i * 1.7);
+        if (glow < -0.2) {
+          continue;
+        }
+        const b = this.iso(p.x + Math.cos(a) * d, p.z + Math.sin(a) * d);
+        const size = glow > 0.6 ? 2 : 1;
+        ctx.fillStyle = glow > 0.6 ? C.flame : C.blood;
+        ctx.fillRect(Math.round(b.x), Math.round(b.y), size, size);
       }
     }
   }
@@ -1679,6 +1727,36 @@ function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number
     ctx.stroke();
     ctx.fillStyle = C.gold;
     ctx.fillRect(base.x + lean - 1, base.y - 15, 3, 3);
+  } else if (p.kind === 'blossom') {
+    // A pale flower on a short stalk, its heart drawn after the light. Once
+    // burst, a bent stalk and its petals on the ground.
+    ctx.fillStyle = C.wood;
+    if (p.open === true) {
+      ctx.fillRect(base.x, base.y - 3, 1, 3);
+      ctx.fillRect(base.x + 1, base.y - 4, 2, 1);
+      ctx.fillStyle = C.cloth;
+      for (const [dx, dy] of [
+        [-4, 0],
+        [3, 1],
+        [-1, 2],
+        [5, -1],
+      ]) {
+        ctx.fillRect(base.x + dx, base.y + dy, 1, 1);
+      }
+    } else {
+      ctx.fillRect(base.x, base.y - 8, 1, 8);
+      ctx.fillStyle = C.bone;
+      for (const [dx, dy] of [
+        [-3, -12],
+        [1, -12],
+        [-5, -10],
+        [3, -10],
+        [-2, -15],
+        [-1, -9],
+      ]) {
+        ctx.fillRect(base.x + dx, base.y + dy, 3, 2);
+      }
+    }
   } else if (p.kind === 'key') {
     // The hall's key on the floor, in gold.
     ctx.fillStyle = C.gold;
