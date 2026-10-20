@@ -192,6 +192,15 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
   - The lair's leader carries the key, shown over its head. It drops where it dies, and the bearer takes it by walking over it.
   - Done once the bearer brings the key to the door. The vault opens, and its chest stands at the door with two more items than the reward would give, and twice the gold.
   - Mini-bosses are not in yet, so the key is on the lair's leader instead of one.
+- The Ritual is in too:
+  - It is rolled from the Undercroft down, as often as the others, and never above.
+  - Three blood sigils stand across the open field, one in each third, west to east. The field has no packs.
+  - The bearer breaks them in that order by standing within 2.2 tiles of the middle for 15 seconds each. Stepping off pauses the sigil but keeps what was done.
+  - A wave comes as the bearer steps onto each sigil, and another halfway through. Each shows on the ground 3 seconds first, from the field's edge, as a Horde's do. The waves share the area's threat budget and rise in strength, the last led by an elite once deep enough.
+  - The next sigil has a gold ring that pulses and shows through the dark, filling with flame as it breaks. An arrow at the screen's edge points to it when it is off the screen. A broken sigil is wiped dull.
+  - Done once the third sigil breaks. Monsters still standing are left to the party.
+  - It rolls Untouched, No losses or Swift, 150 seconds.
+- Silence is not in yet. It needs Horn-Bearers and horn posts the party can destroy.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
 ## Kinds by layer
@@ -211,7 +220,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort and Vault are done.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault and Ritual are done.
 
 ## Open questions
 

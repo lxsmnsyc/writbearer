@@ -185,6 +185,18 @@ export interface Stage {
   // A Vault's strongroom: where its door is, whether the bearer holds its
   // key, and whether it is open
   vault?: Vault;
+  // A Ritual's sigils, in the order the bearer breaks them
+  rites?: Rite[];
+}
+
+/** How long the bearer stands on a Ritual's sigil to break it, and how near its middle. */
+export const RITE_TIME = 15;
+export const RITE_REACH = 2.2;
+
+/** A sigil a Ritual's bearer stands on to break: how long it has stood there so far. */
+export interface Rite extends Spot {
+  held: number;
+  broken?: boolean;
 }
 
 /** A Vault's strongroom, from the gauntlets design. */
@@ -574,6 +586,16 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     stage.hazards = vaultTraps(at, stage.biome);
   }
 
+  // A Ritual's sigils stand across the field, one in each third, west to east.
+  if (plan.objective === 'ritual') {
+    stage.rites = [0, 1, 2].map((k) => {
+      const at = spot(Math.max(10, (width * k) / 3), (width * (k + 1)) / 3 - 4, 3, 3);
+      keep.push({ ...at, r: KEEP_PLACE + 1 });
+      stage.sigils.push(at);
+      return { ...at, held: 0 };
+    });
+  }
+
   const cache = spot(10, width - 8, 1, 1);
   keep.push({ ...cache, r: KEEP_PLACE });
   add('chest', cache.x, cache.z);
@@ -597,6 +619,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     lair,
     cache,
     ...(stage.vault ? [stage.vault.door] : []),
+    ...(stage.rites ?? []),
   ]);
 
   // The roads follow the way a body walks from the entrance to each exit.
@@ -621,6 +644,9 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   // A Horde's field stands empty: its monsters come in waves.
   if (plan.objective === 'horde') {
     stage.waves = buildWaves(stage, rng, plan.kind === 'elite');
+  } else if (plan.objective === 'ritual') {
+    // Two waves for each sigil: as the bearer steps onto it, and halfway through
+    stage.waves = buildWaves(stage, rng, plan.kind === 'elite', (stage.rites?.length ?? 0) * 2);
   } else {
     placePacks(stage, rng, { site, lair, breach: choke }, plan.kind === 'elite');
   }
@@ -1340,8 +1366,12 @@ const WAVE_MOST = 15;
  * east edge, far from the entrance. The last is led by an elite once deep
  * enough, or always in an Elite area.
  */
-function buildWaves(stage: Stage, rng: RNG, elite: boolean): Wave[] {
-  const count = HORDE_WAVES + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0);
+function buildWaves(
+  stage: Stage,
+  rng: RNG,
+  elite: boolean,
+  count = HORDE_WAVES + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0),
+): Wave[] {
   const total = areaBudget(stage.index, elite);
   const pool = factionPool(stage);
   const nav = navFor(stage);

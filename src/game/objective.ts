@@ -1,6 +1,6 @@
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
-import type { Stage, Wave } from '../gen/stage';
+import { RITE_REACH, RITE_TIME, type Stage, type Wave } from '../gen/stage';
 import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
 import { inRect } from '../sim/nav';
@@ -21,6 +21,10 @@ import { warn } from '../sim/warning';
 //   but nothing is paid.
 // - A Vault is done once the bearer brings the key, which the lair's leader
 //   holds, to the vault's door. The vault opens on its spoils.
+// - A Ritual is done once the bearer has stood on each of its three sigils
+//   in turn for long enough. A wave comes as it steps onto each, and
+//   another halfway through. Stepping off pauses the sigil, but keeps what
+//   was done of it.
 
 // How far the bearer walks from the entrance before a Horde begins
 const HORDE_START = 6;
@@ -66,6 +70,9 @@ export default class ObjectiveRun {
     if (this.kind === 'horde') {
       this.horde(sim, dt, level);
     }
+    if (this.kind === 'ritual') {
+      this.ritual(sim, dt, level);
+    }
     if (this.kind === 'escort') {
       this.wards ??= sim.living(Side.Ward);
       this.failed = this.wards.filter((u) => u.alive).length < this.needed();
@@ -86,6 +93,9 @@ export default class ObjectiveRun {
   }
 
   private met(sim: Sim): boolean {
+    if (this.kind === 'ritual') {
+      return (this.stage.rites ?? []).every((r) => r.broken === true);
+    }
     if (this.kind === 'vault') {
       const vault = this.stage.vault;
       const bearer = sim.bearer;
@@ -129,6 +139,29 @@ export default class ObjectiveRun {
     return goal !== undefined && bearer !== null && bearer.alive && inRect(goal, bearer);
   }
 
+  // The bearer stands on the next sigil, and the waves come for it.
+  private ritual(sim: Sim, dt: number, level: number): void {
+    const rites = this.stage.rites ?? [];
+    const rite = rites.find((r) => r.broken !== true);
+    const bearer = sim.bearer;
+    if (!rite || !bearer?.alive || bearer.distanceTo(rite) > RITE_REACH) {
+      return;
+    }
+    const before = rite.held;
+    rite.held = Math.min(RITE_TIME, rite.held + dt);
+    const waves = this.stage.waves ?? [];
+    const i = rites.indexOf(rite);
+    for (const [k, at] of [0, RITE_TIME / 2].entries()) {
+      const wave = waves.at(i * 2 + k);
+      if (wave && before <= at && rite.held > at) {
+        this.summon(sim, wave, level);
+      }
+    }
+    if (rite.held >= RITE_TIME) {
+      rite.broken = true;
+    }
+  }
+
   private horde(sim: Sim, dt: number, level: number): void {
     const bearer = sim.bearer;
     const waves = this.stage.waves ?? [];
@@ -165,7 +198,31 @@ export default class ObjectiveRun {
     });
   }
 
+  // A Ritual's wave: where it comes shows first, then it comes for the bearer.
+  private summon(sim: Sim, wave: Wave, level: number): void {
+    warn(sim, {
+      x: wave.from.x,
+      z: wave.from.z,
+      shape: { kind: 'circle', r: WAVE_MARK },
+      windup: WAVE_WARNING,
+      spare: Side.Party,
+      strike: () => undefined,
+      source: null,
+      done: () => {
+        this.bring(sim, wave, level);
+      },
+    });
+  }
+
   private spawn(sim: Sim, wave: Wave, level: number): void {
+    this.bring(sim, wave, level);
+    this.next++;
+    this.clock = 0;
+    this.warned = false;
+  }
+
+  // A wave's monsters, already in the fight
+  private bring(sim: Sim, wave: Wave, level: number): void {
     wave.kinds.forEach((kind, i) => {
       const a = (i / wave.kinds.length) * Math.PI * 2;
       const u = spawnMonster(
@@ -179,9 +236,6 @@ export default class ObjectiveRun {
       u.aware = true;
       this.came.push(u);
     });
-    this.next++;
-    this.clock = 0;
-    this.warned = false;
   }
 
   /** The monsters of a Horde's next wave, or none once the last has come. */
@@ -199,6 +253,13 @@ export default class ObjectiveRun {
     }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'ritual') {
+      const rites = this.stage.rites ?? [];
+      const rite = rites.find((r) => r.broken !== true);
+      const broken = rites.length - rites.filter((r) => r.broken !== true).length;
+      const left = rite ? Math.ceil(RITE_TIME - rite.held) : 0;
+      return `Break the sigils: ${broken} of ${rites.length} · stand on the next for ${left}s`;
     }
     if (this.kind === 'vault') {
       return this.stage.vault?.key === true

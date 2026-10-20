@@ -81,6 +81,7 @@ import GiMusicSpell from '~icons/game-icons/music-spell';
 import GiOpenBook from '~icons/game-icons/open-book';
 import GiOverlordHelm from '~icons/game-icons/overlord-helm';
 import GiPadlock from '~icons/game-icons/padlock';
+import GiPentagramRose from '~icons/game-icons/pentagram-rose';
 import GiPocketBow from '~icons/game-icons/pocket-bow';
 import GiPopeCrown from '~icons/game-icons/pope-crown';
 import GiRegeneration from '~icons/game-icons/regeneration';
@@ -265,6 +266,7 @@ export const ICONS = {
   temple: GiAnkh,
   market: GiShoppingBag,
   vault: GiLockedChest,
+  ritual: GiPentagramRose,
   compendium: GiOpenBook,
   points: GiUpgrade,
   drop: GiTrashCan,

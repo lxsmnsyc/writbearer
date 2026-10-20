@@ -1,5 +1,5 @@
 import { MUTATOR_NAME, type Objective, type Reward } from '../gen/graph';
-import { type Ahead, type Prop, type Stage, rectOf } from '../gen/stage';
+import { type Ahead, type Prop, RITE_TIME, type Stage, rectOf } from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
@@ -72,6 +72,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   maze: 'Labyrinth: find the way through',
   escort: 'Escort: see the refugees through',
   vault: 'Vault: take the key, open the vault',
+  ritual: 'Ritual: break the three sigils',
 };
 
 // What a signpost says the fight ahead pays.
@@ -86,6 +87,8 @@ const REWARD_SIGN: Record<Reward, string> = {
 // Places lit through, and how far their light reaches from the middle
 const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
 const LIT_RADIUS = 13;
+// A broken sigil, wiped dull
+const BROKEN_SIGIL = '#3a3a3a';
 // Each side's health bar
 const BAR: Record<Side, string> = {
   [Side.Party]: C.gold,
@@ -486,6 +489,8 @@ export default class Renderer {
     }
     this.drawLight(f);
     this.drawEmbers(f, fog);
+    // A Ritual's next sigil shines through the dark, so it can be found.
+    this.drawRites(f);
     this.drawGlow(f, fog);
     this.drawHealth(f, fog);
     // Snapped to the palette with no dither. A dither pattern fixed to the
@@ -507,7 +512,6 @@ export default class Renderer {
   // An arrow at the screen's edge toward each marked monster the party has
   // seen that is off the screen, so a Hunt's field need not be searched blind.
   private drawQuarry(f: Frame, fog: Fogs): void {
-    const { out } = this;
     const w = W * SCALE;
     const h = H * SCALE;
     for (const u of f.sim.living(Side.Monster)) {
@@ -524,31 +528,52 @@ export default class Renderer {
       if (!this.sighted.has(u) || (x >= 0 && x <= w && y >= 0 && y <= h)) {
         continue;
       }
-      // Along the line from the middle of the screen, stopped at the edge
-      const dx = x - w / 2;
-      const dy = y - h / 2;
-      const k = Math.min(
-        (w / 2 - QUARRY_INSET) / Math.abs(dx || 1),
-        (h / 2 - QUARRY_INSET) / Math.abs(dy || 1),
-      );
-      const ax = w / 2 + dx * k;
-      const ay = h / 2 + dy * k;
-      const a = Math.atan2(dy, dx);
-      const tip = (t: number, d: number): [number, number] => [
-        ax + Math.cos(a + t) * d,
-        ay + Math.sin(a + t) * d,
-      ];
-      out.beginPath();
-      out.moveTo(...tip(0, 14));
-      out.lineTo(...tip(2.5, 11));
-      out.lineTo(...tip(-2.5, 11));
-      out.closePath();
-      out.fillStyle = C.blood;
-      out.strokeStyle = '#f2d8c9';
-      out.lineWidth = 2;
-      out.fill();
-      out.stroke();
+      this.pointAt(x, y, C.blood);
     }
+    // A Ritual's next sigil, so the bearer can find it
+    for (const stage of f.areas.map((a) => a.stage)) {
+      const next = stage.rites?.find((r) => r.broken !== true);
+      if (!next) {
+        continue;
+      }
+      const b = this.iso(next.x, next.z);
+      const x = b.x * SCALE - this.sub.x;
+      const y = b.y * SCALE - this.sub.y;
+      if (x < 0 || x > w || y < 0 || y > h) {
+        this.pointAt(x, y, C.gold);
+      }
+    }
+  }
+
+  // An arrow at the screen's edge, along the line from its middle toward a
+  // point off it
+  private pointAt(x: number, y: number, color: string): void {
+    const { out } = this;
+    const w = W * SCALE;
+    const h = H * SCALE;
+    const dx = x - w / 2;
+    const dy = y - h / 2;
+    const k = Math.min(
+      (w / 2 - QUARRY_INSET) / Math.abs(dx || 1),
+      (h / 2 - QUARRY_INSET) / Math.abs(dy || 1),
+    );
+    const ax = w / 2 + dx * k;
+    const ay = h / 2 + dy * k;
+    const a = Math.atan2(dy, dx);
+    const tip = (t: number, d: number): [number, number] => [
+      ax + Math.cos(a + t) * d,
+      ay + Math.sin(a + t) * d,
+    ];
+    out.beginPath();
+    out.moveTo(...tip(0, 14));
+    out.lineTo(...tip(2.5, 11));
+    out.lineTo(...tip(-2.5, 11));
+    out.closePath();
+    out.fillStyle = color;
+    out.strokeStyle = '#f2d8c9';
+    out.lineWidth = 2;
+    out.fill();
+    out.stroke();
   }
 
   // What the party sees this frame. Solid props block sight; bodies do not.
@@ -750,10 +775,44 @@ export default class Renderer {
   }
 
   // The Church's sealing sigil, painted in blood on the floor.
-  private drawSigil(at: { x: number; z: number }): void {
+  // A Ritual's sigils: one broken is wiped dull, and the one the bearer
+  // must stand on next fills with gold as it breaks.
+  private drawRites(f: Frame): void {
+    const { ctx } = this;
+    const z = look.zoom;
+    for (const stage of f.areas.map((a) => a.stage)) {
+      const rites = stage.rites ?? [];
+      const next = rites.find((r) => r.broken !== true);
+      for (const r of rites) {
+        if (r.broken === true) {
+          this.drawSigil(r, BROKEN_SIGIL);
+        }
+      }
+      if (!next) {
+        continue;
+      }
+      const sc = this.iso(next.x, next.z);
+      const pulse = 0.5 + Math.sin(f.time * 3) * 0.5;
+      ctx.lineWidth = 2 * z;
+      ctx.strokeStyle = pulse > 0.5 ? C.gold : '#7a5a22';
+      ctx.beginPath();
+      ctx.ellipse(sc.x, sc.y, 56 * z, 28 * z, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      if (next.held > 0) {
+        ctx.strokeStyle = C.flame;
+        ctx.lineWidth = 3 * z;
+        ctx.beginPath();
+        const end = -Math.PI / 2 + (next.held / RITE_TIME) * Math.PI * 2;
+        ctx.ellipse(sc.x, sc.y, 56 * z, 28 * z, 0, -Math.PI / 2, end);
+        ctx.stroke();
+      }
+    }
+  }
+
+  private drawSigil(at: { x: number; z: number }, color: string = C.blood): void {
     const { ctx } = this;
     const sc = this.iso(at.x, at.z);
-    ctx.strokeStyle = C.blood;
+    ctx.strokeStyle = color;
     ctx.lineWidth = 1;
     ctx.beginPath();
     const z = look.zoom;
