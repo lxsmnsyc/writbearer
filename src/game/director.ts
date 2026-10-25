@@ -58,6 +58,8 @@ const RELAX_HOLDING: [number, number] = [10, 15];
 const RELAX_TRAVEL = 25;
 // How much of the standing each area moves
 const STANDING_STEP = 0.4;
+/** How far the standing moves a fight's threat either way, at most. */
+export const BOUND = 0.25;
 // A wave just after the last is this share of its full size, and full
 // after this many seconds
 const WAVE_LEAST = 0.6;
@@ -268,6 +270,16 @@ export default class Director {
     this.spawns = spots.filter((s) => s.kind === 'spawn');
     this.flow = flow;
     this.recent.length = 0;
+  }
+
+  /**
+   * How much of its usual threat the next fight holds, from the standing:
+   * less for a party that is struggling, more for one winning easily,
+   * within the bounds. An Elite fight is never eased.
+   */
+  scale(elite: boolean): number {
+    const s = 1 + BOUND * this.standing;
+    return elite ? Math.max(1, s) : s;
   }
 
   /** Whether the director is in a lull, when no new wave comes. */

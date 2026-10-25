@@ -114,6 +114,9 @@ export interface AreaPlan {
   aheadFights?: readonly (Fight | undefined)[];
   // The edge each exit leaves by, in the order of `ahead`. East if absent.
   sides?: readonly ExitSide[];
+  // How much of its usual threat a fight holds, as the level director sets
+  // it from the party's standing. 1 if absent.
+  scale?: number;
 }
 
 /**
@@ -195,6 +198,8 @@ export interface Stage {
   spots?: KeyPoint[];
   // Mobs the director sends in a Hunt or an Escort, in turn
   mobs?: Mob[];
+  // How much of its usual threat it holds, as the level director set it
+  scale?: number;
 }
 
 /** A mob, as Left 4 Dead's: what comes, and how many seconds after the last, or the start. */
@@ -558,6 +563,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
     packs: [],
     roads: [],
     down: false,
+    scale: plan.scale,
   };
   const add: Add = (kind, x, z) => {
     const prop: Prop = { kind, x, z, r: SOLID[kind], seed: rng.random() };
@@ -1136,6 +1142,7 @@ const AMBUSH_SHARE = 0.8;
  */
 function generateAmbush(rng: RNG, index: number, plan: AreaPlan, biome: number): Stage {
   const { stage, add } = smallField(rng, index, plan.kind, plan.ahead, biome, plan.sides);
+  stage.scale = plan.scale;
   const fire = { x: stage.width / 2, z: stage.depth / 2 };
   add('campfire', fire.x, fire.z);
   stage.rest = fire;
@@ -1494,8 +1501,8 @@ const factionPool = (stage: Stage): Faction[] =>
  * The threat an area's monsters add up to: much more than a few small packs,
  * so the field can swarm, and more each area. An Elite area holds more.
  */
-export function areaBudget(index: number, elite: boolean): number {
-  return (BUDGET_BASE + index * BUDGET_STEP) * (elite ? ELITE_BUDGET : 1);
+export function areaBudget(index: number, elite: boolean, scale = 1): number {
+  return (BUDGET_BASE + index * BUDGET_STEP) * (elite ? ELITE_BUDGET : 1) * scale;
 }
 
 function placePacks(
@@ -1505,7 +1512,7 @@ function placePacks(
   eliteArea = false,
 ): void {
   // An Elite area holds more, and its lair always has an elite.
-  let budget = areaBudget(stage.index, eliteArea);
+  let budget = areaBudget(stage.index, eliteArea, stage.scale);
   const pool = factionPool(stage);
   const cost = (kinds: MonsterKind[], elite: number): number =>
     kinds.reduce((sum, k) => sum + THREAT[k], 0) + (elite >= 0 ? ELITE_THREAT : 0);
@@ -1597,7 +1604,7 @@ function buildWaves(
   elite: boolean,
   count = HORDE_WAVES + (elite ? 1 : 0) + (stage.index >= AREAS_PER_LAYER ? 1 : 0),
 ): Wave[] {
-  const total = areaBudget(stage.index, elite);
+  const total = areaBudget(stage.index, elite, stage.scale);
   const pool = factionPool(stage);
   const nav = navFor(stage);
   const edge = (): Spot => {
@@ -1650,7 +1657,7 @@ function buildMobs(stage: Stage, rng: RNG, elite: boolean): Mob[] {
     return [];
   }
   return Array.from({ length: MOBS }, () => {
-    let budget = areaBudget(stage.index, elite) * MOB_SHARE;
+    let budget = areaBudget(stage.index, elite, stage.scale) * MOB_SHARE;
     const kinds: MonsterKind[] = [];
     while (budget > 0 && kinds.length < WAVE_MOST) {
       for (const k of packOf(rng, rng.pick(pool), WAVE_MOST - kinds.length)) {
@@ -1801,7 +1808,7 @@ function generateMaze(rng: RNG, index: number, plan: AreaPlan, biome: number): S
     z: j * CELL + CELL / 2,
   });
   const elite = plan.kind === 'elite';
-  let budget = areaBudget(index, elite) * 0.8;
+  let budget = areaBudget(index, elite, plan.scale) * 0.8;
   const pool = factionPool(stage);
   const used = new Set<number>();
   for (const [i, j] of cells) {

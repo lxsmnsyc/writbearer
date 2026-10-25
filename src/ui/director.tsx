@@ -49,6 +49,7 @@ export default function DirectorOverlay(props: { status: DirectorStatus }): JSX.
       <Meter label="Pacing" value={s().pacing} />
       <Meter label="Standing" value={s().standing} signed />
       <Meter label="Progress" value={s().progress} />
+      <p class="text-neutral-500">This area’s threat: ×{s().scale.toFixed(2)}</p>
       <p class="text-neutral-500">
         Spots: {s().spots.spawn} spawn · {s().spots.boss} boss · {s().spots.relief} relief
       </p>

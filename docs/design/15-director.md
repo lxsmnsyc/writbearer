@@ -159,14 +159,14 @@ What changes with it:
 2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets. Done.
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind. Done.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts. Done.
-5. Difficulty from standing, inside the depth's bounds.
+5. Difficulty from standing, inside the depth's bounds. Done.
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
 7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
 8. Relief at relief spots after a hard stretch.
 
 ## In the game so far
 
-Steps 1 to 4 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
+Steps 1 to 5 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -198,6 +198,7 @@ Steps 1 to 4 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director re
 - **The Ritual:** its waves keep the Ritual's own beat, as Left 4 Dead's crescendo events ignore pacing, but come from where the director chooses.
 - **The Ambush:** left as it is. Its groups are a set piece, as Left 4 Dead's bosses are, and pacing does not touch them.
 - Spawn spots on floor that has fallen in a Collapse are passed over.
+- **Difficulty from standing:** each fight is built with its threat budget, and so its packs, waves and mobs, scaled by 1 plus a quarter of the standing: from 0.75 for a party struggling most to 1.25 for one winning most easily. An Elite fight is never scaled below 1. The fight's scale is set as it is built, from the standing then, so it holds for the whole area. The overlay shows it.
 - **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 
 ## Sources

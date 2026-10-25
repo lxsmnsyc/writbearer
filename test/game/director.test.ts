@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import RNG from '../../src/core/rng';
 import Director, { PEAK, scoreArea } from '../../src/game/director';
+import { THREAT, generateStage } from '../../src/gen/stage';
 import Sim from '../../src/sim/sim';
 import { DamageFlags, DamageKind } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
@@ -128,5 +129,43 @@ describe('the level director', () => {
     }
     expect(director.standing).toBeLessThan(0);
     expect(director.standing).toBeGreaterThanOrEqual(-1);
+  });
+});
+
+describe('difficulty from standing', () => {
+  it('scales a fight within a quarter either way, and never eases an Elite', () => {
+    const { director } = field();
+    director.standing = -1;
+    expect(director.scale(false)).toBeCloseTo(0.75);
+    expect(director.scale(true)).toBe(1);
+    director.standing = 1;
+    expect(director.scale(false)).toBeCloseTo(1.25);
+    expect(director.scale(true)).toBeCloseTo(1.25);
+    director.standing = 0;
+    expect(director.scale(false)).toBe(1);
+  });
+
+  it('puts more threat in a fight for a party winning easily, and less for one struggling', () => {
+    const threat = (scale: number, objective: 'hunt' | 'horde'): number => {
+      let sum = 0;
+      for (let seed = 1; seed <= 8; seed++) {
+        const s = generateStage(new RNG(seed), 10, {
+          kind: 'combat',
+          ahead: ['combat'],
+          objective,
+          scale,
+        });
+        const kinds = [
+          ...s.packs.flatMap((p) => p.kinds),
+          ...(s.waves ?? []).flatMap((w) => w.kinds),
+        ];
+        sum += kinds.reduce((n, k) => n + THREAT[k], 0);
+      }
+      return sum;
+    };
+    for (const objective of ['hunt', 'horde'] as const) {
+      expect(threat(1.25, objective)).toBeGreaterThan(threat(1, objective));
+      expect(threat(0.75, objective)).toBeLessThan(threat(1, objective));
+    }
   });
 });

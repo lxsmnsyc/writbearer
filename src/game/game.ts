@@ -1127,6 +1127,10 @@ export default class Game {
       endless: this.endless,
     };
     plan.sides = this.sidesAhead();
+    // The director sets how much threat a fight holds, by the party's standing.
+    if (plan.objective) {
+      plan.scale = this.director.scale(plan.kind === 'elite');
+    }
     if (plan.kind === 'event') {
       const rng = this.streams.area(1, Stream.Events, area);
       const forced = this.options.event ? EVENT_BY_ID.get(this.options.event) : undefined;
@@ -1387,6 +1391,7 @@ export default class Game {
     pacing: number;
     standing: number;
     progress: number;
+    scale: number;
     spots: { spawn: number; boss: number; relief: number };
     intensity: { name: string; value: number }[];
     last: AreaScore | null;
@@ -1399,6 +1404,7 @@ export default class Game {
       pacing: d.pacing(),
       standing: d.standing,
       progress: this.flow?.progress(this.bearer) ?? 0,
+      scale: this.stage.scale ?? 1,
       spots: {
         spawn: spotsOf(this.stage, 'spawn'),
         boss: spotsOf(this.stage, 'boss'),
