@@ -158,7 +158,7 @@ What changes with it:
 1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase. Done.
 2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets. Done.
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind. Done.
-4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
+4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts. Done.
 5. Difficulty from standing, inside the depth's bounds.
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
 7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
@@ -166,7 +166,7 @@ What changes with it:
 
 ## In the game so far
 
-Steps 1 to 3 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde.
+Steps 1 to 4 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -174,7 +174,7 @@ Steps 1 to 3 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director re
   - A monster dying within 6 tiles adds up to 0.06, less the farther away.
   - It decays by 0.05 a second, but not while an aware monster is going for that member.
 - **Pacing:** the party's highest intensity, the bearer's counted double.
-- **Phases:** build up until pacing reaches 0.75; sustain for 3 to 5 seconds; fade until pacing falls below 0.75; relax for 30 to 45 seconds, or until the bearer has walked 25 tiles; then build up again. The timed phases roll from their own `director` stream.
+- **Phases:** build up until pacing reaches 0.75; sustain for 3 to 5 seconds; fade until pacing falls below 0.75; relax for 30 to 45 seconds, or until the bearer has walked 25 tiles; then build up again. Where the party holds its ground, in a Horde, a Ritual or an Ambush, the relax is 10 to 15 seconds, since a party holding ground never walks on to end it early. The timed phases roll from their own `director` stream.
 - **Standing:** from -1 to 1, saved with the run. When an area's objective is done, each part of how it went is scored from -1 to 1, and their mean moves the standing 40% of the way toward it.
   - Health of the living party: 60% scores 0, full health 1.
   - Mercs lost in the area: -0.5 each.
@@ -193,6 +193,11 @@ Steps 1 to 3 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director re
   - A wave is 60% of its full size right after the last, growing to full over 30 seconds. Its leader always comes. The badge shows the next wave at the size it would come now.
   - It comes from a spawn spot no one in the party can see, either beyond 9 tiles in the dark or behind something, at least 8 tiles from all of them and at most 30 from the bearer, and not one of the last two used. Three times in four it is behind the bearer on the flow, when there is one. With none valid, it comes from the wave's own spot on the edge.
   - A Horde keeps its number of waves.
+- **Waves rush the party:** a wave or mob that comes out of sight goes for where the bearer was as it came, as Left 4 Dead's mobs do, and fights whoever it finds.
+- **Mobs** in Hunts and Escorts: three, rolled with the area, each 15% of its threat from the layer's packs. Each comes 60 to 120 seconds after the last, or after the area begins, but only while the director is building up, and only once there is a spawn spot it can come from. They are shown on the ground first.
+- **The Ritual:** its waves keep the Ritual's own beat, as Left 4 Dead's crescendo events ignore pacing, but come from where the director chooses.
+- **The Ambush:** left as it is. Its groups are a set piece, as Left 4 Dead's bosses are, and pacing does not touch them.
+- Spawn spots on floor that has fallen in a Collapse are passed over.
 - **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 
 ## Sources

@@ -193,6 +193,14 @@ export interface Stage {
   // The level director's key points: where waves may come from, where an
   // elite or mini-boss may stand, and where relief may appear
   spots?: KeyPoint[];
+  // Mobs the director sends in a Hunt or an Escort, in turn
+  mobs?: Mob[];
+}
+
+/** A mob, as Left 4 Dead's: what comes, and how many seconds after the last, or the start. */
+export interface Mob {
+  kinds: MonsterKind[];
+  after: number;
 }
 
 /** A key point the level director works with. See the director design. */
@@ -717,6 +725,9 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   }
   if (plan.objective === 'escort') {
     stage.refugees = refugeesAt(stage, plan.kind === 'elite');
+  }
+  if (plan.objective === 'hunt' || plan.objective === 'escort') {
+    stage.mobs = buildMobs(stage, rng, plan.kind === 'elite');
   }
   if (plan.objective === 'collapse') {
     // The floor falls from the entrance's edge, and stops short of the exits.
@@ -1620,6 +1631,35 @@ function buildWaves(
     });
   }
   return waves;
+}
+
+// Mobs in a Hunt or an Escort: how many, how much of an area's threat each
+// holds, and how many seconds apart they come, at the least
+const MOBS = 3;
+const MOB_SHARE = 0.15;
+const MOB_EVERY: [number, number] = [60, 120];
+
+/**
+ * A Hunt's or an Escort's mobs, as Left 4 Dead's: groups the director sends
+ * on a randomized beat while it is building up, each a share of the area's
+ * threat, from the layer's packs.
+ */
+function buildMobs(stage: Stage, rng: RNG, elite: boolean): Mob[] {
+  const pool = factionPool(stage);
+  if (pool.length === 0) {
+    return [];
+  }
+  return Array.from({ length: MOBS }, () => {
+    let budget = areaBudget(stage.index, elite) * MOB_SHARE;
+    const kinds: MonsterKind[] = [];
+    while (budget > 0 && kinds.length < WAVE_MOST) {
+      for (const k of packOf(rng, rng.pick(pool), WAVE_MOST - kinds.length)) {
+        kinds.push(k);
+        budget -= THREAT[k];
+      }
+    }
+    return { kinds, after: rng.range(...MOB_EVERY) };
+  });
 }
 
 // A Labyrinth's cells, in tiles across, and how many across and down

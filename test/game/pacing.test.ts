@@ -8,7 +8,7 @@ import { type Stage, generateStage, navFor, rectOf } from '../../src/gen/stage';
 import Flow from '../../src/sim/flow';
 import type { Spot } from '../../src/sim/nav';
 import Sim from '../../src/sim/sim';
-import { Side } from '../../src/sim/types';
+import { DamageFlags, DamageKind, Side } from '../../src/sim/types';
 import { updateWarnings } from '../../src/sim/warning';
 
 const DT = 0.05;
@@ -108,5 +108,101 @@ describe('where the director sends a wave', () => {
     director.beginArea([{ kind: 'spawn', x: 6, z: 5 }], null);
     const fallback = { x: 1, z: 1 };
     expect(director.spawnAt(fallback)).toBe(fallback);
+  });
+});
+
+describe('a Hunt’s or an Escort’s mobs', () => {
+  it('are rolled for Hunts and Escorts only, a minute or two apart', () => {
+    for (const objective of ['hunt', 'escort'] as const) {
+      const s = generateStage(new RNG(3), 10, { kind: 'combat', ahead: ['combat'], objective });
+      expect(s.mobs).toHaveLength(3);
+      for (const m of s.mobs!) {
+        expect(m.kinds.length).toBeGreaterThan(0);
+        expect(m.after).toBeGreaterThanOrEqual(60);
+        expect(m.after).toBeLessThanOrEqual(120);
+      }
+    }
+    for (const objective of ['horde', 'vault', 'ritual', 'collapse'] as const) {
+      const s = generateStage(new RNG(3), 10, { kind: 'combat', ahead: ['combat'], objective });
+      expect(s.mobs).toBeUndefined();
+    }
+  });
+
+  it('come on their beat while the director builds up, from where it chooses, and wait for somewhere to come from', () => {
+    const stage = generateStage(new RNG(3), 10, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'hunt',
+    });
+    const sim = new Sim(1);
+    enterStage(sim, stage);
+    spawnParty(sim, stage, []);
+    const run = new ObjectiveRun('hunt', stage);
+    const at: Spot = { x: stage.width - 5, z: 5 };
+    let calm = false;
+    let where: Spot | null = null;
+    const pace: Pace = { calm: () => calm, share: () => 1, spawnAt: (f) => where ?? f };
+    const first = stage.mobs![0];
+    play(sim, run, first.after - 1, pace);
+    expect(sim.warnings).toHaveLength(0);
+    calm = true;
+    play(sim, run, 2, pace);
+    expect(sim.warnings).toHaveLength(0);
+    calm = false;
+    play(sim, run, 1, pace);
+    expect(sim.warnings).toHaveLength(0);
+    where = at;
+    const before = sim.living(Side.Monster).length;
+    play(sim, run, DT, pace);
+    expect(sim.warnings).toHaveLength(1);
+    expect(sim.warnings[0].x).toBe(at.x);
+    play(sim, run, 3.2, pace);
+    expect(sim.living(Side.Monster).length - before).toBe(first.kinds.length);
+  });
+});
+
+describe('a Ritual paced by the director', () => {
+  it('calls its waves on its own beat, from where the director chooses', () => {
+    const stage = generateStage(new RNG(3), 18, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'ritual',
+    });
+    const sim = new Sim(1);
+    enterStage(sim, stage);
+    const bearer = spawnParty(sim, stage, []);
+    const run = new ObjectiveRun('ritual', stage);
+    const at: Spot = { x: 5, z: 5 };
+    // Even in a lull: the Ritual keeps its own beat.
+    const pace: Pace = { calm: () => true, share: () => 1, spawnAt: () => at };
+    bearer.x = stage.rites![0].x;
+    bearer.z = stage.rites![0].z;
+    play(sim, run, DT, pace);
+    expect(sim.warnings).toHaveLength(1);
+    expect(sim.warnings[0].x).toBe(at.x);
+  });
+});
+
+describe('the director’s lulls', () => {
+  it('are short where the party holds its ground', () => {
+    const relaxFor = (holding: boolean): number => {
+      const sim = new Sim(1);
+      sim.setWorld([{ x0: 0, z0: 0, x1: 40, z1: 40 }]);
+      const bearer = spawnBearer(sim, 5, 5);
+      const director = new Director(sim, new RNG(4));
+      director.beginArea([], null, holding);
+      bearer.hit(bearer, {
+        kind: DamageKind.True,
+        fixed: Math.round(bearer.derived.maxHp * 0.5),
+        flags: DamageFlags.Redirected,
+      });
+      for (let t = 0; t < 30 && director.phase !== 'relax'; t += DT) {
+        director.update(DT);
+      }
+      expect(director.phase).toBe('relax');
+      return director.phaseLeft() ?? 0;
+    };
+    expect(relaxFor(true)).toBeLessThanOrEqual(15);
+    expect(relaxFor(false)).toBeGreaterThanOrEqual(25);
   });
 });

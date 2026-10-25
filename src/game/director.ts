@@ -51,6 +51,10 @@ export const PEAK = 0.75;
 // how far the bearer walks to end the relax early
 const SUSTAIN: [number, number] = [3, 5];
 const RELAX: [number, number] = [30, 45];
+// A shorter relax where the party holds its ground, as in a Horde, so it
+// does not stand idle: in Left 4 Dead a relax also ends once the
+// survivors move on, which a party holding ground never does.
+const RELAX_HOLDING: [number, number] = [10, 15];
 const RELAX_TRAVEL = 25;
 // How much of the standing each area moves
 const STANDING_STEP = 0.4;
@@ -137,6 +141,8 @@ export default class Director {
   last: AreaScore | null = null;
   // The area's spawn spots and flow, and the spots waves came from lately
   private spawns: KeyPoint[] = [];
+  // Whether the party holds its ground in this area
+  private holding = false;
   private flow: Flow | null = null;
   private readonly recent: Spot[] = [];
 
@@ -238,7 +244,7 @@ export default class Director {
     if (this.phase === 'peakFade') {
       if (pacing < PEAK) {
         this.phase = 'relax';
-        this.left = this.rng.range(...RELAX);
+        this.left = this.rng.range(...(this.holding ? RELAX_HOLDING : RELAX));
         const b = this.sim.bearer;
         this.relaxFrom = b ? { x: b.x, z: b.z } : null;
       }
@@ -255,7 +261,8 @@ export default class Director {
   }
 
   /** A new area begins: its time and losses count from now, and its spawn spots are known. */
-  beginArea(spots: readonly KeyPoint[] = [], flow: Flow | null = null): void {
+  beginArea(spots: readonly KeyPoint[] = [], flow: Flow | null = null, holding = false): void {
+    this.holding = holding;
     this.took = 0;
     this.losses = 0;
     this.spawns = spots.filter((s) => s.kind === 'spawn');
@@ -287,6 +294,8 @@ export default class Director {
       party.every((u) => u.distanceTo(p) > SIGHT || !this.sim.sees(u, p));
     const valid = this.spawns.filter(
       (p) =>
+        // Still floor, as a Collapse may have taken it
+        this.sim.nav?.walkable(p.x, p.z) !== false &&
         unseen(p) &&
         party.every((u) => u.distanceTo(p) >= SPAWN_NEAR) &&
         bearer.distanceTo(p) <= SPAWN_FAR &&

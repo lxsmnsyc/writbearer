@@ -145,6 +145,9 @@ const LEVER_REACH = 1.3;
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
+// The objectives where the party holds its ground, so the director's lulls
+// are short
+const HOLDING: ReadonlySet<Objective> = new Set(['horde', 'ritual', 'ambush']);
 // How many of an area's key points are of a kind
 const spotsOf = (stage: Stage, kind: 'spawn' | 'boss' | 'relief'): number =>
   (stage.spots ?? []).filter((s) => s.kind === kind).length;
@@ -1176,7 +1179,8 @@ export default class Game {
     this.flow = nav
       ? new Flow(rectOf(this.stage), this.stage.entrance, (x, z) => nav.walkable(x, z))
       : null;
-    this.director.beginArea(this.stage.spots, this.flow);
+    const o = this.stage.objective;
+    this.director.beginArea(this.stage.spots, this.flow, o !== undefined && HOLDING.has(o));
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;

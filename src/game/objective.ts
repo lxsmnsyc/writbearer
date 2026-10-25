@@ -18,6 +18,10 @@ import { warn } from '../sim/warning';
 //   last wave is dead. With the level director pacing it, a wave waits out
 //   the director's lulls, comes smaller the sooner it follows the last, and
 //   comes from where the director chooses.
+// - A Hunt or an Escort also has mobs: with the director pacing it, each
+//   comes on its own beat while the director is building up, from where it
+//   chooses. A Ritual's waves come from where it chooses too, but on the
+//   Ritual's own beat, as Left 4 Dead's crescendos do.
 // - An Escort is done once the bearer brings at least half its refugees to
 //   an exit. It fails once fewer than half are left alive: the exits open,
 //   but nothing is paid.
@@ -83,6 +87,9 @@ export default class ObjectiveRun {
   // The level director, pacing the waves, and whether it is holding the next
   private pace: Pace | null = null;
   private held = false;
+  // A Hunt's or an Escort's mobs: time since the last, and the next to come
+  private mobClock = 0;
+  private mobNext = 0;
   // A Horde's clock since the last wave, the next wave and who came so far
   private started = false;
   private clock = 0;
@@ -117,6 +124,7 @@ export default class ObjectiveRun {
     if (this.kind === 'ambush') {
       this.ambush(sim, level);
     }
+    this.mobs(sim, dt, level);
     if (this.kind === 'escort') {
       this.wards ??= sim.living(Side.Ward);
       this.failed = this.wards.filter((u) => u.alive).length < this.needed();
@@ -192,6 +200,28 @@ export default class ObjectiveRun {
     const bearer = sim.bearer;
     const goal = this.stage.goal;
     return goal !== undefined && bearer !== null && bearer.alive && inRect(goal, bearer);
+  }
+
+  // The next mob comes once its time is up, while the director is building
+  // up, and from where it chooses. With nowhere to come from, it waits.
+  private mobs(sim: Sim, dt: number, level: number): void {
+    const mob = this.stage.mobs?.at(this.mobNext);
+    const pace = this.pace;
+    if (!mob || !pace) {
+      return;
+    }
+    this.mobClock += dt;
+    if (this.mobClock < mob.after || pace.calm()) {
+      return;
+    }
+    const nowhere = { x: NaN, z: NaN };
+    const from = pace.spawnAt(nowhere);
+    if (from === nowhere) {
+      return;
+    }
+    this.mobNext++;
+    this.mobClock = 0;
+    this.summon(sim, { kinds: mob.kinds, from, delay: 0, elite: -1 }, level);
   }
 
   /** Whether this is an Ambush that has not sprung: it still passes for a Camp. */
@@ -294,7 +324,8 @@ export default class ObjectiveRun {
     for (const [k, at] of [0, RITE_TIME / 2].entries()) {
       const wave = waves.at(i * 2 + k);
       if (wave && before <= at && rite.held > at) {
-        this.summon(sim, wave, level);
+        const from = this.pace?.spawnAt(wave.from) ?? wave.from;
+        this.summon(sim, { ...wave, from }, level);
       }
     }
     if (rite.held >= RITE_TIME) {
@@ -382,6 +413,10 @@ export default class ObjectiveRun {
         { elite: i === wave.elite },
       );
       u.aware = true;
+      // It rushes the party, as Left 4 Dead's mobs do, though it came where
+      // none of it could be seen.
+      const bearer = sim.bearer;
+      u.lastSeen = bearer ? { x: bearer.x, z: bearer.z } : null;
       this.came.push(u);
     });
   }
