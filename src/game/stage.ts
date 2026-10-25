@@ -1,3 +1,4 @@
+import { giveAffixes } from '../content/affixes';
 import { spawnBoss } from '../content/bosses';
 import {
   type MercKind,
@@ -116,6 +117,7 @@ function followersOf(pack: Pack, layer: number): string[] {
 // Spawns a stage's packs, and its boss a level above them.
 function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
+    const units: Unit[] = [];
     pack.kinds.forEach((kind, i) => {
       // Spread over a disc, the leader in the middle and the rest round it,
       // so a big pack stands as a crowd and not a heap.
@@ -131,7 +133,17 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
       if (i === pack.captain) {
         u.calls = followersOf(pack, stage.biome);
       }
+      units.push(u);
     });
+    const leader = units.at(pack.elite);
+    if (leader && pack.affixes) {
+      giveAffixes(
+        sim,
+        leader,
+        units.filter((u) => u !== leader),
+        pack.affixes,
+      );
+    }
   }
   // An Escort's refugees wait by the entrance, as hardy as the area is deep.
   for (const r of stage.refugees ?? []) {

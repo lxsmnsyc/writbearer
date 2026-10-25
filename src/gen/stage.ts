@@ -1,3 +1,4 @@
+import { AFFIXES, type Affix } from '../content/affixes';
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Flow from '../sim/flow';
@@ -73,6 +74,8 @@ export interface Pack {
   marked?: number;
   // Index into `kinds` of its captain, who calls more of the pack while it lives
   captain?: number;
+  // Its elite's affixes, the first shared by the pack
+  affixes?: Affix[];
 }
 
 /** Where an area's exit leads: an area of the layer's map, or down. */
@@ -347,6 +350,8 @@ export interface Wave {
   delay: number;
   // Index into `kinds` of an elite leading it, or -1
   elite: number;
+  // Its elite's affixes, the first shared by the wave
+  affixes?: Affix[];
 }
 
 // The plan of an area with one road on to a Combat area, as tests use.
@@ -1564,6 +1569,22 @@ function placePacks(
     push({ kinds, x, z, elite: -1 });
   }
   appointCaptains(stage, rng, eliteArea);
+  for (const p of stage.packs) {
+    if (p.elite >= 0) {
+      p.affixes = rollAffixes(rng, stage.biome, p.kinds.length);
+    }
+  }
+}
+
+// How many affixes an elite rolls, by layer: one in the Marches, two in the
+// Rift Road and the Undercroft, three in the Sunken Crown
+const AFFIX_COUNT = [1, 2, 2, 3];
+
+/** An elite's affixes, rolled from the layout stream. Bound only for a pack to bind. */
+export function rollAffixes(rng: RNG, layer: number, packSize: number): Affix[] {
+  const pool = AFFIXES.filter((a) => a !== 'bound' || packSize >= 3);
+  const n = AFFIX_COUNT[Math.min(layer, AFFIX_COUNT.length - 1)];
+  return rng.shuffle([...pool]).slice(0, n);
 }
 
 // The lair's leader is a captain from this area on, or in an Elite area;
@@ -1630,11 +1651,13 @@ function buildWaves(
       }
     }
     const last = w === count - 1;
+    const led = last && (elite || stage.index >= ELITE_FROM);
     waves.push({
       kinds,
       from: edge(),
       delay: w === 0 ? FIRST_WAVE : WAVE_GAP,
-      elite: last && (elite || stage.index >= ELITE_FROM) ? 0 : -1,
+      elite: led ? 0 : -1,
+      affixes: led ? rollAffixes(rng, stage.biome, kinds.length) : undefined,
     });
   }
   return waves;

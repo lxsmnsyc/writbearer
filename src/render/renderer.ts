@@ -1,3 +1,4 @@
+import { AFFIX_NAME, affixesOf } from '../content/affixes';
 import { MUTATOR_NAME, type Objective, type Reward } from '../gen/graph';
 import {
   type Ahead,
@@ -1373,6 +1374,29 @@ export default class Renderer {
       out.fillStyle = 'rgba(0,0,0,0.65)';
       out.fillRect(x - width / 2, y - 14, width, 18);
       out.fillStyle = C.gold;
+      out.fillText(text, x, y);
+    }
+    // An elite's name and affixes over it once seen, so the threat can be
+    // read before the fight.
+    out.font = '600 11px Inter, system-ui, sans-serif';
+    const affixes = affixesOf(f.sim);
+    for (const u of f.sim.living(Side.Monster)) {
+      const has = u.rank === Rank.Normal ? [] : affixes.of(u);
+      if (has.length === 0) {
+        continue;
+      }
+      const r = f.views.rig(u, f.alpha);
+      if (seen(fog, u, r.x, r.z) < 0.5) {
+        continue;
+      }
+      const b = this.body(r.x, r.z);
+      const text = `${u.name} · ${has.map((a) => AFFIX_NAME[a]).join(', ')}`;
+      const x = b.x * SCALE - this.sub.x;
+      const y = (b.y - (barHeight(u) + 6) * look.zoom) * SCALE - this.sub.y;
+      const width = out.measureText(text).width + 8;
+      out.fillStyle = 'rgba(0,0,0,0.65)';
+      out.fillRect(x - width / 2, y - 12, width, 16);
+      out.fillStyle = '#e8a0a0';
       out.fillText(text, x, y);
     }
     out.textAlign = 'start';

@@ -1,3 +1,4 @@
+import { giveAffixes } from '../content/affixes';
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
 import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
@@ -402,6 +403,7 @@ export default class ObjectiveRun {
 
   // A wave's monsters, already in the fight
   private bring(sim: Sim, wave: Wave, level: number): void {
+    const units: Unit[] = [];
     wave.kinds.forEach((kind, i) => {
       const a = (i / wave.kinds.length) * Math.PI * 2;
       const u = spawnMonster(
@@ -418,7 +420,17 @@ export default class ObjectiveRun {
       const bearer = sim.bearer;
       u.lastSeen = bearer ? { x: bearer.x, z: bearer.z } : null;
       this.came.push(u);
+      units.push(u);
     });
+    const leader = units.at(wave.elite);
+    if (leader && wave.affixes && wave.elite >= 0) {
+      giveAffixes(
+        sim,
+        leader,
+        units.filter((u) => u !== leader),
+        wave.affixes,
+      );
+    }
   }
 
   // A wave as big as the director lets it be now: smaller the sooner it

@@ -39,6 +39,20 @@ From Diablo 2's champion and unique monsters. Today an elite is only stronger. W
 | Bound | Its pack shares its health. Hitting any of them hurts all. | Area damage. |
 | Herald | Runs to an alarm bell when the fight starts. | The Heralds priority, Rangers. |
 
+In the game so far (`src/content/affixes.ts`):
+
+- Every elite of a pack or a wave rolls its affixes from the `layout` stream: 1 in the Marches, 2 in the Rift Road and the Undercroft, 3 in the Sunken Crown. Bound is rolled only for a pack of three or more.
+- Its pack shares the first affix at half strength, if it is one that works on whoever has it: Swift, Stoneskin, the Enchanted, Venomous, Vampiric or Thorns.
+- The elite's name and affixes show over it once it is seen.
+- Swift: 30% faster moving and attacking. Stoneskin: 40 armor.
+- Fire, Frost and Venom Enchanted turn its hits to that element, so they build up Burn, Chill or Poison. Fire and Frost Enchanted burst as they die, in a 2 tile circle shown for a second: fire takes 12% of health from the party, frost chills it.
+- Vampiric heals 30% of the damage it deals. Thorns throws back 25% of melee damage.
+- Aura: Might gives the monsters within 6 tiles 25% more attack. Aura: Mending heals them 2% of health a second. Both end with it.
+- Warded: a ward of 30% of its health that takes magic damage first, and refills after 4 seconds unhit.
+- Bound: the elite and its pack share every hit evenly.
+- Herald: there are no bells yet. Instead, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
+- Not yet: Storm Enchanted, Mana Burn, Multishot and Teleport.
+
 ## New monsters
 
 Each layer gains monsters that fill the missing enemy types. Every one has a race, an element, a card and a bestiary line, like the monsters already in the game.

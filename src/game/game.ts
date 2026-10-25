@@ -27,6 +27,7 @@ import {
   rectOf,
   withFightsAhead,
 } from '../gen/stage';
+import { affixesOf } from '../content/affixes';
 import { reveal } from '../content/creditor';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import {
@@ -2436,6 +2437,7 @@ export default class Game {
         }
         this.mutators.update(TICK);
         this.director.update(TICK);
+        affixesOf(this.sim).update(TICK);
         this.relieve();
         this.checkObjective();
         this.acc -= TICK;
