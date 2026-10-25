@@ -114,7 +114,7 @@ Each kind of gauntlet has key points: the places in its layout that the director
 |---|---|
 | Hunt | Where the packs stand, where the marked ones wait, and where a marked one runs for help. |
 | Horde | Where waves come from, the ground the party holds, and the routes waves take to it. |
-| Labyrinth | The start, the end, the main path between them, its branches, and where traps and packs stand along it. |
+| Labyrinth | The start, the end, the main path between them, its branches, and where traps stand along it. No monsters. |
 | Escort | The route to the exit, and where packs lie in wait along it. |
 | Vault | The vault, its ring of traps, and the lair. |
 | Ritual | The sigils, and where waves come from round each. |
@@ -127,9 +127,18 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 
 - It has a start and an end, and on average a single path between them, the way Left 4 Dead's maps have an escape route.
 - The path may branch, but every branch rejoins it, so the party always ends up in the same place.
-- Branches hold something worth the detour: a chest, a shortcut past traps, or a safer way round a pack. None is a dead end.
-- Traps and packs stand along the path, at key points the director can use. The flow along the path places them.
-- The key, gates and levers stay, laid along the path instead of hidden in a maze.
+- **It has no monsters.** Its challenge is the traps: the player times the bearer's moves through them. No packs stand in it and no waves come.
+- Branches hold something worth the detour: a chest, or a shortcut past traps. None is a dead end.
+- Traps stand along the path, at key points the director can use. The flow along the path places them.
+- The gates and levers stay, laid along the path instead of hidden in a maze.
+- With no monsters, the director paces the traps instead: how many stand along the path, how fast their beats run, and how wide the gaps between strikes are, inside the depth's bounds.
+
+What changes with it:
+
+- The hall's key can no longer be carried by a pack. It lies on the path or in a branch, guarded by traps.
+- The Labyrinth no longer rolls the Thorough bonus, since there is nothing to kill.
+- It rolls no mutator that works on monsters, such as Blood moon, Volatile and Restless dead. Darkness still applies.
+- A Labyrinth mini-boss or stalker, as the gauntlets design planned, no longer fits, and is dropped.
 
 ## Rules it keeps
 
@@ -151,7 +160,7 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
 5. Difficulty from standing, inside the depth's bounds.
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
-7. The Labyrinth reworked as an obstacle course along a main path.
+7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
 8. Relief at relief spots after a hard stretch.
 
 ## In the game so far

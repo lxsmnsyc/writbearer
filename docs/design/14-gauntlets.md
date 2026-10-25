@@ -140,7 +140,7 @@ Today: 4 to 6 waves from three edges, every 20 seconds, or 2 seconds after the l
 
 Today: a maze of low walls, traps in the corridors, packs in dead ends, and a hall at the far end.
 
-Planned: the Labyrinth becomes an obstacle course with a start, an end and on average one path between them, with branches that rejoin it. See [the level director](15-director.md#the-labyrinth-reworked).
+Planned: the Labyrinth becomes an obstacle course with a start, an end and on average one path between them, with branches that rejoin it. It has no monsters: its challenge is the traps, which the player times the bearer's moves through. So its key, its stalker and its Thorough bonus change or go. See [the level director](15-director.md#the-labyrinth-reworked).
 
 - **A key to the hall.** The hall's gate is locked. Its key is carried by a pack in the maze, so the party must fight at least once.
 - **Levers and gates.** Some corridors are closed by gates. A lever elsewhere opens them. Some levers open a shortcut back to the entrance side.
