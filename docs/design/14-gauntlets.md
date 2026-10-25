@@ -140,6 +140,8 @@ Today: 4 to 6 waves from three edges, every 20 seconds, or 2 seconds after the l
 
 Today: a maze of low walls, traps in the corridors, packs in dead ends, and a hall at the far end.
 
+Planned: the Labyrinth becomes an obstacle course with a start, an end and on average one path between them, with branches that rejoin it. See [the level director](15-director.md#the-labyrinth-reworked).
+
 - **A key to the hall.** The hall's gate is locked. Its key is carried by a pack in the maze, so the party must fight at least once.
 - **Levers and gates.** Some corridors are closed by gates. A lever elsewhere opens them. Some levers open a shortcut back to the entrance side.
 - **More traps, with patterns.** Each trap keeps a fixed rhythm, so the player can learn its timing.
@@ -235,6 +237,7 @@ Today: a maze of low walls, traps in the corridors, packs in dead ends, and a ha
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
 7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault, Ritual, Collapse and Ambush are done. Silence waits for Horn-Bearers.
+8. The level director, which tunes each gauntlet to how the party is doing, and key points in each layout for it to use. See [the level director](15-director.md).
 
 ## Open questions
 

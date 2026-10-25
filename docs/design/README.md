@@ -22,6 +22,7 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 12. [New jobs](12-new-jobs.md) (draft)
 13. [Bestiary: monsters, mini-bosses and bosses](13-bestiary.md) (draft)
 14. [Gauntlets](14-gauntlets.md) (draft)
+15. [The level director](15-director.md) (draft)
 
 ## Decisions so far
 
