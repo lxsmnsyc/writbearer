@@ -8,7 +8,7 @@ import ObjectiveRun from '../../src/game/objective';
 import { enterStage, spawnParty } from '../../src/game/stage';
 import { generateLayerMap } from '../../src/gen/graph';
 import { generateStage } from '../../src/gen/stage';
-import { Priority, think } from '../../src/sim/ai';
+import { DEFAULT_TOGGLES, Priority, copyToggles, think } from '../../src/sim/ai';
 import Sim from '../../src/sim/sim';
 import { DamageFlags, DamageKind, Side } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
@@ -160,7 +160,10 @@ describe('a Horn-Bearer', () => {
   it('is what mercs set on Heralds go for first', () => {
     const sim = field();
     const merc = spawnMerc(sim, 'ranger', 5, 10, 10);
-    merc.toggles = { ...merc.toggles!, priorities: [Priority.Heralds, Priority.Nearest] };
+    merc.toggles = {
+      ...copyToggles(DEFAULT_TOGGLES),
+      priorities: [Priority.Heralds, Priority.Nearest],
+    };
     const close = spawnMonster(sim, 'husk', 5, 12, 10);
     close.aware = true;
     const herald = spawnMonster(sim, 'hornBearer', 5, 18, 10);

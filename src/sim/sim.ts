@@ -44,12 +44,20 @@ function advanceSwing(u: Unit, dt: number): void {
     const slack = u.job.range === Range.Ranged ? 1 : 0.5;
     if (u.distanceTo(target) <= u.kit.reach + slack) {
       if (u.job.range === Range.Ranged) {
-        // The arrow leaves now and lands when it reaches the target.
-        u.sim.fire(u, target, {
-          speed: ARROW_SPEED,
-          homing: true,
-          options: { flags: DamageFlags.BasicAttack | DamageFlags.Projectile },
-        });
+        // The arrow leaves now and lands when it reaches the target. A
+        // volley looses more at once, at others in reach near it.
+        const others = u.sim
+          .foes(u.side)
+          .filter((f) => f !== target && u.distanceTo(f) <= u.kit.reach + slack)
+          .sort((a, b) => a.distanceTo(target) - b.distanceTo(target))
+          .slice(0, u.volley - 1);
+        for (const at of [target, ...others]) {
+          u.sim.fire(u, at, {
+            speed: ARROW_SPEED,
+            homing: true,
+            options: { flags: DamageFlags.BasicAttack | DamageFlags.Projectile },
+          });
+        }
       } else {
         strike(u, target, { flags: DamageFlags.BasicAttack });
       }

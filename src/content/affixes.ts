@@ -10,8 +10,8 @@ import { warn } from '../sim/warning';
 // an elite, and so its pack, a small puzzle with an answer.
 //
 // So far: Swift, Stoneskin, Fire, Frost and Venom Enchanted, Vampiric,
-// Thorns, the Might and Mending auras, Warded, Bound and Herald. Not yet:
-// Storm Enchanted, Mana Burn, Multishot and Teleport.
+// Thorns, the Might and Mending auras, Warded, Bound, Herald and Multishot.
+// Not yet: Storm Enchanted, Mana Burn and Teleport.
 
 export type Affix =
   | 'swift'
@@ -25,7 +25,8 @@ export type Affix =
   | 'mending'
   | 'warded'
   | 'bound'
-  | 'herald';
+  | 'herald'
+  | 'multishot';
 
 /** Every affix an elite may roll. */
 export const AFFIXES: readonly Affix[] = [
@@ -41,6 +42,7 @@ export const AFFIXES: readonly Affix[] = [
   'warded',
   'bound',
   'herald',
+  'multishot',
 ];
 
 export const AFFIX_NAME: Record<Affix, string> = {
@@ -56,6 +58,7 @@ export const AFFIX_NAME: Record<Affix, string> = {
   warded: 'Warded',
   bound: 'Bound',
   herald: 'Herald',
+  multishot: 'Multishot',
 };
 
 /**
@@ -70,6 +73,7 @@ export const SHARED: ReadonlySet<Affix> = new Set([
   'venomous',
   'vampiric',
   'thorns',
+  'multishot',
 ]);
 
 // Swift: how much faster it moves and attacks
@@ -88,6 +92,8 @@ const MENDING = 0.02;
 // unhit before it refills
 const WARD = 0.3;
 const WARD_REFILL = 4;
+// Multishot: how many more shots it looses at once
+const MULTISHOT = 2;
 // Herald: how often it wakes the next pack in the area
 const HERALD_EVERY = 10;
 const PACK_REACH = 3;
@@ -199,6 +205,8 @@ export default class Affixes {
       u.attackElement = Element.Frost;
     } else if (affix === 'venomous') {
       u.attackElement = Element.Venom;
+    } else if (affix === 'multishot') {
+      u.volley = 1 + Math.round(MULTISHOT * strength);
     } else if (affix === 'warded') {
       h.wardMost = u.derived.maxHp * WARD * strength;
       h.ward = h.wardMost;

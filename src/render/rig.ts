@@ -10,6 +10,8 @@ export type Kind =
   | 'ranger'
   | 'cleric'
   | 'hollowSoldier'
+  | 'hollowArcher'
+  | 'penitentSlinger'
   | 'hornBearer'
   | 'hornPost'
   | 'penitent'
@@ -29,6 +31,8 @@ const KINDS = new Set<string>([
   'ranger',
   'cleric',
   'hollowSoldier',
+  'hollowArcher',
+  'penitentSlinger',
   'hornBearer',
   'hornPost',
   'penitent',
@@ -56,6 +60,8 @@ export const HIT_FRACTION: Record<Kind, number> = {
   cleric: 0.7,
   hollowSoldier: 0.65,
   hornBearer: 0.6,
+  hollowArcher: 0.7,
+  penitentSlinger: 0.6,
   hornPost: 0.5,
   penitent: 0.6,
   cantor: 0.8,
@@ -153,6 +159,8 @@ const KIND_SIZE: Record<Kind, number> = {
   cleric: 1,
   hollowSoldier: 1,
   hornBearer: 0.95,
+  hollowArcher: 1,
+  penitentSlinger: 0.95,
   hornPost: 1,
   penitent: 1,
   cantor: 1,
@@ -299,7 +307,7 @@ export function skeleton(u: RigUnit, time: number): Skeleton {
     st * 4 -
     flinch +
     roar +
-    (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' ? 4 : 0) +
+    (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' || u.kind === 'hollowArcher' ? 4 : 0) +
     (u.kind === 'hollowed' ? 30 : 0) +
     (u.kind === 'husk' ? 12 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
@@ -386,7 +394,12 @@ export function paperColor(kind: Kind, C: Palette): string {
   if (kind === 'vanguard' || kind === 'ranger' || kind === 'cleric') {
     return C.merc;
   }
-  if (kind === 'penitent' || kind === 'cantor' || kind === 'hollowed') {
+  if (
+    kind === 'penitent' ||
+    kind === 'penitentSlinger' ||
+    kind === 'cantor' ||
+    kind === 'hollowed'
+  ) {
     return C.penitent;
   }
   if (kind === 'refugee') {
@@ -504,6 +517,8 @@ export const avg = (...ps: Projected[]): number => ps.reduce((s, p) => s + p.dep
 interface Gear {
   spear?: { back: V3; tip: V3 };
   horn?: { hand: V3 };
+  bow?: { hand: V3; string: V3 };
+  sling?: { hand: V3; angle: number };
   knife?: { hand: V3; dir: V3 };
   staff?: { hand: V3 };
   claws?: { hand: V3; dir: V3 }[];
@@ -531,6 +546,27 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'L', back, v(-1, -1, -0.5));
     const dir = norm(sub(sk.handR, sk.handL));
     g.spear = { back: sub(sk.handL, scale(dir, 30)), tip: add(sk.handR, scale(dir, 48)) };
+  }
+  if (u.kind === 'hollowArcher') {
+    // The bow held out in front; the string drawn back to the cheek in the
+    // windup, let go on the shot.
+    const bowHand = add(sk.chest, v(26, -4, 6));
+    let pull = 0;
+    if (a >= 0) {
+      const ph = phases(a, HIT_FRACTION.hollowArcher, HIT_FRACTION.hollowArcher + 0.1);
+      pull = ph.strike > 0 || ph.recover > 0 ? 0 : ph.windup;
+    }
+    const drawHand = add(sk.chest, v(22 - pull * 18, 2, 6));
+    reach(sk, 'L', bowHand, v(-1, -1, 0));
+    reach(sk, 'R', drawHand, v(-1, 1, 0));
+    g.bow = { hand: sk.handL, string: sk.handR };
+  }
+  if (u.kind === 'penitentSlinger') {
+    // The sling whirled overhead, faster as it winds up, then let fly.
+    const hand = add(sk.head, v(4, 6, 10));
+    reach(sk, 'R', hand, v(-1, 1, 0));
+    const speed = a >= 0 && a < HIT_FRACTION.penitentSlinger ? 22 : 9;
+    g.sling = { hand: sk.handR, angle: time * speed };
   }
   if (u.kind === 'hornBearer') {
     // The horn held at the side, raised to the mouth to strike or to blow.
@@ -673,7 +709,7 @@ export function drawUnit(
         fill(c, rags, color, ink);
       },
     });
-  } else if (u.kind === 'penitent' || u.kind === 'cantor') {
+  } else if (u.kind === 'penitent' || u.kind === 'penitentSlinger' || u.kind === 'cantor') {
     // A robe to the ground instead of legs.
     const hem = [
       v(14, 0, 0),
@@ -725,7 +761,12 @@ export function drawUnit(
   });
 
   // Hoods, crowns and the Writ.
-  if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'hollowed') {
+  if (
+    u.kind === 'penitent' ||
+    u.kind === 'penitentSlinger' ||
+    u.kind === 'cantor' ||
+    u.kind === 'hollowed'
+  ) {
     const hood = [
       add(sk.head, v(-6, -5, -2)),
       add(sk.head, v(-6, 5, -2)),
@@ -739,7 +780,7 @@ export function drawUnit(
       },
     });
   }
-  if (u.kind === 'hollowSoldier' || u.kind === 'hornBearer') {
+  if (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' || u.kind === 'hollowArcher') {
     const ring = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2);
     const band = ring.map((t) => proj(add(sk.head, v(Math.cos(t) * 7, Math.sin(t) * 7, 5))));
     const spikes = ring
@@ -768,6 +809,48 @@ export function drawUnit(
       draw: (c) => {
         fill(c, taper(a, b, 0.6, 0.6), C.wood, null);
         fill(c, head, C.bone, ink);
+      },
+    });
+  }
+  if (gear.bow) {
+    // A long bow, taller than the archer is wide, and its string.
+    const h = gear.bow.hand;
+    const ends = [add(h, v(-4, 0, 30)), add(h, v(-4, 0, -30))];
+    const mids = [add(h, v(2, 0, 16)), add(h, v(2, 0, -16))];
+    const limbs = [proj(ends[0]), proj(mids[0]), proj(h), proj(mids[1]), proj(ends[1])];
+    const nock = proj(gear.bow.string);
+    parts.push({
+      depth: avg(...limbs) + 0.0006,
+      draw: (c) => {
+        for (let i = 1; i < limbs.length; i++) {
+          fill(c, taper(limbs[i - 1], limbs[i], 1.2, 1.2), C.wood, ink);
+        }
+        c.strokeStyle = C.bone;
+        c.lineWidth = 0.6;
+        c.beginPath();
+        c.moveTo(limbs[0].x, limbs[0].y);
+        c.lineTo(nock.x, nock.y);
+        c.lineTo(limbs[4].x, limbs[4].y);
+        c.stroke();
+      },
+    });
+  }
+  if (gear.sling) {
+    // A cord from the hand to a stone swinging round it.
+    const h = gear.sling.hand;
+    const t = gear.sling.angle;
+    const stone = proj(add(h, v(Math.cos(t) * 12, Math.sin(t) * 12, 4)));
+    const hand = proj(h);
+    parts.push({
+      depth: avg(hand, stone) + 0.0008,
+      draw: (c) => {
+        c.strokeStyle = C.wood;
+        c.lineWidth = 0.6;
+        c.beginPath();
+        c.moveTo(hand.x, hand.y);
+        c.lineTo(stone.x, stone.y);
+        c.stroke();
+        fill(c, hexAt(stone, 2), C.bone, ink);
       },
     });
   }
@@ -950,13 +1033,23 @@ export function emissives(
     }
     return out;
   }
-  const eyed = ['hollowSoldier', 'hornBearer', 'penitent', 'cantor', 'hollowed', 'husk'];
+  const eyed = [
+    'hollowSoldier',
+    'hollowArcher',
+    'hornBearer',
+    'penitent',
+    'penitentSlinger',
+    'cantor',
+    'hollowed',
+    'husk',
+  ];
   if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
     // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
     const color =
       u.kind === 'hollowSoldier' ||
       u.kind === 'hornBearer' ||
+      u.kind === 'hollowArcher' ||
       u.kind === 'hollowed' ||
       u.kind === 'husk'
         ? 'teal'

@@ -51,7 +51,9 @@ In the game so far (`src/content/affixes.ts`):
 - Warded: a ward of 30% of its health that takes magic damage first, and refills after 4 seconds unhit.
 - Bound: the elite and its pack share every hit evenly.
 - Herald: there are no bells yet. Instead, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
-- Not yet: Storm Enchanted, Mana Burn, Multishot and Teleport.
+- Multishot: a ranged elite looses three shots at once, at its target and the two nearest it in reach. It is rolled only for an elite that shoots.
+- Not yet: Storm Enchanted, Mana Burn and Teleport.
+- Ranged monsters shoot from 6 tiles, step back 2.5 tiles from anyone nearer than 3 unless taunted, and do not stop for whoever stands in the way of their target. Barriers stop their shots as they stop any enemy's.
 
 ## New monsters
 
@@ -66,7 +68,7 @@ The Blight, the drowned townsfolk and the Church's first keepers.
 | Bloat | Blight | Bomber | A slow, swollen sac. Walks into the party and bursts in a Venom cloud, shown on the ground first. | Venom | Ranged mercs, spreading out, not letting it reach the bearer. |
 | Carrion Moth | Blight | Flyer | Flies in threes, drawn to the lantern. Melee mercs cannot reach it until it lands to bite. Each bite dims the bearer's light for a moment. | Venom | Ranger, Pin Down, Flare. |
 | Drowned Wailer | Drowned | Spectral | A husk with nothing left inside. Neutral hits lose up to half their damage on it. | Spectral | Elemental gear, the Medium, the Monk. |
-| Penitent Slinger | Church | Archer | Keeps 6 tiles back and slings stones at the bearer. | Radiant | Rampart, Veil, the Arbalist. |
+| Penitent Slinger | Church | Archer | Keeps 6 tiles back and slings stones at the bearer. In the game: a Penitent whirling a sling, from the Marches' fourth area and the Undercroft. | Radiant | Rampart, Veil, the Arbalist. |
 
 ### The Rift Road
 
@@ -74,7 +76,7 @@ The Old King's guard holds the road down.
 
 | Monster | Faction | Type | What it does | Element | What answers it |
 |---|---|---|---|---|---|
-| Hollow Archer | Old King's guard | Archer | Shoots from ledges and behind pillars, in pairs. | Neutral | Rampart, Bastion, Veil, the Arbalist. |
+| Hollow Archer | Old King's guard | Archer | Shoots from ledges and behind pillars, in pairs. In the game: a Hollow soldier with a long bow, in pairs behind soldiers, on the Rift Road and in the Crown. | Neutral | Rampart, Bastion, Veil, the Arbalist. |
 | Hollow Shieldbearer | Old King's guard | Shielder | A tower shield that blocks every blow from the front. It turns slowly. | Neutral | Flanking, Sunder, magic. |
 | Horn-Bearer | Old King's guard | Herald | Runs to the nearest horn post when its pack wakes. If it blows the horn, a fresh pack marches in. In the game: a Hollow soldier with a gold horn, light armor and quick. Mercs can be told to go for Heralds first. | Neutral | The Heralds priority, Snare, Pin Down. |
 | Chain Warden | Old King's guard | Kidnapper | Throws a hook at the bearer and drags it back toward its pack. The hook is shown as a line first. | Neutral | Shield Bash, Stun, the Monk's Blade Catch, keeping the bearer behind a merc. |
@@ -129,9 +131,9 @@ A layer has four mini-bosses, and a run meets each at most once.
 
 In the game so far (`src/content/minibosses.ts`):
 
-- Six are in, each built on a monster already in the game: the Bell-Ringer and the First Keeper in the Marches, the Shield-Oath and the Horn of the Road on the Rift Road, the Drowned Cantor in the Undercroft and the Last Herald in the Sunken Crown. The other ten wait for their monsters.
+- Seven are in, each built on a monster already in the game: the Bell-Ringer and the First Keeper in the Marches, the Shield-Oath, the Bone Quartermaster and the Horn of the Road on the Rift Road, the Drowned Cantor in the Undercroft and the Last Herald in the Sunken Crown. The other nine wait for their monsters.
 - A mini-boss is an elite with 250% more health, 40% more attack and 20 more armor on top, a level above the area's monsters, and drawn larger. It comes with its escort and its fixed affixes. Its name and affixes show over it, and the log names it and its gimmick as it joins the fight.
-- Gimmicks: the Bell-Ringer's Herald wakes the next pack every ten seconds. The First Keeper's Ward refills only while its Cantors live. The Shield-Oath and its pack are Bound. The Drowned Cantor raises a pool of water every 6 seconds near it, up to four, which drain when it dies. The Last Herald calls two Hollowed at a time, as a captain does. The Horn of the Road blows a horn post, then runs to another and blows it 15 seconds later; two posts stand in any fight it is in. It is Swift instead of Teleport.
+- Gimmicks: the Bell-Ringer's Herald wakes the next pack every ten seconds. The First Keeper's Ward refills only while its Cantors live. The Shield-Oath and its pack are Bound. The Drowned Cantor raises a pool of water every 6 seconds near it, up to four, which drain when it dies. The Last Herald calls two Hollowed at a time, as a captain does. The Horn of the Road blows a horn post, then runs to another and blows it 15 seconds later; two posts stand in any fight it is in. It is Swift instead of Teleport. The Bone Quartermaster is a Hollow Archer with Multishot and Stoneskin, with two archers and two soldiers; its volleys are not yet shown on the ground first.
 - Where: every Elite fight holds one, but a Labyrinth, an Ambush or a Ritual. From the Rift Road down, an ordinary Hunt, Escort, Vault or Collapse holds one a quarter of the time, from the `director` stream. An Elite fight's stands at its farthest boss spot, so the fight ends on it; an ordinary one's at one of its boss spots. An Elite Hunt's first quarry is it, an Elite Horde's last wave is led by it, and a Vault's key is on it.
 - Not yet: their compendium entries and cards.
 

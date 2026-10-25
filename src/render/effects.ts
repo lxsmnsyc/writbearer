@@ -80,7 +80,12 @@ export function bodyColor(u: Unit): string {
   if (u.side === Side.Ward) {
     return C.cloth;
   }
-  if (u.kind === 'penitent' || u.kind === 'cantor' || u.kind === 'hollowed') {
+  if (
+    u.kind === 'penitent' ||
+    u.kind === 'penitentSlinger' ||
+    u.kind === 'cantor' ||
+    u.kind === 'hollowed'
+  ) {
     return C.penitent;
   }
   return C.monster;

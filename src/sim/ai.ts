@@ -3,7 +3,7 @@ import { Shout, acting, responseDelay } from './shout';
 import type Sim from './sim';
 import { SkillMode } from './skill';
 import { MENDING, REFRESHING, TAUNTED } from './statuses';
-import { Rank, Side } from './types';
+import { Range, Rank, Side } from './types';
 import type Unit from './unit';
 import { type Warning, inside } from './warning';
 import type { Zone } from './zone';
@@ -372,6 +372,10 @@ function lureFor(sim: Sim, u: Unit): Zone | undefined {
     .at(0);
 }
 
+// How near a ranged monster lets the party come before it steps back, and
+// how far it steps
+const KEEP_BACK = 3;
+const STEP_BACK = 2.5;
 /** How near its horn post a herald comes to blow it. */
 export const ALARM_REACH = 1.2;
 // A marked monster runs for help once its health falls below this share.
@@ -480,12 +484,34 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
     return;
   }
   u.lastSeen = { x: target.x, z: target.z };
+  // A ranged monster steps back from whoever comes too close, unless taunted.
+  if (u.job.range === Range.Ranged && !taunt) {
+    const close = nearest(u, party);
+    if (close && u.distanceTo(close) < KEEP_BACK) {
+      const d = u.distanceTo(close) || 1;
+      const away = sim.clamp({
+        x: u.x + ((u.x - close.x) / d) * STEP_BACK,
+        z: u.z + ((u.z - close.z) / d) * STEP_BACK,
+      });
+      if (sim.nav?.walkable(away.x, away.z) !== false) {
+        u.target = target;
+        u.travel(away.x, away.z, dt, 0.3);
+        return;
+      }
+    }
+  }
   // A party member standing in reach is in the way, and gets hit first.
   // The monster still counts as going for its real target, so mercs that
   // guard the bearer see it coming.
   // A taunted monster has eyes only for its taunter.
   const intended = target;
-  if (!taunt?.source.alive && u.hunt !== Hunt.Assassin && u.distanceTo(target) > u.kit.reach) {
+  const melee = u.job.range === Range.Melee;
+  if (
+    melee &&
+    !taunt?.source.alive &&
+    u.hunt !== Hunt.Assassin &&
+    u.distanceTo(target) > u.kit.reach
+  ) {
     const blocker = party.find((p) => p !== target && u.distanceTo(p) <= u.kit.reach);
     if (blocker) {
       target = blocker;

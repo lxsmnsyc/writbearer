@@ -105,6 +105,7 @@ import GiShoppingBag from '~icons/game-icons/shopping-bag';
 import GiShouting from '~icons/game-icons/shouting';
 import GiSkullCrack from '~icons/game-icons/skull-crack';
 import GiSkullCrossedBones from '~icons/game-icons/skull-crossed-bones';
+import GiSling from '~icons/game-icons/sling';
 import GiSparkles from '~icons/game-icons/sparkles';
 import GiSpiderAlt from '~icons/game-icons/spider-alt';
 import GiSpiderFace from '~icons/game-icons/spider-face';
@@ -229,6 +230,8 @@ export const ICONS = {
   cleric: GiSunPriest,
   hollowSoldier: GiDeathSkull,
   hornBearer: GiHuntingHorn,
+  hollowArcher: GiPocketBow,
+  penitentSlinger: GiSling,
   hornPost: GiHuntingHorn,
   penitent: GiCultist,
   cantor: GiHoodedFigure,

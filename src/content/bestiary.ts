@@ -30,6 +30,14 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'A soldier of the Old King’s guard. He was told to hold the road, and he holds it.',
     how: 'Heavily armored. Goes for the bearer, and hits whoever stands in its way.',
   },
+  hollowArcher: {
+    who: 'An archer of the Old King’s guard. The bowstring rotted long ago; the habit did not.',
+    how: 'Shoots from behind its own and steps back from whoever comes close. Barriers stop its arrows.',
+  },
+  penitentSlinger: {
+    who: 'A Penitent who never learned the knife, and slings stones at the bearer instead.',
+    how: 'Keeps well back and slings at the bearer. Fragile once reached. Radiant: holy magic does nothing to it.',
+  },
   hornBearer: {
     who: 'A soldier of the Old King’s guard who carried the horn. It still answers the call to arms.',
     how: 'When its pack wakes, it runs for the nearest horn post. If it blows the horn, a fresh pack marches in. Kill it on the way.',

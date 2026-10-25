@@ -88,6 +88,16 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
     describe: '+15% armor.',
     modifiers: [{ stat: 'armor', percent: 15 }],
   }),
+  hollowArcher: card('hollowArcher', 'Hollow Archer', 1, {
+    fits: WEAPON,
+    describe: '+10 accuracy.',
+    modifiers: [{ stat: 'accuracy', add: 10 }],
+  }),
+  penitentSlinger: card('penitentSlinger', 'Penitent Slinger', 1, {
+    fits: WEAPON,
+    describe: '+3% critical chance.',
+    modifiers: [{ stat: 'crit', add: 3 }],
+  }),
   hornBearer: card('hornBearer', 'Horn-Bearer', 1, {
     fits: SHIELD,
     describe: '+15 evasion.',

@@ -1,8 +1,9 @@
 import { AFFIXES, type Affix } from '../content/affixes';
 import { MINI_BOSSES, type MiniBossId } from '../content/minibosses';
-import type { MonsterKind } from '../content/roster';
+import { MONSTERS, type MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Flow from '../sim/flow';
+import { Range } from '../sim/types';
 import Nav, { type Rect, type Spot } from '../sim/nav';
 import type { MapNode, Mutator, NodeKind, Objective, Reward } from './graph';
 import { AREAS_PER_LAYER, LAYERS, layerIndexOf, leadsDown } from './layers';
@@ -448,6 +449,9 @@ const COLLAPSE_STOP = 0.68;
 const COLLAPSE_SPEED = 0.5;
 const COLLAPSE_ELITE = 1.2;
 
+// Whether a kind of monster shoots
+const shoots = (kind: MonsterKind): boolean => MONSTERS[kind].job.range === Range.Ranged;
+
 // How far round a Vault's strongroom nothing else stands, and how far its
 // door is from its middle
 const VAULT_KEEP = 6;
@@ -494,6 +498,8 @@ export const THREAT: Record<MonsterKind, number> = {
   penitent: 2,
   hollowSoldier: 3,
   hornBearer: 2,
+  hollowArcher: 2,
+  penitentSlinger: 2,
   hornPost: 0,
   hollowed: 3,
   cantor: 3,
@@ -1515,24 +1521,38 @@ const FACTIONS: Faction[] = [
   { layer: 0, from: 4, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
   { layer: 0, from: 4, kinds: ['crawler'], size: MIXED },
   { layer: 0, from: 4, kinds: ['hollowSoldier'], size: STRONG },
+  { layer: 0, from: 3, kinds: ['penitent', 'penitentSlinger', 'penitent'], size: MIXED },
   { layer: 0, from: 5, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
   { layer: 0, from: 6, kinds: ['hollowed'], size: STRONG },
   // The Rift Road: the Old King's guard holds the road down
   { layer: 1, from: 0, kinds: ['hollowSoldier', 'hollowSoldier', 'husk'], size: MIXED },
   { layer: 1, from: 0, kinds: ['hollowSoldier', 'husk', 'husk', 'husk'], size: MIXED },
   { layer: 1, from: 0, kinds: ['crawler', 'mite', 'mite'], size: SWARM },
+  {
+    layer: 1,
+    from: 1,
+    kinds: ['hollowSoldier', 'hollowSoldier', 'hollowArcher', 'hollowArcher'],
+    size: MIXED,
+  },
   { layer: 1, from: 2, kinds: ['hollowSoldier'], size: STRONG },
   { layer: 1, from: 4, kinds: ['penitent', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
   // The Drowned Undercroft: the Church's keepers and the drowned
   { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
   { layer: 2, from: 0, kinds: ['husk'], size: SWARM },
   { layer: 2, from: 0, kinds: ['cantor', 'penitent', 'penitent', 'penitent'], size: MIXED },
+  {
+    layer: 2,
+    from: 1,
+    kinds: ['penitent', 'penitent', 'penitentSlinger', 'penitentSlinger'],
+    size: MIXED,
+  },
   { layer: 2, from: 3, kinds: ['penitent'], size: MIXED },
   { layer: 2, from: 4, kinds: ['hollowed', 'penitent'], size: STRONG },
   // The Sunken Crown: the mad, and the last of the guard
   { layer: 3, from: 0, kinds: ['hollowed'], size: STRONG },
   { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
   { layer: 3, from: 0, kinds: ['cantor', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
+  { layer: 3, from: 1, kinds: ['hollowSoldier', 'hollowArcher', 'hollowArcher'], size: MIXED },
   { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'husk', 'husk'], size: MIXED },
 ];
 
@@ -1661,7 +1681,7 @@ function placePacks(
   appointCaptains(stage, rng, eliteArea);
   for (const p of stage.packs) {
     if (p.elite >= 0) {
-      p.affixes = rollAffixes(rng, stage.biome, p.kinds.length);
+      p.affixes = rollAffixes(rng, stage.biome, p.kinds.length, shoots(p.kinds[p.elite]));
     }
   }
 }
@@ -1670,9 +1690,14 @@ function placePacks(
 // Rift Road and the Undercroft, three in the Sunken Crown
 const AFFIX_COUNT = [1, 2, 2, 3];
 
-/** An elite's affixes, rolled from the layout stream. Bound only for a pack to bind. */
-export function rollAffixes(rng: RNG, layer: number, packSize: number): Affix[] {
-  const pool = AFFIXES.filter((a) => a !== 'bound' || packSize >= 3);
+/**
+ * An elite's affixes, rolled from the layout stream. Bound only for a pack
+ * to bind, Multishot only for an elite that shoots.
+ */
+export function rollAffixes(rng: RNG, layer: number, packSize: number, ranged = false): Affix[] {
+  const pool = AFFIXES.filter(
+    (a) => (a !== 'bound' || packSize >= 3) && (a !== 'multishot' || ranged),
+  );
   const n = AFFIX_COUNT[Math.min(layer, AFFIX_COUNT.length - 1)];
   return rng.shuffle([...pool]).slice(0, n);
 }
@@ -1747,7 +1772,7 @@ function buildWaves(
       from: edge(),
       delay: w === 0 ? FIRST_WAVE : WAVE_GAP,
       elite: led ? 0 : -1,
-      affixes: led ? rollAffixes(rng, stage.biome, kinds.length) : undefined,
+      affixes: led ? rollAffixes(rng, stage.biome, kinds.length, shoots(kinds[0])) : undefined,
     });
   }
   return waves;

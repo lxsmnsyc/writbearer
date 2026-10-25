@@ -103,6 +103,28 @@ export const MONSTERS = {
     race: Race.Undead,
     hunt: Hunt.Bearer,
   },
+  // A soldier of the Old King's guard with a long bow. It shoots from
+  // behind its own and steps back from whoever comes close.
+  hollowArcher: {
+    job: job('Hollow archer', 110, 10, 0, Range.Ranged),
+    base: stats(6, 8, 6, 1, 14, 1),
+    weapon: { min: 10, max: 14, matk: 0 },
+    kit: { reach: 6, interval: 1.8, hitAt: 0.7, moveSpeed: 1.9, notice: 6 },
+    modifiers: [{ stat: 'armor', add: 15 }],
+    race: Race.Undead,
+    hunt: Hunt.Nearest,
+  },
+  // A Penitent with a sling. It keeps well back and slings stones at the
+  // bearer. Radiant, as the Church's keepers are.
+  penitentSlinger: {
+    job: job('Penitent slinger', 80, 8, 0, Range.Ranged),
+    base: stats(4, 10, 4, 1, 12, 1),
+    weapon: { min: 7, max: 11, matk: 0 },
+    kit: { reach: 6, interval: 1.5, hitAt: 0.6, moveSpeed: 2.6, notice: 6 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Bearer,
+  },
   // A soldier of the Old King's guard with a curled horn instead of a spear.
   // When its pack wakes it runs for the nearest horn post, to blow it and
   // call a fresh pack. Lightly armored and quick, and weak once cornered.

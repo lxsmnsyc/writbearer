@@ -185,6 +185,8 @@ export default class Unit {
   alarm: { x: number; z: number } | null = null;
   // Something that never acts, such as a horn post, there only to be broken
   still = false;
+  // How many shots a ranged basic attack looses at once, as Multishot gives
+  volley = 1;
   // A captain's followers: the kinds it calls to its side while it lives.
   // Empty for any other unit.
   calls: readonly string[] = [];
