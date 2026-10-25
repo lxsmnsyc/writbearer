@@ -84,6 +84,7 @@ import {
 import { type Due, Payroll, desert } from './wages';
 import { Compendium, type Ending } from './compendium';
 import ObjectiveRun from './objective';
+import Alarms from './alarms';
 import Captains from './captains';
 import Footing, { BLOSSOM_REACH } from './footing';
 import Hazards from './hazards';
@@ -374,6 +375,7 @@ export default class Game {
   private readonly metMiniBosses = new Set<MiniBossId>();
   // The Drowned Cantor's floods
   private readonly floods = new Floods();
+  private readonly alarms = new Alarms();
   // Mini-bosses already named in the log
   private readonly announced = new WeakSet<Unit>();
   // The current area's flow, from its entrance, for the director
@@ -855,9 +857,14 @@ export default class Game {
       if (event.source.bearsKey) {
         const { x, z } = event.source;
         this.stage.props.push({ kind: 'key', x, z, seed: 0.5 });
-        this.say('The key to the hall falls from the dead.');
+        this.say(
+          this.stage.vault
+            ? 'The vault’s key falls from the dead.'
+            : 'The key to the hall falls from the dead.',
+        );
       }
-      if (event.source.side === Side.Monster) {
+      // A broken horn post is no kill: it pays nothing and drops nothing.
+      if (event.source.side === Side.Monster && !event.source.still) {
         this.slain++;
         this.compendium.beat(event.source.kind);
         this.shareXp(event.source);
@@ -1145,6 +1152,7 @@ export default class Game {
     // The director sets how much threat a fight holds, by the party's standing.
     if (plan.objective) {
       plan.scale = this.director.scale(plan.kind === 'elite');
+      plan.mutators = node?.mutators;
       plan.miniBoss = this.pickMiniBoss(plan, area);
     }
     if (plan.kind === 'event') {
@@ -1403,6 +1411,22 @@ export default class Game {
     const pick = rng.pick(left);
     this.metMiniBosses.add(pick.id);
     return pick.id;
+  }
+
+  // Horn-Bearers run for their posts; a horn blown calls a fresh pack.
+  private soundAlarms(): void {
+    const blown = this.alarms.update(
+      this.sim,
+      TICK,
+      monsterLevel(this.stageIndex),
+      this.stage.hornPack,
+      this.director,
+    );
+    if (blown > 0) {
+      this.bonus?.blown();
+      this.shake = Math.max(this.shake, 2);
+      this.say('A horn sounds. A fresh pack marches in.');
+    }
   }
 
   // After a hard stretch, the director may grow a blossom out of sight.
@@ -2486,6 +2510,7 @@ export default class Game {
         this.director.update(TICK);
         affixesOf(this.sim).update(TICK);
         this.floods.update(this.sim, TICK, (this.stage.patches ??= []));
+        this.soundAlarms();
         this.relieve();
         this.checkObjective();
         this.acc -= TICK;

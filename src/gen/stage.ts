@@ -125,6 +125,8 @@ export interface AreaPlan {
   scale?: number;
   // The mini-boss it holds, if any
   miniBoss?: MiniBossId;
+  // Its own mutators, for those that change how it is laid out
+  mutators?: readonly Mutator[];
 }
 
 /**
@@ -206,6 +208,9 @@ export interface Stage {
   spots?: KeyPoint[];
   // Mobs the director sends in a Hunt or an Escort, in turn
   mobs?: Mob[];
+  // Horn posts, and the fresh pack a horn blown there calls
+  posts?: Spot[];
+  hornPack?: MonsterKind[];
   // How much of its usual threat it holds, as the level director set it
   scale?: number;
 }
@@ -446,6 +451,10 @@ const COLLAPSE_ELITE = 1.2;
 // How far round a Vault's strongroom nothing else stands, and how far its
 // door is from its middle
 const VAULT_KEEP = 6;
+// Horn posts: how many a Silence has, one more in an Elite area, and an
+// Alarmed fight or one with the Horn of the Road
+const SILENCE_POSTS = 3;
+const ALARM_POSTS = 2;
 const VAULT_DOOR = 2;
 const VAULT_CLEAR = 5.5;
 
@@ -484,6 +493,8 @@ export const THREAT: Record<MonsterKind, number> = {
   crawler: 2,
   penitent: 2,
   hollowSoldier: 3,
+  hornBearer: 2,
+  hornPost: 0,
   hollowed: 3,
   cantor: 3,
   // Bosses are never rolled into a pack. They wait in their fields.
@@ -759,6 +770,23 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   if (plan.miniBoss) {
     placeMiniBoss(stage, rng, plan.miniBoss, plan.kind === 'elite');
   }
+  // Horn posts: a Silence's, an Alarmed fight's, or those the Horn of the
+  // Road runs between. In a Silence or an Alarmed fight, every pack has a
+  // Horn-Bearer.
+  const alarmed = plan.mutators?.includes('alarmed') === true;
+  const silence = plan.objective === 'silence';
+  if (silence || alarmed || plan.miniBoss === 'hornOfTheRoad') {
+    const posts = silence ? SILENCE_POSTS + (plan.kind === 'elite' ? 1 : 0) : ALARM_POSTS;
+    stage.posts = layPosts(stage, rng, posts);
+    stage.hornPack = buildMobs(stage, rng, plan.kind === 'elite').at(0)?.kinds;
+    if (silence || alarmed) {
+      for (const pack of stage.packs.slice(1)) {
+        if (!pack.mini) {
+          pack.kinds.push('hornBearer');
+        }
+      }
+    }
+  }
   if (plan.objective === 'vault') {
     // A mini-boss holds the key, or else the lair's leader. The spoils wait
     // at the vault's door.
@@ -949,6 +977,26 @@ function vaultTraps(at: Spot, layer: number): Hazard[] {
       phase: (i / n) * TRAP_PERIOD[kind],
     };
   });
+}
+
+// Horn posts: how far from the entrance and from each other they stand
+const POST_FROM_ENTRANCE = 14;
+const POST_APART = 12;
+
+// Horn posts at spawn spots far from the entrance and apart, the farthest
+// first; fewer if the field has no room for them.
+function layPosts(stage: Stage, rng: RNG, n: number): Spot[] {
+  const far = (p: Spot): number => Math.hypot(p.x - stage.entrance.x, p.z - stage.entrance.z);
+  const spots = rng
+    .shuffle((stage.spots ?? []).filter((s) => s.kind === 'spawn' && far(s) >= POST_FROM_ENTRANCE))
+    .map((s) => ({ x: s.x, z: s.z }));
+  const posts: Spot[] = [];
+  for (const s of spots) {
+    if (posts.length < n && posts.every((p) => Math.hypot(p.x - s.x, p.z - s.z) >= POST_APART)) {
+      posts.push(s);
+    }
+  }
+  return posts;
 }
 
 /**

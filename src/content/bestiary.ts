@@ -30,6 +30,14 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'A soldier of the Old King’s guard. He was told to hold the road, and he holds it.',
     how: 'Heavily armored. Goes for the bearer, and hits whoever stands in its way.',
   },
+  hornBearer: {
+    who: 'A soldier of the Old King’s guard who carried the horn. It still answers the call to arms.',
+    how: 'When its pack wakes, it runs for the nearest horn post. If it blows the horn, a fresh pack marches in. Kill it on the way.',
+  },
+  hornPost: {
+    who: 'A pole with the guard’s great horn on it, set up along the road to call the watch.',
+    how: 'Does nothing by itself. Break it, and no Horn-Bearer can blow it.',
+  },
   penitent: {
     who: 'A Penitent of the Church that keeps the seal, with a knife instead of a prayer.',
     how: 'Fast and fragile. Goes for the bearer. Radiant: holy magic does nothing to it.',

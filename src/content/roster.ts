@@ -103,6 +103,29 @@ export const MONSTERS = {
     race: Race.Undead,
     hunt: Hunt.Bearer,
   },
+  // A soldier of the Old King's guard with a curled horn instead of a spear.
+  // When its pack wakes it runs for the nearest horn post, to blow it and
+  // call a fresh pack. Lightly armored and quick, and weak once cornered.
+  hornBearer: {
+    job: job('Horn-Bearer', 110, 10, 0, Range.Melee),
+    base: stats(6, 8, 6, 1, 6, 1),
+    weapon: { min: 8, max: 12, matk: 0 },
+    kit: { reach: 1.0, interval: 1.4, hitAt: 0.6, moveSpeed: 2.6, notice: 5 },
+    modifiers: [{ stat: 'armor', add: 10 }],
+    race: Race.Undead,
+    hunt: Hunt.Nearest,
+  },
+  // A horn post: a pole with the guard's great horn on it. It does nothing,
+  // and is there to be broken before a Horn-Bearer reaches it.
+  hornPost: {
+    job: job('Horn post', 160, 16, 0, Range.Melee),
+    base: stats(1, 1, 8, 1, 1, 1),
+    weapon: { min: 0, max: 0, matk: 0 },
+    kit: { reach: 0, interval: 99, hitAt: 0.5, moveSpeed: 0, notice: 0 },
+    modifiers: [{ stat: 'armor', add: 20 }],
+    race: Race.Construct,
+    hunt: Hunt.Nearest,
+  },
   // A Penitent of the Church, keeping the seal with a knife. Fast and fragile,
   // and it wants the bearer. Radiant, so holy attacks cannot hurt it.
   penitent: {

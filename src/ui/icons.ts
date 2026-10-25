@@ -62,6 +62,7 @@ import GiHolyWater from '~icons/game-icons/holy-water';
 import GiHood from '~icons/game-icons/hood';
 import GiHoodedFigure from '~icons/game-icons/hooded-figure';
 import GiHouse from '~icons/game-icons/house';
+import GiHuntingHorn from '~icons/game-icons/hunting-horn';
 import GiIncense from '~icons/game-icons/incense';
 import GiKnapsack from '~icons/game-icons/knapsack';
 import GiKnightBanner from '~icons/game-icons/knight-banner';
@@ -227,6 +228,8 @@ export const ICONS = {
   ranger: GiBowman,
   cleric: GiSunPriest,
   hollowSoldier: GiDeathSkull,
+  hornBearer: GiHuntingHorn,
+  hornPost: GiHuntingHorn,
   penitent: GiCultist,
   cantor: GiHoodedFigure,
   hollowed: GiShamblingZombie,
@@ -270,6 +273,7 @@ export const ICONS = {
   ritual: GiPentagramRose,
   collapse: GiFallingRocks,
   ambush: GiCampfire,
+  silence: GiHuntingHorn,
   compendium: GiOpenBook,
   points: GiUpgrade,
   drop: GiTrashCan,

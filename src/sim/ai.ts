@@ -25,6 +25,8 @@ export const enum Priority {
   Elites = 3,
   // Monsters with skills of their own, such as healers
   Casters = 4,
+  // Heralds running to blow a horn
+  Heralds = 5,
 }
 
 /** The player's settings for one merc. */
@@ -117,6 +119,8 @@ function pick(merc: Unit, toggles: Toggles, bearer: Unit | null, enemies: Unit[]
       pool = enemies.filter((e) => e.rank !== Rank.Normal);
     } else if (p === Priority.Casters) {
       pool = enemies.filter((e) => e.skills.length > 0);
+    } else if (p === Priority.Heralds) {
+      pool = enemies.filter((e) => e.alarm !== null);
     } else {
       pool = enemies;
     }
@@ -368,6 +372,8 @@ function lureFor(sim: Sim, u: Unit): Zone | undefined {
     .at(0);
 }
 
+/** How near its horn post a herald comes to blow it. */
+export const ALARM_REACH = 1.2;
 // A marked monster runs for help once its health falls below this share.
 const RUN_AT = 0.5;
 
@@ -408,6 +414,10 @@ function runForHelp(sim: Sim, u: Unit, dt: number, taunted: boolean): boolean {
 }
 
 function thinkMonster(sim: Sim, u: Unit, dt: number): void {
+  if (u.still) {
+    u.target = null;
+    return;
+  }
   // The party and those it keeps safe
   const party = sim.foes(Side.Monster);
   if (!u.aware) {
@@ -424,6 +434,12 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   // A taunted monster goes for whoever taunted it.
   const taunt = u.statuses.get(TAUNTED.id);
   if (runForHelp(sim, u, dt, taunt !== undefined)) {
+    return;
+  }
+  // A herald runs for its horn post, unless taunted.
+  if (u.alarm && !taunt) {
+    u.target = null;
+    u.travel(u.alarm.x, u.alarm.z, dt, ALARM_REACH);
     return;
   }
   // A decoy draws in what is not taunted, bosses aside.

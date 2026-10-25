@@ -86,6 +86,7 @@ export function placeStage(stage: Stage, facing: Spot, at: Spot): Stage {
   stage.refugees?.forEach(move);
   stage.rites?.forEach(move);
   stage.spots?.forEach(move);
+  stage.posts?.forEach(move);
   if (stage.collapse) {
     stage.collapse.dir = turn(f, stage.collapse.dir);
   }

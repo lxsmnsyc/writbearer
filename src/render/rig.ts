@@ -10,6 +10,8 @@ export type Kind =
   | 'ranger'
   | 'cleric'
   | 'hollowSoldier'
+  | 'hornBearer'
+  | 'hornPost'
   | 'penitent'
   | 'cantor'
   | 'hollowed'
@@ -27,6 +29,8 @@ const KINDS = new Set<string>([
   'ranger',
   'cleric',
   'hollowSoldier',
+  'hornBearer',
+  'hornPost',
   'penitent',
   'cantor',
   'hollowed',
@@ -51,6 +55,8 @@ export const HIT_FRACTION: Record<Kind, number> = {
   ranger: 0.7,
   cleric: 0.7,
   hollowSoldier: 0.65,
+  hornBearer: 0.6,
+  hornPost: 0.5,
   penitent: 0.6,
   cantor: 0.8,
   hollowed: 0.5,
@@ -146,6 +152,8 @@ const KIND_SIZE: Record<Kind, number> = {
   ranger: 1,
   cleric: 1,
   hollowSoldier: 1,
+  hornBearer: 0.95,
+  hornPost: 1,
   penitent: 1,
   cantor: 1,
   hollowed: 1,
@@ -291,7 +299,7 @@ export function skeleton(u: RigUnit, time: number): Skeleton {
     st * 4 -
     flinch +
     roar +
-    (u.kind === 'hollowSoldier' ? 4 : 0) +
+    (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' ? 4 : 0) +
     (u.kind === 'hollowed' ? 30 : 0) +
     (u.kind === 'husk' ? 12 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
@@ -495,6 +503,7 @@ export const avg = (...ps: Projected[]): number => ps.reduce((s, p) => s + p.dep
 // What a unit's hands and gear are doing this frame.
 interface Gear {
   spear?: { back: V3; tip: V3 };
+  horn?: { hand: V3 };
   knife?: { hand: V3; dir: V3 };
   staff?: { hand: V3 };
   claws?: { hand: V3; dir: V3 }[];
@@ -522,6 +531,16 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'L', back, v(-1, -1, -0.5));
     const dir = norm(sub(sk.handR, sk.handL));
     g.spear = { back: sub(sk.handL, scale(dir, 30)), tip: add(sk.handR, scale(dir, 48)) };
+  }
+  if (u.kind === 'hornBearer') {
+    // The horn held at the side, raised to the mouth to strike or to blow.
+    let hand = add(sk.chest, v(10, 12, -14));
+    if (a >= 0) {
+      const ph = phases(a, 0.5, 0.65);
+      hand = handPath(ph, hand, add(sk.head, v(8, 4, 0)), add(sk.chest, v(24, 6, -8)));
+    }
+    reach(sk, 'R', hand, v(-1, 1, 0));
+    g.horn = { hand: sk.handR };
   }
   if (u.kind === 'penitent') {
     let hand = add(sk.chest, v(14, 8, -8));
@@ -720,7 +739,7 @@ export function drawUnit(
       },
     });
   }
-  if (u.kind === 'hollowSoldier') {
+  if (u.kind === 'hollowSoldier' || u.kind === 'hornBearer') {
     const ring = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2);
     const band = ring.map((t) => proj(add(sk.head, v(Math.cos(t) * 7, Math.sin(t) * 7, 5))));
     const spikes = ring
@@ -749,6 +768,23 @@ export function drawUnit(
       draw: (c) => {
         fill(c, taper(a, b, 0.6, 0.6), C.wood, null);
         fill(c, head, C.bone, ink);
+      },
+    });
+  }
+  if (gear.horn) {
+    // A curled horn in gold: narrow at the mouthpiece, wide at the bell.
+    const h = gear.horn.hand;
+    const curl = [v(0, 0, 0), v(6, 2, 4), v(12, 2, 2), v(15, 0, -4), v(13, -2, -10)].map((d) =>
+      proj(add(h, d)),
+    );
+    const bell = [v(11, -6, -12), v(17, 2, -12), v(15, -2, -16)].map((d) => proj(add(h, d)));
+    parts.push({
+      depth: avg(...curl) + 0.0006,
+      draw: (c) => {
+        for (let i = 1; i < curl.length; i++) {
+          fill(c, taper(curl[i - 1], curl[i], 0.4 + i * 0.25, 0.6 + i * 0.25), C.gold, ink);
+        }
+        fill(c, hull(bell), C.gold, ink);
       },
     });
   }
@@ -914,12 +950,17 @@ export function emissives(
     }
     return out;
   }
-  const eyed = ['hollowSoldier', 'penitent', 'cantor', 'hollowed', 'husk'];
+  const eyed = ['hollowSoldier', 'hornBearer', 'penitent', 'cantor', 'hollowed', 'husk'];
   if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
     // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
     const color =
-      u.kind === 'hollowSoldier' || u.kind === 'hollowed' || u.kind === 'husk' ? 'teal' : 'blood';
+      u.kind === 'hollowSoldier' ||
+      u.kind === 'hornBearer' ||
+      u.kind === 'hollowed' ||
+      u.kind === 'husk'
+        ? 'teal'
+        : 'blood';
     out.push({ p: proj(add(sk.head, v(3, -1.5, 1))), color });
     out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }

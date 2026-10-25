@@ -181,6 +181,10 @@ export default class Unit {
   bearsKey = false;
   // A mini-boss: a named monster with its own gimmick, drawn larger
   named = false;
+  // A herald's horn post, which it runs for to blow it, if it is running
+  alarm: { x: number; z: number } | null = null;
+  // Something that never acts, such as a horn post, there only to be broken
+  still = false;
   // A captain's followers: the kinds it calls to its side while it lives.
   // Empty for any other unit.
   calls: readonly string[] = [];

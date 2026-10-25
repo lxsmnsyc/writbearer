@@ -33,6 +33,7 @@ import { warn } from '../sim/warning';
 //   moves on, toward the exits. It is done once the bearer reaches an exit.
 //   Whoever the floor falls under falls: a monster is lost, and one of the
 //   party is hurt and scrambles back onto the ground still standing.
+// - A Silence is done once every horn post in the area is broken.
 // - An Ambush looks like a Camp until the bearer comes near its fire or an
 //   exit. Then its groups close in from all round, shown on the ground a
 //   moment first. It is done once every one of them is dead.
@@ -147,6 +148,9 @@ export default class ObjectiveRun {
   }
 
   private met(sim: Sim): boolean {
+    if (this.kind === 'silence') {
+      return this.postsLeft(sim) === 0;
+    }
     if (this.kind === 'ambush') {
       const waves = this.stage.waves ?? [];
       return this.started && this.arrived >= waves.length && this.came.every((u) => !u.alive);
@@ -224,6 +228,12 @@ export default class ObjectiveRun {
     this.mobNext++;
     this.mobClock = 0;
     this.summon(sim, { kinds: mob.kinds, from, delay: 0, elite: -1 }, level);
+  }
+
+  // The area's horn posts still standing
+  private postsLeft(sim: Sim): number {
+    const area = rectOf(this.stage);
+    return sim.living(Side.Monster).filter((u) => u.kind === 'hornPost' && inRect(area, u)).length;
   }
 
   /** Whether this is an Ambush that has not sprung: it still passes for a Camp. */
@@ -473,6 +483,10 @@ export default class ObjectiveRun {
     }
     if (this.done) {
       return 'Done. The way on is open.';
+    }
+    if (this.kind === 'silence') {
+      const all = this.stage.posts?.length ?? 0;
+      return `Break the horn posts before the Horn-Bearers reach them: ${all - this.postsLeft(sim)} of ${all}`;
     }
     if (this.kind === 'ambush') {
       const left = this.came.filter((u) => u.alive).length;

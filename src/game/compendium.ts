@@ -74,6 +74,7 @@ export const MONSTER_ORDER: readonly MonsterKind[] = [
   'husk',
   'crawler',
   'hollowSoldier',
+  'hornBearer',
   'penitent',
   'cantor',
   'hollowed',

@@ -10,15 +10,16 @@ import { type MonsterKind, spawnMonster } from './roster';
 // Each is built on a monster already in the game. A run meets each at most
 // once.
 //
-// So far five of the sixteen, those the monsters in the game can carry:
-// the Bell-Ringer and the First Keeper in the Marches, the Shield-Oath on
-// the Rift Road, the Drowned Cantor in the Undercroft and the Last Herald
-// in the Sunken Crown.
+// So far six of the sixteen, those the monsters in the game can carry:
+// the Bell-Ringer and the First Keeper in the Marches, the Shield-Oath and
+// the Horn of the Road on the Rift Road, the Drowned Cantor in the
+// Undercroft and the Last Herald in the Sunken Crown.
 
 export type MiniBossId =
   | 'bellRinger'
   | 'firstKeeper'
   | 'shieldOath'
+  | 'hornOfTheRoad'
   | 'drownedCantor'
   | 'lastHerald';
 
@@ -64,6 +65,15 @@ export const MINI_BOSSES: Record<MiniBossId, MiniBoss> = {
     escort: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier', 'hollowSoldier'],
     affixes: ['bound', 'stoneskin'],
     text: 'A Hollow soldier sworn to its pack. A hit on any of them hurts all.',
+  },
+  hornOfTheRoad: {
+    id: 'hornOfTheRoad',
+    name: 'The Horn of the Road',
+    layer: 1,
+    kind: 'hornBearer',
+    escort: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'],
+    affixes: ['herald', 'swift'],
+    text: 'A Horn-Bearer that runs from post to post. Each horn blown sends a pack.',
   },
   drownedCantor: {
     id: 'drownedCantor',

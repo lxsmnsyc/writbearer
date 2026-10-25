@@ -9,6 +9,7 @@ import { Side } from '../sim/types';
 // - No losses fails once a merc dies.
 // - Swift fails once the objective takes longer than its time.
 // - Thorough is met if no monster in the area is alive when the objective is done.
+// - Silent fails once a horn is blown.
 
 /** The time a Swift objective must be done in, in seconds. */
 export const SWIFT_TIME: Record<Objective, number> = {
@@ -20,6 +21,7 @@ export const SWIFT_TIME: Record<Objective, number> = {
   ritual: 150,
   collapse: 90,
   ambush: Infinity,
+  silence: 150,
 };
 
 export type BonusState = 'open' | 'met' | 'failed';
@@ -44,6 +46,13 @@ export default class Bonus {
   /** A merc died. */
   lost(): void {
     if (this.kind === 'noLosses') {
+      this.failed = true;
+    }
+  }
+
+  /** A horn was blown. */
+  blown(): void {
+    if (this.kind === 'silent') {
       this.failed = true;
     }
   }
@@ -76,6 +85,9 @@ export default class Bonus {
     }
     if (this.kind === 'noLosses') {
       return 'No merc dies.';
+    }
+    if (this.kind === 'silent') {
+      return 'No horn is blown.';
     }
     if (this.kind === 'swift') {
       return `Done within ${Math.max(0, Math.ceil(SWIFT_TIME[this.objective] - this.time))}s.`;

@@ -84,6 +84,7 @@ const OBJECTIVE_SIGN: Record<Objective, string> = {
   ritual: 'Ritual: break the three sigils',
   collapse: 'Collapse: outrun the falling floor',
   ambush: 'Camp',
+  silence: 'Silence: break the horn posts',
 };
 
 // What a signpost says the fight ahead pays.
@@ -946,6 +947,10 @@ export default class Renderer {
 
   // A figure: the party from its sprite sheet, the rest cut from paper.
   private drawFigure(r: RigUnit, iso: Iso, time: number, flash: boolean): void {
+    if (r.kind === 'hornPost') {
+      drawHornPost(this.ctx, iso(r.x, r.z), r.fall, flash);
+      return;
+    }
     if (isSprited(r.kind)) {
       drawShadow(this.ctx, r, iso);
       drawSprite(this.ctx, r, iso(r.x, r.z), C, time, flash);
@@ -1636,6 +1641,31 @@ function seen(fog: Fogs, u: Unit, x: number, z: number): number {
     return 1;
   }
   return fog.visible(x, z);
+}
+
+// A horn post: a pole with the guard's great horn hung at its top, in gold.
+// Broken, a stump with the horn on the ground.
+function drawHornPost(ctx: CanvasRenderingContext2D, base: Pt, fall: number, flash: boolean): void {
+  const z = look.zoom;
+  const x = Math.round(base.x);
+  const y = Math.round(base.y);
+  const wood = flash ? C.bone : C.wood;
+  if (fall >= 0) {
+    ctx.fillStyle = wood;
+    ctx.fillRect(x - 2 * z, y - 6 * z, 4 * z, 6 * z);
+    ctx.fillStyle = C.gold;
+    ctx.fillRect(x + 4 * z, y - 2 * z, 8 * z, 2 * z);
+    return;
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(x - 5 * z, y - z, 10 * z, 2 * z);
+  ctx.fillStyle = wood;
+  ctx.fillRect(x - 2 * z, y - 34 * z, 4 * z, 34 * z);
+  ctx.fillRect(x - 6 * z, y - 30 * z, 12 * z, 2 * z);
+  ctx.fillStyle = flash ? C.bone : C.gold;
+  ctx.fillRect(x + 3 * z, y - 30 * z, 2 * z, 8 * z);
+  ctx.fillRect(x + 5 * z, y - 24 * z, 6 * z, 2 * z);
+  ctx.fillRect(x + 9 * z, y - 28 * z, 4 * z, 6 * z);
 }
 
 function drawProp(ctx: CanvasRenderingContext2D, p: Prop, base: Pt, time: number): void {

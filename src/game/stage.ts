@@ -159,6 +159,12 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
       );
     }
   }
+  // Horn posts stand where they were laid, doing nothing but standing.
+  for (const p of stage.posts ?? []) {
+    const post = spawnMonster(sim, 'hornPost', monsterLevel(stage.index), p.x, p.z);
+    post.still = true;
+    post.aware = true;
+  }
   // An Escort's refugees wait by the entrance, as hardy as the area is deep.
   for (const r of stage.refugees ?? []) {
     spawnRefugee(sim, monsterLevel(stage.index), r.x, r.z);

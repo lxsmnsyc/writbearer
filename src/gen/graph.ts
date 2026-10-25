@@ -9,8 +9,9 @@ export type NodeKind = 'combat' | 'elite' | 'camp' | 'event' | 'town' | 'boss';
  * Labyrinth's rooms: slay the marked monsters, hold out against waves,
  * find the way through a maze of traps, see refugees across the field, or
  * take a key from the lair to open a vault, break three sigils in turn
- * while waves come, outrun a falling floor to an exit, or live through an
- * ambush at what looked like a Camp.
+ * while waves come, outrun a falling floor to an exit, live through an
+ * ambush at what looked like a Camp, or break the horn posts before the
+ * Horn-Bearers reach them.
  */
 export type Objective =
   | 'hunt'
@@ -20,7 +21,8 @@ export type Objective =
   | 'vault'
   | 'ritual'
   | 'collapse'
-  | 'ambush';
+  | 'ambush'
+  | 'silence';
 
 export const OBJECTIVE_NAME: Record<Objective, string> = {
   hunt: 'Hunt',
@@ -31,6 +33,7 @@ export const OBJECTIVE_NAME: Record<Objective, string> = {
   ritual: 'Ritual',
   collapse: 'Collapse',
   ambush: 'Ambush',
+  silence: 'Silence',
 };
 
 /**
@@ -53,7 +56,7 @@ export const REWARD_NAME: Record<Reward, string> = {
  * A fight's bonus challenge, as Aghanim's Labyrinth's room grades. Meeting
  * it upgrades the reward. Failing it loses only the upgrade.
  */
-export type Challenge = 'untouched' | 'noLosses' | 'swift' | 'thorough';
+export type Challenge = 'untouched' | 'noLosses' | 'swift' | 'thorough' | 'silent';
 
 /** The challenges each objective can roll. A Horde's field is empty, so it has no Thorough. */
 export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
@@ -65,6 +68,7 @@ export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   ritual: ['untouched', 'noLosses', 'swift'],
   collapse: ['untouched', 'noLosses', 'swift', 'thorough'],
   ambush: ['untouched', 'noLosses'],
+  silence: ['silent', 'untouched', 'noLosses', 'swift'],
 };
 
 export const CHALLENGE_NAME: Record<Challenge, string> = {
@@ -72,21 +76,32 @@ export const CHALLENGE_NAME: Record<Challenge, string> = {
   noLosses: 'No losses',
   swift: 'Swift',
   thorough: 'Thorough',
+  silent: 'Silent',
 };
 
 /**
  * A rule that changes a fight, as Aghanim's Labyrinth's room modifiers.
  * Each makes the fight harder and adds an item to its chest.
  */
-export type Mutator = 'darkness' | 'bloodMoon' | 'volatile' | 'restless';
+export type Mutator = 'darkness' | 'bloodMoon' | 'volatile' | 'restless' | 'alarmed';
 
-export const MUTATORS: readonly Mutator[] = ['darkness', 'bloodMoon', 'volatile', 'restless'];
+export const MUTATORS: readonly Mutator[] = [
+  'darkness',
+  'bloodMoon',
+  'volatile',
+  'restless',
+  'alarmed',
+];
+
+// The fights Alarmed works in: open fields whose packs stand waiting
+const ALARMABLE: ReadonlySet<Objective> = new Set(['hunt', 'escort', 'vault', 'collapse']);
 
 export const MUTATOR_NAME: Record<Mutator, string> = {
   darkness: 'Darkness',
   bloodMoon: 'Blood moon',
   volatile: 'Volatile',
   restless: 'Restless dead',
+  alarmed: 'Alarmed',
 };
 
 export const MUTATOR_TEXT: Record<Mutator, string> = {
@@ -94,6 +109,7 @@ export const MUTATOR_TEXT: Record<Mutator, string> = {
   bloodMoon: 'Monsters below half health deal more damage.',
   volatile: 'Monsters burst when they die.',
   restless: 'The whole dead rise as Husks.',
+  alarmed: 'Every pack has a Horn-Bearer, and horn posts stand on the field.',
 };
 
 // From this layer down, an ordinary fight may roll a mutator; from the
@@ -324,12 +340,14 @@ export const OBJECTIVES: readonly Objective[] = [
   'ritual',
   'collapse',
   'ambush',
+  'silence',
 ];
 
 // The layers that have Escorts: refugees flee down the Marches and the
 // Rift Road, and no one lives below to flee. Rituals come from the
-// Undercroft down, where the Church's sigils are. Collapses are the Rift
-// Road's, where the road clings to the chasm's walls.
+// Undercroft down, where the Church's sigils are. Collapses and Silences
+// are the Rift Road's, where the road clings to the chasm's walls and the
+// Old King's guard keeps watch.
 const ESCORT_LAYERS = 2;
 const RITUAL_FROM = 2;
 const COLLAPSE_LAYER = 1;
@@ -341,6 +359,7 @@ export const objectivesFor = (depth: number): readonly Objective[] =>
       (o !== 'escort' || depth < ESCORT_LAYERS) &&
       (o !== 'ritual' || depth >= RITUAL_FROM) &&
       (o !== 'collapse' || depth === COLLAPSE_LAYER) &&
+      (o !== 'silence' || depth === COLLAPSE_LAYER) &&
       // An Ambush is never rolled as a fight: it is laid as a Camp.
       o !== 'ambush',
   );
@@ -470,7 +489,7 @@ function rollMutators(rng: RNG, columns: MapNode[][], depth: number): void {
     } else if (depth >= MUTATE_FROM && rng.chance(MUTATE_CHANCE)) {
       count = 1;
     }
-    const pool = [...MUTATORS];
+    const pool = MUTATORS.filter((m) => m !== 'alarmed' || ALARMABLE.has(node.objective!));
     node.mutators = Array.from(
       { length: count },
       () => pool.splice(rng.int(0, pool.length - 1), 1)[0],

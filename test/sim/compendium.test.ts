@@ -24,7 +24,7 @@ describe('the compendium', () => {
     const known = monster(c, 0);
     expect(known.known).toBe(true);
     expect(known.lines[0]).toBe('Insect · Venom · beaten 2×');
-    expect(section(c, 'Monsters').found).toBe('1 of 12');
+    expect(section(c, 'Monsters').found).toBe('1 of 13');
   });
 
   it('keeps the Creditor nameless until it is beaten or has risen', () => {

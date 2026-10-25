@@ -65,7 +65,7 @@ In the game so far (`src/game/bonus.ts`):
 - Thorough counts the living monsters inside the area's rectangle when the objective is done.
 - The badge shows the challenge, how it stands, and what it added once met.
 - Meeting it gives twice the gold, one Arms item of Rare or better, a second card, twice the materials, or for a Respite, raises the party's untorn dead.
-- Silent and In order are not in yet. Silent needs horns and bells, and In order needs the Hunt's order shown.
+- Silent is in, for the Silence. In order is not in yet: it needs the Hunt's order shown.
 
 ### Mutators
 
@@ -89,7 +89,8 @@ As Aghanim's Labyrinth's room modifiers. From the Rift Road down, a gauntlet may
 
 In the game so far (`src/game/mutators.ts`):
 
-- Darkness, Blood moon, Volatile and Restless dead are in. The other six are not yet.
+- Darkness, Blood moon, Volatile, Restless dead and Alarmed are in. The other five are not yet.
+- Alarmed: two horn posts stand on the field and every pack but the Church's has a Horn-Bearer. It is rolled only for Hunts, Escorts, Vaults and Collapses, whose packs wait to be woken.
 - An ordinary fight from the Rift Road down has one 30% of the time. An Elite always has one, from the first layer. From the Sunken Crown down, an Elite has two.
 - The signpost shows them on a line under the objective. The map shows them in red under the area's name. The badge shows them as chips, with what each does on hover.
 - Each mutator adds one elite's item to the chest.
@@ -224,7 +225,13 @@ More traps to come, after Aghanim's Labyrinth's:
   - Once the bearer comes within 6 tiles of the fire or 5 of an exit, it springs: three groups, four in an Elite area, come from all round the fire, 9 tiles out, shown on the ground for 1.2 seconds. They hold most of a fight's threat.
   - Done once every one of them is dead. The chest appears by the fire, and the fire then rests the party as a Camp's does.
   - It rolls Untouched or No losses, shown once it springs.
-- Silence is not in yet. It needs Horn-Bearers and horn posts the party can destroy.
+- The Silence is in too (`src/game/alarms.ts`):
+  - It is rolled on the Rift Road only, as often as the others.
+  - Three horn posts stand across the open field, four in an Elite area, at spawn spots at least 14 tiles from the entrance and 12 from each other. Every pack but the Church's has a Horn-Bearer.
+  - A horn post is a still monster: it never acts, the mercs can break it, and it pays and drops nothing.
+  - Once its pack wakes, a Horn-Bearer runs for the nearest post still standing, and takes another if that one breaks. If it gets there, it blows the horn once, and a fresh pack, 15% of the area's threat, comes from where the director chooses, shown on the ground for 3 seconds.
+  - Done once every post in the area is broken.
+  - It rolls Silent, Untouched, No losses or Swift, 150 seconds. Silent fails once a horn is blown, anywhere.
 - A layer offers four or five kinds. The Hunt, the Horde and the Labyrinth stay the most common.
 
 ## Kinds by layer
@@ -244,7 +251,7 @@ More traps to come, after Aghanim's Labyrinth's:
 4. Arrows to marked monsters, and marked monsters that run. Done.
 5. Mutators, starting with Darkness, Blood moon, Volatile and Restless dead. Those four are done.
 6. The Labyrinth's key, gates and new traps. Done, without shortcut levers and gas vents.
-7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. Escort, Vault, Ritual, Collapse and Ambush are done. Silence waits for Horn-Bearers.
+7. New kinds: Escort and Vault first, then Silence, Ritual, Collapse and Ambush. All six are done.
 8. The level director, which tunes each gauntlet to how the party is doing, and key points in each layout for it to use. See [the level director](15-director.md).
 
 ## Open questions
