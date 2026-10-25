@@ -1,55 +1,118 @@
 # The level director
 
-Draft. A game AI that runs each gauntlet as it plays, after Left 4 Dead's AI Director and the pacing of Aghanim's Labyrinth. It watches how well the party is doing over the run and tunes the gauntlet's challenge to match, so a party that is struggling can catch up and a party that is winning easily is pushed harder.
+Draft. A game AI that runs each gauntlet as it plays, after Left 4 Dead's AI Director and the pacing of Aghanim's Labyrinth. It watches how well the party is doing, in the moment and over the run, and tunes the gauntlet to match, so a party that is struggling can catch up and a party that is winning easily is pushed harder.
 
-## What it does
+## Prior art: Left 4 Dead
 
-- It reads how the party is doing, during the area and over the run so far.
-- It decides the gauntlet's parameters from that reading, inside bounds set by the depth.
-- It orchestrates the gauntlet as it plays: when a wave comes, how big it is, and how hard.
+From Michael Booth's talk "The AI Systems of Left 4 Dead" (GDC 2009). Valve's director populates a hand-made map as it is played, and paces the fight to how the players feel.
+
+**Tools it reasons with:**
+
+- **Flow distance:** the travel distance from the start room to every area of the navigation mesh. Following it upward always leads to the exit. It places enemies and loot, and answers "how far have they come?"
+- **Escape route:** the shortest path from the start room to the exit.
+- **Potential visibility:** which areas any survivor could see. Enemies spawn only where no one can see them.
+- **Active area set:** the areas round the survivors. The director creates enemies as areas enter it and deletes them as they leave, so a few hundred enemies cost only a small set of live ones.
+
+**What it populates**, as "structured unpredictability": each kind of thing comes on its own randomized schedule, neither purely random nor uniform, and the schedules overlap.
+
+| Layer | How often | How |
+|---|---|---|
+| Wanderers | High | A count per area, rolled at map start from the escape route's length and a density. Spawned as the area enters the active set, removed as it leaves. Zeroed once an area is seen, and during Relax. |
+| Mobs | Medium | 20 to 30 enraged infected, every 90 to 180 seconds on Normal. A mob grows from its least size just after the last one to its most over time, so frequent mobs stay fair. A Boomer's vomit forces one at once and resets the timer. |
+| Special infected | Medium | Each on its own randomized timer, in an area of the active set no survivor can see. Smokers prefer areas above the team. |
+| Bosses | Low | Placed every so many units along the flow, a random amount, at map start. Tank, Witch and Nothing are shuffled and dealt out, with no kind twice in a row. Pacing does not touch them. |
+| Weapon caches and items | Low and medium | The map's designer places many possible spots. The director picks which exist. |
+
+**Where a mob spawns:** in the active set, out of sight.
+
+- Behind the survivors, at or below their flow distance: 75% of mobs, since wanderers, specials and bosses are usually met ahead.
+- Ahead of them, past their flow distance.
+- Near a survivor a Boomer has vomited on.
+- Anywhere in the active set, when nothing more specific is valid.
+- The director avoids areas that spawned a mob recently.
+
+**Adaptive dramatic pacing:**
+
+- Each survivor has an intensity.
+  - It rises with damage taken, in proportion.
+  - It rises on being incapacitated, or pulled or pushed off a ledge.
+  - It rises when an infected dies nearby, more the nearer it is.
+  - It decays toward zero over time, but not while infected are engaging that survivor.
+- The director tracks the highest intensity of the four, and moves through four phases:
+  1. **Build up:** the full threat population (wanderers, mobs, specials) until intensity crosses a peak threshold.
+  2. **Sustain peak:** the full population for 3 to 5 seconds more.
+  3. **Peak fade:** the least population until intensity decays out of the peak range, so the current fight can play out.
+  4. **Relax:** the least population (no mobs, no new specials) for 30 to 45 seconds, or until the survivors have travelled far enough toward the next safe room. Then build up again.
+- It changes pacing, not difficulty. The amplitude of a peak stays the same; how often peaks come changes.
+- Booth notes the intensity estimate is crude, and the pacing still works.
+
+## What our director does
+
+- It reads how the party is doing, in the moment and over the run.
+- It paces each gauntlet as Left 4 Dead does: build up, sustain peak, peak fade, relax.
+- It decides the gauntlet's parameters inside bounds set by the depth: when a wave comes, how big it is, and how hard.
 - It never changes what the map and the signposts promised: the objective, the reward and the mutators stay as shown.
+
+### Pacing and difficulty
+
+Left 4 Dead's director changes only pacing. Ours does both, at two time scales:
+
+- **Within an area, pacing.** The party's intensity decides when threats come and when the lulls are, as Left 4 Dead does. Peaks keep their height.
+- **Across the run, difficulty.** The party's standing over the run moves the height of the peaks, inside the depth's bounds: wave sizes, kinds and elites. This is how a party catches up or is held back over the run.
 
 ## What it reads
 
+**Intensity, for pacing.** Each living member of the party has one, as Left 4 Dead's survivors do.
+
+- It rises with damage taken, in proportion to maximum health.
+- It rises when a merc falls, and when the bearer is hit.
+- It rises when a monster dies nearby, more the nearer it is.
+- It decays over time, but not while a monster is engaging that member.
+- The director paces by the highest intensity in the party, with the bearer's counted double, since losing the bearer ends the run.
+
+**Standing, for difficulty.** One number for the run, updated at the end of each area.
+
 | Signal | What it says |
 |---|---|
-| Party health | Health and mana of the living, as a share of their maximum. |
-| Losses | Mercs dead in this area and over the run. |
-| Damage taken | How much the party and the bearer took in the last stretch of time. |
+| Party health | Health and mana of the living at the end of the area, as a share of their maximum. |
+| Losses | Mercs dead in the area and over the run. |
 | Potions | Potions drunk, and potions left on the belts and in the pack. |
-| Pace | How long the party is taking against the objective's usual time. |
+| Pace | How long the area took against its objective's usual time. |
 | Bonus record | How many bonus challenges the party has met so far. |
 | Party strength | Levels and gear against the depth's expected level. |
 
-From these it keeps one number for the run, the party's standing, and one for the moment, the pressure the party is under now.
+## What it populates
 
-## What it controls
+Our gauntlets map onto Left 4 Dead's layers:
 
-| Parameter | Examples |
-|---|---|
-| Timing | When the next wave comes, and how long the lull before it lasts. |
-| Size | How many monsters a wave or a pack holds. |
-| Difficulty | Which kinds come, whether an elite leads, and the elite's affixes. |
-| Where | Which of the area's key points a wave comes from. |
-| Relief | Whether a blossom grows, or a potion drops, after a hard stretch. |
+| Layer | Ours | Paced |
+|---|---|---|
+| Wanderers | The packs laid at generation, standing where they are until the party wakes them. | Thinned during Relax only where unseen. |
+| Mobs | Waves: a Horde's, a Ritual's, an Ambush's, and new waves in a Hunt or an Escort. Timer, size and where are the director's. | Yes |
+| Specials | Single harassers on their own timers: archers, captains, Horn-Bearers. | Yes |
+| Bosses | Elites and mini-bosses, placed along the flow at generation, dealt from a shuffled deck with no kind twice in a row. | No |
+| Items | Relief: blossoms, potions and chests, at spots the generator lays out. The director picks which exist. | Yes, after a hard stretch |
 
-## Pacing
+**Where a wave comes from:** out of sight of the whole party, in the area round it.
 
-As Left 4 Dead's director, a gauntlet moves through phases:
-
-1. **Build-up:** the pressure rises as the party moves on and fights.
-2. **Peak:** the hardest stretch, such as a Horde's last wave or the fight at a Ritual's last sigil.
-3. **Relax:** a lull with no new threat, so the party can heal, loot and set orders.
-
-The director moves to Relax once the pressure has stayed high for long enough, and back to Build-up once it has fallen. A party that is struggling gets longer lulls and smaller waves. A party that is winning easily gets shorter lulls and bigger, harder waves.
+- Mostly from behind, at or below the party's flow distance, since packs and elites wait ahead.
+- Sometimes from ahead, past it.
+- Anywhere round the party, when nothing more specific is valid.
+- Never from a spot used recently.
+- Where it comes still shows on the ground first, as waves do today. Out of sight keeps it from appearing in view; the warning keeps it fair.
 
 ## Key points
 
-Each kind of gauntlet has key points: the places in its layout that the director works with. The terrain generator must lay them out, and lay the ground around them so they play well.
+Each kind of gauntlet has key points: the places in its layout that the director works with. The terrain generator must lay them out first, then the ground between them so they play well.
+
+- **Flow:** every open cell gets its travel distance from the entrance, as Left 4 Dead's flow. The main path is the route from the entrance to the exits.
+- **Spawn spots:** places a wave may come from, tagged by whether they are behind, ahead or round the main path.
+- **Boss spots:** places along the flow where an elite or mini-boss may stand.
+- **Relief spots:** places a blossom, potion or chest may appear.
 
 | Gauntlet | Key points |
 |---|---|
-| Hunt | Where the packs stand, where the marked ones wait, and where a marked one runs to for help. |
+| Hunt | Where the packs stand, where the marked ones wait, and where a marked one runs for help. |
 | Horde | Where waves come from, the ground the party holds, and the routes waves take to it. |
 | Labyrinth | The start, the end, the main path between them, its branches, and where traps and packs stand along it. |
 | Escort | The route to the exit, and where packs lie in wait along it. |
@@ -58,38 +121,43 @@ Each kind of gauntlet has key points: the places in its layout that the director
 | Collapse | The falling edge, the route ahead of it, and where packs stand across it. |
 | Ambush | The fire, and where the groups wait round it. |
 
-- Generating an area means laying out its key points first, then the ground between them.
-- Each key point is tagged with what the director may do there: spawn a wave, hold a pack, place relief.
-
 ## The Labyrinth, reworked
 
 The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is an obstacle course:
 
-- It has a start and an end, and on average a single path between them.
+- It has a start and an end, and on average a single path between them, the way Left 4 Dead's maps have an escape route.
 - The path may branch, but every branch rejoins it, so the party always ends up in the same place.
 - Branches hold something worth the detour: a chest, a shortcut past traps, or a safer way round a pack. None is a dead end.
-- Traps and packs stand along the path, at key points the director can use.
+- Traps and packs stand along the path, at key points the director can use. The flow along the path places them.
 - The key, gates and levers stay, laid along the path instead of hidden in a maze.
 
 ## Rules it keeps
 
-- **Seeded:** the director's choices come from the run's seed and the party's play. The same seed played the same way gives the same gauntlet.
+- **Seeded:** the director's rolls come from the run's seed. The same seed played the same way gives the same gauntlet.
 - **Bounded:** each depth sets a least and a most for every parameter, so the director can ease a fight but never make it trivial, and push a fight but never make it hopeless.
 - **Fair:** whatever it spawns is shown first, as waves are today.
 - **Quiet:** the player is never told that the director eased off.
+- **Bosses are fixed:** elites and mini-bosses are placed at generation and pacing does not touch them, as in Left 4 Dead.
 
 ## Order to build in
 
-1. Track the signals over the run, and show them in a debug overlay.
-2. Key points in the generator for the open field gauntlets: Hunt, Horde, Escort, Ritual and Ambush.
-3. The director for the Horde: wave timing, size and difficulty, with the three pacing phases.
-4. The same for the other gauntlets with waves or packs.
-5. The Labyrinth reworked as an obstacle course with key points.
-6. Relief: blossoms and drops after a hard stretch.
+1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase.
+2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets.
+3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind.
+4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
+5. Difficulty from standing, inside the depth's bounds.
+6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
+7. The Labyrinth reworked as an obstacle course along a main path.
+8. Relief at relief spots after a hard stretch.
 
 ## Open questions
 
 - Should the party's standing also change rewards, or only the challenge? Paying more for struggling could be exploited.
 - How wide should the bounds be at each depth?
-- Should the player be able to see the director's reading, for example on a difficulty setting?
+- Should difficulty from standing be a setting the player can turn off?
 - Should an Elite gauntlet narrow the director's bounds, so it is always hard?
+- Should the Horde keep its fixed wave count, or let the director decide when the last wave comes?
+
+## Sources
+
+- Michael Booth, "The AI Systems of Left 4 Dead", GDC 2009. [Slides](https://steamcdn-a.akamaihd.net/apps/valve/2009/ai_systems_of_l4d_mike_booth.pdf).
