@@ -72,6 +72,13 @@ const SPAWN_NEAR = 8;
 const SPAWN_FAR = 30;
 const FROM_BEHIND = 0.75;
 const RECENT = 2;
+// Relief after a hard stretch: how likely, at a standing of 0, and how much
+// less likely for a party doing well; how near the bearer it may grow; and
+// at most how many in an area
+const RELIEF_CHANCE = 0.5;
+const RELIEF_LEAST = 0.15;
+const RELIEF_REACH = 20;
+const RELIEF_MOST = 2;
 
 /** What the game tells the director of an area once its objective is done. */
 export interface AreaReport {
@@ -147,6 +154,11 @@ export default class Director {
   private holding = false;
   private flow: Flow | null = null;
   private readonly recent: Spot[] = [];
+  // The area's relief spots, those used, and whether a hard stretch has
+  // just ended
+  private reliefs: KeyPoint[] = [];
+  private relieved = 0;
+  private reliefDue = false;
 
   constructor(
     private readonly sim: Sim,
@@ -247,6 +259,7 @@ export default class Director {
       if (pacing < PEAK) {
         this.phase = 'relax';
         this.left = this.rng.range(...(this.holding ? RELAX_HOLDING : RELAX));
+        this.reliefDue = true;
         const b = this.sim.bearer;
         this.relaxFrom = b ? { x: b.x, z: b.z } : null;
       }
@@ -268,8 +281,42 @@ export default class Director {
     this.took = 0;
     this.losses = 0;
     this.spawns = spots.filter((s) => s.kind === 'spawn');
+    this.reliefs = spots.filter((s) => s.kind === 'relief');
+    this.relieved = 0;
+    this.reliefDue = false;
     this.flow = flow;
     this.recent.length = 0;
+  }
+
+  /**
+   * Relief after a hard stretch, as Left 4 Dead places items: once a peak
+   * has faded, perhaps a relief spot near the bearer that no one in the
+   * party can see, for a blossom to grow at. More likely the worse the
+   * party is doing, at most a couple in an area. Null when none.
+   */
+  takeRelief(): Spot | null {
+    if (!this.reliefDue) {
+      return null;
+    }
+    this.reliefDue = false;
+    const chance = clamp(RELIEF_CHANCE * (1 - this.standing), RELIEF_LEAST, 1);
+    const bearer = this.sim.bearer;
+    if (!bearer || this.relieved >= RELIEF_MOST || !this.rng.chance(chance)) {
+      return null;
+    }
+    const party = this.sim.living(Side.Party);
+    const open = this.reliefs.filter(
+      (p) =>
+        bearer.distanceTo(p) <= RELIEF_REACH &&
+        party.every((u) => u.distanceTo(p) > SIGHT || !this.sim.sees(u, p)),
+    );
+    if (open.length === 0) {
+      return null;
+    }
+    const at = this.rng.pick(open);
+    this.reliefs.splice(this.reliefs.indexOf(at), 1);
+    this.relieved++;
+    return at;
   }
 
   /**

@@ -169,3 +169,51 @@ describe('difficulty from standing', () => {
     }
   });
 });
+
+describe('relief after a hard stretch', () => {
+  // Runs a director through a peak to its relax, and asks for relief.
+  function afterPeak(
+    standing: number,
+    seed: number,
+  ): { relief: ReturnType<Director['takeRelief']>; director: Director; sim: Sim } {
+    const sim = new Sim(1);
+    sim.setWorld([{ x0: 0, z0: 0, x1: 60, z1: 60 }]);
+    const bearer = spawnBearer(sim, 10, 10);
+    const director = new Director(sim, new RNG(seed));
+    director.standing = standing;
+    director.beginArea(
+      [
+        { kind: 'relief', x: 22, z: 10 },
+        { kind: 'relief', x: 10, z: 24 },
+        { kind: 'relief', x: 50, z: 50 },
+      ],
+      null,
+    );
+    hurt(bearer, 0.5);
+    for (let t = 0; t < 30 && director.phase !== 'relax'; t += DT) {
+      director.update(DT);
+    }
+    return { relief: director.takeRelief(), director, sim };
+  }
+
+  it('comes only once a peak has faded, out of sight and near the bearer', () => {
+    const { director } = field();
+    director.beginArea([{ kind: 'relief', x: 25, z: 10 }], null);
+    expect(director.takeRelief()).toBeNull();
+    for (let seed = 1; seed <= 20; seed++) {
+      const { relief, director: d } = afterPeak(-1, seed);
+      expect(relief).not.toBeNull();
+      expect(relief!.x === 50).toBe(false);
+      // Asked again in the same relax, nothing more
+      expect(d.takeRelief()).toBeNull();
+    }
+  });
+
+  it('comes less often for a party doing well', () => {
+    const count = (standing: number): number =>
+      Array.from({ length: 40 }, (_, i) => afterPeak(standing, i + 1).relief).filter(Boolean)
+        .length;
+    expect(count(-1)).toBeGreaterThan(count(1));
+    expect(count(1)).toBeGreaterThan(0);
+  });
+});

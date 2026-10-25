@@ -1363,6 +1363,14 @@ export default class Game {
     }
   }
 
+  // After a hard stretch, the director may grow a blossom out of sight.
+  private relieve(): void {
+    const at = this.director.takeRelief();
+    if (at) {
+      this.stage.props.push({ kind: 'blossom', x: at.x, z: at.z, seed: 0.5 });
+    }
+  }
+
   // Tells the director how the area went, once its objective is done.
   private reportArea(kind: Objective, bonus: boolean | null): void {
     const party = this.sim.living(Side.Party);
@@ -2428,6 +2436,7 @@ export default class Game {
         }
         this.mutators.update(TICK);
         this.director.update(TICK);
+        this.relieve();
         this.checkObjective();
         this.acc -= TICK;
         if (wakeBoss(this.sim, this.boss)) {
