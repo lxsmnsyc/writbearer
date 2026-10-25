@@ -1,4 +1,5 @@
 import { giveAffixes } from '../content/affixes';
+import { MINI_BOSSES, spawnMiniBoss } from '../content/minibosses';
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
 import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
@@ -404,6 +405,22 @@ export default class ObjectiveRun {
   // A wave's monsters, already in the fight
   private bring(sim: Sim, wave: Wave, level: number): void {
     const units: Unit[] = [];
+    // A mini-boss leads it, with its escort.
+    if (wave.mini) {
+      const { boss, escort } = spawnMiniBoss(
+        sim,
+        MINI_BOSSES[wave.mini],
+        level + 1,
+        wave.from.x,
+        wave.from.z,
+      );
+      for (const u of [boss, ...escort]) {
+        u.aware = true;
+        const bearer = sim.bearer;
+        u.lastSeen = bearer ? { x: bearer.x, z: bearer.z } : null;
+        this.came.push(u);
+      }
+    }
     wave.kinds.forEach((kind, i) => {
       const a = (i / wave.kinds.length) * Math.PI * 2;
       const u = spawnMonster(
@@ -475,8 +492,12 @@ export default class ObjectiveRun {
       return `Break the sigils: ${broken} of ${rites.length} · stand on the next for ${left}s`;
     }
     if (this.kind === 'vault') {
-      return this.stage.vault?.key === true
-        ? 'Bring the key to the vault’s door.'
+      if (this.stage.vault?.key === true) {
+        return 'Bring the key to the vault’s door.';
+      }
+      const holder = [...sim.units].find((u) => u.bearsKey && u.alive && u.named);
+      return holder
+        ? `${holder.name} holds the vault’s key. Take it.`
         : 'The lair’s leader holds the vault’s key. Take it.';
     }
     if (this.kind === 'escort') {

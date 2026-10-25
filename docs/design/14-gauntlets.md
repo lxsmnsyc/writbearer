@@ -201,7 +201,7 @@ More traps to come, after Aghanim's Labyrinth's:
   - Six traps ring it 3.6 tiles out, eight from the Undercroft down: spike grates and fire vents in turn, each on its own beat, so there is a way through.
   - The lair's leader carries the key, shown over its head. It drops where it dies, and the bearer takes it by walking over it.
   - Done once the bearer brings the key to the door. The vault opens, and its chest stands at the door with two more items than the reward would give, and twice the gold.
-  - Mini-bosses are not in yet, so the key is on the lair's leader instead of one.
+  - The key is on the area's mini-boss when it has one, or else on the lair's leader.
 - The Ritual is in too:
   - It is rolled from the Undercroft down, as often as the others, and never above.
   - Three blood sigils stand across the open field, one in each third, west to east. The field has no packs.

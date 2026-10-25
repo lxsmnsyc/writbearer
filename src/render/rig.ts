@@ -85,6 +85,8 @@ export interface RigUnit {
   fall: number;
   // Elites are drawn a quarter larger.
   elite?: boolean;
+  // A mini-boss, drawn larger than an elite
+  named?: boolean;
   // Drawn at this size instead of its kind's, as a boss is
   size?: number;
   // What a merc wears that shows: its weapon and whether it has a shield.
@@ -155,7 +157,16 @@ const KIND_SIZE: Record<Kind, number> = {
 };
 
 // How big a figure is drawn: its own size if it has one, else its kind's.
-const sizeOf = (u: RigUnit): number => u.size ?? KIND_SIZE[u.kind] * (u.elite ? 1.25 : 1);
+const sizeOf = (u: RigUnit): number => {
+  if (u.size !== undefined) {
+    return u.size;
+  }
+  let grown = u.elite ? 1.25 : 1;
+  if (u.named) {
+    grown = 1.45;
+  }
+  return KIND_SIZE[u.kind] * grown;
+};
 
 // ---------- projection ----------
 export type Iso = (x: number, z: number) => Pt;

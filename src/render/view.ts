@@ -149,6 +149,7 @@ export class Views {
       hurt: v.hurt,
       alert: u.alive && u.target?.alive === true,
       elite: u.rank !== Rank.Normal,
+      named: u.named,
       held: u.side === Side.Party ? held(u) : undefined,
     };
   }

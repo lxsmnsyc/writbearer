@@ -179,6 +179,8 @@ export default class Unit {
   ran = false;
   // A Labyrinth's monster that carries the key to its hall
   bearsKey = false;
+  // A mini-boss: a named monster with its own gimmick, drawn larger
+  named = false;
   // A captain's followers: the kinds it calls to its side while it lives.
   // Empty for any other unit.
   calls: readonly string[] = [];

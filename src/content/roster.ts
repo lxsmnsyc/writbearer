@@ -355,7 +355,7 @@ export function spawnMonster(
   level: number,
   x: number,
   z: number,
-  options: { elite?: boolean } = {},
+  options: { elite?: boolean; name?: string; modifiers?: readonly Modifier[] } = {},
 ): Unit {
   const t: Template = MONSTERS[kind];
   // Never inside something solid or shut in among it, where nothing could
@@ -366,13 +366,16 @@ export function spawnMonster(
   if (!options.elite) {
     return spawn(sim, kind, t, Side.Monster, level, x, z);
   }
+  const modifiers = [...(t.modifiers ?? []), ...ELITE, ...(options.modifiers ?? [])];
   return spawn(
     sim,
     kind,
-    { ...t, rank: Rank.Elite, modifiers: [...(t.modifiers ?? []), ...ELITE] },
+    { ...t, rank: Rank.Elite, modifiers },
     Side.Monster,
     level,
     x,
     z,
+    undefined,
+    options.name,
   );
 }

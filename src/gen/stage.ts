@@ -1,4 +1,5 @@
 import { AFFIXES, type Affix } from '../content/affixes';
+import { MINI_BOSSES, type MiniBossId } from '../content/minibosses';
 import type { MonsterKind } from '../content/roster';
 import type RNG from '../core/rng';
 import Flow from '../sim/flow';
@@ -76,6 +77,8 @@ export interface Pack {
   captain?: number;
   // Its elite's affixes, the first shared by the pack
   affixes?: Affix[];
+  // A mini-boss and its escort, standing in place of its kinds
+  mini?: MiniBossId;
 }
 
 /** Where an area's exit leads: an area of the layer's map, or down. */
@@ -120,6 +123,8 @@ export interface AreaPlan {
   // How much of its usual threat a fight holds, as the level director sets
   // it from the party's standing. 1 if absent.
   scale?: number;
+  // The mini-boss it holds, if any
+  miniBoss?: MiniBossId;
 }
 
 /**
@@ -352,6 +357,8 @@ export interface Wave {
   elite: number;
   // Its elite's affixes, the first shared by the wave
   affixes?: Affix[];
+  // A mini-boss leading it, with its escort, ahead of its kinds
+  mini?: MiniBossId;
 }
 
 // The plan of an area with one road on to a Combat area, as tests use.
@@ -749,9 +756,13 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
       speed: COLLAPSE_SPEED * (plan.kind === 'elite' ? COLLAPSE_ELITE : 1),
     };
   }
+  if (plan.miniBoss) {
+    placeMiniBoss(stage, rng, plan.miniBoss, plan.kind === 'elite');
+  }
   if (plan.objective === 'vault') {
-    // The lair's leader holds the key. The spoils wait at the vault's door.
-    stage.packs[1].key = 0;
+    // A mini-boss holds the key, or else the lair's leader. The spoils wait
+    // at the vault's door.
+    (stage.packs.find((p) => p.mini) ?? stage.packs[1]).key = 0;
     stage.reward = { ...stage.vault!.door };
   }
   return stage;
@@ -938,6 +949,37 @@ function vaultTraps(at: Spot, layer: number): Hazard[] {
       phase: (i / n) * TRAP_PERIOD[kind],
     };
   });
+}
+
+/**
+ * Places a fight's mini-boss, as Left 4 Dead deals its bosses along the
+ * flow: an Elite fight's at its farthest boss spot, so it ends on it, any
+ * other's at one of them. A Horde's last wave is led by it, and an Elite
+ * Hunt's first quarry is it.
+ */
+function placeMiniBoss(stage: Stage, rng: RNG, id: MiniBossId, elite: boolean): void {
+  const def = MINI_BOSSES[id];
+  const last = stage.waves?.at(-1);
+  if (last) {
+    last.mini = id;
+    last.elite = -1;
+    last.affixes = undefined;
+    return;
+  }
+  const spots = (stage.spots ?? []).filter((s) => s.kind === 'boss');
+  const lair = stage.packs.at(1);
+  const fallback = lair
+    ? { x: lair.x + 4, z: lair.z }
+    : { x: stage.width * 0.7, z: stage.depth / 2 };
+  let at: Spot = fallback;
+  if (spots.length > 0) {
+    at = elite ? spots[spots.length - 1] : rng.pick(spots);
+  }
+  const pack: Pack = { kinds: [def.kind, ...def.escort], x: at.x, z: at.z, elite: 0, mini: id };
+  if (elite && stage.objective === 'hunt') {
+    pack.marked = 0;
+  }
+  stage.packs.push(pack);
 }
 
 // How many refugees an Escort has, one more in an Elite area, and how far

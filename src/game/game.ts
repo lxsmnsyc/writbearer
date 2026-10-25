@@ -29,6 +29,7 @@ import {
 } from '../gen/stage';
 import { affixesOf } from '../content/affixes';
 import { reveal } from '../content/creditor';
+import { Floods, MINI_BOSSES, type MiniBossId, miniBossesOf } from '../content/minibosses';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import {
   CHALLENGE_NAME,
@@ -146,6 +147,8 @@ const LEVER_REACH = 1.3;
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
+// How often an ordinary fight from the Rift Road down holds a mini-boss
+const MINI_BOSS_CHANCE = 0.25;
 // The objectives where the party holds its ground, so the director's lulls
 // are short
 const HOLDING: ReadonlySet<Objective> = new Set(['horde', 'ritual', 'ambush']);
@@ -367,6 +370,12 @@ export default class Game {
   // The rules this fight's mutators change
   private mutators!: MutatorRun;
   private director!: Director;
+  // The mini-bosses met so far in the run, each only once
+  private readonly metMiniBosses = new Set<MiniBossId>();
+  // The Drowned Cantor's floods
+  private readonly floods = new Floods();
+  // Mini-bosses already named in the log
+  private readonly announced = new WeakSet<Unit>();
   // The current area's flow, from its entrance, for the director
   private flow: Flow | null = null;
   // Whether the title panel is up, before the run begins
@@ -544,6 +553,7 @@ export default class Game {
       materials: [...this.pack.materials],
       vault: this.vault.items.map((i) => saveItem(i)),
       standing: this.director.standing,
+      miniBosses: [...this.metMiniBosses],
     };
   }
 
@@ -760,6 +770,10 @@ export default class Game {
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
     this.director = new Director(this.sim, this.streams.get(1, Stream.Director));
     this.director.standing = save?.standing ?? 0;
+    this.metMiniBosses.clear();
+    for (const id of save?.miniBosses ?? []) {
+      this.metMiniBosses.add(id);
+    }
     this.mutators = new MutatorRun(this.sim, () => monsterLevel(this.stageIndex));
     this.stageIndex = save?.stageIndex ?? Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
@@ -1131,6 +1145,7 @@ export default class Game {
     // The director sets how much threat a fight holds, by the party's standing.
     if (plan.objective) {
       plan.scale = this.director.scale(plan.kind === 'elite');
+      plan.miniBoss = this.pickMiniBoss(plan, area);
     }
     if (plan.kind === 'event') {
       const rng = this.streams.area(1, Stream.Events, area);
@@ -1364,6 +1379,32 @@ export default class Game {
     }
   }
 
+  // Whether a fight holds a mini-boss, and which: always in an Elite fight,
+  // a quarter of the time from the Rift Road down, never one met before in
+  // the run, and none in a Labyrinth, an Ambush or a Ritual.
+  private pickMiniBoss(plan: AreaPlan, area: number): MiniBossId | undefined {
+    const o = plan.objective;
+    if (!o || o === 'maze' || o === 'ambush' || o === 'ritual') {
+      return undefined;
+    }
+    const elite = plan.kind === 'elite';
+    if (!elite && o === 'horde') {
+      return undefined;
+    }
+    const rng = this.streams.area(1, Stream.Director, area);
+    const layer = this.biome;
+    if (!elite && (layer < 1 || !rng.chance(MINI_BOSS_CHANCE))) {
+      return undefined;
+    }
+    const left = miniBossesOf(layer).filter((m) => !this.metMiniBosses.has(m.id));
+    if (left.length === 0) {
+      return undefined;
+    }
+    const pick = rng.pick(left);
+    this.metMiniBosses.add(pick.id);
+    return pick.id;
+  }
+
   // After a hard stretch, the director may grow a blossom out of sight.
   private relieve(): void {
     const at = this.director.takeRelief();
@@ -1478,6 +1519,12 @@ export default class Game {
     for (const m of this.sim.units) {
       if (m.side === Side.Monster && m.aware && m.alive) {
         this.compendium.see(m.kind);
+        // A mini-boss is named as it joins the fight.
+        if (m.named && !this.announced.has(m)) {
+          this.announced.add(m);
+          const def = Object.values(MINI_BOSSES).find((d) => d.name === m.name);
+          this.say(def ? `${def.name}: ${def.text}` : `${m.name} joins the fight.`);
+        }
       }
     }
   }
@@ -2438,6 +2485,7 @@ export default class Game {
         this.mutators.update(TICK);
         this.director.update(TICK);
         affixesOf(this.sim).update(TICK);
+        this.floods.update(this.sim, TICK, (this.stage.patches ??= []));
         this.relieve();
         this.checkObjective();
         this.acc -= TICK;

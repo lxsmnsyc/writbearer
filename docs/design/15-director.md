@@ -160,7 +160,7 @@ What changes with it:
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind. Done.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts. Done.
 5. Difficulty from standing, inside the depth's bounds. Done.
-6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
+6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist. Mini-bosses now stand at boss spots; the shuffled deck of elite, mini-boss and nothing is not in yet.
 7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
 8. Relief at relief spots after a hard stretch. Done.
 

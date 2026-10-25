@@ -1,5 +1,6 @@
 import { giveAffixes } from '../content/affixes';
 import { spawnBoss } from '../content/bosses';
+import { MINI_BOSSES, spawnMiniBoss } from '../content/minibosses';
 import {
   type MercKind,
   spawnBearer,
@@ -117,6 +118,19 @@ function followersOf(pack: Pack, layer: number): string[] {
 // Spawns a stage's packs, and its boss a level above them.
 function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
+    // A mini-boss stands a level above the area's monsters, with its escort.
+    if (pack.mini) {
+      const { boss } = spawnMiniBoss(
+        sim,
+        MINI_BOSSES[pack.mini],
+        monsterLevel(stage.index) + 1,
+        pack.x,
+        pack.z,
+      );
+      boss.marked = pack.marked === 0;
+      boss.bearsKey = pack.key === 0;
+      continue;
+    }
     const units: Unit[] = [];
     pack.kinds.forEach((kind, i) => {
       // Spread over a disc, the leader in the middle and the rest round it,

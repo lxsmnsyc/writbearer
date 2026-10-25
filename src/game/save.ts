@@ -1,3 +1,4 @@
+import type { MiniBossId } from '../content/minibosses';
 import { CARDS } from '../content/cards';
 import { BASE_BY_ID } from '../content/items';
 import { HIREABLE } from '../content/recruits';
@@ -87,6 +88,8 @@ export interface RunSave {
   vault: ItemSave[];
   // The level director's standing for the run, from -1 to 1
   standing?: number;
+  // The mini-bosses met so far, each only once a run
+  miniBosses?: MiniBossId[];
 }
 
 // Every base an item can be made on, cards and gems included.
