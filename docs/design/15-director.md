@@ -157,7 +157,7 @@ What changes with it:
 
 1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase. Done.
 2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets. Done.
-3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind.
+3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind. Done.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
 5. Difficulty from standing, inside the depth's bounds.
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
@@ -166,7 +166,7 @@ What changes with it:
 
 ## In the game so far
 
-Steps 1 and 2 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase and knows the ground, but nothing it decides spawns yet.
+Steps 1 to 3 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -188,6 +188,11 @@ Steps 1 and 2 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director r
   - Boss spots: 35%, 60% and 85% of the way along the first road, 3 tiles to one side, or the other, or a little along.
   - Relief spots: 4 beside the roads, at least 6 tiles apart, nearer the road where there is no room, as on a bridge.
   - An Ambush's spawn spots are its groups', and it has two relief spots by the fire. The Labyrinth has none until it is reworked.
+- **The Horde, paced** (`Pace` in `src/game/objective.ts`):
+  - A wave still comes when its time is up, or 2 seconds after the last is beaten, but not while the director is in a lull: sustain peak, peak fade or relax. Its badge then says the next wave is gathering.
+  - A wave is 60% of its full size right after the last, growing to full over 30 seconds. Its leader always comes. The badge shows the next wave at the size it would come now.
+  - It comes from a spawn spot no one in the party can see, either beyond 9 tiles in the dark or behind something, at least 8 tiles from all of them and at most 30 from the bearer, and not one of the last two used. Three times in four it is behind the bearer on the flow, when there is one. With none valid, it comes from the wave's own spot on the edge.
+  - A Horde keeps its number of waves.
 - **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 
 ## Sources

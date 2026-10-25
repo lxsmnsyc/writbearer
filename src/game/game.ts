@@ -1172,11 +1172,11 @@ export default class Game {
     if (!joined) {
       this.boss = enterStage(this.sim, this.stage);
     }
-    this.director.beginArea();
     const nav = this.sim.nav;
     this.flow = nav
       ? new Flow(rectOf(this.stage), this.stage.entrance, (x, z) => nav.walkable(x, z))
       : null;
+    this.director.beginArea(this.stage.spots, this.flow);
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
@@ -1289,7 +1289,7 @@ export default class Game {
       this.bonus?.tick(TICK);
     }
     const hidden = o?.hidden() === true;
-    const done = o?.update(this.sim, TICK, monsterLevel(this.stageIndex)) === true;
+    const done = o?.update(this.sim, TICK, monsterLevel(this.stageIndex), this.director) === true;
     if (hidden && !o.hidden()) {
       this.shake = Math.max(this.shake, 3);
       this.say('It was no camp. They close in from every side!');

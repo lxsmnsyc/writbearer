@@ -1,5 +1,8 @@
 import { EventPriority } from '../core/event-emitter';
 import type RNG from '../core/rng';
+import type { KeyPoint } from '../gen/stage';
+import type Flow from '../sim/flow';
+import type { Spot } from '../sim/nav';
 import { SimEvents } from '../sim/events';
 import type Sim from '../sim/sim';
 import { DamagePriority, Side } from '../sim/types';
@@ -18,7 +21,9 @@ import type Unit from '../sim/unit';
 //   that is struggling to 1 for one winning easily, moved at the end of
 //   each area's objective.
 //
-// So far it only reads and keeps its phase. Nothing it decides spawns yet.
+// - Waves: the Horde's wait out the lulls, grow the longer since the last,
+//   and come from a spawn spot no one in the party can see, mostly behind
+//   it on the area's flow, as Left 4 Dead's mobs do.
 
 export type Phase = 'buildUp' | 'sustainPeak' | 'peakFade' | 'relax';
 
@@ -49,6 +54,18 @@ const RELAX: [number, number] = [30, 45];
 const RELAX_TRAVEL = 25;
 // How much of the standing each area moves
 const STANDING_STEP = 0.4;
+// A wave just after the last is this share of its full size, and full
+// after this many seconds
+const WAVE_LEAST = 0.6;
+const WAVE_GROW = 30;
+// Where a wave may come from: out of the party's sight, which reaches this
+// far in the dark; no nearer any of it than this, nor farther from the
+// bearer than this; from behind this often; and not from the last few used
+const SIGHT = 9;
+const SPAWN_NEAR = 8;
+const SPAWN_FAR = 30;
+const FROM_BEHIND = 0.75;
+const RECENT = 2;
 
 /** What the game tells the director of an area once its objective is done. */
 export interface AreaReport {
@@ -99,6 +116,11 @@ export function scoreArea(report: AreaReport, losses: number, took: number): Are
   return { ...parts, score: known.reduce((n, v) => n + v, 0) / known.length };
 }
 
+/** The share of its full size a wave has, so many seconds after the last. */
+export function waveShare(since: number): number {
+  return WAVE_LEAST + (1 - WAVE_LEAST) * Math.min(1, Math.max(0, since) / WAVE_GROW);
+}
+
 export default class Director {
   phase: Phase = 'buildUp';
   // Seconds left in a timed phase
@@ -113,6 +135,10 @@ export default class Director {
   standing = 0;
   /** What the last area said of the party. */
   last: AreaScore | null = null;
+  // The area's spawn spots and flow, and the spots waves came from lately
+  private spawns: KeyPoint[] = [];
+  private flow: Flow | null = null;
+  private readonly recent: Spot[] = [];
 
   constructor(
     private readonly sim: Sim,
@@ -228,10 +254,60 @@ export default class Director {
     }
   }
 
-  /** A new area begins: its time and losses count from now. */
-  beginArea(): void {
+  /** A new area begins: its time and losses count from now, and its spawn spots are known. */
+  beginArea(spots: readonly KeyPoint[] = [], flow: Flow | null = null): void {
     this.took = 0;
     this.losses = 0;
+    this.spawns = spots.filter((s) => s.kind === 'spawn');
+    this.flow = flow;
+    this.recent.length = 0;
+  }
+
+  /** Whether the director is in a lull, when no new wave comes. */
+  calm(): boolean {
+    return this.phase !== 'buildUp';
+  }
+
+  /** The share of its full size a wave has, so many seconds after the last. */
+  readonly share = waveShare;
+
+  /**
+   * Where a wave comes from: a spawn spot no one in the party can see, not
+   * too near it nor too far from the bearer, and not one used lately; from
+   * behind the party on the flow three times in four. The fallback when
+   * none will do.
+   */
+  spawnAt(fallback: Spot): Spot {
+    const party = this.sim.living(Side.Party);
+    const bearer = this.sim.bearer;
+    if (!bearer || party.length === 0) {
+      return fallback;
+    }
+    const unseen = (p: Spot): boolean =>
+      party.every((u) => u.distanceTo(p) > SIGHT || !this.sim.sees(u, p));
+    const valid = this.spawns.filter(
+      (p) =>
+        unseen(p) &&
+        party.every((u) => u.distanceTo(p) >= SPAWN_NEAR) &&
+        bearer.distanceTo(p) <= SPAWN_FAR &&
+        !this.recent.some((r) => r.x === p.x && r.z === p.z),
+    );
+    if (valid.length === 0) {
+      return fallback;
+    }
+    const here = this.flow?.at(bearer) ?? Infinity;
+    const behind = valid.filter((p) => (this.flow?.at(p) ?? Infinity) <= here);
+    const ahead = valid.filter((p) => !behind.includes(p));
+    let pool = valid;
+    if (behind.length > 0 && (ahead.length === 0 || this.rng.chance(FROM_BEHIND))) {
+      pool = behind;
+    } else if (ahead.length > 0) {
+      pool = ahead;
+    }
+    const at = this.rng.pick(pool);
+    this.recent.push(at);
+    this.recent.splice(0, Math.max(0, this.recent.length - RECENT));
+    return at;
   }
 
   /** An area's objective is done: the standing moves by how it went. */

@@ -3,7 +3,7 @@ import type { Objective } from '../gen/graph';
 import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
 import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
-import { type Rect, inRect } from '../sim/nav';
+import { type Rect, type Spot, inRect } from '../sim/nav';
 import { DamageFlags, DamageKind, Side } from '../sim/types';
 import { warn } from '../sim/warning';
 
@@ -15,7 +15,9 @@ import { warn } from '../sim/warning';
 // - A Horde begins once the bearer leaves the entrance. Each wave comes
 //   when its time is up, or as soon as the wave before it is beaten. Where
 //   it comes shows on the ground a few seconds first. It is done once the
-//   last wave is dead.
+//   last wave is dead. With the level director pacing it, a wave waits out
+//   the director's lulls, comes smaller the sooner it follows the last, and
+//   comes from where the director chooses.
 // - An Escort is done once the bearer brings at least half its refugees to
 //   an exit. It fails once fewer than half are left alive: the exits open,
 //   but nothing is paid.
@@ -60,6 +62,16 @@ const AMBUSH_WARNING = 1.2;
 // How near the vault's door the bearer comes with the key to open it
 const VAULT_REACH = 1.6;
 
+/** How the level director paces a gauntlet's waves. See the director design. */
+export interface Pace {
+  // Whether it is a lull, when no new wave comes
+  calm(): boolean;
+  // The share of its full size a wave has, so many seconds after the last
+  share(since: number): number;
+  // Where a wave comes from, or the fallback
+  spawnAt(fallback: Spot): Spot;
+}
+
 export default class ObjectiveRun {
   done = false;
   // An Escort that lost too many of its refugees: done, but owed nothing
@@ -68,6 +80,9 @@ export default class ObjectiveRun {
   private wards: Unit[] | null = null;
   // How many of a Ritual's or an Ambush's waves have come
   private arrived = 0;
+  // The level director, pacing the waves, and whether it is holding the next
+  private pace: Pace | null = null;
+  private held = false;
   // A Horde's clock since the last wave, the next wave and who came so far
   private started = false;
   private clock = 0;
@@ -85,7 +100,8 @@ export default class ObjectiveRun {
    * Plays the objective on for a tick: a Horde's waves come. Returns true on
    * the tick it is done.
    */
-  update(sim: Sim, dt: number, level: number): boolean {
+  update(sim: Sim, dt: number, level: number, pace: Pace | null = null): boolean {
+    this.pace = pace;
     if (this.done) {
       return false;
     }
@@ -306,18 +322,25 @@ export default class ObjectiveRun {
     if (!due && !(beaten && this.clock >= WAVE_MIN_GAP)) {
       return;
     }
+    // The director holds the wave through a lull.
+    this.held = this.pace?.calm() === true;
+    if (this.held) {
+      return;
+    }
     // Its spawn point shows first. It harms no one.
     this.warned = true;
+    const sized = this.sized(wave);
+    const from = this.pace?.spawnAt(wave.from) ?? wave.from;
     warn(sim, {
-      x: wave.from.x,
-      z: wave.from.z,
+      x: from.x,
+      z: from.z,
       shape: { kind: 'circle', r: WAVE_MARK },
       windup: WAVE_WARNING,
       spare: Side.Party,
       strike: () => undefined,
       source: null,
       done: () => {
-        this.spawn(sim, wave, level);
+        this.spawn(sim, { ...wave, kinds: sized, from }, level);
       },
     });
   }
@@ -363,12 +386,20 @@ export default class ObjectiveRun {
     });
   }
 
+  // A wave as big as the director lets it be now: smaller the sooner it
+  // follows the last. Its leader comes first, so it always comes.
+  private sized(wave: Wave): MonsterKind[] {
+    const share = this.pace?.share(this.clock) ?? 1;
+    return wave.kinds.slice(0, Math.max(1, Math.ceil(wave.kinds.length * share)));
+  }
+
   /** The monsters of a Horde's next wave, or none once the last has come. */
   coming(): readonly MonsterKind[] {
     if (this.kind !== 'horde' || this.done) {
       return [];
     }
-    return this.stage.waves?.at(this.next)?.kinds ?? [];
+    const wave = this.stage.waves?.at(this.next);
+    return wave ? this.sized(wave) : [];
   }
 
   /** How far along it is, in a line. */
@@ -423,6 +454,9 @@ export default class ObjectiveRun {
       }
       if (this.warned) {
         return `Wave ${this.next} of ${waves.length} · next is coming · ${left} left`;
+      }
+      if (this.held) {
+        return `Wave ${this.next} of ${waves.length} · the next is gathering · ${left} left`;
       }
       const soon = Math.max(0, Math.ceil(wave.delay - this.clock));
       return `Wave ${this.next} of ${waves.length} · next in ${soon}s · ${left} left`;
