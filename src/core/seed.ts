@@ -12,6 +12,7 @@ export const enum Stream {
   Events = 'events',
   Recruits = 'recruits',
   Craft = 'craft',
+  Director = 'director',
 }
 
 // Crockford base 32: no I, L, O or U, so seeds are easy to read and type.

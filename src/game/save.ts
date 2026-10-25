@@ -85,6 +85,8 @@ export interface RunSave {
   pack: ItemSave[];
   materials: [string, number][];
   vault: ItemSave[];
+  // The level director's standing for the run, from -1 to 1
+  standing?: number;
 }
 
 // Every base an item can be made on, cards and gems included.

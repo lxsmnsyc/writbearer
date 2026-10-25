@@ -145,7 +145,7 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 
 ## Order to build in
 
-1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase.
+1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase. Done.
 2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets.
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
@@ -153,6 +153,26 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
 7. The Labyrinth reworked as an obstacle course along a main path.
 8. Relief at relief spots after a hard stretch.
+
+## In the game so far
+
+Step 1 is in (`src/game/director.ts`). The director reads and keeps its phase, but nothing it decides spawns yet.
+
+- **Intensity:** from 0 to 1 for each party member.
+  - A hit adds 1.2 times the share of health it took.
+  - A merc falling adds 0.4 to everyone left.
+  - A monster dying within 6 tiles adds up to 0.06, less the farther away.
+  - It decays by 0.05 a second, but not while an aware monster is going for that member.
+- **Pacing:** the party's highest intensity, the bearer's counted double.
+- **Phases:** build up until pacing reaches 0.75; sustain for 3 to 5 seconds; fade until pacing falls below 0.75; relax for 30 to 45 seconds, or until the bearer has walked 25 tiles; then build up again. The timed phases roll from their own `director` stream.
+- **Standing:** from -1 to 1, saved with the run. When an area's objective is done, each part of how it went is scored from -1 to 1, and their mean moves the standing 40% of the way toward it.
+  - Health of the living party: 60% scores 0, full health 1.
+  - Mercs lost in the area: -0.5 each.
+  - Potions left in the pack and on the belts: 4 scores 0, 8 or more 1.
+  - Pace, where the objective has a Swift time: the usual time is 1.2 times it, and finishing in no time scores 1.
+  - The bonus challenge: met 0.5, failed -0.25, none left out.
+  - Strength: the mercs' mean level against three above the depth's monsters, a third for each level.
+- **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored.
 
 ## Sources
 

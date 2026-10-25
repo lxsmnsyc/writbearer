@@ -1,3 +1,4 @@
+import DirectorOverlay, { type DirectorStatus } from './director';
 import { Index, type JSX, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import Game, { type EventView, type GameOptions } from '../game/game';
 import { type RunSave, describeSave, readSave } from '../game/save';
@@ -34,6 +35,8 @@ interface PartyEntry {
 
 // How often the party bar reads health and mana from the game, in milliseconds.
 const PARTY_REFRESH = 200;
+// `?director` shows the level director's reading, for tuning it.
+const SHOW_DIRECTOR = new URLSearchParams(location.search).has('director');
 
 // Run options from the address: `?seed=ASHEN` fixes the run, and
 // `?party=vanguard,ranger` skips the first pick, as browser tests do.
@@ -64,6 +67,7 @@ export default function App(): JSX.Element {
   const [party, setParty] = createSignal<PartyEntry[]>([]);
   const [shouts, setShouts] = createSignal<ShoutEntry[]>([]);
   const [objective, setObjective] = createSignal<ReturnType<Game['objectiveStatus']>>(null);
+  const [director, setDirector] = createSignal<DirectorStatus | null>(null);
   const [inventory, setInventory] = createSignal(false);
   const [title, setTitle] = createSignal(false);
   const [recruit, setRecruit] = createSignal<Offer | null>(null);
@@ -155,6 +159,9 @@ export default function App(): JSX.Element {
       );
       setShouts(g.shoutBar());
       setObjective(g.objectiveStatus());
+      if (SHOW_DIRECTOR) {
+        setDirector(g.directorStatus());
+      }
     }, PARTY_REFRESH);
     onCleanup(() => {
       clearInterval(timer);
@@ -181,6 +188,9 @@ export default function App(): JSX.Element {
             }}
           />
         )}
+      </Show>
+      <Show when={director()} keyed>
+        {(d) => <DirectorOverlay status={d} />}
       </Show>
       <Show when={objective()} keyed>
         {(o) => (

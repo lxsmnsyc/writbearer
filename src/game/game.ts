@@ -125,8 +125,9 @@ import {
   wakeBoss,
 } from './stage';
 import { placeBeyond } from '../gen/place';
-import Bonus, { type BonusState } from './bonus';
+import Bonus, { type BonusState, SWIFT_TIME } from './bonus';
 import MutatorRun from './mutators';
+import Director, { type AreaScore, PHASE_NAME, type Phase } from './director';
 import { type Rect, inRect } from '../sim/nav';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -143,6 +144,10 @@ const LEVER_REACH = 1.3;
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
+// An objective's usual time, against its Swift bonus's, for the director;
+// and how many levels above the depth's monsters mercs are expected to be
+const USUAL_PER_SWIFT = 1.2;
+const LEVEL_LEAD = 3;
 // The items a Vault adds to its chest, beyond what the area pays
 const VAULT_EXTRA = 2;
 // A chest holds this many pieces of equipment, rolled as an elite's drop.
@@ -350,6 +355,7 @@ export default class Game {
   private bonusMet: boolean | null = null;
   // The rules this fight's mutators change
   private mutators!: MutatorRun;
+  private director!: Director;
   // Whether the title panel is up, before the run begins
   private title = false;
   // The recruits rolled for the Guild House at the start of the run
@@ -524,6 +530,7 @@ export default class Game {
       pack: this.pack.items.map((i) => saveItem(i)),
       materials: [...this.pack.materials],
       vault: this.vault.items.map((i) => saveItem(i)),
+      standing: this.director.standing,
     };
   }
 
@@ -738,6 +745,8 @@ export default class Game {
       }
     }
     this.sim = new Sim(this.streams.get(1, Stream.Combat));
+    this.director = new Director(this.sim, this.streams.get(1, Stream.Director));
+    this.director.standing = save?.standing ?? 0;
     this.mutators = new MutatorRun(this.sim, () => monsterLevel(this.stageIndex));
     this.stageIndex = save?.stageIndex ?? Math.max(0, (this.options.area ?? 1) - 1);
     this.payroll = null;
@@ -1154,6 +1163,7 @@ export default class Game {
     if (!joined) {
       this.boss = enterStage(this.sim, this.stage);
     }
+    this.director.beginArea();
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
@@ -1278,6 +1288,7 @@ export default class Game {
     if (o.failed) {
       // A failed Escort opens the way on, and pays nothing.
       this.bonusMet = this.bonus ? false : null;
+      this.reportArea(o.kind, false);
       this.say('Too many refugees were lost. The way on is open, but nothing is owed.');
       return;
     }
@@ -1286,6 +1297,7 @@ export default class Game {
     }
     const better = this.bonus?.met(this.sim) ?? false;
     this.bonusMet = this.bonus ? better : null;
+    this.reportArea(o.kind, this.bonusMet);
     const chest = this.prize ? `the ${REWARD_NAME[this.prize]} chest` : 'the spoils';
     this.say(`${OBJECTIVE_NAME[o.kind]} done. The way on is open, and ${chest} lies before it.`);
     if (this.prize === 'respite') {
@@ -1328,6 +1340,50 @@ export default class Game {
       );
       this.scatter(gold, { x: at.x - 1, z: at.z });
     }
+  }
+
+  // Tells the director how the area went, once its objective is done.
+  private reportArea(kind: Objective, bonus: boolean | null): void {
+    const party = this.sim.living(Side.Party);
+    const hp = party.reduce((n, u) => n + u.hp, 0);
+    const max = party.reduce((n, u) => n + u.derived.maxHp, 0);
+    const potion = (i: Item | null): number => (i?.base.potion ? i.quantity : 0);
+    const potions =
+      this.pack.items.reduce((n, i) => n + potion(i), 0) +
+      this.mercs().reduce((n, m) => n + m.belt.reduce((k, i) => k + potion(i), 0), 0);
+    const mercs = this.mercs().filter((m) => m.alive);
+    const level = mercs.reduce((n, m) => n + m.level, 0) / Math.max(1, mercs.length);
+    this.director.endArea({
+      health: max > 0 ? hp / max : 0,
+      potions,
+      usual: SWIFT_TIME[kind] * USUAL_PER_SWIFT,
+      bonus,
+      levelAhead: mercs.length > 0 ? level - (monsterLevel(this.stageIndex) + LEVEL_LEAD) : 0,
+    });
+  }
+
+  /** What the level director is reading, for its debug overlay. */
+  directorStatus(): {
+    phase: Phase;
+    phaseName: string;
+    left: number | null;
+    pacing: number;
+    standing: number;
+    intensity: { name: string; value: number }[];
+    last: AreaScore | null;
+  } {
+    const d = this.director;
+    return {
+      phase: d.phase,
+      phaseName: PHASE_NAME[d.phase],
+      left: d.phaseLeft(),
+      pacing: d.pacing(),
+      standing: d.standing,
+      intensity: this.sim
+        .living(Side.Party)
+        .map((u) => ({ name: u.name, value: d.intensityOf(u) })),
+      last: d.last,
+    };
   }
 
   // In a Labyrinth, the bearer picks up the key a slain monster dropped,
@@ -2340,6 +2396,7 @@ export default class Game {
           this.say(`The ${c.name} captain calls more of its pack. Kill it to stop the calls.`);
         }
         this.mutators.update(TICK);
+        this.director.update(TICK);
         this.checkObjective();
         this.acc -= TICK;
         if (wakeBoss(this.sim, this.boss)) {
