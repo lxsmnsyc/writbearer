@@ -131,6 +131,7 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 - Branches hold something worth the detour: a chest, or a shortcut past traps. None is a dead end.
 - Traps stand along the path, at key points the director can use. The flow along the path places them.
 - The gates and levers stay, laid along the path instead of hidden in a maze.
+- Its traps are the gauntlets design's, with the flamethrowers, pressure plates and arrow launchers to come. See [traps](14-gauntlets.md#the-labyrinth).
 - With no monsters, the director paces the traps instead: how many stand along the path, how fast their beats run, and how wide the gaps between strikes are, inside the depth's bounds.
 
 What changes with it:

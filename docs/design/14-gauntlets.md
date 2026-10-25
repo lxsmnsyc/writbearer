@@ -155,6 +155,14 @@ Planned: the Labyrinth becomes an obstacle course with a start, an end and on av
 | Falling floor | A square of floor that drops away after it is stepped on, shown first. It stays open, which can cut a route. |
 | Gas vent | Leaves a Venom cloud that lasts a few seconds. |
 
+More traps to come, after Aghanim's Labyrinth's:
+
+| Trap | What it does |
+|---|---|
+| Flamethrower | A jet of fire that shuts a stretch of the path for a while, shown first, then goes out. It points one fixed way, or turns in a slow circle, so the way past it opens and closes as it sweeps. |
+| Pressure plate | A plate on the floor that does nothing until someone steps on it. After a short delay, shown on the ground, it strikes where it lies, then sets itself again. Unlike the falling floor, it stays. |
+| Arrow launcher | A launcher at one end of a path that shoots arrows down it, each a projectile that flies its length. It reaches much farther than an arrow slit, which strikes only its own corridor. |
+
 - In the game so far:
   - One pack's leader carries the key, shown as a gold key over its head. It drops where it dies, and the bearer picks it up by walking over it. The hall's gates then open.
   - One inner gate, two from area 9 down, each cuts off part of the maze. Its lever stands in a cell the party can reach with every gate shut. The bearer pulls a lever by walking up to it. Shortcut levers are not in yet.
