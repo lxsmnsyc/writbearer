@@ -87,7 +87,7 @@ Our gauntlets map onto Left 4 Dead's layers:
 
 | Layer | Ours | Paced |
 |---|---|---|
-| Wanderers | The packs laid at generation, standing where they are until the party wakes them. | Thinned during Relax only where unseen. |
+| Wanderers | The packs laid at generation, standing where they are until the party wakes them. | Thinned during Relax, only where no one has seen them. A pack the party has seen is never moved or thinned. |
 | Mobs | Waves: a Horde's, a Ritual's, an Ambush's, and new waves in a Hunt or an Escort. Timer, size and where are the director's. | Yes |
 | Specials | Single harassers on their own timers: archers, captains, Horn-Bearers. | Yes |
 | Bosses | Elites and mini-bosses, placed along the flow at generation, dealt from a shuffled deck with no kind twice in a row. | No |
@@ -134,9 +134,13 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 ## Rules it keeps
 
 - **Seeded:** the director's rolls come from the run's seed. The same seed played the same way gives the same gauntlet.
-- **Bounded:** each depth sets a least and a most for every parameter, so the director can ease a fight but never make it trivial, and push a fight but never make it hopeless.
+- **Bounded:** each depth sets a least and a most for every parameter, so the director can ease a fight but never make it trivial, and push a fight but never make it hopeless. To start, the bounds are 25% either side of today's numbers. They widen only after playtesting.
 - **Fair:** whatever it spawns is shown first, as waves are today.
-- **Quiet:** the player is never told that the director eased off.
+- **Quiet:** the player is never told that the director eased off. There is no setting to turn it off.
+- **Rewards are fixed:** the director changes only the challenge. What an area pays stays what its signpost promised, however the party is doing, so playing badly on purpose earns nothing.
+- **Elites are never eased:** in an Elite gauntlet, the director may push the challenge or give lulls, but never lowers it below its usual difficulty.
+- **Wave counts are fixed:** a Horde keeps its number of waves, so the badge's count stays true. The director chooses each wave's timing and size.
+- **What was seen stays:** the director thins packs only where no one has seen them, and never moves or removes a pack the party has seen.
 - **Bosses are fixed:** elites and mini-bosses are placed at generation and pacing does not touch them, as in Left 4 Dead.
 
 ## Order to build in
@@ -149,14 +153,6 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist.
 7. The Labyrinth reworked as an obstacle course along a main path.
 8. Relief at relief spots after a hard stretch.
-
-## Open questions
-
-- Should the party's standing also change rewards, or only the challenge? Paying more for struggling could be exploited.
-- How wide should the bounds be at each depth?
-- Should difficulty from standing be a setting the player can turn off?
-- Should an Elite gauntlet narrow the director's bounds, so it is always hard?
-- Should the Horde keep its fixed wave count, or let the director decide when the last wave comes?
 
 ## Sources
 
