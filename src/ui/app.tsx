@@ -57,6 +57,7 @@ function runOptions(): GameOptions {
     event: params.get('event') ?? undefined,
     endless: params.has('endless'),
     objective: OBJECTIVES.find((o) => o === params.get('objective')),
+    director: params.has('director'),
   };
 }
 

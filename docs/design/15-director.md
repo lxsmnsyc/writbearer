@@ -146,7 +146,7 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 ## Order to build in
 
 1. Intensity for each party member, the standing over the run, and a debug overlay that shows both and the current phase. Done.
-2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets.
+2. Flow over each area's open cells, and spawn, boss and relief spots in the generator for the open field gauntlets. Done.
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts.
 5. Difficulty from standing, inside the depth's bounds.
@@ -156,7 +156,7 @@ The Labyrinth stops being a maze. As Aghanim's Labyrinth's obstacle rooms, it is
 
 ## In the game so far
 
-Step 1 is in (`src/game/director.ts`). The director reads and keeps its phase, but nothing it decides spawns yet.
+Steps 1 and 2 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase and knows the ground, but nothing it decides spawns yet.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -172,7 +172,13 @@ Step 1 is in (`src/game/director.ts`). The director reads and keeps its phase, b
   - Pace, where the objective has a Swift time: the usual time is 1.2 times it, and finishing in no time scores 1.
   - The bonus challenge: met 0.5, failed -0.25, none left out.
   - Strength: the mercs' mean level against three above the depth's monsters, a third for each level.
-- **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored.
+- **Flow:** the walking distance from the entrance to every tile of an area, worked out over the world's nav when the party enters it, stepping across corners only where both sides are open. A point whose tile's middle is blocked takes its nearest reachable neighbour's. The overlay shows the bearer's progress: its flow against the area's farthest tile.
+- **Key points** (`laySpots` in `src/gen/stage.ts`), on every open field, each on open ground the entrance can reach and clear of the places:
+  - Spawn spots: one in each 8 by 8 tile cell where one fits, at most 16, none within 6 tiles of the entrance.
+  - Boss spots: 35%, 60% and 85% of the way along the first road, 3 tiles to one side, or the other, or a little along.
+  - Relief spots: 4 beside the roads, at least 6 tiles apart, nearer the road where there is no room, as on a bridge.
+  - An Ambush's spawn spots are its groups', and it has two relief spots by the fire. The Labyrinth has none until it is reworked.
+- **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 
 ## Sources
 

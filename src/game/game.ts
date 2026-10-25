@@ -128,6 +128,7 @@ import { placeBeyond } from '../gen/place';
 import Bonus, { type BonusState, SWIFT_TIME } from './bonus';
 import MutatorRun from './mutators';
 import Director, { type AreaScore, PHASE_NAME, type Phase } from './director';
+import Flow from '../sim/flow';
 import { type Rect, inRect } from '../sim/nav';
 
 // Never simulate more than this much time in one frame, so a stalled tab
@@ -144,6 +145,10 @@ const LEVER_REACH = 1.3;
 const CHEST_PICK = 1.1;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
+// How many of an area's key points are of a kind
+const spotsOf = (stage: Stage, kind: 'spawn' | 'boss' | 'relief'): number =>
+  (stage.spots ?? []).filter((s) => s.kind === kind).length;
+
 // An objective's usual time, against its Swift bonus's, for the director;
 // and how many levels above the depth's monsters mercs are expected to be
 const USUAL_PER_SWIFT = 1.2;
@@ -248,6 +253,8 @@ export interface GameOptions {
   endless?: boolean;
   // Gives the first fight this objective, for tests and playtesting
   objective?: Objective;
+  // Shows the level director's key points on the ground, for tuning it
+  director?: boolean;
 }
 
 // The most mercs in the party, living or dead.
@@ -356,6 +363,8 @@ export default class Game {
   // The rules this fight's mutators change
   private mutators!: MutatorRun;
   private director!: Director;
+  // The current area's flow, from its entrance, for the director
+  private flow: Flow | null = null;
   // Whether the title panel is up, before the run begins
   private title = false;
   // The recruits rolled for the Guild House at the start of the run
@@ -1164,6 +1173,10 @@ export default class Game {
       this.boss = enterStage(this.sim, this.stage);
     }
     this.director.beginArea();
+    const nav = this.sim.nav;
+    this.flow = nav
+      ? new Flow(rectOf(this.stage), this.stage.entrance, (x, z) => nav.walkable(x, z))
+      : null;
     this.objective = this.stage.objective
       ? new ObjectiveRun(this.stage.objective, this.stage)
       : null;
@@ -1369,6 +1382,8 @@ export default class Game {
     left: number | null;
     pacing: number;
     standing: number;
+    progress: number;
+    spots: { spawn: number; boss: number; relief: number };
     intensity: { name: string; value: number }[];
     last: AreaScore | null;
   } {
@@ -1379,6 +1394,12 @@ export default class Game {
       left: d.phaseLeft(),
       pacing: d.pacing(),
       standing: d.standing,
+      progress: this.flow?.progress(this.bearer) ?? 0,
+      spots: {
+        spawn: spotsOf(this.stage, 'spawn'),
+        boss: spotsOf(this.stage, 'boss'),
+        relief: spotsOf(this.stage, 'relief'),
+      },
       intensity: this.sim
         .living(Side.Party)
         .map((u) => ({ name: u.name, value: d.intensityOf(u) })),
@@ -2466,6 +2487,7 @@ export default class Game {
       region: this.region,
       hoverExit: this.hoverExit,
       exitsShut: !this.exitsOpen && this.objective?.hidden() !== true,
+      spots: this.options.director === true,
       dark: this.mutators.has('darkness'),
       leaving: this.leaving,
       seed: this.streams.seed,

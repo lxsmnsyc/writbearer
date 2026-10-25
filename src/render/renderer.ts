@@ -1,5 +1,13 @@
 import { MUTATOR_NAME, type Objective, type Reward } from '../gen/graph';
-import { type Ahead, type Prop, RITE_TIME, type Stage, floorOf, rectOf } from '../gen/stage';
+import {
+  type Ahead,
+  type KeyPoint,
+  type Prop,
+  RITE_TIME,
+  type Stage,
+  floorOf,
+  rectOf,
+} from '../gen/stage';
 import { itemName } from '../gen/loot';
 import type { GroundItem } from '../game/inventory';
 import { ItemType, Quality } from '../sim/item';
@@ -89,6 +97,12 @@ const REWARD_SIGN: Record<Reward, string> = {
 // Places lit through, and how far their light reaches from the middle
 const LIT: ReadonlySet<Stage['kind']> = new Set(['guild', 'waystation', 'town', 'camp']);
 const LIT_RADIUS = 13;
+// The level director's key points, by kind
+const SPOT_COLOR: Record<KeyPoint['kind'], string> = {
+  spawn: C.blood,
+  boss: C.gold,
+  relief: C.teal,
+};
 // How far ahead of a Collapse's edge the ground shows it will fall, in
 // tiles: the next tile to go
 const FALL_WARN = 1;
@@ -209,6 +223,8 @@ export interface Frame {
   leaving: number | null;
   // Whether the area's objective still holds every exit shut
   exitsShut: boolean;
+  // Whether to show the level director's key points, for tuning it
+  spots?: boolean;
   // Whether the Darkness mutator halves the party's light
   dark: boolean;
   // The run's seed, shown when it ends so it can be shared
@@ -499,6 +515,9 @@ export default class Renderer {
     this.drawEmbers(f, fog);
     // A Ritual's next sigil shines through the dark, so it can be found.
     this.drawRites(f);
+    if (f.spots === true) {
+      this.drawSpots(f);
+    }
     this.drawGlow(f, fog);
     this.drawHealth(f, fog);
     // Snapped to the palette with no dither. A dither pattern fixed to the
@@ -783,6 +802,21 @@ export default class Renderer {
   }
 
   // The Church's sealing sigil, painted in blood on the floor.
+  // The level director's key points, for tuning it: a red diamond where a
+  // wave may come from, gold where a boss may stand, teal for relief.
+  private drawSpots(f: Frame): void {
+    const { ctx, iso } = this;
+    for (const s of f.areas.flatMap((a) => a.stage.spots ?? [])) {
+      const r = s.kind === 'boss' ? 0.6 : 0.4;
+      fillPoly(
+        ctx,
+        [iso(s.x - r, s.z), iso(s.x, s.z - r), iso(s.x + r, s.z), iso(s.x, s.z + r)],
+        SPOT_COLOR[s.kind],
+        C.ink,
+      );
+    }
+  }
+
   // A Collapse's fallen floor: the void, with a ragged lip of rock where
   // the ground breaks off, and the strip about to fall flashing red.
   private drawCollapse(f: Frame): void {

@@ -48,6 +48,10 @@ export default function DirectorOverlay(props: { status: DirectorStatus }): JSX.
       </h2>
       <Meter label="Pacing" value={s().pacing} />
       <Meter label="Standing" value={s().standing} signed />
+      <Meter label="Progress" value={s().progress} />
+      <p class="text-neutral-500">
+        Spots: {s().spots.spawn} spawn · {s().spots.boss} boss · {s().spots.relief} relief
+      </p>
       <div class="space-y-1 border-t border-line pt-2">
         <For each={s().intensity}>{(i) => <Meter label={i.name} value={i.value} />}</For>
       </div>
