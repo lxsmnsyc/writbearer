@@ -32,6 +32,7 @@ import { reveal } from '../content/creditor';
 import { Floods, MINI_BOSSES, type MiniBossId, miniBossesOf } from '../content/minibosses';
 import { EVENT_BY_ID, type EventDef, type EventPlay, pickEvent } from '../content/events';
 import {
+  CHALLENGES,
   CHALLENGE_NAME,
   type Cell,
   type LayerMap,
@@ -1226,7 +1227,10 @@ export default class Game {
     this.prize = node?.reward ?? null;
     this.sim.spared = this.prize === 'respite';
     this.bonus =
-      this.stage.objective && node?.challenge
+      this.stage.objective &&
+      node?.challenge &&
+      // A test's forced objective may not have the node's challenge.
+      CHALLENGES[this.stage.objective].includes(node.challenge)
         ? new Bonus(node.challenge, this.stage.objective, rectOf(this.stage))
         : null;
     this.bonusMet = null;

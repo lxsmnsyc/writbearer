@@ -164,9 +164,10 @@ More traps to come, after Aghanim's Labyrinth's:
 | Pressure plate | A plate on the floor that does nothing until someone steps on it. After a short delay, shown on the ground, it strikes where it lies, then sets itself again. Unlike the falling floor, it stays. |
 | Arrow launcher | A launcher at one end of a path that shoots arrows down it, each a projectile that flies its length. It reaches much farther than an arrow slit, which strikes only its own corridor. |
 
-- In the game so far:
-  - One pack's leader carries the key, shown as a gold key over its head. It drops where it dies, and the bearer picks it up by walking over it. The hall's gates then open.
-  - One inner gate, two from area 9 down, each cuts off part of the maze. Its lever stands in a cell the party can reach with every gate shut. The bearer pulls a lever by walking up to it. Shortcut levers are not in yet.
+- In the game so far, reworked as [the level director](15-director.md#the-labyrinth-reworked) asks:
+  - No monsters. The Labyrinth rolls no Thorough bonus, and no mutator but Darkness.
+  - The key lies on the way, in a way round or two thirds along the path. The bearer picks it up by walking over it, and the hall's gate opens.
+  - One gate across the path, two from area 9 down, each outside every branch so no branch goes round it. Its lever stands on the path before it. The bearer pulls a lever by walking up to it. Shortcut levers are not in yet.
   - Arrow slits, swinging blades and falling floors are in. Gas vents are not, since zones need an owner. The Marches have spikes, vents and arrow slits. Blades and falling floors come from the Rift Road down.
   - A floor falls in only in a cell the maze stays connected without, so a pit never cuts the only way.
 - **The stalker.** From the Rift Road down, some Labyrinths hold a mini-boss that walks the maze toward the bearer from the start. It cannot be killed until the hall. It can be slowed with snares and doors.

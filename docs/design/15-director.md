@@ -161,12 +161,12 @@ What changes with it:
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts. Done.
 5. Difficulty from standing, inside the depth's bounds. Done.
 6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist. Done.
-7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
+7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director. Done, without flamethrowers, pressure plates and arrow launchers.
 8. Relief at relief spots after a hard stretch. Done.
 
 ## In the game so far
 
-Steps 1 to 6 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
+All eight steps are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -187,7 +187,7 @@ Steps 1 to 6 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The direc
   - Spawn spots: one in each 8 by 8 tile cell where one fits, at most 16, none within 6 tiles of the entrance.
   - Boss spots: 35%, 60% and 85% of the way along the first road, 3 tiles to one side, or the other, or a little along.
   - Relief spots: 4 beside the roads, at least 6 tiles apart, nearer the road where there is no room, as on a bridge.
-  - An Ambush's spawn spots are its groups', and it has two relief spots by the fire. The Labyrinth has none until it is reworked.
+  - An Ambush's spawn spots are its groups', and it has two relief spots by the fire. The Labyrinth has none.
 - **The Horde, paced** (`Pace` in `src/game/objective.ts`):
   - A wave still comes when its time is up, or 2 seconds after the last is beaten, but not while the director is in a lull: sustain peak, peak fade or relax. Its badge then says the next wave is gathering.
   - A wave is 60% of its full size right after the last, growing to full over 30 seconds. Its leader always comes. The badge shows the next wave at the size it would come now.
@@ -207,6 +207,13 @@ Steps 1 to 6 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The direc
   - Wandering packs within 6 tiles of a dealt elite or mini-boss are cleared, so the area holds about the same threat. The site's keepers, the lair, the watch on the way and marked quarry stay.
   - A Horde's mini-boss still leads its last wave. The Labyrinth, the Ritual and the Ambush deal no cards.
   - The overlay lists the cards dealt.
+- **The Labyrinth** (`generateMaze` in `src/gen/stage.ts`):
+  - One main path of cells runs east from the entrance to the column before the hall, turning up or down the rows on the way. Branches, two and three from the Rift Road down, each leave the path and rejoin it 3 to 7 cells further along, through cells the path does not use. Every other cell is walled off and holds a heap of rubble.
+  - It has no monsters, no waves and no mobs.
+  - Traps stand spread along the path in order along the flow, the first two cells kept clear: 7, one more each two areas, three more in an Elite fight, times the director's scale. Each trap's beat is its usual period divided by the scale, so a party struggling gets fewer and slower traps. The scale is 0.75 to 1.25, and never below 1 in an Elite fight.
+  - The first branch holds a chest behind a trap. Each other branch is a way round: the stretch of path it skips gets one more trap.
+  - A floor falls in only where the hall can still be reached without it, so only where a branch goes round it.
+  - The key lies in the longest way round, or two thirds along the path.
 - **Relief:** each time a peak fades into a relax, the director may grow a blossom at one of the area's relief spots, as Left 4 Dead places items. The chance is half, times one less the standing: likely for a party struggling, rarer for one doing well, never under 15%. The spot must be within 20 tiles of the bearer and out of the party's sight, and an area grows at most two. Nothing tells the player it came from the director.
 - **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 

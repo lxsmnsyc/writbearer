@@ -545,7 +545,7 @@ export default class ObjectiveRun {
     }
     const locked = (this.stage.gates ?? []).some((g) => !g.lever && g.open !== true);
     if (locked) {
-      return 'The hall is locked. One of the maze’s monsters carries the key.';
+      return 'The hall is locked. Its key lies on the way through.';
     }
     return 'Find the way through to the hall at the far end.';
   }

@@ -58,11 +58,14 @@ export const REWARD_NAME: Record<Reward, string> = {
  */
 export type Challenge = 'untouched' | 'noLosses' | 'swift' | 'thorough' | 'silent';
 
-/** The challenges each objective can roll. A Horde's field is empty, so it has no Thorough. */
+/**
+ * The challenges each objective can roll. A Horde's field is empty and a
+ * Labyrinth has no monsters, so neither has Thorough.
+ */
 export const CHALLENGES: Record<Objective, readonly Challenge[]> = {
   hunt: ['untouched', 'noLosses', 'swift', 'thorough'],
   horde: ['untouched', 'noLosses'],
-  maze: ['untouched', 'noLosses', 'swift', 'thorough'],
+  maze: ['untouched', 'noLosses', 'swift'],
   escort: ['untouched', 'noLosses', 'swift'],
   vault: ['untouched', 'noLosses', 'swift', 'thorough'],
   ritual: ['untouched', 'noLosses', 'swift'],
@@ -489,9 +492,14 @@ function rollMutators(rng: RNG, columns: MapNode[][], depth: number): void {
     } else if (depth >= MUTATE_FROM && rng.chance(MUTATE_CHANCE)) {
       count = 1;
     }
-    const pool = MUTATORS.filter((m) => m !== 'alarmed' || ALARMABLE.has(node.objective!));
+    // A Labyrinth has no monsters for the others to work on.
+    const pool = MUTATORS.filter(
+      (m) =>
+        (m !== 'alarmed' || ALARMABLE.has(node.objective!)) &&
+        (node.objective !== 'maze' || m === 'darkness'),
+    );
     node.mutators = Array.from(
-      { length: count },
+      { length: Math.min(count, pool.length) },
       () => pool.splice(rng.int(0, pool.length - 1), 1)[0],
     );
   }

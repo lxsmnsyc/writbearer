@@ -192,13 +192,14 @@ describe('a Labyrinth', () => {
   const maze = (seed: number, kind: 'combat' | 'elite' = 'combat'): Stage =>
     generateStage(new RNG(seed), 5, { kind, ahead: ['combat', 'camp'], objective: 'maze' });
 
-  it('is a maze of walls with a way through to the hall, traps and packs in dead ends', () => {
+  it('is a course of walls with one way to the hall, traps along it and no monsters', () => {
     for (let seed = 1; seed <= 12; seed++) {
       const stage = maze(seed);
-      expect(stage.props.filter((p) => p.kind === 'wall').length).toBeGreaterThan(150);
-      expect(stage.hazards!.length).toBeGreaterThanOrEqual(10);
-      expect(stage.packs.length).toBeGreaterThan(0);
-      // Shut, the gates keep the party from the hall, but not from the levers.
+      expect(stage.props.filter((p) => p.kind === 'wall').length).toBeGreaterThan(100);
+      expect(stage.hazards!.length).toBeGreaterThanOrEqual(8);
+      expect(stage.packs).toHaveLength(0);
+      expect(stage.props.filter((p) => p.kind === 'chest').length).toBeGreaterThan(0);
+      // Shut, the gates keep the party from the hall, but not from the first lever.
       const shut = navFor(stage);
       for (const e of stage.exits) {
         const end = shut.path(stage.entrance, e).at(-1);
@@ -206,11 +207,16 @@ describe('a Labyrinth', () => {
       }
       const levers = stage.gates!.filter((g) => g.lever);
       expect(levers.length).toBeGreaterThan(0);
+      const first = levers[0].lever!;
+      const toLever = shut.path(stage.entrance, first).at(-1)!;
+      expect(Math.hypot(toLever.x - first.x, toLever.z - first.z)).toBeLessThan(1.5);
+      // With the levers pulled, the key can be reached.
       for (const g of levers) {
-        const end = shut.path(stage.entrance, g.lever!).at(-1)!;
-        expect(Math.hypot(end.x - g.lever!.x, end.z - g.lever!.z)).toBeLessThan(1.5);
+        openGate(g);
       }
-      expect(stage.packs.filter((p) => p.key !== undefined)).toHaveLength(1);
+      const key = stage.props.find((p) => p.kind === 'key')!;
+      const toKey = navFor(stage).path(stage.entrance, key).at(-1)!;
+      expect(Math.hypot(toKey.x - key.x, toKey.z - key.z)).toBeLessThan(1.5);
       // Even with every floor fallen in, the way through stays once the gates open.
       for (const h of stage.hazards!.filter((x) => x.kind === 'floor')) {
         stage.props.push({ kind: 'pit', x: h.x, z: h.z, r: 1, seed: 0 });
@@ -223,11 +229,22 @@ describe('a Labyrinth', () => {
         const end = nav.path(stage.entrance, e).at(-1)!;
         expect(Math.hypot(end.x - e.x, end.z - e.z)).toBeLessThan(1);
       }
-      for (const p of stage.packs) {
-        const end = nav.path(stage.entrance, p).at(-1)!;
-        expect(Math.hypot(end.x - p.x, end.z - p.z)).toBeLessThan(1);
-      }
     }
+  });
+
+  it('holds more and quicker traps when the director scales it up', () => {
+    const at = (scale: number): Stage =>
+      generateStage(new RNG(4), 5, {
+        kind: 'combat',
+        ahead: ['combat'],
+        objective: 'maze',
+        scale,
+      });
+    const easy = at(0.75);
+    const hard = at(1.25);
+    expect(hard.hazards!.length).toBeGreaterThan(easy.hazards!.length);
+    const spikes = (s: Stage): number => s.hazards!.find((h) => h.kind === 'spikes')!.period;
+    expect(spikes(hard)).toBeLessThan(spikes(easy));
   });
 
   it('is done once the bearer reaches the hall', () => {

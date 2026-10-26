@@ -15,7 +15,8 @@ describe('mutators on the map', () => {
         for (const node of generateLayerMap(new RNG(seed), 2, true, depth).columns.flat()) {
           const n = node.mutators?.length ?? 0;
           if (node.kind === 'elite') {
-            expect(n).toBe(depth >= 3 ? 2 : 1);
+            // A Labyrinth can roll only Darkness.
+            expect(n).toBe(depth >= 3 && node.objective !== 'maze' ? 2 : 1);
             expect(new Set(node.mutators).size).toBe(n);
           } else if (depth === 0 || !node.objective) {
             expect(n).toBe(0);
