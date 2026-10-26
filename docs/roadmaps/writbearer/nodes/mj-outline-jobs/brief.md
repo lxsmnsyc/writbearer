@@ -10,7 +10,7 @@ size: XL
 depends_on:
   - on: mj-outline-trees
     kind: hard
-    why: needs the full trees
+    why: needs their spells and upgrades
   - on: cc-job-systems
     kind: hard
     why: needs the shared engine systems
@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-Build Bard, Alchemist, Sapper, Beastmaster (with a pet taking half a slot), Scout, Hexblade and Necromancer from their full trees. Splits into one or more nodes per job when refined.
+Build Bard, Alchemist, Sapper, Beastmaster (with a pet taking half a slot), Scout, Hexblade and Necromancer from their spells and upgrades. Splits into a job node and an upgrades node per job when refined, as the starting jobs did.
 
 ## Context
 

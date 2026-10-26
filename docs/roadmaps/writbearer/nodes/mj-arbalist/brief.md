@@ -20,9 +20,11 @@ depends_on:
 
 ## Goal
 
-The Arbalist job: Siege, Marksman, Overwatch branches, planted ranged damage that grows the longer it stands still.
+The Arbalist job: themes Siege, Marksman, Overwatch (doc 12), drawn as 4 spells, 1 innate passive and 12 elite upgrades as in `docs/design/16-builds.md`, planted ranged damage that grows the longer it stands still.
 
 ## Context
+
+- Split when refined into a job node (job, look, spells, innate) and an upgrades node, as the starting jobs did.
 
 - Source: `docs/design/12-new-jobs.md#arbalist`
 - Items: `../../COVERAGE.md`, entries with target `mj-arbalist`.

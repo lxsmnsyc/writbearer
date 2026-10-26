@@ -26,9 +26,11 @@ depends_on:
 
 ## Goal
 
-The Lamplighter job: Beacon, Kindling, Wayfinding branches; changes how far the party sees and blinds monsters.
+The Lamplighter job: themes Beacon, Kindling, Wayfinding (doc 12), drawn as 4 spells, 1 innate passive and 12 elite upgrades as in `docs/design/16-builds.md`; changes how far the party sees and blinds monsters.
 
 ## Context
+
+- Split when refined into a job node (job, look, spells, innate) and an upgrades node, as the starting jobs did.
 
 - Source: `docs/design/12-new-jobs.md#lamplighter`
 - Items: `../../COVERAGE.md`, entries with target `mj-lamplighter`.

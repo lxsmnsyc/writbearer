@@ -9,7 +9,7 @@ defined_by: job-registry
 
 ## Purpose
 
-One module per job, registered in one place, so the four new jobs and their twelve branches can be built at the same time without editing the same files. Today a job is spread over `src/content/roster.ts` (MERCS, DISCIPLINE, the non-exported `Template`), `trees.ts` (TREES), `recruits.ts` (HIREABLE, FIGHTERS, `rollStartingOffers`), `items.ts` (job-name lists, STARTER_GEAR, STARTER_BELT), `src/ui/icons.ts`, `src/ui/offer.tsx` (blurb), `src/render/rig.ts` (Kind, KINDS, HIT_FRACTION, KIND_SIZE, `paperColor`), `src/render/sprites.ts` (`isSprited`, attachments, a `kind === 'cleric'` test) and `src/render/effects.ts` (a `kind === 'vanguard'` test). Used by every job node and roster-balance.
+One module per job, registered in one place, so the four new jobs and their upgrades can be built at the same time without editing the same files. Today a job is spread over `src/content/roster.ts` (MERCS, DISCIPLINE, the non-exported `Template`), `trees.ts` (TREES), `recruits.ts` (HIREABLE, FIGHTERS, `rollStartingOffers`), `items.ts` (job-name lists, STARTER_GEAR, STARTER_BELT), `src/ui/icons.ts`, `src/ui/offer.tsx` (blurb), `src/render/rig.ts` (Kind, KINDS, HIT_FRACTION, KIND_SIZE, `paperColor`), `src/render/sprites.ts` (`isSprited`, attachments, a `kind === 'cleric'` test) and `src/render/effects.ts` (a `kind === 'vanguard'` test). Used by every job node and roster-balance.
 
 ## Interface
 
@@ -30,7 +30,9 @@ export interface JobDef {
   hireable: boolean; // offered at the Guild House; false until roster-balance
   blurb: string; // one line on the offer card
   icon: string; // an IconName from src/ui/icons.ts (job-registry adds icons for all seven jobs)
-  tree: Branch[]; // 3 branches of 5 nodes
+  spells: [Skill, Skill, Skill, Skill]; // in cast priority order (builds contract)
+  innate: { name: string; effect: Passive; describe: () => string };
+  upgrades: Upgrade[]; // 12, 3 per spell (builds contract)
   starterGear: string[]; // ids of bases in items.ts
   starterBelt: [string, number][];
 }
@@ -46,30 +48,31 @@ export interface JobLook {
 Files, all created by job-registry, for all seven jobs:
 
 - `src/content/jobs/<kind>/index.ts` exports `<KIND>: JobDef` (for example `WARDEN`).
-- `src/content/jobs/<kind>/<branch>.ts` exports `<BRANCH>: Branch` (for example `jobs/warden/watchman.ts` exports `WATCHMAN`). Branch file names: sellsword `hired-blade`, `coin`, `tricks`; warden `shadow`, `watchman`, `executioner`; duelist `blade`, `showmanship`, `footwork`; arcanist `pyromancy`, `cryomancy`, `weave`.
+- `src/content/jobs/<kind>/upgrades.ts` exports `<KIND>_UPGRADES: Upgrade[]` (for example `WARDEN_UPGRADES`). `index.ts` imports it.
 - `src/content/jobs/index.ts`: JOBS, all seven registered.
 - `src/render/looks/<kind>.ts` and `src/render/looks/index.ts`: LOOKS, all seven registered.
 - `src/render/zones.ts`: ZONE_LOOKS, with the five skill zones drawn today (`banner`, `lightningRod`, `bait`, `rampart`, `spikeField`).
 
 ## Behavior
 
-- job-registry registers Sellsword, Warden, Duelist and Arcanist with placeholder modules: a first-guess template, `hireable: false`, a plain look, and three branches of five summary-only nodes (text from doc 09). A job node fills in its own folder and look file; a branch node replaces one branch file. Neither edits the registries.
+- job-registry registers Sellsword, Warden, Duelist and Arcanist with placeholder modules: a first-guess template, `hireable: false`, a plain look, 4 placeholder spells and 12 summary-only upgrades named as in `docs/design/16-builds.md`. Vanguard, Ranger and Cleric get their real spells and innate, with summary-only upgrades. A job node fills in `index.ts` and its look; an upgrade node fills in `upgrades.ts`. Neither edits the registries.
 - `MercKind` stays a literal union of the seven kinds. `HIREABLE` and `FIGHTERS` hold only jobs with `hireable: true`, so the Guild House draw does not change until roster-balance.
 - Item bases stay in `src/content/items.ts`, which already lists Arcanist and Duelist gear and has `WeaponKind` (`dagger`, `staff`). Imports go one way: `jobs/*` import `items.ts`, never the reverse. `STARTER_GEAR` and `STARTER_BELT` are read from JOBS where they are used (`roster.ts`), not in `items.ts`. job-registry adds Sellsword and Warden to the `jobs` lists of fitting bases and any missing base the four jobs need for starter gear.
 - Monster kinds stay in `rig.ts`; only merc kinds come from LOOKS.
-- Tree nodes without `skill` or `effect` stay "designed, not in the game" and cannot be learned.
+- An upgrade without `patch` or `effect` is "designed, not in the game" and is never offered.
 - A zone kind's drawing is added as one entry in `ZONE_LOOKS` (append-only, shared).
-- Saved runs keep loading: the save format does not change.
+- Saved runs keep loading: tree ranks are refunded as shards (builds contract).
 
 ## Stub
 
-The placeholder modules are the stub: every new job can be spawned with `spawnMerc` from the first day, so branch nodes test their skills on it.
+The placeholder modules are the stub: every new job can be spawned with `spawnMerc` from the first day, so upgrade nodes test their upgrades on it.
 
 ## Contract tests
 
-- `test/content/jobs.test.ts`: every registered job has 3 branches of 5 nodes with tiers 1 to 5, a look, starter gear that resolves to item bases, and can be spawned. HIREABLE holds exactly the hireable jobs.
+- `test/content/jobs.test.ts`: every registered job has 4 spells, an innate passive and 12 upgrades, 3 per spell, each naming one of its spells; a look, starter gear that resolves to item bases, and can be spawned. HIREABLE holds exactly the hireable jobs.
 - `test/sim/recruits.test.ts` and `e2e/recruit.spec.ts` read HIREABLE instead of a fixed list.
 
 ## Changes
 
 - v1: initial.
+- v1 (draft, 2026-10-27): trees replaced by spells, innate and upgrades after the build-variety gate.

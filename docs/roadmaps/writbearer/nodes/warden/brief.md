@@ -1,6 +1,6 @@
 ---
 id: warden
-title: Warden: the job and its Shadow branch
+title: Warden: the job, its 4 spells and innate passive
 status: todo
 priority: must
 type: feature
@@ -14,10 +14,9 @@ verify: pnpm vitest run test/sim/warden.test.ts test/content/jobs.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
-added:
+added: 2026-10-27
 owns:
   - src/content/jobs/warden/index.ts
-  - src/content/jobs/warden/shadow.ts
   - src/render/looks/warden.ts
   - test/sim/warden.test.ts
 shared:
@@ -25,42 +24,58 @@ shared:
   - src/sim/sim.ts
   - src/sim/ai.ts
   - src/render/zones.ts
+  - src/ui/map.tsx
+  - src/game/mutators.ts
+  - src/sim/trap.ts
+  - src/render/light.ts
+  - src/sim/statuses.ts
 reserves: []
 provides: []
 depends_on:
   - on: job-registry
     kind: contract
     via: job-def
+  - on: builds-design
+    kind: hard
+    why: the job's 4 spells, innate passive and 12 upgrades are drawn there
   - on: targeting-rules
     kind: hard
     why: Tether changes chase logic in thinkMerc, the function targeting-rules rewrites
 ---
 
-# Warden: the job and its Shadow branch
+# Warden: the job, its 4 spells and innate passive
 
 ## Goal
 
-Make the Warden (guard) a real job: replace its placeholder template, starter gear and look, and build its Shadow branch with all five skills (Interpose, Tether, Retaliate, Cover, Living Shield). It stays `hireable: false`; roster-balance opens it at the Guild House.
+Make the Warden (guard) a real job under the build model of `docs/design/16-builds.md`: replace its placeholder template, starter gear and look, and build its 4 spells (ranks 1 to 10) and its innate passive, as `builds-design` drew them. It stays `hireable: false`; roster-balance opens it at the Guild House. Its 12 elite upgrades are the `warden-upgrades` node.
 
 ## Context
 
-- Source: `docs/design/09-skill-trees.md#warden` (this node builds Shadow).
-- Pattern: Vanguard's module after job-registry, and `src/content/vanguard.ts` for skill code.
+- Design: `docs/design/16-builds.md`, the Warden section (spells, innate, upgrades and numbers). Source skills: `docs/design/09-skill-trees.md#warden` (Shadow, Watchman and Executioner).
+- Rules: `contracts/builds.md` (spells, ranks, shards, elite upgrades) and `contracts/job-def.md`.
+- Pattern: the Vanguard's module after job-registry.
 - Look: one large signature shape, per the minimalist figure rule (`docs/design/02-tech-stack.md#unit-design`).
 
 ## Acceptance
 
 - [ ] A headless fight with the Warden in the party plays out, in `test/sim/warden.test.ts`.
-- [ ] Each of the five Shadow skills has a test, in the style of `test/sim/tree-skills.test.ts`.
+- [ ] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
 - [ ] Fast check passes.
 
 ## Sizing
 
-Job data, a look and five skills in its own files, plus small engine hooks. M.
+Job data, a look, 4 spells and a passive in its own files, plus small engine hooks. M.
 
 ## Notes for the worker
 
+- Engine notes by source skill. Doc 16 decides which skills are spells, the innate or upgrades; use the notes for the ones this node builds.
 - Interpose redirects hits aimed at the bearer at the Pre step of the damage pipeline (`src/sim/mechanics/damage.ts`), as in `docs/design/03-combat-engine.md#example-interpose`. Mark the hit with the existing `Redirected` flag so it is not redirected twice.
 - Tether caps chase distance from the bearer at 3 tiles, through the merc's toggles if possible.
 - Cover stops projectiles from the front reaching the bearer for 3 seconds (projectile flight is in `src/sim/sim.ts`); Rampart in `src/content/vanguard.ts` is the closest pattern.
-- Do not edit the registries, the other two branch files or `src/content/items.ts`.
+- Sentry and Read the Room call `reveal` from the concealment contract; test with a hidden monster made in the test until hidden-units lands.
+- Tripwire is a trap (`src/sim/trap.ts`) that marks and slows.
+- Night Eyes removes the Darkness mutator's sight penalty for the party (`src/game/mutators.ts`) and widens the lantern (`src/render/light.ts`).
+- Never Surprised shows Ambush nodes on the map (`src/ui/map.tsx`) and stuns ambushers for 1 second at the start.
+- Add a Marked status (6 seconds) applied when an enemy damages the bearer; other skills read it.
+- Execute kills a marked non-boss below 20% health; bosses and mini-bosses are immune.
+- Do not edit the registries, `upgrades.ts` or `src/content/items.ts`.

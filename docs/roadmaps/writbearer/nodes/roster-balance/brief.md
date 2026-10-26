@@ -37,37 +37,37 @@ depends_on:
   - on: sellsword
     kind: hard
     why: balances and documents the finished jobs
-  - on: sellsword-coin
-    kind: hard
-    why: balances and documents the finished jobs
-  - on: sellsword-tricks
+  - on: sellsword-upgrades
     kind: hard
     why: balances and documents the finished jobs
   - on: warden
     kind: hard
     why: balances and documents the finished jobs
-  - on: warden-watchman
-    kind: hard
-    why: balances and documents the finished jobs
-  - on: warden-executioner
+  - on: warden-upgrades
     kind: hard
     why: balances and documents the finished jobs
   - on: duelist
     kind: hard
     why: balances and documents the finished jobs
-  - on: duelist-showmanship
-    kind: hard
-    why: balances and documents the finished jobs
-  - on: duelist-footwork
+  - on: duelist-upgrades
     kind: hard
     why: balances and documents the finished jobs
   - on: arcanist
     kind: hard
     why: balances and documents the finished jobs
-  - on: arcanist-cryomancy
+  - on: arcanist-upgrades
     kind: hard
     why: balances and documents the finished jobs
-  - on: arcanist-weave
+  - on: vanguard-upgrades
+    kind: hard
+    why: balances and documents the finished jobs
+  - on: ranger-upgrades
+    kind: hard
+    why: balances and documents the finished jobs
+  - on: cleric-upgrades
+    kind: hard
+    why: balances and documents the finished jobs
+  - on: mastery-offers
     kind: hard
     why: balances and documents the finished jobs
 ---

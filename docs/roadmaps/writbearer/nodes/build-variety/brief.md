@@ -1,7 +1,7 @@
 ---
 id: build-variety
 title: Choose how mercs build: real skill trees or upgraded fixed spells
-status: active
+status: done
 priority: must
 type: docs
 outline: false

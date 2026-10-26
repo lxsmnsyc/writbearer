@@ -47,7 +47,7 @@ A timed mind control that turns a merc to the monster side and then restores its
 ## Context
 
 - Base: the Creditor turns dead mercs for good (`src/content/creditor.ts:78`); AI dispatch is by side (`src/sim/ai.ts:580`); skills run on any unit (`Unit.startCast`); `UnitSkillRelease` carries source and skill.
-- If sellsword-tricks already added a buff flag for Cutpurse, reuse it.
+- If sellsword-upgrades already added a buff flag for Cutpurse, reuse it.
 - Source: `docs/design/13-bestiary.md#the-sunken-crown` (Usurper).
 
 ## Acceptance

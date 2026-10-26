@@ -37,18 +37,18 @@ Each entry says what differs and which node should settle it.
 
 | Milestone | Items |
 | --- | --- |
-| built | 222 |
-| starting-jobs | 29 |
+| built | 218 |
+| starting-jobs | 39 |
 | combat-core | 49 |
-| more-jobs | 18 |
+| more-jobs | 17 |
 | bestiary | 65 |
 | gauntlets-stages | 67 |
 | items-economy | 44 |
 | story-bearer | 28 |
 | not code | 20 |
-| dropped | 3 |
+| dropped | 4 |
 | inbox | 3 |
-| total | 548 |
+| total | 554 |
 
 ## Coverage list
 
@@ -429,11 +429,11 @@ Each entry says what differs and which node should settle it.
 ### 09-skill-trees
 
 #### Rules
-- 1 skill point per level after 1, recruits arrive unspent (09#Rules) -> built: src/sim/progress.ts, test/sim/progress.test.ts, test/sim/recruits.test.ts
-- Skills 5 ranks, capstones 1 rank (09#Rules) -> built: trees.ts maxRank()
-- Tier unlock levels 1/4/8/12/16 (09#Rules) -> built: trees.ts TIER_LEVEL
-- Prerequisite: 1 rank in previous node of branch (09#Rules) -> built: trees.ts cannotLearn()
-- Synergies (Diablo 2 style) (09#Rules) -> mj-trainer-synergies (remainder: only Fault Line gets more Earth per rank of Crush (vanguard.ts:185-191). Synergy Pocket Sand->Low Blow)
+- 1 skill point per level after 1, recruits arrive unspent (09#Rules) -> build-rules (replaced by shards, 1 per level, doc 16; built today as skill points in src/sim/progress.ts)
+- Skills 5 ranks, capstones 1 rank (09#Rules) -> build-rules (replaced by spell ranks 1 to 10 capped at 1 + level / 2, doc 16; built today as trees.ts maxRank())
+- Tier unlock levels 1/4/8/12/16 (09#Rules) -> job-registry (removed with the tree path; spells are known from level 1, doc 16)
+- Prerequisite: 1 rank in previous node of branch (09#Rules) -> job-registry (removed with the tree path, doc 16)
+- Synergies (Diablo 2 style) (09#Rules) -> dropped: the build-variety gate chose spells with elite upgrades (doc 16); upgrades take the synergies' role
 - Trainer in a Town that resets a merc's points for gold (09#Rules) -> mj-trainer-synergies
 - Any active skill can appear on an autocast card (09#Rules) -> not code
 
@@ -877,3 +877,9 @@ Each entry says what differs and which node should settle it.
 - 6 Boss deck (15#Order to build in (director)) -> built: present in code
 - 7 Labyrinth rework (15#Order to build in (director)) -> gs-labyrinth (remainder: done, without flamethrowers, pressure plates, arrow launchers)
 - 8 Relief at relief spots after a hard stretch (15#Order to build in (director)) -> built: present in code
+- Rules of the build model: spells, shards, rank cap, one elite upgrade per spell, save refund, spell panel, no Auto spend (16#Options, #Numbers to start from) -> build-rules
+- Elite upgrade offers at the Waystations of phases 2 to 4 and the Mastery road reward (16#Numbers to start from) -> mastery-offers
+- The Vanguard as 4 spells, Sunder innate and 12 upgrades (16#The Vanguard under option B) -> vanguard-upgrades; also job-registry
+- The other six starting jobs drawn as spells and upgrades (16#What it replaces in doc 09) -> builds-design
+- Doc 09 trees become source lists for spells and upgrades (16#What it replaces in doc 09) -> builds-design
+- Charge pushes enemies aside, needs knockback (16#The Vanguard under option B) -> cc-job-systems; also vanguard-upgrades

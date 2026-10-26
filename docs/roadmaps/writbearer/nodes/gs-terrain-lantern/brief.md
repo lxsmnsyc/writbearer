@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/lantern.test.ts test/game/mutators.test.ts test/sim/warden-watchman.test.ts
+verify: pnpm vitest run test/sim/lantern.test.ts test/game/mutators.test.ts test/sim/warden-upgrades.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
@@ -34,7 +34,7 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
-  - on: warden-watchman
+  - on: warden-upgrades
     kind: hard
     why: Night Eyes edits the lantern radius this node turns into sim state; build on its result
 ---
@@ -67,4 +67,4 @@ Sim state replacing three renderer numbers, plus a toggle key. M.
 
 - Keep the current ranges (7, 6.5, `notice`) as the defaults; existing tests rely on them.
 - Use a fixed key for shading until gs-controls lands.
-- Blind is added by sellsword-tricks; do not add another.
+- Blind is added by sellsword-upgrades; do not add another.

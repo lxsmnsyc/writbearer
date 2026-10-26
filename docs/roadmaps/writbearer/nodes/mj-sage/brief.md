@@ -20,7 +20,7 @@ depends_on:
 
 ## Goal
 
-The Sage job from doc 12: Endow, Breaker, Study branches, its look and tests. Splits into a job node and two branch nodes when refined, as the starting jobs did.
+The Sage job from doc 12: themes Endow, Breaker and Study, drawn as 4 spells, 1 innate passive and 12 elite upgrades as in `docs/design/16-builds.md`, its look and tests. Splits into a job node and an upgrades node when refined, as the starting jobs did.
 
 ## Context
 

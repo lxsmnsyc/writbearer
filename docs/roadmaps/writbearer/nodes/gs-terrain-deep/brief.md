@@ -29,7 +29,7 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
-  - on: arcanist-cryomancy
+  - on: arcanist-upgrades
     kind: hard
     why: uses the temporary nav block API and the Frost hit that node adds
 ---
@@ -61,4 +61,4 @@ A plan variant, holes, a freeze listener and paint. M.
 
 - Ice is permanent for the stage (decided at refinement; change it only with the user).
 - Rebuilding nav costs the whole grid: batch freezes per tick.
-- Use arcanist-cryomancy's nav API; if it only blocks, add the inverse in a small commit and say so in the outcome.
+- Use arcanist-upgrades's nav API; if it only blocks, add the inverse in a small commit and say so in the outcome.

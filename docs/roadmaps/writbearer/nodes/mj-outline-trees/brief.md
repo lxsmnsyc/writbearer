@@ -1,6 +1,6 @@
 ---
 id: mj-outline-trees
-title: Full trees for the seven outlined jobs
+title: Spells and upgrades for the seven outlined jobs
 status: todo
 priority: could
 type: feature
@@ -10,11 +10,11 @@ size: M
 depends_on: []
 ---
 
-# Full trees for the seven outlined jobs
+# Spells and upgrades for the seven outlined jobs
 
 ## Goal
 
-Design work: write full 3x5 trees for Bard, Alchemist, Sapper, Beastmaster, Scout, Hexblade and Necromancer in the design notes, in the style of doc 09.
+Design work: draw Bard, Alchemist, Sapper, Beastmaster, Scout, Hexblade and Necromancer as 4 spells, 1 innate passive and 12 elite upgrades each, in the style of `docs/design/16-builds.md`. Their doc 09 outlines are the source.
 
 ## Context
 

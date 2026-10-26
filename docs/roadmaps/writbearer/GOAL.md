@@ -9,20 +9,20 @@ branches:
 
 ## Outcome
 
-The game matches its design notes in `docs/design/`. Every item there is built, or recorded as dropped, in `COVERAGE.md`. The first milestone, starting-jobs, makes the Guild House offer all seven starting jobs of the skill-tree design (Vanguard, Ranger and Cleric plus Sellsword, Warden, Duelist and Arcanist), each with a full set of skills in the build model build-variety picks (today: a tree of 3 branches and 15 skills), from five recruits drawn by slot (a guard, a striker, a support and two more).
+The game matches its design notes in `docs/design/`. Every item there is built, or recorded as dropped, in `COVERAGE.md`. The first milestone, starting-jobs, moves mercs to the build model of `docs/design/16-builds.md` (4 spells, 1 innate passive and 12 elite upgrades per job, shards to raise spell ranks) and makes the Guild House offer all seven starting jobs (Vanguard, Ranger and Cleric plus Sellsword, Warden, Duelist and Arcanist), each complete in that model, from five recruits drawn by slot (a guard, a striker, a support and two more).
 
 ## Acceptance
 
-- starting-jobs: `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` passes; no node of the four new trees is left "designed, not in the game"; a boss test wins with a party of new jobs.
+- starting-jobs: `pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e` passes; no spell or upgrade of the seven starting jobs is left "designed, not in the game"; a run offers elite upgrades at the Waystations and on Mastery roads; a boss test wins with a party of new jobs.
 - Each later milestone: its outline nodes are refined, built and merged, and `COVERAGE.md` shows none of its items open.
 
 ## Milestones
 
 In order. Only starting-jobs is broken into briefs; the rest are outline nodes, refined as they come within two waves (`plan.py refine`).
 
-- starting-jobs: the four designed jobs, the job registry, CheckTarget, hidden units, recruits by slot.
+- starting-jobs: the build model (rules, offers, the seven jobs drawn as spells and upgrades), the four designed jobs, the job registry, CheckTarget, hidden units, recruits by slot.
 - combat-core: threat, cast events and interrupts, autocast, element gaps, engine systems for later jobs, merc autonomy.
-- more-jobs: the six jobs of doc 12, the seven outlined jobs, the respec trainer.
+- more-jobs: the six jobs of doc 12, new jobs beyond docs 09 and 12 (designed in mj-new-jobs-design), the seven outlined jobs, the shard trainer.
 - bestiary: monster types, new monsters, mini-bosses, the boss pool and new bosses.
 - gauntlets-stages: Hunt and Horde kinds, mutators, Labyrinth, director, node kinds, terrain, phase modifiers, controls.
 - items-economy: item model, identification and curses, crafting, cards, bench and contracts, utility items.
@@ -72,15 +72,18 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 ## Decisions
 
 - The Guild House offers five recruits at the start of a run, drawn by slot; the player hires up to four (roster-balance).
+- Build model B of `docs/design/16-builds.md` (build-variety, 2026-10-27), as in Aghanim's Labyrinth: each job has 4 spells known from level 1 and 1 innate passive. Each spell holds one elite upgrade, which changes how it works, kept for the run. Shards are the regular upgrades: they stack, 1 per merc level, each raising one spell a rank (1 to 10, capped at 1 + level / 2). Elite upgrades come from the Waystations of phases 2 to 4 and a Mastery road reward. No Auto spend: the player spends by hand. Doc 09's trees become the pool for spells and upgrades; synergies are dropped.
+- More jobs: since a job is cheaper to make in this model, design new jobs beyond docs 09 and 12 (mj-new-jobs-design).
 
 ## Open questions
 
-- Build model: keep skill trees and make them real (rAthena / Diablo 2 prerequisites, synergies, caps), or switch to 4 fixed spells with behavior-changing upgrades and skill shards (Aghanim's Labyrinth)? Decided at the build-variety gate. Blocks job-registry and so every job node; the job briefs are rewritten to match.
+- Shards per merc level, or a party pool? Per merc level for now. Revisit if levels move to stage clears (one level per cleared stage). Blocks nothing.
 - Recruiting after the Guild House (taverns in phases 1 and 2, as doc 05 says) or Guild-only, as now? Blocks ie-party only.
 
 ## Gates
 
-- build-variety: the user picks the build model before job-registry starts.
+- builds-design: the user approves the seven jobs' spells and upgrades before job-registry starts.
 - job-registry: review the job-def contract before the job nodes fan out.
 - roster-balance: play a run with the new offers before closing starting-jobs.
+- mj-new-jobs-design: the user picks which new jobs enter the plan.
 - Every milestone end: review the refined briefs of the next milestone before its first wave.

@@ -1,6 +1,6 @@
 ---
 id: mj-trainer-synergies
-title: Respec trainer and skill synergies
+title: Shard trainer and Consecrate's rest
 status: todo
 priority: should
 type: feature
@@ -16,11 +16,11 @@ depends_on:
     why: Consecrate needs corpses laid to rest
 ---
 
-# Respec trainer and skill synergies
+# Shard trainer and Consecrate's rest
 
 ## Goal
 
-A Town trainer that resets a merc's skill points for gold, a general synergy mechanism (each rank of one skill raises another), and Consecrate's 'corpses inside cannot be raised'.
+A Town trainer that resets a merc's spent shards for gold (half its wage); elite upgrades stay. Consecrate's 'corpses inside cannot be raised', if Consecrate is still a Cleric spell or upgrade in `docs/design/16-builds.md`. Synergies were dropped at the build-variety gate.
 
 ## Context
 
