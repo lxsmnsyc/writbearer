@@ -35,7 +35,10 @@ owns:
 shared: []
 reserves: []
 provides: [job-def]
-depends_on: []
+depends_on:
+  - on: build-variety
+    kind: hard
+    why: the job-def contract's tree field and every job's skill layout follow the build model chosen there
 ---
 
 # One module per job, with a registry

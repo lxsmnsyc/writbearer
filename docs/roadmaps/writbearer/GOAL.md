@@ -9,7 +9,7 @@ branches:
 
 ## Outcome
 
-The game matches its design notes in `docs/design/`. Every item there is built, or recorded as dropped, in `COVERAGE.md`. The first milestone, starting-jobs, makes the Guild House offer all seven starting jobs of the skill-tree design (Vanguard, Ranger and Cleric plus Sellsword, Warden, Duelist and Arcanist), each with a full tree of 3 branches and 15 skills, from five recruits drawn by slot (a guard, a striker, a support and two more).
+The game matches its design notes in `docs/design/`. Every item there is built, or recorded as dropped, in `COVERAGE.md`. The first milestone, starting-jobs, makes the Guild House offer all seven starting jobs of the skill-tree design (Vanguard, Ranger and Cleric plus Sellsword, Warden, Duelist and Arcanist), each with a full set of skills in the build model build-variety picks (today: a tree of 3 branches and 15 skills), from five recruits drawn by slot (a guard, a striker, a support and two more).
 
 ## Acceptance
 
@@ -75,10 +75,12 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 ## Open questions
 
+- Build model: keep skill trees and make them real (rAthena / Diablo 2 prerequisites, synergies, caps), or switch to 4 fixed spells with behavior-changing upgrades and skill shards (Aghanim's Labyrinth)? Decided at the build-variety gate. Blocks job-registry and so every job node; the job briefs are rewritten to match.
 - Recruiting after the Guild House (taverns in phases 1 and 2, as doc 05 says) or Guild-only, as now? Blocks ie-party only.
 
 ## Gates
 
+- build-variety: the user picks the build model before job-registry starts.
 - job-registry: review the job-def contract before the job nodes fan out.
 - roster-balance: play a run with the new offers before closing starting-jobs.
 - Every milestone end: review the refined briefs of the next milestone before its first wave.
