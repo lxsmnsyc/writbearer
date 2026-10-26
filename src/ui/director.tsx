@@ -53,6 +53,9 @@ export default function DirectorOverlay(props: { status: DirectorStatus }): JSX.
       <p class="text-neutral-500">
         Spots: {s().spots.spawn} spawn · {s().spots.boss} boss · {s().spots.relief} relief
       </p>
+      <Show when={s().bosses.length > 0}>
+        <p class="text-neutral-500">Bosses dealt: {s().bosses.join(' · ')}</p>
+      </Show>
       <div class="space-y-1 border-t border-line pt-2">
         <For each={s().intensity}>{(i) => <Meter label={i.name} value={i.value} />}</For>
       </div>

@@ -1467,6 +1467,7 @@ export default class Game {
     progress: number;
     scale: number;
     spots: { spawn: number; boss: number; relief: number };
+    bosses: readonly string[];
     intensity: { name: string; value: number }[];
     last: AreaScore | null;
   } {
@@ -1484,6 +1485,7 @@ export default class Game {
         boss: spotsOf(this.stage, 'boss'),
         relief: spotsOf(this.stage, 'relief'),
       },
+      bosses: this.stage.bossCards ?? [],
       intensity: this.sim
         .living(Side.Party)
         .map((u) => ({ name: u.name, value: d.intensityOf(u) })),

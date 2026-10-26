@@ -160,13 +160,13 @@ What changes with it:
 3. The pacing phases for the Horde: wave timing from intensity, wave size growing since the last, spawn spots out of sight and mostly behind. Done.
 4. The same for the other gauntlets with waves: Ritual and Ambush, then new waves in Hunts and Escorts. Done.
 5. Difficulty from standing, inside the depth's bounds. Done.
-6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist. Mini-bosses now stand at boss spots; the shuffled deck of elite, mini-boss and nothing is not in yet.
+6. Bosses dealt along the flow from a shuffled deck, once mini-bosses exist. Done.
 7. The Labyrinth reworked as a monster-free obstacle course of traps along a main path, its traps paced by the director.
 8. Relief at relief spots after a hard stretch. Done.
 
 ## In the game so far
 
-Steps 1 to 5 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
+Steps 1 to 6 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The director reads, keeps its phase, knows the ground, and paces the Horde, the Ritual's waves and the mobs of Hunts and Escorts.
 
 - **Intensity:** from 0 to 1 for each party member.
   - A hit adds 1.2 times the share of health it took.
@@ -199,6 +199,14 @@ Steps 1 to 5 and 8 are in (`src/game/director.ts`, `src/sim/flow.ts`). The direc
 - **The Ambush:** left as it is. Its groups are a set piece, as Left 4 Dead's bosses are, and pacing does not touch them.
 - Spawn spots on floor that has fallen in a Collapse are passed over.
 - **Difficulty from standing:** each fight is built with its threat budget, and so its packs, waves and mobs, scaled by 1 plus a quarter of the standing: from 0.75 for a party struggling most to 1.25 for one winning most easily. An Elite fight is never scaled below 1. The fight's scale is set as it is built, from the standing then, so it holds for the whole area. The overlay shows it.
+- **The boss deck** (`bossHand` in `src/gen/stage.ts`): each fight with packs deals a card to each of its boss spots, in order along the flow, from the `layout` stream.
+  - The deck holds one elite, the fight's mini-boss if it has one, and nothing for the rest. No kind is dealt twice in a row.
+  - An Elite fight's mini-boss is always dealt to its farthest spot, so the fight ends on it.
+  - Elites are dealt from the Marches' third area, or in any Elite fight. Before then, every card is nothing.
+  - An elite card stands a pack of the layer's at its spot, led by its strongest monster as an elite with rolled affixes.
+  - Wandering packs within 6 tiles of a dealt elite or mini-boss are cleared, so the area holds about the same threat. The site's keepers, the lair, the watch on the way and marked quarry stay.
+  - A Horde's mini-boss still leads its last wave. The Labyrinth, the Ritual and the Ambush deal no cards.
+  - The overlay lists the cards dealt.
 - **Relief:** each time a peak fades into a relax, the director may grow a blossom at one of the area's relief spots, as Left 4 Dead places items. The chance is half, times one less the standing: likely for a party struggling, rarer for one doing well, never under 15%. The spot must be within 20 tiles of the bearer and out of the party's sight, and an area grows at most two. Nothing tells the player it came from the director.
 - **Overlay:** `?director` in the address shows the phase and its time left, the pacing, the standing, each member's intensity, and how the last area scored. It also counts the area's key points and draws them on the ground: red for spawn, gold for boss and teal for relief.
 
