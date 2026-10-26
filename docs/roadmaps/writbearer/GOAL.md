@@ -53,7 +53,7 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 ## Shared files
 
-`plan.py` warns that `src/sim/ai.ts`, `src/sim/sim.ts` and `src/render/zones.ts` are each edited by several starting-jobs nodes. They are not split first: the edits are small hooks, and splitting `ai.ts` or `sim.ts` would be a large move unrelated to the jobs. Merge in the order `plan.py status` prints. If conflicts show up in `ai.ts`, add a node that splits it into merc and monster modules before combat-core.
+`plan.py` warns about files that many detailed nodes edit: `src/gen/stage.ts` and `src/render/renderer.ts` (9 nodes each), `src/sim/ai.ts` (8), `src/sim/sim.ts` (7), `src/game/game.ts` (6), and four or five each for `roster.ts`, `events.ts`, `statuses.ts`, `unit.ts`, `floor.ts`, `zones.ts`, `ground.ts`, `game/stage.ts`. Most edits are small hooks or appended rows, and the nodes touching the same file are spread across waves, so they are not split first. Merge in the order `plan.py status` prints. `gen/stage.ts`, `renderer.ts`, `ai.ts` and `game.ts` are each over 2,000 lines, so a behavior-preserving split of one of them is the first fix if merges start to conflict.
 
 ## Numbered resources
 

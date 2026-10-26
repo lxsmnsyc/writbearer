@@ -118,7 +118,7 @@ Each entry says what differs and which node should settle it.
 
 #### World
 - Square grid, iso camera, A* (src/sim/nav.ts), flow field (src/sim/flow.ts), projectiles & zones as entities (projectile.ts, zone.ts) (02#World) -> built: src/sim/flow.ts
-- Tile height levels / depth buffer (02#World) -> gs-terrain (remainder: none in sim; renderer-only)
+- Tile height levels / depth buffer (02#World) -> gs-terrain-height-view (remainder: none in sim; renderer-only)
 - Spatial hash (02#World) -> cc-determinism (remainder: unverified (no spatial-hash file; sim iterates units); separation steering likely in sim.ts (stuck handling))
 - Facing matters for blocking/backstabs (02#World) -> duelist-footwork (remainder: Flank flag + shield block in damage.ts, unit.ts:279 behind-check; "backstab" bonus not found)
 
@@ -382,7 +382,7 @@ Each entry says what differs and which node should settle it.
 
 #### Utility items
 - Smoke bomb, Flare, Caltrops, Bandage, Resurrection item (src grep: only ranger.ts trap skills) (07#Utility items) -> ie-utility-items
-- Lantern: bearer has a lantern (light, notice range); "needed in night phases", "monsters drawn to it" (07#Utility items) -> gs-phase-modifiers; also gs-terrain (remainder: lantern light built (render/light.ts, ai.ts notice); night phases NOT BUILT)
+- Lantern: bearer has a lantern (light, notice range); "needed in night phases", "monsters drawn to it" (07#Utility items) -> gs-phase-modifiers; also gs-terrain-lantern (remainder: lantern light built (render/light.ts, ai.ts notice); night phases NOT BUILT)
 
 #### Backgrounds
 - All six backgrounds (Merchant, Noble, Scholar, Physician, Fugitive, Pilgrim) and picking one at run start (07#Backgrounds) -> sb-backgrounds
@@ -554,14 +554,14 @@ Each entry says what differs and which node should settle it.
 - Open ground, choke points (walls with openings), obstacles blocking sight/projectiles (nav.ts, test/sim/sight.test.ts) (11#Layout / terrain) -> built: nav.ts, test/sim/sight.test.ts
 - Shallow water slows 60% (footing.ts, test/game/footing.test.ts) (11#Layout / terrain) -> built: footing.ts, test/game/footing.test.ts
 - Chasm edges / bridges (Bridges plan) (11#Layout / terrain) -> built: present in code
-- Ledges raised ground reached by ramps (11#Layout / terrain) -> gs-terrain
-- Deep water, Frost freezes it (11#Layout / terrain) -> gs-terrain
-- Tall grass and fungus the citizen can hide in (only decorative dead grass, floor.ts:33,243) (11#Layout / terrain) -> gs-terrain
+- Ledges raised ground reached by ramps (11#Layout / terrain) -> gs-terrain-ledges
+- Deep water, Frost freezes it (11#Layout / terrain) -> gs-terrain-deep
+- Tall grass and fungus the citizen can hide in (only decorative dead grass, floor.ts:33,243) (11#Layout / terrain) -> gs-terrain-grass
 - Embers, blossoms (extras beyond doc; commit da6acca, 1d814ed) (11#Layout / terrain) -> built: extras beyond doc; commit da6acca, 1d814ed
 
 #### Points of interest
 - Entrance/exit (signpost, torches), horn posts (game/alarms.ts, test/game/alarms.test.ts), cache chest, trap field (Labyrinth traps; hazards.ts), monster lair (stage.ts) (11#Points of interest) -> built: game/alarms.ts, test/game/alarms.test.ts
-- Brazier circle the citizen can light: braziers are decor on the stair (stage.ts:1376, renderer.ts:775), citizen cannot light them (11#Points of interest) -> gs-terrain (remainder: Brazier circle the citizen can light: braziers are decor on the stair (stage.ts:1376, renderer.ts:775))
+- Brazier circle the citizen can light: braziers are decor on the stair (stage.ts:1376, renderer.ts:775), citizen cannot light them (11#Points of interest) -> gs-terrain-braziers (remainder: Brazier circle the citizen can light: braziers are decor on the stair (stage.ts:1376, renderer.ts:775))
 - Alarm bell/horn: horn posts built; "Sapper destroys bell" is job-gated, no Sapper (11#Points of interest) -> mj-outline-jobs (remainder: Alarm bell/horn: horn posts built; "Sapper destroys bell" is job-gated, no Sapper)
 
 #### Building a stage (algorithm)
@@ -574,14 +574,14 @@ Each entry says what differs and which node should settle it.
 
 #### Monsters
 - Packs, threat budget, idle/alert (stage.ts, ai.ts), noise/heard (unit heard), pack wake radius (ai.ts PACK_RADIUS), "chase" toggle waking next pack (ai.ts:36) (11#Monsters) -> built: present in code
-- Patrolling pack state: "idle, patrolling or alert" (11#Monsters) -> gs-terrain (remainder: no patrol (11 says "Not yet: patrols"))
+- Patrolling pack state: "idle, patrolling or alert" (11#Monsters) -> gs-terrain-patrols (remainder: no patrol (11 says "Not yet: patrols"))
 - Heralds run to horn, kill herald stops alarm, "Heralds" priority (alarms.ts, ai.ts, test/game/alarms.test.ts) (11#Monsters) -> built: alarms.ts, ai.ts, test/game/alarms.test.ts
 - Reinforcements from spawn holes (alarms.ts) (11#Monsters) -> built: present in code
 
 #### Light and vision
 - Lantern circle (bearer 7), merc smaller sight, dark hides monsters (render/light.ts, fog.ts, unit.ts sight) (11#Light and vision) -> built: present in code
 - Night phases shrink light: Darkness mutator halves sight; no per-phase night (11#Light and vision) -> gs-phase-modifiers (remainder: Night phases shrink light: Darkness mutator halves sight; no per-phase night)
-- Some monsters drawn to lantern; citizen shades lantern to hide (11#Light and vision) -> gs-terrain
+- Some monsters drawn to lantern; citizen shades lantern to hide (11#Light and vision) -> gs-terrain-lantern
 - Warden Night Eyes (job missing) (11#Light and vision) -> warden-watchman
 
 #### Citizen in a stage
@@ -591,13 +591,13 @@ Each entry says what differs and which node should settle it.
 #### Traps and hazards
 - Spike grates, fire vents, arrow slits, swinging blades, collapsing floors (11#Traps and hazards) -> built: HazardKind in src/gen/stage.ts, src/sim/trap.ts, test/game/collapse.test.ts
 - Flamethrowers, pressure plates, arrow launchers (11#Traps and hazards) -> gs-labyrinth (commit 216185b is design only)
-- Scout disarms traps; Warden Sentry reveals hidden traps; deep water slow/Frost freeze; falling rocks, pits (not seen) (11#Traps and hazards) -> gs-terrain; also warden-watchman, mj-outline-jobs
+- Scout disarms traps; Warden Sentry reveals hidden traps; deep water slow/Frost freeze; falling rocks, pits (not seen) (11#Traps and hazards) -> gs-terrain-hazards; also gs-terrain-deep, also warden-watchman, mj-outline-jobs
 
 #### Seamless connections
 - Forks with signpost, exits close the other road, crossing edge to edge, collapse after 4 s, mercs/dead brought along, loot lost (gen/place.ts, game.ts (11#Seamless connections) -> built: gen/place.ts, game.ts; commits fce5a86, b547bea; test/gen/place.test.ts
 - Alert monsters follow across (verify: monsters "wait in it from then on" per doc; follow-across is PARTIAL) (11#Seamless connections) -> built: present in code
 - Rewards at exit cache (bonus.ts, gen/loot.ts, commit 65a53cf) (11#Seamless connections) -> built: bonus.ts, gen/loot.ts, commit 65a53cf
-- Landmark foreshadowing (lights of a Town, smoke of Camp, glow of Shrine) (11#Seamless connections) -> gs-terrain (remainder: signposts show names; no distant landmarks)
+- Landmark foreshadowing (lights of a Town, smoke of Camp, glow of Shrine) (11#Seamless connections) -> gs-terrain-landmarks (remainder: signposts show names; no distant landmarks)
 - Loading: area built near entrance on crossing; generation is by seed stream. "descent into next layer" transition not a loading cutscene (11#Seamless connections) -> gs-world-flow (remainder: the way down stays a cut)
 - Pause on inventory/merc sheet/map (game.ts:454) (11#Seamless connections) -> built: present in code
 
@@ -654,7 +654,7 @@ Each entry says what differs and which node should settle it.
 - Each layer fields >=6 kinds of monster from >=2 factions (13#Goals) -> be-monsters-upper; also be-monsters-deep (remainder: roster.ts has ~13 non-boss kinds across 4 layers; most new-layer monsters (Undercroft, Crown) missing)
 - Every enemy type in the enemies table has a monster (13#Goals) -> be-monster-types (remainder: now archer, shielder, herald, bomber exist; flyer, kidnapper, summoner, thief, stripper, berserker, fear caster)
 - Each monster asks the player to change something; names are titles (13#Goals) -> not code
-- Boss rolled from a pool of three per layer, 81 boss orders (13#Goals) -> be-boss-pool
+- Boss rolled from a pool of three per layer, 81 boss orders (13#Goals) -> bp-roll
 - Mini-bosses lead gauntlets (13#Goals) -> be-minibosses (remainder: 7 of 16 in, placed (see Mini-bosses))
 
 #### Elite affixes
@@ -725,30 +725,30 @@ Each entry says what differs and which node should settle it.
 - "A run meets each at most once" (13#Mini-bosses) -> be-minibosses
 
 #### Bosses
-- Existing four boss rules (telegraphed moves, half-health change, drop card) (13#Bosses) -> be-boss-pool (remainder: boss-moves.ts, bosses.ts, test/sim/boss.test.ts)
+- Existing four boss rules (telegraphed moves, half-health change, drop card) (13#Bosses) -> bp-roll (remainder: boss-moves.ts, bosses.ts, test/sim/boss.test.ts)
 - Brood Mother, Gatekeeper, Abbess, Hollowed Saint (13#Bosses) -> built: bosses.ts:171-214
-- Rolled boss pool per layer from `map` stream + show boss name on layer map (13#Bosses) -> be-boss-pool
-- Endless mode rolling all twelve (13#Bosses) -> be-boss-pool
-- The Drowned Reeve (13#Bosses) -> be-bosses
-- The Lantern-Eater (13#Bosses) -> be-bosses
-- The Siege Crew (13#Bosses) -> be-bosses
-- The Bridge-Warden (13#Bosses) -> be-bosses
-- The Ossuary Bishop (13#Bosses) -> be-bosses
-- The Drowned Choir (13#Bosses) -> be-bosses
-- The Usurper (13#Bosses) -> be-bosses
-- The Faceless Regent (13#Bosses) -> be-bosses
-- Field changes engine: rising water, falling sections, darkness over a fight (the Collapse objective has falling floor; reusable pattern in objective.ts) (13#Bosses) -> be-boss-pool
-- Linked units: shared health / must-die-together (Bound affix shares hits, affixes.ts, partial basis) (13#Bosses) -> be-boss-pool
-- Mind control of mercs (Creditor turns mercs: creditor.ts, basis) (13#Bosses) -> be-boss-pool
-- Boss copying a merc's skill (skills run on any unit; no copy logic) (13#Bosses) -> be-boss-pool
+- Rolled boss pool per layer from `map` stream + show boss name on layer map (13#Bosses) -> bp-roll
+- Endless mode rolling all twelve (13#Bosses) -> bp-roll
+- The Drowned Reeve (13#Bosses) -> bb-reeve-siege
+- The Lantern-Eater (13#Bosses) -> bb-bridge-lantern
+- The Siege Crew (13#Bosses) -> bb-reeve-siege
+- The Bridge-Warden (13#Bosses) -> bb-bridge-lantern
+- The Ossuary Bishop (13#Bosses) -> bb-bishop-usurper
+- The Drowned Choir (13#Bosses) -> bb-choir-regent
+- The Usurper (13#Bosses) -> bb-bishop-usurper
+- The Faceless Regent (13#Bosses) -> bb-choir-regent
+- Field changes engine: rising water, falling sections, darkness over a fight (the Collapse objective has falling floor; reusable pattern in objective.ts) (13#Bosses) -> bp-ground; also gs-terrain-lantern (darkness)
+- Linked units: shared health / must-die-together (Bound affix shares hits, affixes.ts, partial basis) (13#Bosses) -> bp-link
+- Mind control of mercs (Creditor turns mercs: creditor.ts, basis) (13#Bosses) -> bp-possess
+- Boss copying a merc's skill (skills run on any unit; no copy logic) (13#Bosses) -> bp-possess
 
 #### Order to build in (bestiary)
 - 1 Elite affixes (all but 3 affixes) (13#Order to build in (bestiary)) -> built: present in code
 - 2 Ranged monsters (Hollow Archer, Penitent Slinger) (13#Order to build in (bestiary)) -> built: efbb9a9
 - 3 Shieldbearer, Bloat, Horn-Bearer (13#Order to build in (bestiary)) -> built: 162891b, 8879534
 - 4 Mini-bosses for Elite gauntlets, one per layer first (13#Order to build in (bestiary)) -> be-minibosses (remainder: 7/16 in)
-- 5 Second boss per layer (Reeve, Siege Crew, Bishop, Usurper) (13#Order to build in (bestiary)) -> be-bosses
-- 6 Flyers, thieves, hidden units, third boss per layer (13#Order to build in (bestiary)) -> be-monster-types; also hidden-units, be-bosses
+- 5 Second boss per layer (Reeve, Siege Crew, Bishop, Usurper) (13#Order to build in (bestiary)) -> bb-reeve-siege; also bb-bishop-usurper
+- 6 Flyers, thieves, hidden units, third boss per layer (13#Order to build in (bestiary)) -> be-monster-types; also hidden-units, bb-bridge-lantern, bb-choir-regent
 
 #### Art
 - Figures built on existing rigs with added shape (src/render/rig.ts, sprites.ts) (13#Art) -> be-monsters-upper (remainder: archer, slinger, shieldbearer, horn-bearer, bloat have art (70b5fe6))

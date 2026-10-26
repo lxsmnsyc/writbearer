@@ -8,9 +8,12 @@ outline: true
 milestone: gauntlets-stages
 size: L
 depends_on:
-  - on: gs-terrain
+  - on: gs-terrain-lantern
     kind: hard
-    why: night and rain build on light and water
+    why: night lowers the sim light level that node adds
+  - on: gs-terrain-deep
+    kind: hard
+    why: rain raises water, built on that node's deep water
 ---
 
 # Phase modifiers

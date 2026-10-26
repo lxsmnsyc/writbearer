@@ -7,7 +7,10 @@ type: feature
 outline: true
 milestone: gauntlets-stages
 size: L
-depends_on: []
+depends_on:
+  - on: gs-terrain-braziers
+    kind: hard
+    why: hold the light reuses lit braziers from that node
 ---
 
 # Horde kinds

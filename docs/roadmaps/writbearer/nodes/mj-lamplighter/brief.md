@@ -14,6 +14,9 @@ depends_on:
   - on: cc-job-systems
     kind: hard
     why: needs light radius as a stat
+  - on: gs-terrain-lantern
+    kind: hard
+    why: changes the sim lantern value that node adds
   - on: hidden-units
     kind: behavior
     via: concealment

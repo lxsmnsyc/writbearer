@@ -8,6 +8,12 @@ outline: true
 milestone: bestiary
 size: XL
 depends_on:
+  - on: bp-ground
+    kind: hard
+    why: the Drowned Cantor's flood moves onto the rising-water helper that node adds
+  - on: bp-link
+    kind: hard
+    why: the Whispering Choir and Shield-Oath use link groups from that node
   - on: be-monsters-upper
     kind: hard
     why: built on those monsters

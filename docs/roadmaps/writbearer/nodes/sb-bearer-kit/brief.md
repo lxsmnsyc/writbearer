@@ -8,9 +8,12 @@ outline: true
 milestone: story-bearer
 size: M
 depends_on:
-  - on: gs-terrain
+  - on: gs-terrain-grass
     kind: hard
-    why: Hide uses tall grass and shadows from that node
+    why: Hide uses coverAt from that node
+  - on: gs-terrain-lantern
+    kind: hard
+    why: shadows are ground where litAt is false
   - on: targeting-rules
     kind: hard
     why: Mark adds a target priority to the merc pick that node rewrites
