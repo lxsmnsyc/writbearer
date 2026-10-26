@@ -1,5 +1,7 @@
 ---
 milestones: [starting-jobs, combat-core, more-jobs, bestiary, gauntlets-stages, items-economy, story-bearer]
+merge:
+  mode: maintainer
 branches:
 ---
 

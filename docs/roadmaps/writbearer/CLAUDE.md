@@ -14,4 +14,4 @@ Rules for agents working on a node:
 - Read the outcomes of your direct dependencies. Do not read other nodes' logs.
 - The repo is private. Do not push branches that would trigger GitHub Actions; run checks locally.
 
-Script: `python3 ~/.claude/plugins/cache/lxsmnsyc-agent-skills/agent-skills/0.5.0/skills/parallel-roadmap/scripts/plan.py docs/roadmaps/writbearer context <id>` lists the files to load for a node.
+Script: `python3 ~/.claude/plugins/cache/lxsmnsyc-agent-skills/agent-skills/0.7.0/skills/parallel-roadmap/scripts/plan.py docs/roadmaps/writbearer context <id>` lists the files to load for a node.
