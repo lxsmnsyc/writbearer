@@ -51,7 +51,7 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 - Fast check (safe to run in parallel worktrees): `pnpm typecheck && pnpm lint && pnpm test` (about 10 s).
 - Full check (after merging, at checkpoints): `pnpm test:e2e` (a few minutes). It starts a dev server on fixed port 5199, so only one copy can run at a time: nodes that run it carry `exclusive: [e2e-port]`.
-- The repo is private: run checks locally, never trigger GitHub Actions.
+- The repo is public and has no GitHub Actions workflows: run checks locally.
 
 ## Shared files
 

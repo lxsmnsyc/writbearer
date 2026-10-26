@@ -12,6 +12,6 @@ Rules for agents working on a node:
 - Follow the code style of `src/content/vanguard.ts`: one exported const per skill, a short comment on what it does, numbers as first guesses.
 - Keep notes in your `log.md`. Finish by writing `outcome.md` from the template.
 - Read the outcomes of your direct dependencies. Do not read other nodes' logs.
-- The repo is private. Do not push branches that would trigger GitHub Actions; run checks locally.
+- The repo is public and has no CI. Run the checks locally before opening a pull request.
 
 Script: `python3 ~/.claude/plugins/cache/lxsmnsyc-agent-skills/agent-skills/0.7.0/skills/parallel-roadmap/scripts/plan.py docs/roadmaps/writbearer context <id>` lists the files to load for a node.
