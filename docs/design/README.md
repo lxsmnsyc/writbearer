@@ -8,6 +8,8 @@ A real-time isometric roguelite where the player is a citizen who cannot fight. 
 
 ## Files
 
+The work still to build from these notes is planned in [roadmaps](../roadmaps/README.md).
+
 1. [Overview and run structure](01-overview.md)
 2. [Tech stack and architecture](02-tech-stack.md)
 3. [Combat engine and damage](03-combat-engine.md)
