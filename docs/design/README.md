@@ -25,6 +25,7 @@ The work still to build from these notes is planned in [roadmaps](../roadmaps/RE
 13. [Bestiary: monsters, mini-bosses and bosses](13-bestiary.md) (draft)
 14. [Gauntlets](14-gauntlets.md) (draft)
 15. [The level director](15-director.md) (draft)
+16. [Builds: skill trees or fixed spells with upgrades](16-builds.md) (draft)
 
 ## Decisions so far
 
