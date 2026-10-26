@@ -499,6 +499,8 @@ export const THREAT: Record<MonsterKind, number> = {
   hollowSoldier: 3,
   hornBearer: 2,
   hollowArcher: 2,
+  hollowShieldbearer: 3,
+  bloat: 2,
   penitentSlinger: 2,
   hornPost: 0,
   hollowed: 3,
@@ -1518,6 +1520,7 @@ const FACTIONS: Faction[] = [
   { layer: 0, from: 0, kinds: ['husk', 'mite', 'mite'], size: MIXED },
   { layer: 0, from: 2, kinds: ['crawler', 'mite', 'mite'], size: MIXED },
   { layer: 0, from: 2, kinds: ['hollowSoldier', 'husk', 'husk', 'husk'], size: MIXED },
+  { layer: 0, from: 2, kinds: ['husk', 'bloat', 'husk', 'husk'], size: MIXED },
   { layer: 0, from: 4, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
   { layer: 0, from: 4, kinds: ['crawler'], size: MIXED },
   { layer: 0, from: 4, kinds: ['hollowSoldier'], size: STRONG },
@@ -1534,7 +1537,14 @@ const FACTIONS: Faction[] = [
     kinds: ['hollowSoldier', 'hollowSoldier', 'hollowArcher', 'hollowArcher'],
     size: MIXED,
   },
+  {
+    layer: 1,
+    from: 1,
+    kinds: ['hollowShieldbearer', 'hollowArcher', 'hollowSoldier'],
+    size: MIXED,
+  },
   { layer: 1, from: 2, kinds: ['hollowSoldier'], size: STRONG },
+  { layer: 1, from: 3, kinds: ['crawler', 'mite', 'bloat', 'mite'], size: MIXED },
   { layer: 1, from: 4, kinds: ['penitent', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
   // The Drowned Undercroft: the Church's keepers and the drowned
   { layer: 2, from: 0, kinds: ['penitent', 'penitent', 'husk'], size: MIXED },
@@ -1553,6 +1563,12 @@ const FACTIONS: Faction[] = [
   { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
   { layer: 3, from: 0, kinds: ['cantor', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
   { layer: 3, from: 1, kinds: ['hollowSoldier', 'hollowArcher', 'hollowArcher'], size: MIXED },
+  {
+    layer: 3,
+    from: 2,
+    kinds: ['hollowShieldbearer', 'hollowSoldier', 'hollowArcher'],
+    size: MIXED,
+  },
   { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'husk', 'husk'], size: MIXED },
 ];
 

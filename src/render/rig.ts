@@ -11,6 +11,7 @@ export type Kind =
   | 'cleric'
   | 'hollowSoldier'
   | 'hollowArcher'
+  | 'hollowShieldbearer'
   | 'penitentSlinger'
   | 'hornBearer'
   | 'hornPost'
@@ -20,6 +21,7 @@ export type Kind =
   | 'husk'
   | 'mite'
   | 'crawler'
+  | 'bloat'
   | 'broodMother'
   | 'refugee';
 
@@ -32,6 +34,7 @@ const KINDS = new Set<string>([
   'cleric',
   'hollowSoldier',
   'hollowArcher',
+  'hollowShieldbearer',
   'penitentSlinger',
   'hornBearer',
   'hornPost',
@@ -41,6 +44,7 @@ const KINDS = new Set<string>([
   'husk',
   'mite',
   'crawler',
+  'bloat',
   'broodMother',
   'refugee',
 ]);
@@ -49,9 +53,16 @@ export function isKind(kind: string): kind is Kind {
   return KINDS.has(kind);
 }
 
+// The Old King's guard, drawn as Hollow soldiers with their crowns
+const hollowGuard = (kind: Kind): boolean =>
+  kind === 'hollowSoldier' ||
+  kind === 'hornBearer' ||
+  kind === 'hollowArcher' ||
+  kind === 'hollowShieldbearer';
+
 /** Kinds drawn as a Blight crawler, at their own size. */
 export const isCrawler = (kind: string): boolean =>
-  kind === 'crawler' || kind === 'mite' || kind === 'broodMother';
+  kind === 'crawler' || kind === 'mite' || kind === 'bloat' || kind === 'broodMother';
 
 export const HIT_FRACTION: Record<Kind, number> = {
   bearer: 1,
@@ -61,6 +72,7 @@ export const HIT_FRACTION: Record<Kind, number> = {
   hollowSoldier: 0.65,
   hornBearer: 0.6,
   hollowArcher: 0.7,
+  hollowShieldbearer: 0.6,
   penitentSlinger: 0.6,
   hornPost: 0.5,
   penitent: 0.6,
@@ -69,6 +81,8 @@ export const HIT_FRACTION: Record<Kind, number> = {
   husk: 0.6,
   mite: 0.5,
   crawler: 0.5,
+  // Its burst: the swelling is all windup.
+  bloat: 0.1,
   broodMother: 0.5,
   refugee: 1,
 };
@@ -160,6 +174,7 @@ const KIND_SIZE: Record<Kind, number> = {
   hollowSoldier: 1,
   hornBearer: 0.95,
   hollowArcher: 1,
+  hollowShieldbearer: 1,
   penitentSlinger: 0.95,
   hornPost: 1,
   penitent: 1,
@@ -168,6 +183,7 @@ const KIND_SIZE: Record<Kind, number> = {
   husk: 0.95,
   mite: 0.55,
   crawler: 1,
+  bloat: 0.95,
   broodMother: 2.1,
   refugee: 0.78,
 };
@@ -307,7 +323,7 @@ export function skeleton(u: RigUnit, time: number): Skeleton {
     st * 4 -
     flinch +
     roar +
-    (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' || u.kind === 'hollowArcher' ? 4 : 0) +
+    (hollowGuard(u.kind) ? 4 : 0) +
     (u.kind === 'hollowed' ? 30 : 0) +
     (u.kind === 'husk' ? 12 : 0) +
     strike * (u.kind === 'hollowSoldier' ? 14 : 8);
@@ -522,6 +538,7 @@ interface Gear {
   knife?: { hand: V3; dir: V3 };
   staff?: { hand: V3 };
   claws?: { hand: V3; dir: V3 }[];
+  tower?: { hand: V3 };
 }
 
 function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
@@ -567,6 +584,19 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'R', hand, v(-1, 1, 0));
     const speed = a >= 0 && a < HIT_FRACTION.penitentSlinger ? 22 : 9;
     g.sling = { hand: sk.handR, angle: time * speed };
+  }
+  if (u.kind === 'hollowShieldbearer') {
+    // The tower shield held square in front, a short blade thrust past it.
+    reach(sk, 'L', add(sk.chest, v(14, -6, -8)), v(-1, -1, 0));
+    let thrust = 0;
+    if (a >= 0) {
+      const ph = phases(a, 0.5, 0.65);
+      thrust = ph.recover > 0 ? 1 - ph.recover : ph.strike - ph.windup * 0.4;
+    }
+    const blade = add(sk.chest, v(10 + thrust * 18, 12, -10));
+    reach(sk, 'R', blade, v(-1, 1, 0));
+    g.knife = { hand: sk.handR, dir: v(1, 0, 0) };
+    g.tower = { hand: sk.handL };
   }
   if (u.kind === 'hornBearer') {
     // The horn held at the side, raised to the mouth to strike or to blow.
@@ -780,7 +810,7 @@ export function drawUnit(
       },
     });
   }
-  if (u.kind === 'hollowSoldier' || u.kind === 'hornBearer' || u.kind === 'hollowArcher') {
+  if (hollowGuard(u.kind)) {
     const ring = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2);
     const band = ring.map((t) => proj(add(sk.head, v(Math.cos(t) * 7, Math.sin(t) * 7, 5))));
     const spikes = ring
@@ -868,6 +898,24 @@ export function drawUnit(
           fill(c, taper(curl[i - 1], curl[i], 0.4 + i * 0.25, 0.6 + i * 0.25), C.gold, ink);
         }
         fill(c, hull(bell), C.gold, ink);
+      },
+    });
+  }
+  if (gear.tower) {
+    // A tower shield taller than the soldier, in wood with a gold band.
+    const f = gear.tower.hand[0] + 4;
+    const board = [v(f, -15, 2), v(f, 15, 2), v(f, 15, 92), v(f, -15, 92)].map(proj);
+    const band = [
+      v(f + 0.5, -15, 50),
+      v(f + 0.5, 15, 50),
+      v(f + 0.5, 15, 56),
+      v(f + 0.5, -15, 56),
+    ].map(proj);
+    parts.push({
+      depth: avg(...board) + 0.0007,
+      draw: (c) => {
+        fill(c, hull(board), C.wood, ink);
+        fill(c, hull(band), C.gold, null);
       },
     });
   }
@@ -984,6 +1032,30 @@ function drawCrawler(
       fill(c, hull(headPts), color, C.ink);
     },
   });
+  if (u.kind === 'bloat') {
+    // A pale sac on its back, bigger than the crawler. It swells as it bursts.
+    const swell = u.atk >= 0 ? 1 + u.atk * 0.45 : 1 + Math.sin(u.walk * 0.9 + u.x) * 0.05;
+    // Points over a round body sitting on its back, drawn over the legs
+    const sac: Projected[] = [];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      for (const h of [-0.6, 0, 0.6]) {
+        const k = Math.sqrt(1 - h * h);
+        sac.push(
+          proj(
+            v(-4 + Math.cos(a) * 24 * k * swell, Math.sin(a) * 22 * k * swell, 30 + h * 20 * swell),
+          ),
+        );
+      }
+    }
+    sac.push(proj(v(-4, 0, 30 + 20 * swell)), proj(v(-4, 0, 30 - 20 * swell)));
+    parts.push({
+      depth: avg(...body) + 1,
+      draw: (c) => {
+        fill(c, hull(sac), flash ? '#ffffff' : C.skin, C.ink);
+      },
+    });
+  }
   if (u.kind === 'broodMother') {
     // Her egg sac: pale, swollen, dragged behind her, swelling as she breathes.
     const swell = 1 + Math.sin(u.walk * 0.7 + u.x) * 0.04;
@@ -1036,6 +1108,7 @@ export function emissives(
   const eyed = [
     'hollowSoldier',
     'hollowArcher',
+    'hollowShieldbearer',
     'hornBearer',
     'penitent',
     'penitentSlinger',
@@ -1047,13 +1120,7 @@ export function emissives(
     const sk = skeleton(u, time);
     // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
     const color =
-      u.kind === 'hollowSoldier' ||
-      u.kind === 'hornBearer' ||
-      u.kind === 'hollowArcher' ||
-      u.kind === 'hollowed' ||
-      u.kind === 'husk'
-        ? 'teal'
-        : 'blood';
+      hollowGuard(u.kind) || u.kind === 'hollowed' || u.kind === 'husk' ? 'teal' : 'blood';
     out.push({ p: proj(add(sk.head, v(3, -1.5, 1))), color });
     out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }

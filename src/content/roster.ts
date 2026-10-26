@@ -7,7 +7,7 @@ import Unit, { type Kit } from '../sim/unit';
 import { plainItem, potionStack } from '../gen/loot';
 import { slotFor } from '../sim/item';
 import { BASE_BY_ID, STARTER_BELT, STARTER_GEAR } from './items';
-import { HYMN } from './skills';
+import { BURST, HYMN } from './skills';
 import { applyTraits } from './traits';
 
 // First numbers for the starting jobs and the first monsters. They are a
@@ -125,6 +125,22 @@ export const MONSTERS = {
     element: Element.Radiant,
     hunt: Hunt.Bearer,
   },
+  // A soldier of the Old King's guard behind a tower shield taller than it.
+  // The shield takes most of every physical blow from the front, and it
+  // turns slowly, so it is beaten from the side or behind, or with magic.
+  hollowShieldbearer: {
+    job: job('Hollow Shieldbearer', 170, 15, 0, Range.Melee),
+    base: stats(9, 3, 12, 1, 8, 1),
+    weapon: { min: 12, max: 16, matk: 0 },
+    kit: { reach: 1.1, interval: 1.5, hitAt: 0.6, moveSpeed: 1.7, notice: 5, turn: 1.4 },
+    modifiers: [
+      { stat: 'armor', add: 30 },
+      { stat: 'blockChance', add: 100 },
+      { stat: 'blockAmount', add: 80 },
+    ],
+    race: Race.Undead,
+    hunt: Hunt.Nearest,
+  },
   // A soldier of the Old King's guard with a curled horn instead of a spear.
   // When its pack wakes it runs for the nearest horn post, to blow it and
   // call a fresh pack. Lightly armored and quick, and weak once cornered.
@@ -215,6 +231,20 @@ export const MONSTERS = {
     // Its bite builds up poison.
     attackElement: Element.Venom,
     hunt: Hunt.Nearest,
+  },
+  // A Blight bloat: a slow, swollen sac on legs. It walks into the party
+  // and bursts in a cloud of Venom, shown on the ground first. Killed
+  // before it bursts, it only pops.
+  bloat: {
+    job: job('Bloat', 90, 9, 0, Range.Melee),
+    base: stats(8, 2, 6, 1, 4, 1),
+    weapon: { min: 14, max: 18, matk: 0 },
+    kit: { reach: 1.0, interval: 99, hitAt: 0.5, moveSpeed: 1.4, notice: 6 },
+    race: Race.Insect,
+    element: Element.Venom,
+    attackElement: Element.Venom,
+    hunt: Hunt.Bearer,
+    skills: [BURST],
   },
   // The Marches' boss: a Blight crawler grown huge, swollen with eggs. Slow,
   // and she lays mites. Her skill and her frenzy are set up in brood.ts.

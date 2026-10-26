@@ -22,6 +22,10 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'One of the Old King’s townsfolk, drowned when he sank the capital. It still walks the road home.',
     how: 'Slow. Shambles at whoever is nearest.',
   },
+  bloat: {
+    who: 'A crawler the Blight filled until it could not stop swelling.',
+    how: 'Walks into the party and bursts in a cloud of Venom, shown on the ground first. Kill it before it gets there, and it only pops.',
+  },
   crawler: {
     who: 'The Blight grown. It burrows up from below, as if something down there wanted the road closed.',
     how: 'Bites whoever is closest. Its bites build up Poison.',
@@ -37,6 +41,10 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
   penitentSlinger: {
     who: 'A Penitent who never learned the knife, and slings stones at the bearer instead.',
     how: 'Keeps well back and slings at the bearer. Fragile once reached. Radiant: holy magic does nothing to it.',
+  },
+  hollowShieldbearer: {
+    who: 'A soldier of the Old King’s guard who held the line behind a tower shield. It still holds it.',
+    how: 'Its shield takes most of every blow from the front, and it turns slowly. Hit it from the side or behind, or with magic.',
   },
   hornBearer: {
     who: 'A soldier of the Old King’s guard who carried the horn. It still answers the call to arms.',

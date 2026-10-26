@@ -83,6 +83,11 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
     modifiers: [],
     setup: buildupOnHit(POISON, 15),
   }),
+  bloat: card('bloat', 'Bloat', 1, {
+    fits: BODY,
+    describe: 'Takes 15% less Venom damage.',
+    modifiers: [{ reduce: Category.AttackElement, key: Element.Venom, percent: 15 }],
+  }),
   hollowSoldier: card('hollowSoldier', 'Hollow Soldier', 1, {
     fits: SHIELD,
     describe: '+15% armor.',
@@ -97,6 +102,11 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
     fits: WEAPON,
     describe: '+3% critical chance.',
     modifiers: [{ stat: 'crit', add: 3 }],
+  }),
+  hollowShieldbearer: card('hollowShieldbearer', 'Hollow Shieldbearer', 1, {
+    fits: SHIELD,
+    describe: '+8% block chance.',
+    modifiers: [{ stat: 'blockChance', add: 8 }],
   }),
   hornBearer: card('hornBearer', 'Horn-Bearer', 1, {
     fits: SHIELD,

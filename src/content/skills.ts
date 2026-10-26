@@ -1,8 +1,10 @@
 import { ARROW_SPEED, strike } from '../sim/sim';
 import { type Skill, Targeting } from '../sim/skill';
-import { PETRIFY, RENEWED, ROOTED, STUN, TAUNTED } from '../sim/statuses';
+import { PETRIFY, POISON, RENEWED, ROOTED, STUN, TAUNTED } from '../sim/statuses';
 import { DamageFlags, DamageKind, Element, Race, Range, Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
+import { warn } from '../sim/warning';
+import { setZone } from '../sim/zone';
 
 // First numbers for active skills. A starting point for balance, not final
 // values. Every number that grows with rank says so in its skill's text.
@@ -401,6 +403,74 @@ export const HYMN: Skill = {
     for (const m of flock(u)) {
       u.heal(m, m.derived.maxHp * HYMN_SHARE);
     }
+  },
+};
+
+// How near the party a Bloat comes before it bursts, how wide its burst
+// and its cloud are, and how long each lasts
+const BURST_NEAR = 1.4;
+const BURST_R = 2.2;
+const BURST_WARN = 1.2;
+const CLOUD_TIME = 5;
+
+/**
+ * Bloat. Once at the party, it swells and bursts. The ground shows where
+ * first. Whoever is caught is hit with Venom, and a cloud stays that
+ * poisons whoever stands in it. A Bloat killed while it swells only pops.
+ */
+export const BURST: Skill = {
+  id: 'burst',
+  name: 'Burst',
+  describe: () =>
+    `Swells and bursts ${BURST_WARN} seconds later, poisoning all within ${BURST_R} tiles. A cloud stays for ${CLOUD_TIME} seconds.`,
+  cost: 0,
+  cooldown: 0,
+  windup: 0.1,
+  recovery: BURST_WARN + 0.2,
+  targeting: Targeting.Self,
+  wants(u, _target, sim) {
+    return sim.foes(Side.Monster).some((p) => u.distanceTo(p) <= BURST_NEAR);
+  },
+  elite() {
+    return false;
+  },
+  release(u, _target, sim) {
+    warn(sim, {
+      x: u.x,
+      z: u.z,
+      shape: { kind: 'circle', r: BURST_R },
+      windup: BURST_WARN,
+      spare: Side.Monster,
+      source: u,
+      strike: (v) => {
+        strike(u, v, {
+          ratio: 150,
+          element: Element.Venom,
+          buildup: [{ status: POISON, amount: 40 }],
+          flags: DamageFlags.Skill | DamageFlags.AoE | DamageFlags.Sure,
+        });
+      },
+      done: () => {
+        setZone(sim, {
+          kind: 'venomCloud',
+          owner: u,
+          x: u.x,
+          z: u.z,
+          r: BURST_R,
+          life: CLOUD_TIME,
+          element: Element.Venom,
+          pulse: (e) => {
+            if (e.side !== Side.Monster) {
+              e.addStatus(POISON, u);
+            }
+          },
+        });
+        // It is spent. Nothing is left of it to raise.
+        u.hp = 0;
+        u.lastBlow = { value: u.derived.maxHp, flags: 0 };
+        u.die(null);
+      },
+    });
   },
 };
 

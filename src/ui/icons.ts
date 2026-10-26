@@ -14,6 +14,7 @@ import GiBroadsword from '~icons/game-icons/broadsword';
 import GiBrokenBone from '~icons/game-icons/broken-bone';
 import GiBrokenShield from '~icons/game-icons/broken-shield';
 import GiBullseye from '~icons/game-icons/bullseye';
+import GiBurstBlob from '~icons/game-icons/burst-blob';
 import GiCampfire from '~icons/game-icons/campfire';
 import GiCardPickup from '~icons/game-icons/card-pickup';
 import GiCauldron from '~icons/game-icons/cauldron';
@@ -47,6 +48,7 @@ import GiFlangedMace from '~icons/game-icons/flanged-mace';
 import GiFlyingFlag from '~icons/game-icons/flying-flag';
 import GiFootprint from '~icons/game-icons/footprint';
 import GiGemPendant from '~icons/game-icons/gem-pendant';
+import GiGuardedTower from '~icons/game-icons/guarded-tower';
 import GiGhost from '~icons/game-icons/ghost';
 import GiHammerDrop from '~icons/game-icons/hammer-drop';
 import GiHangingSpider from '~icons/game-icons/hanging-spider';
@@ -230,6 +232,7 @@ export const ICONS = {
   cleric: GiSunPriest,
   hollowSoldier: GiDeathSkull,
   hornBearer: GiHuntingHorn,
+  hollowShieldbearer: GiGuardedTower,
   hollowArcher: GiPocketBow,
   penitentSlinger: GiSling,
   hornPost: GiHuntingHorn,
@@ -239,6 +242,7 @@ export const ICONS = {
   husk: GiGhost,
   mite: GiSpiderAlt,
   crawler: GiHangingSpider,
+  bloat: GiBurstBlob,
   broodMother: GiSpiderFace,
   gatekeeper: GiOverlordHelm,
   abbess: GiPopeCrown,

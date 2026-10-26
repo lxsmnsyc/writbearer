@@ -62,10 +62,10 @@ export const MINI_BOSSES: Record<MiniBossId, MiniBoss> = {
     id: 'shieldOath',
     name: 'The Shield-Oath',
     layer: 1,
-    kind: 'hollowSoldier',
-    escort: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier', 'hollowSoldier'],
+    kind: 'hollowShieldbearer',
+    escort: ['hollowShieldbearer', 'hollowShieldbearer', 'hollowSoldier', 'hollowSoldier'],
     affixes: ['bound', 'stoneskin'],
-    text: 'A Hollow soldier sworn to its pack. A hit on any of them hurts all.',
+    text: 'A Shieldbearer sworn to its pack. A hit on any of them hurts all. Flank them, or use magic.',
   },
   boneQuartermaster: {
     id: 'boneQuartermaster',

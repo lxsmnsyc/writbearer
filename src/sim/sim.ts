@@ -93,6 +93,18 @@ function advanceCast(u: Unit, dt: number): void {
   }
 }
 
+// Holds each slow turner within its turn of the angle it had at the start
+// of the step.
+function turnSlowly(facing: readonly (readonly [Unit, number])[], dt: number): void {
+  for (const [u, from] of facing) {
+    const most = u.kit.turn * dt;
+    const d = Math.atan2(Math.sin(u.angle - from), Math.cos(u.angle - from));
+    if (Math.abs(d) > most) {
+      u.angle = from + Math.sign(d) * most;
+    }
+  }
+}
+
 /**
  * A blow that lands now: wakes the target and marks hits from behind.
  * Returns the damage event, or null on a miss.
@@ -390,13 +402,18 @@ export default class Sim extends EventEngine<SimEventMap> {
       const rate = u.target?.alive ? 1 : REST_REGEN;
       u.mana = Math.min(u.derived.maxMana, u.mana + u.derived.manaRegen * rate * dt);
     }
+    // Units that turn slowly turn at most so far this step, before and
+    // after their swings face them at their targets.
+    const facing = living.filter((u) => u.kit.turn > 0).map((u) => [u, u.angle] as const);
     for (const u of living) {
       think(this, u, dt);
     }
+    turnSlowly(facing, dt);
     for (const u of living) {
       advanceSwing(u, dt);
       advanceCast(u, dt);
     }
+    turnSlowly(facing, dt);
     for (const p of this.projectiles) {
       this.stopAtWalls(p);
       if (p.done) {

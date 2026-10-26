@@ -45,6 +45,9 @@ export interface Kit {
   // How far a monster notices the bearer and its lantern. Mercs, unlit, are
   // noticed from three quarters of it.
   notice: number;
+  // How fast it can turn, in radians a second, or 0 to turn at once. A
+  // Shieldbearer turns slowly, so it can be flanked.
+  turn: number;
 }
 
 const DEFAULT_KIT: Kit = {
@@ -54,6 +57,7 @@ const DEFAULT_KIT: Kit = {
   moveSpeed: 2.5,
   sight: 7,
   notice: 5,
+  turn: 0,
 };
 
 export interface UnitSpec {
