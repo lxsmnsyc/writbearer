@@ -3,7 +3,7 @@ import { Shout, acting, responseDelay } from './shout';
 import type Sim from './sim';
 import { SkillMode } from './skill';
 import { MENDING, REFRESHING, TAUNTED } from './statuses';
-import { allowed, canTarget } from './targeting';
+import { allowed, forbids } from './targeting';
 import { Range, Rank, Side } from './types';
 import type Unit from './unit';
 import { type Warning, inside } from './warning';
@@ -57,11 +57,7 @@ export const DEFAULT_TOGGLES: Toggles = {
 
 /** A copy of a merc's orders, so changing one never changes another. */
 export function copyToggles(toggles: Toggles): Toggles {
-  return {
-    ...toggles,
-    priorities: [...toggles.priorities],
-    skills: { ...toggles.skills },
-  };
+  return { ...toggles, priorities: [...toggles.priorities], skills: { ...toggles.skills } };
 }
 
 /** Gives a merc new standing orders. The merc keeps its own copy. */
@@ -101,15 +97,6 @@ const HOLD_RADIUS = 2;
 // fall back, in tiles.
 const RALLY_CHASE = 2;
 const FALL_BACK = 1.6;
-
-// Whether `from` may not pick `target`, which is hostile to it.
-function forbidden(from: Unit, target: Unit): boolean {
-  return (
-    target.side !== from.side &&
-    from.sim.foes(from.side).includes(target) &&
-    !canTarget(from, target)
-  );
-}
 
 function nearest(from: Unit, units: Unit[]): Unit | null {
   let best: Unit | null = null;
@@ -176,8 +163,8 @@ function useSkill(sim: Sim, u: Unit, toggles: Toggles, target: Unit | null): boo
     if ((skill.aim && !aimed) || !skill.wants(u, aimed, sim)) {
       continue;
     }
-    // A hostile target the rules forbid is passed over. An ally is not asked.
-    if (aimed && forbidden(u, aimed)) {
+    // A skill's own aim can name a hostile unit the rules forbid. An ally is not asked.
+    if (aimed && forbids(u, aimed)) {
       continue;
     }
     if (mode === SkillMode.Elites && !skill.elite(u, aimed, sim)) {
@@ -278,7 +265,7 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
     fallBack(sim, u, bearer, dt);
     return;
   }
-  if (heard?.shout === Shout.Focus && heard.target && !forbidden(u, heard.target)) {
+  if (heard?.shout === Shout.Focus && heard.target && !forbids(u, heard.target)) {
     if (useSkill(sim, u, toggles, heard.target)) {
       u.target = heard.target;
     } else {
@@ -287,11 +274,7 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
     return;
   }
   if (heard?.shout === Shout.Rally) {
-    toggles = {
-      ...toggles,
-      stance: Stance.Guard,
-      chase: Math.min(toggles.chase, RALLY_CHASE),
-    };
+    toggles = { ...toggles, stance: Stance.Guard, chase: Math.min(toggles.chase, RALLY_CHASE) };
   } else if (heard?.shout === Shout.Hold) {
     toggles = { ...toggles, stance: Stance.Hold };
   }
@@ -394,7 +377,7 @@ function lureFor(sim: Sim, u: Unit): Zone | undefined {
         z.lure !== undefined &&
         z.owner.side !== u.side &&
         u.distanceTo(z) <= z.lure &&
-        canTarget(u, z.owner),
+        !forbids(u, z.owner),
     )
     .sort((a, b) => u.distanceTo(a) - u.distanceTo(b))
     .at(0);
@@ -466,7 +449,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   // A taunted monster goes for whoever taunted it.
   // A taunt from a unit it may not target is ignored.
   const taunted = u.statuses.get(TAUNTED.id);
-  const taunt = taunted && canTarget(u, taunted.source) ? taunted : undefined;
+  const taunt = taunted && !forbids(u, taunted.source) ? taunted : undefined;
   if (runForHelp(sim, u, dt, taunt !== undefined)) {
     return;
   }
@@ -483,12 +466,12 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
     u.travel(bait.x, bait.z, dt, 0.6);
     return;
   }
-  const current = u.target && forbidden(u, u.target) ? null : u.target;
+  const current = u.target && forbids(u, u.target) ? null : u.target;
   if (monsterSkill(sim, u, taunt?.source ?? current)) {
     return;
   }
   if (u.hunt === Hunt.Support && !taunt) {
-    support(sim, u, party, dt);
+    support(sim, u, allowed(u, party), dt);
     return;
   }
   // It goes only for whom it can see. Losing sight of its quarry, it walks
@@ -516,6 +499,7 @@ function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   }
   u.lastSeen = { x: target.x, z: target.z };
   // A ranged monster steps back from whoever comes too close, unless taunted.
+  // It steps back from anyone close, forbidden or not: this is distance, not a choice of target.
   if (u.job.range === Range.Ranged && !taunt) {
     const close = nearest(u, party);
     if (close && u.distanceTo(close) < KEEP_BACK) {
@@ -621,7 +605,7 @@ export function think(sim: Sim, u: Unit, dt: number): void {
     return;
   }
   // A target the rules now forbid is dropped.
-  if (u.target && u !== sim.bearer && forbidden(u, u.target)) {
+  if (u.target && u !== sim.bearer && forbids(u, u.target)) {
     u.target = null;
   }
   if (u === sim.bearer) {

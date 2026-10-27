@@ -5,10 +5,11 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
+import { allowed, canTarget, forbids } from './targeting';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
 import { type Zone, updateZones, zonesAt } from './zone';
-import { allowed, canTarget } from './targeting';
+import { Targeting } from './skill';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
@@ -51,16 +52,16 @@ function advanceSwing(u: Unit, dt: number): void {
           .filter((f) => f !== target && u.distanceTo(f) <= u.kit.reach + slack)
           .sort((a, b) => a.distanceTo(target) - b.distanceTo(target))
           .slice(0, u.volley - 1);
-        for (const at of [target, ...others]) {
+        // The pick may have been forbidden during the windup.
+        const shots = forbids(u, target) ? others : [target, ...others];
+        for (const at of shots) {
           u.sim.fire(u, at, {
             speed: ARROW_SPEED,
             homing: true,
-            options: {
-              flags: DamageFlags.BasicAttack | DamageFlags.Projectile,
-            },
+            options: { flags: DamageFlags.BasicAttack | DamageFlags.Projectile },
           });
         }
-      } else {
+      } else if (!forbids(u, target)) {
         strike(u, target, { flags: DamageFlags.BasicAttack });
       }
     }
@@ -82,6 +83,11 @@ function advanceCast(u: Unit, dt: number): void {
   cast.t += dt;
   const { skill } = cast;
   if (before < skill.windup && cast.t >= skill.windup) {
+    // A hostile target forbidden during the windup cancels the cast.
+    if (skill.targeting === Targeting.Enemy && cast.target && forbids(u, cast.target)) {
+      u.cast = null;
+      return;
+    }
     u.sim.emit(SimEvents.UnitSkillRelease, {
       id: 'UnitSkillRelease',
       disabled: false,
@@ -139,14 +145,38 @@ function flyHoming(p: Projectile, dt: number): void {
     p.x = t.x;
     p.z = t.z;
     p.done = true;
-    strike(p.source, t, p.options);
-    p.onHit?.(t);
+    // A target forbidden in flight is not struck.
+    if (!forbids(p.source, t)) {
+      strike(p.source, t, p.options);
+      p.onHit?.(t);
+    }
     return;
   }
   p.dx = dx / d;
   p.dz = dz / d;
   p.x += p.dx * step;
   p.z += p.dz * step;
+}
+
+// Units a straight projectile was refused, so the question is asked once.
+const passed = new WeakMap<Projectile, Set<Unit>>();
+
+// Whether a straight projectile's source may not hit a unit. A refused unit is
+// asked once per projectile.
+function refused(p: Projectile, u: Unit): boolean {
+  let denied = passed.get(p);
+  if (denied?.has(u)) {
+    return true;
+  }
+  if (canTarget(p.source, u)) {
+    return false;
+  }
+  if (!denied) {
+    denied = new Set();
+    passed.set(p, denied);
+  }
+  denied.add(u);
+  return true;
 }
 
 // A straight projectile hits each enemy it passes, in small steps.
@@ -160,12 +190,10 @@ function flyStraight(sim: Sim, p: Projectile, dt: number): void {
     p.x += p.dx * step;
     p.z += p.dz * step;
     for (const u of enemies) {
-      if (
-        u.alive &&
-        !p.hits.has(u) &&
-        Math.hypot(u.x - p.x, u.z - p.z) <= p.radius &&
-        canTarget(p.source, u)
-      ) {
+      if (u.alive && !p.hits.has(u) && Math.hypot(u.x - p.x, u.z - p.z) <= p.radius) {
+        if (refused(p, u)) {
+          continue;
+        }
         p.hits.add(u);
         strike(p.source, u, p.options);
         p.onHit?.(u);
