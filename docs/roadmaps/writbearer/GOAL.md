@@ -51,11 +51,12 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 - Fast check (safe to run in parallel worktrees): `pnpm typecheck && pnpm lint && pnpm test` (about 10 s).
 - Full check (after merging, at checkpoints): `pnpm test:e2e` (a few minutes). It starts a dev server on fixed port 5199, so only one copy can run at a time: nodes that run it carry `exclusive: [e2e-port]`.
-- The repo is public and has no GitHub Actions workflows: run checks locally.
+- The repo is public. Its only GitHub Actions workflow is `release.yml`, which versions and tags releases. No workflow runs the checks, so run them locally.
+- Releases use Changesets (`.changeset/`). Every pull request that changes the game adds a changeset (`pnpm cs:add`); roadmap and design doc changes do not.
 
 ## Shared files
 
-`plan.py` warns about files that many detailed nodes edit: `src/gen/stage.ts` and `src/render/renderer.ts` (9 nodes each), `src/sim/ai.ts` (8), `src/sim/sim.ts` (7), `src/game/game.ts` (6), and four or five each for `roster.ts`, `events.ts`, `statuses.ts`, `unit.ts`, `floor.ts`, `zones.ts`, `ground.ts`, `game/stage.ts`. Most edits are small hooks or appended rows, and the nodes touching the same file are spread across waves, so they are not split first. Merge in the order `plan.py status` prints. `gen/stage.ts`, `renderer.ts`, `ai.ts` and `game.ts` are each over 2,000 lines, so a behavior-preserving split of one of them is the first fix if merges start to conflict.
+`plan.py` warns about files that many detailed nodes edit. The job and upgrade nodes of starting-jobs no longer edit core simulation files. `job-hooks` adds the hooks they need first (`contracts/job-hooks.md`). Each job's spells, passives and statuses live in its own module. Most of the remaining overlap is the terrain and boss nodes of later milestones. They edit `src/gen/stage.ts` (2,251 lines), `src/render/renderer.ts` (2,178 lines) and `src/game/game.ts` (2,651 lines). Those nodes are spread across waves, so they are not split first. Merge in the order `plan.py status` prints, and split one of those three by feature in a behavior-preserving node if merges start to conflict.
 
 ## Numbered resources
 

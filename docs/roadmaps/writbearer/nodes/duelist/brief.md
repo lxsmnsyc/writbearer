@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/duelist.test.ts test/content/jobs.test.ts
+verify: pnpm vitest run test/sim/duelist.test.ts && pnpm vitest run test/content/jobs.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
@@ -19,10 +19,7 @@ owns:
   - src/content/jobs/duelist/index.ts
   - src/render/looks/duelist.ts
   - test/sim/duelist.test.ts
-shared:
-  - src/sim/mechanics/hit.ts
-  - src/sim/mechanics/damage.ts
-  - src/sim/statuses.ts
+shared: []
 reserves: []
 provides: []
 depends_on:
@@ -32,6 +29,9 @@ depends_on:
   - on: builds-design
     kind: hard
     why: the job's 4 spells, innate passive and 12 upgrades are drawn there
+  - on: job-hooks
+    kind: contract
+    via: job-hooks
 ---
 
 # Duelist: the job, its 4 spells and innate passive
@@ -62,11 +62,12 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 - Engine notes by source skill. Doc 16 decides which skills are spells, the innate or upgrades; use the notes for the ones this node builds.
 - Riposte parries melee hits: cancel the hit in CheckHit or the damage Pre step and answer with a free counter that cannot be parried back.
 - Flurry is four hits, each through the full damage pipeline.
-- Bleed already exists (`src/sim/statuses.ts`); Bleed Out applies it on crit.
+- Bleed already exists (`src/sim/statuses.ts`); Bleed Out applies it on crit from a listener.
 - Daggers and the Duelist's gear already exist in `src/content/items.ts`; pick starter gear from them.
 - Duel binds the Duelist and one enemy: through the targeting contract, neither may target or be targeted by anyone else. Area hits still land.
 - Flourish and Crowd Pleaser raise morale through `src/sim/morale.ts`'s event table.
 - Backstab uses facing: the Flank flag and the behind check in `src/sim/unit.ts` already exist.
-- Feint sets a flag that skips the Block step for the next attack.
+- Feint skips the Block step for the next attack, with a UnitDamage listener at `DamagePriority.Block`.
 - Untouchable listens to UnitMiss on the Duelist.
+- Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `upgrades.ts` or `src/content/items.ts`.

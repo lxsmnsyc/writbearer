@@ -10,7 +10,7 @@ target:
 from:
 size: S
 spike: false
-verify: pnpm vitest run test/sim/link.test.ts test/sim/affixes.test.ts
+verify: pnpm vitest run test/sim/link.test.ts && pnpm vitest run test/sim/affixes.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

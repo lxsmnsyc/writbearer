@@ -19,15 +19,11 @@ owns:
   - src/content/jobs/warden/upgrades.ts
   - test/sim/warden-upgrades.test.ts
 shared:
-  - src/sim/mechanics/damage.ts
-  - src/sim/sim.ts
-  - src/sim/ai.ts
   - src/render/zones.ts
   - src/ui/map.tsx
   - src/game/mutators.ts
   - src/sim/trap.ts
   - src/render/light.ts
-  - src/sim/statuses.ts
 reserves: []
 provides: []
 depends_on:
@@ -37,12 +33,12 @@ depends_on:
   - on: warden
     kind: hard
     why: each upgrade patches one of the spells that node builds
-  - on: targeting-rules
-    kind: hard
-    why: Tether changes chase logic in thinkMerc, the function targeting-rules rewrites
   - on: hidden-units
     kind: behavior
     via: concealment
+  - on: job-hooks
+    kind: contract
+    via: job-hooks
 ---
 
 # Warden: its 12 elite upgrades
@@ -70,13 +66,14 @@ Build the Warden's 12 elite upgrades (3 per spell) as `builds-design` drew them 
 ## Notes for the worker
 
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
-- Interpose redirects hits aimed at the bearer at the Pre step of the damage pipeline (`src/sim/mechanics/damage.ts`), as in `docs/design/03-combat-engine.md#example-interpose`. Mark the hit with the existing `Redirected` flag so it is not redirected twice.
-- Tether caps chase distance from the bearer at 3 tiles, through the merc's toggles if possible.
-- Cover stops projectiles from the front reaching the bearer for 3 seconds (projectile flight is in `src/sim/sim.ts`); Rampart in `src/content/vanguard.ts` is the closest pattern.
+- Interpose redirects hits aimed at the bearer with a UnitDamage listener at `DamagePriority.Pre`, as in `docs/design/03-combat-engine.md#example-interpose`. Mark the hit with the existing `Redirected` flag so it is not redirected twice.
+- Tether caps chase distance from the bearer at 3 tiles, through a CheckChase listener (job-hooks).
+- Cover stops projectiles from the front reaching the bearer for 3 seconds, by cancelling CheckProjectile (job-hooks); Rampart in `src/content/vanguard.ts` is the closest pattern.
 - Sentry and Read the Room call `reveal` from the concealment contract; test with a hidden monster made in the test until hidden-units lands.
 - Tripwire is a trap (`src/sim/trap.ts`) that marks and slows.
 - Night Eyes removes the Darkness mutator's sight penalty for the party (`src/game/mutators.ts`) and widens the lantern (`src/render/light.ts`).
 - Never Surprised shows Ambush nodes on the map (`src/ui/map.tsx`) and stuns ambushers for 1 second at the start.
-- Add a Marked status (6 seconds) applied when an enemy damages the bearer; other skills read it.
+- Add a Marked status (6 seconds) in the Warden's module, applied when an enemy damages the bearer; other skills read it.
 - Execute kills a marked non-boss below 20% health; bosses and mini-bosses are immune.
+- Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `index.ts` or `src/content/items.ts`.

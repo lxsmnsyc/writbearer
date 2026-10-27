@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/lantern.test.ts test/game/mutators.test.ts test/sim/warden-upgrades.test.ts
+verify: pnpm vitest run test/sim/lantern.test.ts && pnpm vitest run test/sim/warden-upgrades.test.ts && pnpm vitest run test/game/mutators.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/patrol.test.ts test/gen/stage.test.ts test/gen/balance.test.ts
+verify: pnpm vitest run test/sim/patrol.test.ts && pnpm vitest run test/gen/stage.test.ts test/gen/balance.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

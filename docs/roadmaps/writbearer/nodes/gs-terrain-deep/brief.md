@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/game/deep-water.test.ts test/gen/fields.test.ts
+verify: pnpm vitest run test/game/deep-water.test.ts && pnpm vitest run test/gen/fields.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

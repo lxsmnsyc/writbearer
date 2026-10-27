@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/arcanist.test.ts test/content/jobs.test.ts
+verify: pnpm vitest run test/sim/arcanist.test.ts && pnpm vitest run test/content/jobs.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
@@ -20,13 +20,9 @@ owns:
   - src/render/looks/arcanist.ts
   - test/sim/arcanist.test.ts
 shared:
-  - src/sim/skill.ts
   - src/sim/zone.ts
   - src/sim/mechanics/zones.ts
   - src/render/zones.ts
-  - src/sim/nav.ts
-  - src/sim/ai.ts
-  - src/ui/merc-panel.tsx
 reserves: []
 provides: []
 depends_on:
@@ -36,6 +32,9 @@ depends_on:
   - on: builds-design
     kind: hard
     why: the job's 4 spells, innate passive and 12 upgrades are drawn there
+  - on: job-hooks
+    kind: contract
+    via: job-hooks
 ---
 
 # Arcanist: the job, its 4 spells and innate passive
@@ -64,12 +63,13 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 ## Notes for the worker
 
 - Engine notes by source skill. Doc 16 decides which skills are spells, the innate or upgrades; use the notes for the ones this node builds.
-- Add an optional `friendlyFire` field to `Skill` (`src/sim/skill.ts`); area hits of such skills carry the existing `DamageFlags.FriendlyFire` and hurt the party. Inferno uses it; Fireball does not.
+- Inferno sets `friendlyFire` on its skill (job-hooks), so its area hits hurt the party. Fireball does not.
 - Volcano is a zone that raises the Fire damage of allies inside, based on rAthena's Volcano. Its drawing goes in ZONE_LOOKS.
 - Staffs and the Arcanist's gear already exist in `src/content/items.ts`.
-- Glacial Wall blocks a path for a few seconds: temporary blocked tiles in `src/sim/nav.ts`, removed when it melts.
+- Glacial Wall blocks a path for a few seconds with `nav.block` (job-hooks).
 - Shatterpoint: an enemy killed while Frozen leaves no corpse and deals Frost damage around it. Reuse the `torn` body state if it fits.
-- Add the 'Weak to my element' target priority to the toggles (`Priority` and `pick` in `src/sim/ai.ts`, `src/ui/merc-panel.tsx`); Elemental Sense makes it pick Fire or Frost per target.
+- Elemental Sense uses `Priority.WeakToElement` (job-hooks) and picks Fire or Frost per target.
 - Overchannel uses the existing CheckSkillCost hook.
 - Controlled Burn reads effective Discipline (`src/sim/morale.ts`) and spares the party from friendly fire skills at 60 or more.
+- Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `upgrades.ts` or `src/content/items.ts`.

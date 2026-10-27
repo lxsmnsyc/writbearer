@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/sellsword.test.ts test/content/jobs.test.ts
+verify: pnpm vitest run test/sim/sellsword.test.ts && pnpm vitest run test/content/jobs.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
@@ -20,15 +20,12 @@ owns:
   - src/render/looks/sellsword.ts
   - test/sim/sellsword.test.ts
 shared:
-  - src/content/skills.ts
   - src/sim/unit.ts
   - src/game/wages.ts
   - src/game/town.ts
   - src/gen/loot.ts
   - src/sim/sim.ts
   - src/game/game.ts
-  - src/sim/statuses.ts
-  - src/sim/mechanics/hit.ts
 reserves: []
 provides: []
 depends_on:
@@ -38,6 +35,9 @@ depends_on:
   - on: builds-design
     kind: hard
     why: the job's 4 spells, innate passive and 12 upgrades are drawn there
+  - on: job-hooks
+    kind: contract
+    via: job-hooks
 ---
 
 # Sellsword: the job, its 4 spells and innate passive
@@ -66,12 +66,13 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 ## Notes for the worker
 
 - Engine notes by source skill. Doc 16 decides which skills are spells, the innate or upgrades; use the notes for the ones this node builds.
-- Bonus skill ranks (Veteran of Many Wars here, Paid in Full in the Coin branch): a modifier that `rankOf` (`src/content/skills.ts`) adds, not a change to spent points.
+- Bonus skill ranks (Veteran of Many Wars, Paid in Full): a CheckSkillRank listener (job-hooks), not a change to spent shards.
 - Weapon Habit reads the existing `ItemBase.weapon` (`WeaponKind` in `src/sim/item.ts`).
 - Hazard Pay and Paid in Full read how much was paid over the wage at a Waystation (`src/game/wages.ts`). Add a hook there; do not change wage rules.
 - Bribe makes a non-elite Human enemy leave the fight: it walks off the field and is removed, dropping nothing.
 - Haggler lowers Town prices in `src/game/town.ts` while the Sellsword is in the party.
-- Add a Blind status with buildup: blinded units miss more (a CheckHit listener). Lamplighter and monsters will reuse it.
+- Blind is `BLIND` in `src/sim/statuses.ts` (job-hooks); apply it, do not redefine it.
 - Play Dead uses the targeting contract: while it lies still, monsters may not target it.
-- Cutpurse steals one timed buff: mark which statuses are buffs with a flag on the status, not a list.
+- Cutpurse steals one timed buff: a status with `buff: true` (job-hooks).
+- Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `upgrades.ts` or `src/content/items.ts`.

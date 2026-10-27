@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/game/boss-field.test.ts test/game/collapse.test.ts test/sim/boss.test.ts test/game/minibosses.test.ts
+verify: pnpm vitest run test/game/boss-field.test.ts && pnpm vitest run test/game/collapse.test.ts test/sim/boss.test.ts test/game/minibosses.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

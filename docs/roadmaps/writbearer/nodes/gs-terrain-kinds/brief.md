@@ -10,7 +10,7 @@ target:
 from:
 size: S
 spike: false
-verify: pnpm vitest run test/sim/ground.test.ts test/game/footing.test.ts test/gen/fields.test.ts test/gen/stage.test.ts
+verify: pnpm vitest run test/sim/ground.test.ts && pnpm vitest run test/game/footing.test.ts test/gen/fields.test.ts test/gen/stage.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/game/rocks-pits.test.ts test/game/vault.test.ts test/gen/objective.test.ts
+verify: pnpm vitest run test/game/rocks-pits.test.ts && pnpm vitest run test/game/vault.test.ts test/gen/objective.test.ts
 exclusive: []
 fulfilled_by:
 gate: false

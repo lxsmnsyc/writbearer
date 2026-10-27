@@ -18,10 +18,7 @@ added: 2026-10-27
 owns:
   - src/content/jobs/duelist/upgrades.ts
   - test/sim/duelist-upgrades.test.ts
-shared:
-  - src/sim/mechanics/hit.ts
-  - src/sim/mechanics/damage.ts
-  - src/sim/statuses.ts
+shared: []
 reserves: []
 provides: []
 depends_on:
@@ -32,8 +29,11 @@ depends_on:
     kind: hard
     why: each upgrade patches one of the spells that node builds
   - on: targeting-rules
-    kind: hard
-    why: Duel adds CheckTarget listeners, which need the event
+    kind: contract
+    via: targeting
+  - on: job-hooks
+    kind: contract
+    via: job-hooks
 ---
 
 # Duelist: its 12 elite upgrades
@@ -63,11 +63,12 @@ Build the Duelist's 12 elite upgrades (3 per spell) as `builds-design` drew them
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
 - Riposte parries melee hits: cancel the hit in CheckHit or the damage Pre step and answer with a free counter that cannot be parried back.
 - Flurry is four hits, each through the full damage pipeline.
-- Bleed already exists (`src/sim/statuses.ts`); Bleed Out applies it on crit.
+- Bleed already exists (`src/sim/statuses.ts`); Bleed Out applies it on crit from a listener.
 - Daggers and the Duelist's gear already exist in `src/content/items.ts`; pick starter gear from them.
 - Duel binds the Duelist and one enemy: through the targeting contract, neither may target or be targeted by anyone else. Area hits still land.
 - Flourish and Crowd Pleaser raise morale through `src/sim/morale.ts`'s event table.
 - Backstab uses facing: the Flank flag and the behind check in `src/sim/unit.ts` already exist.
-- Feint sets a flag that skips the Block step for the next attack.
+- Feint skips the Block step for the next attack, with a UnitDamage listener at `DamagePriority.Block`.
 - Untouchable listens to UnitMiss on the Duelist.
+- Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `index.ts` or `src/content/items.ts`.
