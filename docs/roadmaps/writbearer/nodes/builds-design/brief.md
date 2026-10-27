@@ -1,7 +1,7 @@
 ---
 id: builds-design
 title: Draw the seven starting jobs as spells and upgrades
-status: todo
+status: active
 priority: must
 type: docs
 outline: false
