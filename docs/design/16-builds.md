@@ -161,6 +161,15 @@ Two Vanguards at level 25, with 24 points each:
 
 **Innate: Sunder.** Melee hits lower the target's armor by 4 per stack, up to 5 stacks.
 
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Intercept | 8 | 8 s | Today 8 and 8. |
+| Challenge | 12 | 9 s | Today 12 and 9. |
+| Shield Wall | 12 | 12 s | Today 12 and 12. |
+| Crush | 8 | 3 s | Today 10 and 6. Cheaper and faster so the filler is cast every few seconds. |
+
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
 | Intercept | Dashes up to 4 + 0.5r tiles between the bearer and the nearest threat | Vow | On arrival, the Vanguard and the bearer gain +20 armor for 6 s. | Vow |
@@ -194,6 +203,8 @@ Same form as the Vanguard. Each per-rank gain is half of today's, so rank 10 is 
 - "From doc 09" names the skill an upgrade comes from. "New" means doc 09 has no such skill.
 - An upgrade that needs a system the engine lacks has a **Needs** line under the table.
 - Each job is drawn so that its 4 spells and its innate passive already play its role with no upgrade.
+- Each job has a **Mana and cooldown** table. Costs and cooldowns are first guesses on the scale of today's skills: mana 6 to 18 (30 for a resurrection), cooldown 2 to 16 s. A basic attack does 100% damage every 1.0 to 1.2 s. The last spell in cast order is the filler. It has a 2 to 4 s cooldown and the lowest mana cost. The merc casts it every few seconds and makes basic attacks only while it recharges.
+- Impact against basic attacks, over one cooldown, at rank 1: an area spell on a pack of 4 about doubles the merc's damage. Fireball does 4 × 142% against about 5.5 basic attacks in 6 s. The gap grows with rank. A single-target damage spell adds about half. Aimed Shot does 215% against about 4.5 basic attacks in 5 s. A control spell (Snare, Hamstring, Frost Nova) trades damage for its effect. Fillers are about even with a basic attack and add status buildup or a second target.
 
 ### Ranger
 
@@ -204,6 +215,15 @@ The 4 spells alone: Snare holds the nearest threat, Lightning Rod and Charged Ar
 **Cast order:** Snare, Lightning Rod, Aimed Shot, Charged Arrow.
 
 **Innate: Static.** Storm hits add 25% more Shock buildup.
+
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Snare | 8 | 7 s | Today 8 and 7. |
+| Lightning Rod | 18 | 15 s | Today 18 and 15. |
+| Aimed Shot | 10 | 5 s | Today 10 and 5. |
+| Charged Arrow | 9 | 2.5 s | Today 9 and 4. Faster, as the filler. |
 
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
@@ -240,15 +260,24 @@ The 4 spells alone: Ward before the blow, Heal after it, Sacred Ground for a lon
 
 **Innate: Aegis.** 3 s out of a fight, the bearer's Ward fills to 80 + 4 per Cleric level. It costs no cast.
 
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Ward | 10 | 4 s | Today 10 and 4. |
+| Heal | 10 | 2.5 s | Today 10 and 2.5. Resurrection changes it to 30 mana and 20 s. |
+| Sacred Ground | 18 | 14 s | Today 18 and 14. Veil changes it to 18 mana and 15 s. |
+| Smite | 8 | 3 s | Today 8 and 3. The filler. |
+
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
 | Ward | A Ward of 30 + 8r, plus magic attack, on whoever an enemy is after. It absorbs magic damage. | Cleanse | Also removes harmful statuses and clears their buildup from the target. | Cleanse |
 | | | Wall of Faith | Also puts a barrier on the target's tile that stops the next 2 + 0.5r melee blows on anyone in it. | Wall of Faith |
 | | | Twin Ward | Casts on the two allies in most danger. Each gets 60% of the pool. | New |
-| Heal | 40 + 10r health, plus magic attack, on one ally or the bearer | Renew | Becomes a heal over time: 8 + 3r health a second for 6 s. | Renew |
-| | | Resurrection | Can target a dead merc. A long windup, then it rises with 10 + 5r% health. | Resurrection |
+| Heal | 40 + 10r health, plus magic attack, on one ally or the bearer | Renew | Becomes a heal over time: 8 + 3r health a second for 6 s. 12 mana, 5 s cooldown. | Renew |
+| | | Resurrection | Can target a dead merc. It costs 30 mana and has a 20 s cooldown. A long windup, then it rises with 10 + 5r% health. | Resurrection |
 | | | Martyr | When the Cleric dies, every dead ally within 5 tiles rises with 20% health. Heal itself is unchanged. | Martyr |
-| Sacred Ground | 2.2 tiles for 8 s, healing 6 + 2.5r a second, plus a quarter of magic attack | Veil | Becomes a 2.5-tile veil around the bearer for 4 + 0.5r s. It stops ranged physical hits inside. It does not heal. | Veil |
+| Sacred Ground | 2.2 tiles for 8 s, healing 6 + 2.5r a second, plus a quarter of magic attack | Veil | Becomes a 2.5-tile veil around the bearer for 4 + 0.5r s. It stops ranged physical hits inside. It does not heal. 18 mana, 15 s cooldown. | Veil |
 | | | Consecrate | The ground also burns enemies inside for 40 + 5r% Radiant magic damage a second. | Consecrate |
 | | | Pilgrim's Rest | Allies inside also regain 2 mana a second and 0.5 morale a second. | New |
 | Smite | 110 + 10r% magic damage, half again on the Undead and Occult | Turn Undead | Also a 15 + 2r% chance, plus up to 30% as the target is hurt, to destroy a non-boss Undead. | Turn Undead |
@@ -275,12 +304,21 @@ The 4 spells alone: Rush answers a threat to the bearer, Pocket Sand and Hamstri
 
 **Innate: Second Wind.** Once per stage, at 30% health, it heals 20% of max health.
 
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Rush | 8 | 8 s | New. Same scale as Intercept. |
+| Pocket Sand | 8 | 10 s | New. |
+| Hamstring | 8 | 6 s | New. Same scale as Crush before the change. |
+| Cleave | 6 | 2 s | New. The filler. |
+
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
 | Rush | Charges an enemy that is attacking the bearer, with 40 + 4r stun buildup | Shield Rush | After it arrives, the Sellsword taunts that enemy for 3 s. | New |
 | | | Chain Rush | If the target dies within 2 s, it rushes the next enemy attacking the bearer, free. | New |
 | | | Knock Aside | The target is pushed 2 tiles away from the bearer. | New |
-| Pocket Sand | A cone that adds 40 + 5r blind buildup | Bribe | Becomes a bribe. It costs gold and mana, and a non-elite Human enemy leaves the fight. | Bribe |
+| Pocket Sand | A cone that adds 40 + 5r blind buildup | Bribe | Becomes a bribe. It costs gold and 12 mana, and a non-elite Human enemy leaves the fight. | Bribe |
 | | | Play Dead | The first time the Sellsword would die in a stage, it throws sand, lies still for 3 s and gets up with 20% health. Monsters ignore it while it lies still. | Play Dead |
 | | | Salt the Wound | Blinded enemies take 15% more damage from every merc. | New |
 | Hamstring | 110 + 8r% damage, slows the target by 30 + 2r% for 3 s | Low Blow | +25% crit rate against blinded or slowed targets. | Low Blow |
@@ -305,11 +343,20 @@ The first is a bruiser that grows with each phase. The second trades blows for g
 
 Guard. Neutral. The bodyguard: it stands by the bearer and punishes anyone who touches them.
 
-The 4 spells alone: Cover shields the bearer, Tripwire marks what comes near, Execute and Pursue finish the marked. Interpose, the innate, does the guarding.
+The 4 spells alone: Cover shields the bearer, Tripwire marks what comes near, Execute and Pursue finish the marked. None of them hits a pack. Interpose, the innate, does the guarding.
 
-**Cast order:** Cover, Execute, Pursue, Tripwire. Execute comes before Pursue so that a marked enemy at low health dies where it stands. Tripwire is set when no enemy is close.
+**Cast order:** Cover, Execute, Tripwire, Pursue. Execute comes before Pursue so that a marked enemy at low health dies where it stands. Tripwire is set only when no enemy is close, so it never blocks Pursue in a fight. Pursue is the filler.
 
 **Innate: Interpose.** Within 2 tiles of the bearer, the Warden takes hits aimed at the bearer at 70% of their damage. An enemy that damages the bearer is marked for 6 s. This is the mark doc 09 gives Marked for Death. Its damage bonus is an upgrade.
+
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Cover | 12 | 12 s | New. Same scale as Shield Wall. |
+| Execute | 12 | 8 s | New. |
+| Tripwire | 10 | 12 s | New. Set between fights. |
+| Pursue | 6 | 4 s | New. The filler. It needs a mark, which Interpose and Tripwire give. |
 
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
@@ -319,15 +366,15 @@ The 4 spells alone: Cover shields the bearer, Tripwire marks what comes near, Ex
 | Execute | 120 + 12r% damage. It kills a marked non-boss enemy below 20% health. | Blood Debt | A kill heals the bearer for 10% of the enemy's max health. | Blood Debt |
 | | | Hangman's Reach | The Warden first leaps up to 3 tiles to the target. | New |
 | | | Last Rites | A kill resets Pursue and marks the nearest enemy. | New |
+| Tripwire | An alarm trap. The enemy that triggers it is marked and slowed by 30 + 2r% for 4 s. | Sentry | While the trap stands, it reveals hidden and invisible enemies within 6 tiles of it. | Sentry |
+| | | Trap Field | The trap is a 2.5-tile field. Every enemy that enters it is marked and slowed. A pack that walks in is marked whole. | New |
+| | | Never Surprised | In an ambush, a Tripwire is already set at the entrance, and ambushers start stunned for 1 s. Ambush nodes also show on the map. | Never Surprised |
 | Pursue | Leaps to a marked enemy, 100 + 8r% damage and 20 + 2r stun buildup | Marked for Death | Every merc deals 10% more damage to marked enemies. | Marked for Death |
 | | | Debt Collector | +25% crit rate against marked enemies. | Debt Collector |
 | | | Read the Room | Can leap to a hidden or disguised enemy and reveals it. It also reveals disguised enemies at the start of a stage. | Read the Room |
-| Tripwire | An alarm trap. The enemy that triggers it is marked and slowed by 30 + 2r% for 4 s. | Sentry | While the trap stands, it reveals hidden and invisible enemies within 6 tiles of it. | Sentry |
-| | | Night Eyes | The trap is a lantern post: no night penalty for the party within 5 tiles of it, and a wider light. | Night Eyes |
-| | | Never Surprised | In an ambush, a Tripwire is already set at the entrance, and ambushers start stunned for 1 s. Ambush nodes also show on the map. | Never Surprised |
 
-- All 15 of today's nodes are used: 4 spells, Interpose (with the mark of Marked for Death) and 10 upgrades. Two upgrades are new.
-- **Needs:** hidden units (planned in this milestone) for Sentry and Read the Room. Night Eyes needs a light radius. Never Surprised needs an ambush marker on the map. If either is missing when the Warden is built, that upgrade waits. Retaliate and Last Rites need a free attack outside the normal attack timer.
+- 14 of today's 15 nodes are used: 4 spells, Interpose (with the mark of Marked for Death) and 9 upgrades. Three upgrades are new. **Dropped: Night Eyes**. It replaced nothing in a fight (it only removes a night penalty and widens light), so it is the weakest of Tripwire's three. Trap Field takes its place as the Warden's pack upgrade. Night Eyes can return with the Lamplighter or Scout, which are built around light (doc 12).
+- **Needs:** hidden units (planned in this milestone) for Sentry and Read the Room. Never Surprised needs an ambush marker on the map. If it is missing when the Warden is built, that upgrade waits. Retaliate and Last Rites need a free attack outside the normal attack timer.
 - Pursue and Execute do nothing without a mark. Interpose and Tripwire give marks, so the Warden has a target in any fight that reaches the bearer.
 
 Two Wardens at the end of a run:
@@ -347,6 +394,15 @@ The 4 spells alone: Duel takes an elite out of the fight, Shadowstep removes a c
 
 **Innate: Riposte.** A 15% chance to parry a melee hit. A parry triggers a free counter.
 
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Duel | 14 | 16 s | New. At the top of today's range, as it removes an elite. |
+| Shadowstep | 10 | 10 s | New. |
+| Lunge | 8 | 6 s | New. |
+| Flurry | 8 | 3 s | New. The filler. |
+
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
 | Duel | Binds the Duelist and one elite for 4 + 0.5r s. Neither can target or be targeted by anyone else. | Grand Duel | Lasts until one of them dies. The Duelist gets +50% crit rate during it. | Grand Duel |
@@ -360,17 +416,17 @@ The 4 spells alone: Duel takes an elite out of the fight, Shadowstep removes a c
 | | | Untouchable | Fires by itself right after an evade, as a critical. | Untouchable |
 | Flurry | Four quick hits, 40 + 4r% damage each, each through the full damage pipeline | Bleed Out | Crits add bleed, which deals True damage over time. | Bleed Out |
 | | | Thousand Cuts | Each hit in a row on the same target adds 3% damage. Switching targets resets it. | Thousand Cuts |
-| | | Backstab | +40% damage from behind. Facing matters. | Backstab |
+| | | Whirlwind | The four hits strike every enemy within 2 tiles of the Duelist, one hit each in turn, instead of one target. | New |
 
-- All 15 of today's nodes are used: 4 spells, Riposte and 10 upgrades. Two upgrades are new.
-- **Needs:** Duel needs a bind between two units that blocks other targeting. Facing exists (`src/sim/unit.ts`), so Backstab and Shadowstep need no new system.
+- 14 of today's 15 nodes are used: 4 spells, Riposte and 9 upgrades. Three upgrades are new. **Dropped: Backstab**. Shadowstep already hits from behind with the back bonus, so the upgrade was a copy of a spell's base. Whirlwind takes its place on Flurry as the Duelist's pack upgrade. Thousand Cuts stays: it is the single-target choice, opposite to Whirlwind.
+- **Needs:** Duel needs a bind between two units that blocks other targeting. Facing exists (`src/sim/unit.ts`), so Shadowstep needs no new system.
 
 Two Duelists at the end of a run:
 
 - **Bleeder:** Flurry with Bleed Out, Lunge with Feint, Duel with Grand Duel, Shadowstep with Flourish. Shards in Flurry and Duel.
-- **Dancer:** Lunge with Untouchable, Flurry with Backstab, Duel with Crowd Pleaser, Shadowstep with Smoke Step. Shards in Lunge and Shadowstep.
+- **Dancer:** Lunge with Untouchable, Flurry with Whirlwind, Duel with Crowd Pleaser, Shadowstep with Smoke Step. Shards in Lunge and Shadowstep.
 
-The first picks one elite and does not leave it. The second never stands where it is hit and strikes from behind.
+The first picks one elite and does not leave it. The second never stands where it is hit, strikes from behind and cuts through a pack.
 
 ### Arcanist
 
@@ -382,13 +438,22 @@ The 4 spells alone: Frost Nova answers anything that reaches the Arcanist, Fireb
 
 **Innate: Elemental Sense.** For each target, the Arcanist casts the bolt of the element the target is weaker to. If neither is better, Firebolt. This works with the "weak to my element" toggle.
 
+**Mana and cooldown** (first guesses):
+
+| Spell | Mana | Cooldown | Note |
+|---|---|---|---|
+| Frost Nova | 14 | 7 s | New. Area, so a longer cooldown. |
+| Fireball | 16 | 6 s | New. Area, at the scale of Arc Volley. |
+| Frost Shard | 7 | 2.5 s | New. A filler. |
+| Firebolt | 7 | 2.5 s | New. A filler. |
+
 | Spell | At rank r | Upgrade | What it changes | From doc 09 |
 |---|---|---|---|---|
 | Frost Nova | A ring of Frost around the Arcanist, 2.5 tiles, 90 + 8r% damage, 30 + 3r Freeze buildup | Glacial Wall | Becomes a wall of ice between the bearer and the enemies for 4 + 0.5r s. It blocks the path. | Glacial Wall |
 | | | Rimefield | The ring leaves a frost field for 5 s. Enemies in it are slowed by 40%. | New |
 | | | Cold Snap | Also fires by itself when an enemy first touches the Arcanist, once every 12 s, free. | New |
 | Fireball | A Fire area, 2 tiles, 130 + 12r% damage. No friendly fire. | Volcano | Leaves a Fire field for 4 s. Allies inside deal 20% more Fire damage. | Volcano |
-| | | Inferno | A 4-tile area, 200 + 15r% damage, at double mana cost. It has friendly fire, unless the Arcanist's effective Discipline is 60 or more. | Inferno, Controlled Burn |
+| | | Inferno | A 4-tile area, 200 + 15r% damage. It costs 32 mana and has a 12 s cooldown. It has friendly fire, unless the Arcanist's effective Discipline is 60 or more. | Inferno, Controlled Burn |
 | | | Echo | A 25% chance to cast it again for free. | Echo |
 | Frost Shard | A Frost bolt, 100 + 8r% damage | Chill | Also slows the target by 30% for 3 s and adds chill buildup. | Chill |
 | | | Shatterpoint | An enemy killed while Frozen shatters for Frost damage to enemies within 2 tiles. It leaves no corpse. | Shatterpoint |
@@ -411,9 +476,18 @@ The first burns a wide area and risks its allies. The second freezes, shatters a
 
 - The four strikers differ in shape: Ranger by reach and chains, Sellsword by wearing down, Duelist by one target, Arcanist by area.
 - The two guards differ: the Vanguard holds a crowd and breaks it, the Warden protects the bearer and kills the marked.
+- The Duelist and the Warden have no group damage in their base spells. Each gets one pack upgrade, so a build must choose it.
 - The Cleric is the only support among the seven. A recruit slot for a support draws from the Cleric alone until more-jobs adds more.
+- Clearing a pack, per job:
+  - Vanguard: Crush with Fault Line or Earthshaker, and Intercept with Charge. Challenge pulls a pack but does not damage it.
+  - Ranger: Lightning Rod and Charged Arrow with Arc Volley, Thunderhead or Piercing Arrow.
+  - Cleric: Sacred Ground with Consecrate, and Smite with Holy Light.
+  - Sellsword: Cleave hits 3 enemies and Pocket Sand blinds a cone in the base kit.
+  - Arcanist: Fireball and Frost Nova in the base kit, plus Volcano, Inferno and Piercing Bolt.
+  - Duelist: only Flurry with Whirlwind. No base spell hits a pack.
+  - Warden: only Tripwire with Trap Field. No base spell hits a pack.
 - Every job has at least one upgrade or innate that cares about the bearer, as the design notes of doc 09 require.
-- The seven jobs hold 84 elite upgrades, 12 each. 18 are new and 66 come from doc 09. Doc 09's 105 starting nodes become 28 spells, 7 innates, 66 upgrades, 3 dropped (Hazard Pay, Paid in Full, Haggler) and 1 merged (Controlled Burn, into Inferno).
+- The seven jobs hold 84 elite upgrades, 12 each. 20 are new and 64 come from doc 09. Doc 09's 105 starting nodes become 28 spells, 7 innates, 64 upgrades, 5 dropped (Hazard Pay, Paid in Full, Haggler, Backstab, Night Eyes) and 1 merged (Controlled Burn, into Inferno).
 
 ## Choosing for four mercs
 
