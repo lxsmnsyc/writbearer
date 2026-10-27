@@ -70,4 +70,5 @@ Build the Arcanist's 12 elite upgrades (3 per spell) as `builds-design` drew the
 - Overchannel uses the existing CheckSkillCost hook.
 - Controlled Burn reads effective Discipline (`src/sim/morale.ts`) and spares the party from friendly fire skills at 60 or more.
 - Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
+- If choosing a bolt by element (Elemental Sense) does not work cleanly with the damage calculation (`src/sim/elements.ts`, `src/sim/mechanics/damage.ts`), stop and write it in your outcome. The maintainer's fallbacks: split Fire and Frost into separate jobs, or rework the elemental damage calculation. Do not invent a third way.
 - Do not edit the registries, `index.ts` or `src/content/items.ts`.

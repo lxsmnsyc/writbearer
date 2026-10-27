@@ -66,7 +66,8 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 - Daggers and the Duelist's gear already exist in `src/content/items.ts`; pick starter gear from them.
 - Duel binds the Duelist and one enemy: through the targeting contract, neither may target or be targeted by anyone else. Area hits still land.
 - Flourish and Crowd Pleaser raise morale through `src/sim/morale.ts`'s event table.
-- Backstab uses facing: the Flank flag and the behind check in `src/sim/unit.ts` already exist.
+- Shadowstep strikes from behind: the Flank flag and the behind check in `src/sim/unit.ts` already exist.
+- Whirlwind makes Flurry's four hits strike every enemy within 2 tiles, one hit each in turn. Backstab was dropped for it (doc 16).
 - Feint skips the Block step for the next attack, with a UnitDamage listener at `DamagePriority.Block`.
 - Untouchable listens to UnitMiss on the Duelist.
 - Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.

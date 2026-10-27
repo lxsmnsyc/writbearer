@@ -22,9 +22,7 @@ owns:
 shared:
   - src/render/zones.ts
   - src/ui/map.tsx
-  - src/game/mutators.ts
   - src/sim/trap.ts
-  - src/render/light.ts
 reserves: []
 provides: []
 depends_on:
@@ -70,7 +68,7 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 - Cover stops projectiles from the front reaching the bearer for 3 seconds, by cancelling CheckProjectile (job-hooks); Rampart in `src/content/vanguard.ts` is the closest pattern.
 - Sentry and Read the Room call `reveal` from the concealment contract; test with a hidden monster made in the test until hidden-units lands.
 - Tripwire is a trap (`src/sim/trap.ts`) that marks and slows.
-- Night Eyes removes the Darkness mutator's sight penalty for the party (`src/game/mutators.ts`) and widens the lantern (`src/render/light.ts`).
+- Trap Field turns Tripwire into a 2.5-tile field: every enemy that enters is marked and slowed. Night Eyes was dropped for it (doc 16).
 - Never Surprised shows Ambush nodes on the map (`src/ui/map.tsx`) and stuns ambushers for 1 second at the start.
 - Add a Marked status (6 seconds) in the Warden's module, applied when an enemy damages the bearer; other skills read it.
 - Execute kills a marked non-boss below 20% health; bosses and mini-bosses are immune.

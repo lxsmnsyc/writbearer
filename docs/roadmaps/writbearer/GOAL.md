@@ -74,6 +74,7 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 - The Guild House offers five recruits at the start of a run, drawn by slot; the player hires up to four (roster-balance).
 - Build model B of `docs/design/16-builds.md` (build-variety, 2026-10-27), as in Aghanim's Labyrinth: each job has 4 spells known from level 1 and 1 innate passive. Each spell holds one elite upgrade, which changes how it works, kept for the run. Shards are the regular upgrades: they stack, 1 per merc level, each raising one spell a rank (1 to 10, capped at 1 + level / 2). Elite upgrades come from the Waystations of phases 2 to 4 and a Mastery road reward. No Auto spend: the player spends by hand. Doc 09's trees become the pool for spells and upgrades; synergies are dropped.
+- builds-design gate approved (2026-10-27): the seven jobs of doc 16, with mana costs, cooldowns and 20 new upgrades. Hazard Pay, Paid in Full, Haggler, Backstab and Night Eyes are dropped. If the Arcanist's element choice proves hard, split Fire and Frost into separate jobs or rework the elemental damage calculation.
 - Clearing groups (2026-10-27): every job can help clear a pack, but for the Duelist and the Warden only through an elite upgrade. Doc 16 gives every spell a mana cost and a cooldown, and roster-balance measures what each job's spells add over basic attacks.
 - More jobs: since a job is cheaper to make in this model, design new jobs beyond docs 09 and 12 (mj-new-jobs-design).
 

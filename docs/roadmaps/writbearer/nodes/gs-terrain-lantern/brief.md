@@ -10,7 +10,7 @@ target:
 from:
 size: M
 spike: false
-verify: pnpm vitest run test/sim/lantern.test.ts && pnpm vitest run test/sim/warden-upgrades.test.ts && pnpm vitest run test/game/mutators.test.ts
+verify: pnpm vitest run test/sim/lantern.test.ts && pnpm vitest run test/game/mutators.test.ts
 exclusive: []
 fulfilled_by:
 gate: false
@@ -34,9 +34,6 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
-  - on: warden-upgrades
-    kind: hard
-    why: Night Eyes edits the lantern radius this node turns into sim state; build on its result
 ---
 
 # One lantern: light level, shading, drawn-to monsters
@@ -48,7 +45,7 @@ The bearer's lantern becomes sim state (`Sim.lantern`: radius with multiplier sl
 ## Context
 
 - Three numbers exist today: fog sight 7 (`renderer.ts:128`), light radius 6.5 (`:741`), and each monster's `kit.notice` (`ai.ts:428`). Darkness is a renderer-only boolean (`DARK_SHARE`).
-- This node also serves the bosses (Lantern-Eater, Faceless Regent) and later night, the Lamplighter and gs-phase-modifiers: give it slots for night, Darkness, Night Eyes and a timed put-out.
+- This node also serves the bosses (Lantern-Eater, Faceless Regent) and later night, the Lamplighter and gs-phase-modifiers: give it slots for night, Darkness and a timed put-out. Night Eyes was dropped from the Warden (doc 16), so no job widens the lantern yet.
 - Introduce one `noticeRange(sim, monster, target)` in `ai.ts` as the single place light, cover and shading change noticing.
 - Source: `docs/design/11-stages.md#light-and-vision`, `13-bestiary.md#the-marches` (Lantern-Eater).
 

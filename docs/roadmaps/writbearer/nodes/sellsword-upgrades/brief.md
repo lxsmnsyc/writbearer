@@ -20,8 +20,6 @@ owns:
   - test/sim/sellsword-upgrades.test.ts
 shared:
   - src/sim/unit.ts
-  - src/game/wages.ts
-  - src/game/town.ts
   - src/gen/loot.ts
   - src/sim/sim.ts
   - src/game/game.ts
@@ -67,11 +65,9 @@ Build the Sellsword's 12 elite upgrades (3 per spell) as `builds-design` drew th
 ## Notes for the worker
 
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
-- Bonus skill ranks (Veteran of Many Wars, Paid in Full): a CheckSkillRank listener (job-hooks), not a change to spent shards.
+- Veteran of Many Wars adds bonus ranks to Cleave: a CheckSkillRank listener (job-hooks), not a change to spent shards.
 - Weapon Habit reads the existing `ItemBase.weapon` (`WeaponKind` in `src/sim/item.ts`).
-- Hazard Pay and Paid in Full read how much was paid over the wage at a Waystation (`src/game/wages.ts`). Add a hook there; do not change wage rules.
 - Bribe makes a non-elite Human enemy leave the fight: it walks off the field and is removed, dropping nothing.
-- Haggler lowers Town prices in `src/game/town.ts` while the Sellsword is in the party.
 - Blind is `BLIND` in `src/sim/statuses.ts` (job-hooks); apply it, do not redefine it.
 - Play Dead uses the targeting contract: while it lies still, monsters may not target it.
 - Cutpurse steals one timed buff: a status with `buff: true` (job-hooks).
