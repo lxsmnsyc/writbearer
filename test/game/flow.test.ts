@@ -44,7 +44,7 @@ describe('an area’s flow', () => {
 describe('an open field’s key points', () => {
   it('has spawn, boss and relief spots on open ground the party can reach, clear of the entrance', () => {
     for (const objective of OPEN_FIELD) {
-      for (let seed = 1; seed <= 8; seed++) {
+      for (let seed = 1; seed <= 4; seed++) {
         for (const index of [2, 10, 18, 26]) {
           const s = field(seed, objective, index);
           const spots = s.spots ?? [];

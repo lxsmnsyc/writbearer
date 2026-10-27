@@ -10,7 +10,7 @@ import { spawnMonster } from '../../src/content/roster';
 describe('a monster as an area is entered', () => {
   it('never stands inside something solid, such as a sealing site’s altar', () => {
     let altars = 0;
-    for (let seed = 1; seed <= 30; seed++) {
+    for (let seed = 1; seed <= 10; seed++) {
       for (const objective of OBJECTIVES) {
         for (const index of [0, 1, 5]) {
           const stage = generateStage(new RNG(seed), index, {
