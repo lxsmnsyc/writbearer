@@ -25,10 +25,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # package.json does not pin pnpm, so the major is set here
       - uses: pnpm/action-setup@v4
-        with:
-          version: 12
 
       # The tag script runs straight from TypeScript, which needs a recent node
       - uses: actions/setup-node@v4
