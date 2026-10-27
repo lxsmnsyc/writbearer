@@ -14,6 +14,7 @@ import type Unit from './unit';
 
 export const enum SimEvents {
   CheckHit = 'CheckHit',
+  CheckTarget = 'CheckTarget',
   UnitMiss = 'UnitMiss',
   UnitDamage = 'UnitDamage',
   UnitHeal = 'UnitHeal',
@@ -43,6 +44,13 @@ export interface CheckHitEvent extends BaseEvent {
   hitChance: number;
   critical: boolean;
   hit: boolean;
+}
+
+/** Asks whether a unit may pick a hostile unit as a target. Listeners set `allowed` to false. */
+export interface CheckTargetEvent extends BaseEvent {
+  source: Unit;
+  target: Unit;
+  allowed: boolean;
 }
 
 export interface UnitMissEvent extends BaseEvent {
@@ -141,6 +149,7 @@ export interface TickEvent extends BaseEvent {
 /** Which event carries which shape, on which priority scale. */
 export interface SimEventMap extends EventMap {
   [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
+  [SimEvents.CheckTarget]: [CheckTargetEvent, ValuePriority];
   [SimEvents.UnitMiss]: [UnitMissEvent, EventPriority];
   [SimEvents.UnitDamage]: [UnitDamageEvent, DamagePriority];
   [SimEvents.UnitHeal]: [UnitHealEvent, HealPriority];

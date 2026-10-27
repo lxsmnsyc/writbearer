@@ -8,6 +8,7 @@ import type { Projectile } from './projectile';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
 import { type Zone, updateZones, zonesAt } from './zone';
+import { allowed, canTarget } from './targeting';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
@@ -46,8 +47,7 @@ function advanceSwing(u: Unit, dt: number): void {
       if (u.job.range === Range.Ranged) {
         // The arrow leaves now and lands when it reaches the target. A
         // volley looses more at once, at others in reach near it.
-        const others = u.sim
-          .foes(u.side)
+        const others = allowed(u, u.sim.foes(u.side))
           .filter((f) => f !== target && u.distanceTo(f) <= u.kit.reach + slack)
           .sort((a, b) => a.distanceTo(target) - b.distanceTo(target))
           .slice(0, u.volley - 1);
@@ -55,7 +55,9 @@ function advanceSwing(u: Unit, dt: number): void {
           u.sim.fire(u, at, {
             speed: ARROW_SPEED,
             homing: true,
-            options: { flags: DamageFlags.BasicAttack | DamageFlags.Projectile },
+            options: {
+              flags: DamageFlags.BasicAttack | DamageFlags.Projectile,
+            },
           });
         }
       } else {
@@ -158,7 +160,12 @@ function flyStraight(sim: Sim, p: Projectile, dt: number): void {
     p.x += p.dx * step;
     p.z += p.dz * step;
     for (const u of enemies) {
-      if (u.alive && !p.hits.has(u) && Math.hypot(u.x - p.x, u.z - p.z) <= p.radius) {
+      if (
+        u.alive &&
+        !p.hits.has(u) &&
+        Math.hypot(u.x - p.x, u.z - p.z) <= p.radius &&
+        canTarget(p.source, u)
+      ) {
         p.hits.add(u);
         strike(p.source, u, p.options);
         p.onHit?.(u);
