@@ -1,6 +1,6 @@
 # Skill trees
 
-> Pending a choice. [Builds](16-builds.md) compares these trees with four fixed spells and upgrades, and recommends the spells. If the user picks them, doc 16 replaces the Rules section and turns each starting tree below into 4 spells, 1 innate passive and 12 upgrades. If the user keeps the trees, doc 16 changes the Rules section and adds prerequisites and synergies per node.
+> Replaced by [Builds](16-builds.md) (option B, chosen). The Rules section below no longer applies. Each starting tree below is a source list: doc 16 draws each of the seven starting jobs as 4 spells, 1 innate passive and 12 upgrades, and says where each skill went.
 
 Each job has 3 branches. Each branch has 5 skills, and the fifth is a capstone. The trees lean on what makes this game different from other RPGs: the citizen, toggles, Discipline, wages, corpses and element fields.
 
