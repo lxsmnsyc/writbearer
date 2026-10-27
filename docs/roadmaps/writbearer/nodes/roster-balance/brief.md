@@ -8,9 +8,9 @@ outline: false
 milestone: starting-jobs
 target:
 from:
-size: M
+size: L
 spike: false
-verify: pnpm test && pnpm test:e2e
+verify: pnpm vitest run test/sim/spell-impact.test.ts && pnpm test && pnpm test:e2e
 exclusive: [e2e-port]
 fulfilled_by:
 gate: true
@@ -25,6 +25,7 @@ owns:
   - test/sim/recruits.test.ts
   - test/sim/bosses.test.ts
   - test/gen/balance.test.ts
+  - test/sim/spell-impact.test.ts
   - e2e/recruit.spec.ts
   - docs/design/09-skill-trees.md
   - docs/design/05-mercenaries.md
@@ -89,6 +90,7 @@ Offer five Guild House recruits at the start of a run, drawn by slot (a guard, a
 - [ ] Set `hireable: true` on the four new jobs.
 - [ ] Recruit draw by role from the job registry.
 - [ ] Boss and balance tests over parties that include each new job.
+- [ ] Measure what spells add, in `test/sim/spell-impact.test.ts`. For each of the seven jobs, a merc of level 10 fights a pack of 4 twice: with its spells, and with basic attacks only. Record the fight time. For the guards and the Cleric, also record the damage the bearer takes with and without the merc's spells.
 - [ ] Make the deserter Event and endless mode's wandering mercs draw from every hireable job.
 - [ ] Update doc 12's starting offers table to five recruits (two of them any job), 'In the game so far' in doc 09 (also drop its stale 'no monster shoots yet'), the job list and starting recruits in doc 05 (#party-size), and the doc 12 roster table.
 
@@ -97,12 +99,14 @@ Offer five Guild House recruits at the start of a run, drawn by slot (a guard, a
 - [ ] Over 200 seeds, every draw has five recruits: a guard, a striker, a support, five different jobs, and a fighter.
 - [ ] The player can hire at most four of the five; the fifth stays at the Guild House.
 - [ ] A party of Warden, Duelist and Arcanist wins the boss test as often as Vanguard, Ranger and Cleric.
+- [ ] In the impact test, the Arcanist and the Ranger clear the pack at least 1.5 times as fast with their spells as without. Every job's spells shorten the fight or lower the bearer's damage taken. The numbers for all seven are in the outcome.
 - [ ] `pnpm test:e2e` passes.
 
 ## Sizing
 
-Small code, many tests and doc edits; tuning may take a few rounds. M.
+Small code, many tests and doc edits, plus the impact test. Tuning may take a few rounds. L.
 
 ## Notes for the worker
 
-- Tune numbers in the job modules only where a boss test fails; record each change in the outcome.
+- Tune numbers in the job modules only where a boss test or the impact test fails. Record each change in the outcome.
+- Clearing groups is gated behind elite upgrades for the Duelist and the Warden (decided by the user, 2026-10-27). Their base spells are not expected to speed up a pack fight much. Their group upgrade should, so test it once with that upgrade applied.
