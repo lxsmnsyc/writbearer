@@ -116,8 +116,11 @@ export default function SpellPanel(props: Props): JSX.Element {
                         'text-neutral-600 ring-white/10': why() !== null,
                       }}
                       onClick={() => {
-                        setMessage(raise(props.unit, base.id));
-                        props.onSpend();
+                        const failed = raise(props.unit, base.id);
+                        setMessage(failed);
+                        if (failed === null) {
+                          props.onSpend();
+                        }
                       }}
                     >
                       +

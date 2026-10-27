@@ -34,8 +34,9 @@ const upgrade = (spell: string, n: number, extra: Partial<Upgrade> = {}): Upgrad
 
 const POOL: Upgrade[] = SPELLS.flatMap((s) => [1, 2, 3].map((n) => upgrade(s.id, n)));
 
-const merc = (level = 5): Unit =>
-  withSpells(spawnMerc(new Sim(1), 'vanguard', level, 0, 0), SPELLS);
+// A Vanguard on the build model, with the pool registered as its build.
+const merc = (level = 5, pool = POOL): Unit =>
+  withSpells(spawnMerc(new Sim(1), 'vanguard', level, 0, 0), SPELLS, pool);
 
 const roundTrip = <T>(value: T): T => structuredClone(value);
 
@@ -91,8 +92,8 @@ describe('the build model', () => {
   });
 
   it('casts a spell with its upgrade’s patch', () => {
-    const m = merc();
-    const cheap = upgrade('crush', 1, { patch: { cost: 0, cooldown: 1 } });
+    const cheap = upgrade('crush', 4, { patch: { cost: 0, cooldown: 1 } });
+    const m = merc(5, [cheap]);
     expect(spellOf(m, CRUSH)).toBe(CRUSH);
     withUpgrade(m, cheap);
     const cast = spellOf(m, CRUSH);
@@ -111,7 +112,6 @@ describe('the build model', () => {
   });
 
   it('starts an upgrade’s passive at the spell’s rank, and again as the rank rises', () => {
-    const m = merc();
     const ranks: number[] = [];
     let running = 0;
     const effect = upgrade('crush', 9, {
@@ -129,6 +129,7 @@ describe('the build model', () => {
         }),
       },
     });
+    const m = merc(5, [effect]);
     withUpgrade(m, effect);
     raise(m, 'crush');
     expect(ranks).toEqual([1, 2]);
@@ -152,7 +153,6 @@ describe('the build model', () => {
   });
 
   it('keeps shards, ranks and upgrades through a save', () => {
-    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL });
     const m = merc(9);
     raise(m, 'crush');
     raise(m, 'crush');
@@ -165,6 +165,23 @@ describe('the build model', () => {
     expect(back.skillRank('intercept')).toBe(2);
     expect([...back.upgrades]).toEqual([['crush', POOL[4].id]]);
     expect(spellOf(back, CRUSH).cost).toBe(0);
+  });
+
+  it('keeps an upgrade it cannot find by id, so a later version can', () => {
+    const m = merc(9);
+    withUpgrade(m, POOL[4]);
+    // A version where the upgrade was renamed: its old id is not in the build.
+    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL.slice(0, 4) });
+    const lost = loadMerc(new Sim(1), roundTrip(saveMerc(m)), 0, 0);
+    expect([...lost.upgrades]).toEqual([['crush', POOL[4].id]]);
+    expect(spellOf(lost, CRUSH)).toBe(CRUSH);
+    expect(applyUpgrade(lost, POOL[3])).toBe('The spell already holds an upgrade.');
+    const saved = roundTrip(saveMerc(lost));
+    expect(saved.upgrades).toEqual([['crush', POOL[4].id]]);
+
+    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL });
+    const found = loadMerc(new Sim(1), saved, 0, 0);
+    expect(spellOf(found, CRUSH).cost).toBe(0);
   });
 
   it('gives an old save’s tree ranks back as shards', () => {

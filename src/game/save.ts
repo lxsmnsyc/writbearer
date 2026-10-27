@@ -238,10 +238,14 @@ function loadSpells(unit: Unit, s: MercSave): void {
       unit.skillRanks.set(id, rank);
     }
   }
-  for (const [, id] of s.upgrades ?? []) {
+  for (const [spell, id] of s.upgrades ?? []) {
     const upgrade = upgradeById(id);
     if (upgrade) {
       applyUpgrade(unit, upgrade);
+    } else if (unit.spells.some((known) => known.id === spell)) {
+      // An upgrade this version does not know, such as a renamed one, is
+      // kept by id: the spell still holds it, and the next save writes it back.
+      unit.upgrades.set(spell, id);
     }
   }
 }

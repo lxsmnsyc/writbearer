@@ -36,23 +36,27 @@ export const rankCap = (level: number): number => Math.min(MAX_RANK, 1 + Math.fl
 const BUILDS = new Map<string, Build>();
 const UPGRADE_BY_ID = new Map<string, Upgrade>();
 
-/** Registers a job's spells and upgrades, by merc kind. */
+/** Registers a job's spells and upgrades, by merc kind, over any before. */
 export function registerBuild(kind: string, build: Build): void {
+  unregisterBuild(kind);
   BUILDS.set(kind, build);
   for (const upgrade of build.upgrades) {
     UPGRADE_BY_ID.set(upgrade.id, upgrade);
   }
 }
 
-/** Removes a job's build, for tests. */
+/** Removes a job's build and its upgrades, for tests. */
 export function unregisterBuild(kind: string): void {
+  for (const upgrade of BUILDS.get(kind)?.upgrades ?? []) {
+    UPGRADE_BY_ID.delete(upgrade.id);
+  }
   BUILDS.delete(kind);
 }
 
 /** A merc kind's build, or undefined for a job still on its skill tree. */
 export const buildFor = (kind: string): Build | undefined => BUILDS.get(kind);
 
-/** An upgrade by id, if any job registered it or a unit took it. */
+/** An upgrade by id, if a registered job has it. */
 export const upgradeById = (id: string): Upgrade | undefined => UPGRADE_BY_ID.get(id);
 
 /** Whether an upgrade does anything yet. Ones that do not are never offered. */
@@ -63,6 +67,9 @@ export const isBuilt = (upgrade: Upgrade): boolean =>
  * Gives a merc its job's spells at rank 1, and turns the skill points it
  * arrived with into shards: a recruit comes with `level - 1`, unspent.
  * `unit.skills`, which the AI and the orders read, follows the spell order.
+ * Call it after `spawnMerc` sets `skillPoints` to `level - 1`
+ * (src/content/roster.ts), or the recruit gets no shards. It replaces
+ * whatever was in `unit.skills`.
  */
 export function giveSpells(unit: Unit, spells: readonly Skill[]): void {
   unit.spells = [...spells];
@@ -152,7 +159,6 @@ export function applyUpgrade(unit: Unit, upgrade: Upgrade): string | null {
   if (why) {
     return why;
   }
-  UPGRADE_BY_ID.set(upgrade.id, upgrade);
   unit.upgrades.set(upgrade.spell, upgrade.id);
   const base = unit.spells.find((s) => s.id === upgrade.spell);
   if (base) {

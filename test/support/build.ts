@@ -1,5 +1,11 @@
 import { cannotLearn, learn, treeFor } from '../../src/content/trees';
-import { type Upgrade, applyUpgrade, giveSpells } from '../../src/sim/builds';
+import {
+  type Upgrade,
+  applyUpgrade,
+  giveSpells,
+  registerBuild,
+  upgradeById,
+} from '../../src/sim/builds';
 import type { Skill } from '../../src/sim/skill';
 import type Unit from '../../src/sim/unit';
 
@@ -23,8 +29,13 @@ export default function spendAll(m: Unit): void {
   }
 }
 
-/** Puts a merc on the build model with these spells, as job-registry will. */
-export function withSpells(m: Unit, spells: readonly Skill[]): Unit {
+/**
+ * Puts a merc on the build model with these spells, as job-registry will,
+ * and registers them with the upgrades as its kind's build. Call
+ * `unregisterBuild(m.kind)` after the test.
+ */
+export function withSpells(m: Unit, spells: readonly Skill[], upgrades: Upgrade[] = []): Unit {
+  registerBuild(m.kind, { spells: [...spells], upgrades });
   giveSpells(m, spells);
   return m;
 }
@@ -36,6 +47,9 @@ export function setRank(m: Unit, spell: string, rank: number): void {
 
 /** Gives a spell an elite upgrade, failing the test if it cannot. */
 export function withUpgrade(m: Unit, upgrade: Upgrade): void {
+  if (upgradeById(upgrade.id) !== upgrade) {
+    throw new Error(`${upgrade.id} is not in a registered build.`);
+  }
   const why = applyUpgrade(m, upgrade);
   if (why) {
     throw new Error(why);

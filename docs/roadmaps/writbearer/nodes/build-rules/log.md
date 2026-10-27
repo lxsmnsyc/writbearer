@@ -9,3 +9,11 @@
 - An upgrade's `effect` is set up at the spell's rank and set up again on each raise, stored in `unit.passives` under the upgrade id.
 - Merc panel: spell panel for units with spells, old tree otherwise; panel stays narrow for spells.
 - rtk rewrites `git` and the worktree guard then blocks it; used /usr/bin/git. `pnpm lint` output is eaten by rtk; ran ./node_modules/.bin/oxlint directly (exit 0).
+
+## Review fixes
+
+- `loadSpells` keeps an upgrade id it cannot resolve in `unit.upgrades` (if the spell is known), so the spell still counts as upgraded and the next save writes it back. Tested.
+- `applyUpgrade` no longer writes into the upgrade registry. `registerBuild` now clears the kind's old upgrades first; `unregisterBuild` removes them. `withSpells(m, spells, upgrades)` in test/support registers the build; `withUpgrade` throws for an unregistered upgrade.
+- `giveSpells` doc: call it after spawnMerc sets `skillPoints`.
+- Spell panel: `onSpend` only when `raise` succeeds.
+- Full run once: spawn.test.ts failed one case in the full suite and passed alone, the known slow-test issue.
