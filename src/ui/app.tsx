@@ -154,7 +154,7 @@ export default function App(): JSX.Element {
           maxMana: unit.derived.maxMana,
           alive: unit.alive,
           level: unit.level,
-          points: unit.skillPoints + unit.statPoints,
+          points: unit.skillPoints + unit.shards + unit.statPoints,
           morale: moraleOf(unit),
         })),
       );

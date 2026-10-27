@@ -210,6 +210,13 @@ export default class Unit {
   readonly skillRanks = new Map<string, number>();
   // Passive skills in effect, by node id, so a new rank can replace the old
   readonly passives = new Map<string, Lifecycle>();
+  // The job's 4 spells in cast priority order, for jobs on the build model
+  // (src/sim/builds.ts). Empty for jobs still on a skill tree.
+  spells: Skill[] = [];
+  // Shards not yet spent: each raises one spell a rank
+  shards = 0;
+  // The elite upgrade each spell holds: spell id to upgrade id
+  readonly upgrades = new Map<string, string>();
   // Experience toward the next level, and points not yet spent
   xp = 0;
   skillPoints = 0;

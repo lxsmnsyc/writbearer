@@ -18,6 +18,7 @@ import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
 import SkillTree from './skill-tree';
+import SpellPanel from './spell-panel';
 import StatSheet from './stat-sheet';
 
 // How many target priorities a merc follows. Discipline will set this later.
@@ -109,7 +110,7 @@ export default function MercPanel(props: Props): JSX.Element {
       return 0;
     }
     if (t === 'skills') {
-      return props.unit.skillPoints;
+      return props.unit.spells.length > 0 ? props.unit.shards : props.unit.skillPoints;
     }
     return t === 'stats' ? props.unit.statPoints : 0;
   };
@@ -143,6 +144,9 @@ export default function MercPanel(props: Props): JSX.Element {
   const unused = (): Priority[] =>
     PRIORITIES.map((p) => p.value).filter((p) => !toggles().priorities.includes(p));
 
+  // The skill tree needs room for three branches; the spell panel does not.
+  const wide = (): boolean => tab() === 'skills' && props.unit.spells.length === 0;
+
   const setSkill = (id: string, mode: SkillMode): void => {
     update({ ...toggles(), skills: { ...toggles().skills, [id]: mode } });
   };
@@ -160,7 +164,7 @@ export default function MercPanel(props: Props): JSX.Element {
   return (
     <aside
       class="panel absolute top-6 right-6 flex max-h-[calc(100%-9rem)] flex-col p-5"
-      classList={{ 'w-96': tab() !== 'skills', 'w-[620px]': tab() === 'skills' }}
+      classList={{ 'w-96': !wide(), 'w-[620px]': wide() }}
       aria-label={`Orders for ${props.unit.name}`}
     >
       <header class="mb-3 flex items-start gap-3">
@@ -442,7 +446,18 @@ export default function MercPanel(props: Props): JSX.Element {
           </section>
         </Show>
         <Show when={tab() === 'skills'}>
-          <SkillTree unit={props.unit} version={version()} onSpend={spent} />
+          <Show
+            when={props.unit.spells.length > 0}
+            fallback={<SkillTree unit={props.unit} version={version()} onSpend={spent} />}
+          >
+            <SpellPanel
+              unit={props.unit}
+              version={version()}
+              onSpend={spent}
+              mode={(id) => skillMode(toggles(), id)}
+              onMode={setSkill}
+            />
+          </Show>
         </Show>
         <Show when={tab() === 'stats'}>
           <StatSheet unit={props.unit} version={version()} onSpend={spent} />

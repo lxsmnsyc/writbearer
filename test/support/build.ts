@@ -1,4 +1,6 @@
 import { cannotLearn, learn, treeFor } from '../../src/content/trees';
+import { type Upgrade, applyUpgrade, giveSpells } from '../../src/sim/builds';
+import type { Skill } from '../../src/sim/skill';
 import type Unit from '../../src/sim/unit';
 
 /**
@@ -18,5 +20,24 @@ export default function spendAll(m: Unit): void {
       return;
     }
     learn(m, pick.branch, pick.node);
+  }
+}
+
+/** Puts a merc on the build model with these spells, as job-registry will. */
+export function withSpells(m: Unit, spells: readonly Skill[]): Unit {
+  giveSpells(m, spells);
+  return m;
+}
+
+/** Sets a spell's rank, past the cap and without shards, for a test. */
+export function setRank(m: Unit, spell: string, rank: number): void {
+  m.skillRanks.set(spell, rank);
+}
+
+/** Gives a spell an elite upgrade, failing the test if it cannot. */
+export function withUpgrade(m: Unit, upgrade: Upgrade): void {
+  const why = applyUpgrade(m, upgrade);
+  if (why) {
+    throw new Error(why);
   }
 }

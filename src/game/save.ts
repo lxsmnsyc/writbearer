@@ -9,6 +9,7 @@ import { AREAS_PER_LAYER, areaOf, layerOf } from '../gen/layers';
 import { freshUid } from '../gen/loot';
 import type { Stage } from '../gen/stage';
 import { type Toggles, copyToggles } from '../sim/ai';
+import { applyUpgrade, buildFor, giveSpells, upgradeById } from '../sim/builds';
 import type { AffixRoll, EquipSlot, Item, ItemBase, Quality } from '../sim/item';
 import type Sim from '../sim/sim';
 import type { BaseStats, Modifier } from '../sim/stats';
@@ -57,8 +58,13 @@ export interface MercSave {
   alive: boolean;
   torn: boolean;
   toggles: Toggles | null;
-  // Skill-tree ranks, in the order they were first learned
+  // Skill-tree ranks, in the order they were first learned, or spell ranks
   ranks: [string, number][];
+  // Shards not spent, for a merc on the build model. A save without them is
+  // from before its job had spells.
+  shards?: number;
+  // Each spell's elite upgrade: spell id, upgrade id
+  upgrades?: [string, string][];
   equipment: [EquipSlot, ItemSave][];
   belt: (ItemSave | null)[];
 }
@@ -165,6 +171,7 @@ export function saveMerc(unit: Unit): MercSave {
     torn: unit.torn,
     toggles: unit.toggles ? copyToggles(unit.toggles) : null,
     ranks: [...unit.skillRanks],
+    ...(unit.spells.length > 0 ? { shards: unit.shards, upgrades: [...unit.upgrades] } : {}),
     equipment: [...unit.equipment].map(([slot, item]) => [slot, saveItem(item)]),
     belt: unit.belt.map((stack) => stack && saveItem(stack)),
   };
@@ -195,7 +202,53 @@ export function loadMerc(sim: Sim, s: MercSave, x: number, z: number): Unit {
   unit.statPoints = s.statPoints;
   unit.morale = s.morale;
   unit.discipline = s.discipline;
-  // Its skills and passives, at the ranks it learned them to
+  const build = buildFor(unit.kind);
+  if (build && unit.spells.length === 0) {
+    giveSpells(unit, build.spells);
+  }
+  if (unit.spells.length > 0) {
+    loadSpells(unit, s);
+  } else {
+    loadTree(unit, s);
+  }
+  unit.recalc();
+  unit.hp = s.hp;
+  unit.mana = s.mana;
+  unit.alive = s.alive;
+  unit.torn = s.torn;
+  return unit;
+}
+
+// A merc on the build model: its spell ranks, shards and upgrades. A save
+// from before its job had spells gives back every skill point as a shard,
+// spent or not, and its spells start again at rank 1.
+function loadSpells(unit: Unit, s: MercSave): void {
+  if (s.shards === undefined) {
+    let spent = 0;
+    for (const [, rank] of s.ranks) {
+      spent += rank;
+    }
+    unit.shards = s.skillPoints + spent;
+    unit.skillPoints = 0;
+    return;
+  }
+  unit.shards = s.shards;
+  for (const [id, rank] of s.ranks) {
+    if (unit.spells.some((spell) => spell.id === id)) {
+      unit.skillRanks.set(id, rank);
+    }
+  }
+  for (const [, id] of s.upgrades ?? []) {
+    const upgrade = upgradeById(id);
+    if (upgrade) {
+      applyUpgrade(unit, upgrade);
+    }
+  }
+}
+
+// A merc on its skill tree: its skills and passives, at the ranks it
+// learned them to.
+function loadTree(unit: Unit, s: MercSave): void {
   for (const [id, rank] of s.ranks) {
     const found = findNode(unit, id);
     if (!found) {
@@ -212,12 +265,6 @@ export function loadMerc(sim: Sim, s: MercSave, x: number, z: number): Unit {
       life.start();
     }
   }
-  unit.recalc();
-  unit.hp = s.hp;
-  unit.mana = s.mana;
-  unit.alive = s.alive;
-  unit.torn = s.torn;
-  return unit;
 }
 
 /** Fills a pack and the vault from a save. */

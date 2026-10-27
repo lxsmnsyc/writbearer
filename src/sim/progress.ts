@@ -25,7 +25,8 @@ export function killXp(monster: Unit): number {
 }
 
 /**
- * Adds experience. Each level gained gives a skill point and stat points.
+ * Adds experience. Each level gained gives a skill point, or a shard, and
+ * stat points.
  * Returns how many levels were gained.
  */
 export function gainXp(unit: Unit, xp: number): number {
@@ -34,7 +35,12 @@ export function gainXp(unit: Unit, xp: number): number {
   while (unit.xp >= xpToNext(unit.level)) {
     unit.xp -= xpToNext(unit.level);
     unit.level++;
-    unit.skillPoints++;
+    // A merc on the build model gets a shard instead of a skill point.
+    if (unit.spells.length > 0) {
+      unit.shards++;
+    } else {
+      unit.skillPoints++;
+    }
     unit.statPoints += STAT_POINTS;
     // Each level makes a merc a little more disciplined.
     shiftDiscipline(unit, 1);

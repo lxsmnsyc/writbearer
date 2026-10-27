@@ -86,6 +86,14 @@ describe('the save', () => {
     expect(back.torn).toBe(true);
   });
 
+  it('writes no shards for a merc on its tree, so a later load can refund its ranks', () => {
+    const merc = spawnMerc(new Sim(1), 'cleric', 6, 0, 0);
+    const saved = roundTrip(saveMerc(merc));
+    expect(saved.shards).toBeUndefined();
+    expect(saved.upgrades).toBeUndefined();
+    expect(loadMerc(new Sim(1), saved, 0, 0).spells).toEqual([]);
+  });
+
   it('picks the random streams up where they stood', () => {
     const run = new RunStreams('ASHEN');
     run.get(1, Stream.Loot).random();
