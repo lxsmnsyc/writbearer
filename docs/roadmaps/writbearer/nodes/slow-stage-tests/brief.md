@@ -1,7 +1,7 @@
 ---
 id: slow-stage-tests
 title: Stage generation tests that pass the 5 second limit
-status: active
+status: done
 priority: must
 type: fix
 outline: false

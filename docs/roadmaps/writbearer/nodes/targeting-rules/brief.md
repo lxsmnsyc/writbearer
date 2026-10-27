@@ -1,7 +1,7 @@
 ---
 id: targeting-rules
 title: CheckTarget: one rule for who may be targeted
-status: active
+status: done
 priority: must
 type: feature
 outline: false

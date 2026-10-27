@@ -92,4 +92,5 @@ Blast radius high (core registries, removing the tree path); size large (many fi
 - This node moves code and removes the tree path. Do not add any new job, skill or upgrade.
 - The three built jobs lose the skills that become upgrades until their `<kind>-upgrades` node lands. Say which in the outcome.
 - Keep `src/game/save.ts` loading old saves; it reads kinds through HIREABLE.
+- build-rules left a temporary build registry (`contracts/builds.md` v2). Make `buildFor` and `upgradeById` read from JOBS, delete `registerBuild` and `unregisterBuild`, and call `giveSpells(unit, def.spells)` in `spawnMerc` after `skillPoints` is set.
 - Type the registry so `MercKind` stays a literal union; `keyof typeof MERCS` is used widely.

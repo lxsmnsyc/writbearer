@@ -1,7 +1,7 @@
 ---
 id: build-rules
 title: Spells, shards and elite upgrades: the rules and the spell panel
-status: active
+status: done
 priority: must
 type: feature
 outline: false
