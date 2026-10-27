@@ -1,0 +1,48 @@
+name: Release
+
+# Pending changesets on main keep a "Version Packages" PR up to date. Merging it
+# leaves none pending, and that push tags the version and publishes the release.
+# Nothing goes to npm: the package is private.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history, so the tag script can see every tag already made
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Reads the version from packageManager in package.json
+      - uses: pnpm/action-setup@v4
+
+      # The tag script runs straight from TypeScript, which needs a recent node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # release.sh makes the tag and the release itself, since the package
+      # is private and Changesets does not tag it
+      - uses: changesets/action@v2
+        with:
+          version-script: pnpm cs:ver
+          publish-script: bash tools/release/release.sh
+          create-github-releases: false
+          push-git-tags: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
