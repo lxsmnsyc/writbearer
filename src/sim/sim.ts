@@ -5,7 +5,6 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
-import { reveal } from './concealment';
 import { allowed, canTarget, forbids } from './targeting';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
@@ -14,6 +13,7 @@ import { Targeting } from './skill';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
+import { reveal } from './concealment';
 
 // The fixed simulation step: 20 ticks per second.
 export const TICK = 0.05;

@@ -122,7 +122,7 @@ function followersOf(pack: Pack, layer: number): string[] {
 // always gives the same Escort. Returns its index, or -1.
 const ASSASSIN_CHANCE = 0.25;
 
-function assassinAmong(stage: Stage, count: number): number {
+export function assassinAmong(stage: Stage, count: number): number {
   if (count === 0) {
     return -1;
   }

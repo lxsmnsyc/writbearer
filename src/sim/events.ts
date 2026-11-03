@@ -20,7 +20,6 @@ export const enum SimEvents {
   UnitDamage = 'UnitDamage',
   UnitHeal = 'UnitHeal',
   UnitDies = 'UnitDies',
-  UnitRevealed = 'UnitRevealed',
   CheckSkillCost = 'CheckSkillCost',
   UnitSkillWindup = 'UnitSkillWindup',
   UnitSkillRelease = 'UnitSkillRelease',
@@ -35,6 +34,7 @@ export const enum SimEvents {
   CheckProjectile = 'CheckProjectile',
   CheckSkillRank = 'CheckSkillRank',
   CheckAttackElements = 'CheckAttackElements',
+  UnitRevealed = 'UnitRevealed',
 }
 
 /**
@@ -198,7 +198,6 @@ export interface SimEventMap extends EventMap {
   [SimEvents.UnitDamage]: [UnitDamageEvent, DamagePriority];
   [SimEvents.UnitHeal]: [UnitHealEvent, HealPriority];
   [SimEvents.UnitDies]: [UnitDiesEvent, EventPriority];
-  [SimEvents.UnitRevealed]: [UnitRevealedEvent, EventPriority];
   [SimEvents.CheckSkillCost]: [CheckSkillCostEvent, ValuePriority];
   [SimEvents.UnitSkillWindup]: [UnitSkillWindupEvent, EventPriority];
   [SimEvents.UnitSkillRelease]: [UnitSkillReleaseEvent, EventPriority];
@@ -212,4 +211,5 @@ export interface SimEventMap extends EventMap {
   [SimEvents.CheckProjectile]: [CheckProjectileEvent, EventPriority];
   [SimEvents.CheckSkillRank]: [CheckSkillRankEvent, ValuePriority];
   [SimEvents.CheckAttackElements]: [CheckAttackElementsEvent, ValuePriority];
+  [SimEvents.UnitRevealed]: [UnitRevealedEvent, EventPriority];
 }

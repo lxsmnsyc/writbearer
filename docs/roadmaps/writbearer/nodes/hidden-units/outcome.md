@@ -21,6 +21,7 @@
 - `Unit.name` lost `readonly`, so the assassin can be renamed on reveal.
 - The assassin's unit kind is `hollowed`, not `refugee`; it is drawn as a refugee only through `disguise`.
 - The assassin turns by its fuse, since a ward never attacks; once revealed it is a monster that strikes.
+- The Escort's `wards` snapshot still counts the assassin in `needed()` and in the "N of M" text, on purpose: a changed count would give the disguise away. Effect: an Escort with an assassin needs one more real refugee (half of all, rounded up, counting the assassin).
 - `UnitRevealed` also fires when a hidden unit is revealed by a hit or by its own damage, not only by `strike`.
 
 ## Stubs left

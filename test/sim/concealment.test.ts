@@ -6,6 +6,9 @@ import {
   spawnMonster,
   spawnRefugee,
 } from '../../src/content/roster';
+import RNG from '../../src/core/rng';
+import { assassinAmong } from '../../src/game/stage';
+import { type Stage, generateStage } from '../../src/gen/stage';
 import { reveal } from '../../src/sim/concealment';
 import { SimEvents } from '../../src/sim/events';
 import Sim from '../../src/sim/sim';
@@ -129,5 +132,32 @@ describe('the disguised assassin', () => {
     const a = spawnDisguisedAssassin(sim, 5, 11, 10);
     merc.hit(a, { ratio: 100 });
     expect(a.side).toBe(Side.Monster);
+  });
+});
+
+describe('which Escort hides an assassin', () => {
+  const escort = (seed: number, index: number): Stage =>
+    generateStage(new RNG(seed), index, { kind: 'combat', ahead: ['combat'], objective: 'escort' });
+
+  it('is the same for the same stage and lands about one Escort in four', () => {
+    let hit = 0;
+    let total = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+      const stage = escort(seed, (seed % 12) + 1);
+      const n = stage.refugees?.length ?? 0;
+      if (n === 0) {
+        continue;
+      }
+      total++;
+      const pick = assassinAmong(stage, n);
+      expect(assassinAmong(escort(seed, (seed % 12) + 1), n)).toBe(pick);
+      expect(pick).toBeLessThan(n);
+      if (pick >= 0) {
+        hit++;
+      }
+    }
+    expect(total).toBeGreaterThan(100);
+    expect(hit / total).toBeGreaterThan(0.18);
+    expect(hit / total).toBeLessThan(0.32);
   });
 });
