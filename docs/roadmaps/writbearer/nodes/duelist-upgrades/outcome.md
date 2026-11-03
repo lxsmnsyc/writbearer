@@ -19,7 +19,7 @@ The upgrades:
 - Lunge
   - Feint: patch marks the thrust; effect undoes the shield block on it (value stashed after Reduce, restored at Block, `Blocked` flag cleared). No Flank flag is added.
   - Sidestep: patch, after the thrust the Duelist steps 0.8 tiles aside and gets SIDESTEPPING for 3 s: -30 hit chance on hits at it (CheckHit Additive, like BLIND). Read "+30% evasion" as 30 points of hit chance.
-  - Untouchable: effect, on UnitMiss with the Duelist as target, if Lunge is off cooldown and the attacker is targetable and within 4 tiles: Lunge's base release at the attacker, free, forced to hit as a critical (CheckHit Post); Lunge's cooldown then starts.
+  - Untouchable: effect, on UnitMiss with the Duelist as target, if Lunge is off cooldown, the Duelist is not busy (mid-swing or mid-cast) and the attacker is targetable and within 4 tiles: Lunge's base release at the attacker, free, forced to hit as a critical (CheckHit Post); Lunge's cooldown then starts.
 - Flurry
   - Bleed Out: patch marks the Flurry; effect adds BLEED (power 1 + 0.2r, so 1.2% max health a second at rank 1, 4 s, True) on each critical Flurry hit.
   - Thousand Cuts: effect, each blow in a row on the same target adds 3%, capped at 20 blows (+60%); a blow on another target resets. Counts all the Duelist's blows (basic and spells), not DoT ticks.
@@ -27,7 +27,7 @@ The upgrades:
 
 ## Deviations
 
-- None in files: only the owned paths, the node folder and a changeset.
+- `test/content/jobs.test.ts` (not in the owns list): added the Duelist line to the "all built" check next to the Arcanist's, as the job-registry test asks each upgrade node to.
 - Thousand Cuts has a cap of 20 blows that doc 16 does not give; without it a Grand Duel on a boss grows without limit. The describe text says so.
 - Untouchable needs Lunge off cooldown and starts it; doc 16 sets no limit, but without one every evade would fire it.
 
@@ -40,7 +40,7 @@ The upgrades:
 - A parry fires UnitMiss on the Duelist, so Untouchable also fires after a Riposte parry. Tests that force misses must stop the Riposte passive (`duelist.passives.get('riposte')?.stop()`), or a forced hit at Post lets Riposte parry and counter.
 - Grand Duel's status has `remaining = Infinity`. It ends only through `endsWithSource` (a death) or `removeStatus`.
 - Smoke Step forbids the Duelist as a target even for its Shadowstep victim, which turns aware after the strike.
-- Feint relies on its Block listener running after the core one; both are on DamagePriority.Block and the core one is registered when the Sim is built.
+- Feint relies on its Block listener running after every blocking listener; the core one is registered when the Sim is built, so it runs first, but a blocking listener added later at DamagePriority.Block would still block a Feint. A comment in the code says so.
 
 ## Proposed learnings
 
@@ -49,6 +49,7 @@ The upgrades:
 ## Verification
 
 - `pnpm vitest run test/sim/duelist-upgrades.test.ts`: 13 pass.
+- `pnpm vitest run test/content/jobs.test.ts`: pass.
 - `pnpm typecheck && pnpm lint && pnpm test`: pass (65 files, 572 tests, 24 skipped).
 - `pnpm test:e2e` not run, by instruction.
 

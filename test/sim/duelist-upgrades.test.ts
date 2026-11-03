@@ -334,6 +334,11 @@ describe('Lunge upgrades', () => {
     brute.hit(duelist, { range: Range.Melee });
     expect(hits).toHaveLength(1);
     sim.run(LUNGE.cooldown + 0.1);
+    // Not while it is winding up a spell
+    duelist.cast = { skill: spell(duelist, 'flurry'), target: brute, t: 0 };
+    brute.hit(duelist, { range: Range.Melee });
+    expect(hits).toHaveLength(1);
+    duelist.cast = null;
     brute.hit(duelist, { range: Range.Melee });
     expect(hits).toHaveLength(2);
     expect(lungeRatio(1)).toBe(130);

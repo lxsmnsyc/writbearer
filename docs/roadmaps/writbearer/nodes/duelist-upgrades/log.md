@@ -6,3 +6,4 @@
 - Feint undoes the core block: stashes the value after the Reduce step and restores it at Block (core Block runs first, it was registered with the sim).
 - Untouchable test: Riposte parried some forced misses first and countered; the test stops the Riposte passive.
 - Fast check passes: 65 files, 572 tests.
+- Review fixes: Duelist all-built line in test/content/jobs.test.ts; Untouchable skips when busy (test added); Feint ordering comment.

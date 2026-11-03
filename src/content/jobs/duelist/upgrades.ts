@@ -296,7 +296,9 @@ const FEINT: Passive = {
         held = event.value;
       }
     });
-    // Core blocking runs first at this priority: it was registered with the sim.
+    // Assumes this runs after every blocking listener at this priority. The
+    // core one is registered when the Sim is built, so it runs first; a
+    // blocking listener added later than this one would still block.
     const after = listen(unit.sim, SimEvents.UnitDamage, DamagePriority.Block, (event) => {
       if (event.source === unit && feinting.has(unit) && event.flags & DamageFlags.Blocked) {
         event.value = held;
@@ -356,7 +358,8 @@ const sidestep: Partial<Skill> = {
 
 /**
  * After an evade, Lunge fires by itself at the attacker, free and as a
- * critical, when it is off cooldown. Its cooldown then starts.
+ * critical, when it is off cooldown and the Duelist is not mid-swing or
+ * mid-cast. Its cooldown then starts.
  */
 const UNTOUCHABLE: Passive = {
   id: 'untouchable',
@@ -369,6 +372,7 @@ const UNTOUCHABLE: Passive = {
         event.target !== unit ||
         !unit.alive ||
         unit.disabled ||
+        unit.busy ||
         (unit.skillCooldowns.get(LUNGE.id) ?? 0) > 0 ||
         !canTarget(unit, foe) ||
         unit.distanceTo(foe) > LUNGE_RANGE
