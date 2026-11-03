@@ -358,8 +358,8 @@ const sidestep: Partial<Skill> = {
 
 /**
  * After an evade, Lunge fires by itself at the attacker, free and as a
- * critical, when it is off cooldown and the Duelist is not mid-swing or
- * mid-cast. Its cooldown then starts.
+ * critical, when it is off cooldown and the Duelist is not casting. It cuts
+ * a basic attack short. Its cooldown then starts.
  */
 const UNTOUCHABLE: Passive = {
   id: 'untouchable',
@@ -372,13 +372,16 @@ const UNTOUCHABLE: Passive = {
         event.target !== unit ||
         !unit.alive ||
         unit.disabled ||
-        unit.busy ||
+        unit.cast !== null ||
         (unit.skillCooldowns.get(LUNGE.id) ?? 0) > 0 ||
         !canTarget(unit, foe) ||
         unit.distanceTo(foe) > LUNGE_RANGE
       ) {
         return;
       }
+      // A basic attack in progress gives way to the thrust.
+      unit.swing = -1;
+      unit.swingTarget = null;
       answering = true;
       try {
         LUNGE.release(unit, foe, unit.sim);

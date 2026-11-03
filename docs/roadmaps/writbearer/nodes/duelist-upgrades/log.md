@@ -7,3 +7,4 @@
 - Untouchable test: Riposte parried some forced misses first and countered; the test stops the Riposte passive.
 - Fast check passes: 65 files, 572 tests.
 - Review fixes: Duelist all-built line in test/content/jobs.test.ts; Untouchable skips when busy (test added); Feint ordering comment.
+- Round 2: Untouchable guard is `cast !== null` (busy was true for most of each swing); it cancels a basic swing before the thrust. Test covers both.

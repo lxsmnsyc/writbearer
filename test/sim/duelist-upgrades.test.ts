@@ -339,8 +339,13 @@ describe('Lunge upgrades', () => {
     brute.hit(duelist, { range: Range.Melee });
     expect(hits).toHaveLength(1);
     duelist.cast = null;
+    // A basic attack in progress gives way to it.
+    duelist.swing = 0.1;
+    duelist.swingTarget = brute;
     brute.hit(duelist, { range: Range.Melee });
     expect(hits).toHaveLength(2);
+    expect(duelist.swing).toBe(-1);
+    expect(duelist.swingTarget).toBeNull();
     expect(lungeRatio(1)).toBe(130);
   });
 });
