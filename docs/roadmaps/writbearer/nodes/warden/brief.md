@@ -1,13 +1,14 @@
 ---
 id: warden
 title: Warden: the job, its 4 spells and innate passive
-status: active
+status: done
 priority: must
 type: feature
 outline: false
 milestone: starting-jobs
 target:
 from:
+spent: 168366
 size: M
 spike: false
 verify: pnpm vitest run test/sim/warden.test.ts && pnpm vitest run test/content/jobs.test.ts
@@ -52,9 +53,9 @@ Make the Warden (guard) a real job under the build model of `docs/design/16-buil
 
 ## Acceptance
 
-- [ ] A headless fight with the Warden in the party plays out, in `test/sim/warden.test.ts`.
-- [ ] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
-- [ ] Fast check passes.
+- [x] A headless fight with the Warden in the party plays out, in `test/sim/warden.test.ts`.
+- [x] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
+- [x] Fast check passes.
 
 ## Sizing
 

@@ -1,13 +1,14 @@
 ---
 id: duelist
 title: Duelist: the job, its 4 spells and innate passive
-status: active
+status: done
 priority: must
 type: feature
 outline: false
 milestone: starting-jobs
 target:
 from:
+spent: 183364
 size: M
 spike: false
 verify: pnpm vitest run test/sim/duelist.test.ts && pnpm vitest run test/content/jobs.test.ts
@@ -49,9 +50,9 @@ Make the Duelist (striker) a real job under the build model of `docs/design/16-b
 
 ## Acceptance
 
-- [ ] A headless fight with the Duelist in the party plays out, in `test/sim/duelist.test.ts`.
-- [ ] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
-- [ ] Fast check passes.
+- [x] A headless fight with the Duelist in the party plays out, in `test/sim/duelist.test.ts`.
+- [x] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
+- [x] Fast check passes.
 
 ## Sizing
 
