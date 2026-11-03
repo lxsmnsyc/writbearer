@@ -5,6 +5,7 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
+import { reveal } from './concealment';
 import { allowed, canTarget, forbids } from './targeting';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
@@ -118,6 +119,10 @@ function turnSlowly(facing: readonly (readonly [Unit, number])[], dt: number): v
  * Returns the damage event, or null on a miss.
  */
 export function strike(source: Unit, target: Unit, options: HitOptions): ReturnType<Unit['hit']> {
+  // A hidden or disguised unit gives itself away by striking
+  if (source.hidden || source.disguise) {
+    reveal(source, target);
+  }
   let flags = options.flags ?? 0;
   if (target.isFlankedBy(source)) {
     flags |= DamageFlags.Flank;

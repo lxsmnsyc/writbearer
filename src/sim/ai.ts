@@ -1,3 +1,4 @@
+import { reveal } from './concealment';
 import { affinity } from './elements';
 import { SimEvents } from './events';
 import { honoursElites, prioritiesFollowed } from './morale';
@@ -602,6 +603,9 @@ const WARD_SHY = 2.5;
 // How near the bearer comes before a ward joins it
 const WARD_JOIN = 6;
 
+// How near the bearer a disguised assassin must be to turn on it
+const TURN_REACH = 3;
+
 // A ward, such as an Escort's refugee, waits until the bearer comes for it,
 // then follows the bearer and never fights. With a monster at hand, it keeps
 // the bearer between them as best it can.
@@ -613,6 +617,15 @@ function thinkWard(sim: Sim, u: Unit, dt: number): void {
   }
   if (!bearer || !u.aware || sidestep(sim, u, dt)) {
     return;
+  }
+  // A disguised assassin walks with the others until its time comes, and
+  // then turns on the bearer if near enough.
+  if (u.disguise !== null && u.hunt === Hunt.Assassin) {
+    u.fuse -= dt;
+    if (u.fuse <= 0 && u.distanceTo(bearer) <= TURN_REACH) {
+      reveal(u, null);
+      return;
+    }
   }
   const near = nearest(
     u,

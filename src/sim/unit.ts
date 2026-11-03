@@ -117,7 +117,8 @@ export interface HitOptions {
  */
 export default class Unit {
   readonly kind: string;
-  readonly name: string;
+  // Renamed when a disguised unit is revealed
+  name: string;
   // Changes only at the end: the Creditor raises the unresurrected dead.
   side: Side;
   readonly job: Job;
@@ -176,6 +177,15 @@ export default class Unit {
   target: Unit | null = null;
   // Monsters stand idle until they notice the party.
   aware = false;
+  // Hidden from the other side until revealed: it cannot be targeted or noticed
+  hidden = false;
+  // The kind it is drawn and listed as until revealed, or null
+  disguise: string | null = null;
+  // Seconds a disguised assassin walks with the party, counted from when it
+  // joins, before it turns on the bearer. Infinity means never on its own.
+  fuse = Infinity;
+  // Runs when the unit is revealed, such as a disguised assassin changing sides
+  onReveal: ((by: Unit | null) => void) | null = null;
   // A Hunt's quarry: the exits open once every marked monster is dead.
   // Badly hurt, it runs once to a pack still unaware, to wake it.
   marked = false;

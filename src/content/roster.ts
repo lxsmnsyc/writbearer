@@ -303,6 +303,36 @@ export function spawnRefugee(sim: Sim, level: number, x: number, z: number): Uni
   return spawn(sim, 'refugee', REFUGEE, Side.Ward, level, at.x, at.z);
 }
 
+// How long a disguised assassin walks with the refugees before it strikes
+const ASSASSIN_FUSE = 12;
+
+/**
+ * A refugee that is a Hollowed in disguise. It joins the bearer like the
+ * others, then turns on it: revealed, it changes sides and hunts the bearer.
+ */
+export function spawnDisguisedAssassin(sim: Sim, level: number, x: number, z: number): Unit {
+  const at = sim.nav?.free(x, z) ?? { x, z };
+  const unit = spawn(
+    sim,
+    'hollowed',
+    MONSTERS.hollowed,
+    Side.Ward,
+    level,
+    at.x,
+    at.z,
+    undefined,
+    'Refugee',
+  );
+  unit.disguise = 'refugee';
+  unit.fuse = ASSASSIN_FUSE;
+  unit.onReveal = () => {
+    unit.side = Side.Monster;
+    unit.name = 'Assassin';
+    unit.aware = true;
+  };
+  return unit;
+}
+
 export function spawnBearer(sim: Sim, x: number, z: number): Unit {
   const unit = spawn(sim, 'bearer', BEARER, Side.Party, 1, x, z);
   sim.bearer = unit;

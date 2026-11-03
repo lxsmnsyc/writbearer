@@ -49,6 +49,12 @@ const WAVE_MIN_GAP = 2;
 // How long a wave's spawn point shows on the ground before it comes, and how wide
 export const WAVE_WARNING = 3;
 const WAVE_MARK = 2;
+// A refugee still on the bearer's side: a living ward. A disguised assassin
+// that turned is a monster, and does not count.
+function stillWard(u: Unit): boolean {
+  return u.alive && u.side === Side.Ward;
+}
+
 // How near an exit the bearer brings the refugees, and how near the bearer
 // they must be to count as brought
 const ESCORT_EXIT = 4;
@@ -130,7 +136,7 @@ export default class ObjectiveRun {
     this.mobs(sim, dt, level);
     if (this.kind === 'escort') {
       this.wards ??= sim.living(Side.Ward);
-      this.failed = this.wards.filter((u) => u.alive).length < this.needed();
+      this.failed = this.wards.filter(stillWard).length < this.needed();
     }
     this.done = this.failed || this.met(sim);
     if (this.done && this.kind === 'escort') {
@@ -191,7 +197,7 @@ export default class ObjectiveRun {
         (e) => Math.hypot(e.x - bearer.x, e.z - bearer.z) <= ESCORT_EXIT,
       );
       const brought = (this.wards ?? []).filter(
-        (u) => u.alive && u.distanceTo(bearer) <= ESCORT_NEAR,
+        (u) => stillWard(u) && u.distanceTo(bearer) <= ESCORT_NEAR,
       );
       return atExit && brought.length >= this.needed();
     }
@@ -516,7 +522,7 @@ export default class ObjectiveRun {
     }
     if (this.kind === 'escort') {
       const all = this.wards ?? sim.living(Side.Ward);
-      const alive = all.filter((u) => u.alive).length;
+      const alive = all.filter(stillWard).length;
       const need = Math.ceil(all.length / 2);
       return `Bring the refugees to an exit: ${alive} of ${all.length} alive, ${need} needed`;
     }

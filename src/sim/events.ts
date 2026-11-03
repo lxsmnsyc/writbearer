@@ -20,6 +20,7 @@ export const enum SimEvents {
   UnitDamage = 'UnitDamage',
   UnitHeal = 'UnitHeal',
   UnitDies = 'UnitDies',
+  UnitRevealed = 'UnitRevealed',
   CheckSkillCost = 'CheckSkillCost',
   UnitSkillWindup = 'UnitSkillWindup',
   UnitSkillRelease = 'UnitSkillRelease',
@@ -100,6 +101,12 @@ export interface UnitHealEvent extends BaseEvent {
 export interface UnitDiesEvent extends BaseEvent {
   source: Unit;
   killer: Unit | null;
+}
+
+/** A hidden or disguised unit is revealed. */
+export interface UnitRevealedEvent extends BaseEvent {
+  source: Unit;
+  by: Unit | null;
 }
 
 /** Asks the final mana cost of a skill. `value` starts at the skill's cost. */
@@ -191,6 +198,7 @@ export interface SimEventMap extends EventMap {
   [SimEvents.UnitDamage]: [UnitDamageEvent, DamagePriority];
   [SimEvents.UnitHeal]: [UnitHealEvent, HealPriority];
   [SimEvents.UnitDies]: [UnitDiesEvent, EventPriority];
+  [SimEvents.UnitRevealed]: [UnitRevealedEvent, EventPriority];
   [SimEvents.CheckSkillCost]: [CheckSkillCostEvent, ValuePriority];
   [SimEvents.UnitSkillWindup]: [UnitSkillWindupEvent, EventPriority];
   [SimEvents.UnitSkillRelease]: [UnitSkillReleaseEvent, EventPriority];
