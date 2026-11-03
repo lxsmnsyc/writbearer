@@ -1,7 +1,7 @@
 ---
 id: job-hooks
 title: Engine hooks for the four new jobs
-status: active
+status: done
 priority: must
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-27
+spent: 302300
 owns:
   - test/sim/job-hooks.test.ts
 shared:
