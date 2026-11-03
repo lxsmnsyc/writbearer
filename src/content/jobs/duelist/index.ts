@@ -1,39 +1,15 @@
+import GiDervishSwords from '~icons/game-icons/dervish-swords';
+import GiDuel from '~icons/game-icons/duel';
+import GiPiercingSword from '~icons/game-icons/piercing-sword';
+import GiShadowFollower from '~icons/game-icons/shadow-follower';
 import { Range } from '../../../sim/types';
-import { designedInnate, designedSpell } from '../designed';
 import { job, stats } from '../stats';
 import type { JobDef } from '../types';
+import { DUEL, FLURRY, LUNGE, RIPOSTE, SHADOWSTEP, riposteText } from './spells';
 import DUELIST_UPGRADES from './upgrades';
 
 // Daggers and swords: fast hits on one target, and a duel with the elite.
-// Placeholder: its spells and innate are designed in docs/design/16-builds.md
-// and built by the duelist node. Not offered until roster-balance.
-
-const DUEL = designedSpell(
-  'duel',
-  'Duel',
-  'Binds the Duelist and one elite for 4 seconds. Neither can target or be targeted by anyone else.',
-  14,
-  16,
-);
-
-const SHADOWSTEP = designedSpell(
-  'shadowstep',
-  'Shadowstep',
-  'Teleports behind a caster or healer, then hits it for 130% damage with the back bonus.',
-  10,
-  10,
-);
-
-const LUNGE = designedSpell(
-  'lunge',
-  'Lunge',
-  'A thrust that closes the gap, for 120% damage.',
-  8,
-  6,
-);
-
-const FLURRY = designedSpell('flurry', 'Flurry', 'Four quick hits for 40% damage each.', 8, 3);
-
+// Not offered until roster-balance.
 const DUELIST: JobDef = {
   kind: 'duelist',
   template: {
@@ -49,16 +25,16 @@ const DUELIST: JobDef = {
   hireable: false,
   blurb: 'Skirmisher. Strikes from behind and duels the elite.',
   spells: [DUEL, SHADOWSTEP, LUNGE, FLURRY],
-  innate: designedInnate(
-    'riposte',
-    'Riposte',
-    'A 15% chance to parry a melee hit. A parry triggers a free counter.',
-  ),
+  innate: { name: 'Riposte', effect: RIPOSTE, describe: riposteText },
   upgrades: DUELIST_UPGRADES,
   starterGear: ['stiletto', 'buckler', 'jerkin'],
   starterBelt: [['healingDraught', 2]],
-  // Its spell icons come with its spells.
-  icons: {},
+  icons: {
+    duel: GiDuel,
+    shadowstep: GiShadowFollower,
+    lunge: GiPiercingSword,
+    flurry: GiDervishSwords,
+  },
 };
 
 export default DUELIST;
