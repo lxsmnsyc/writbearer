@@ -53,3 +53,4 @@ Design only. M.
 ## Notes for the worker
 
 - Prefer jobs that use systems the game already has or that several jobs share.
+- A one-element job (Frost-only, Storm, Earth) has one element, one signature shape, and its own 4 spells, innate and 12 upgrades. It does not take the Arcanist's spells or reuse Elemental Sense: the Arcanist stays the only two-element striker (`debate/debate.md`). Check overlap with the Sage of doc 12, which also picks bolts by weakness.
