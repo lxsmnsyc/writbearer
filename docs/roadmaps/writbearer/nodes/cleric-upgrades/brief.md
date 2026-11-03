@@ -47,6 +47,7 @@ Finish moving the Cleric to the build model. job-registry already gave it its 4 
 
 - [ ] All 12 upgrades have a patch or effect, and each has a test in `test/sim/cleric-upgrades.test.ts`.
 - [ ] The Cleric cases job-registry moved into `test/sim/cleric-upgrades.test.ts` cover spells and upgrades, or are deleted when the skill is gone.
+- [ ] Duel gap: during a Duel, other mercs must not reach the dueled elite (`docs/design/16-builds.md` Duel; `nodes/duelist/outcome.md`). `after` in `src/content/cleric.ts` passes its enemies through `hostiles(u)` or `canTarget(u, e)` from `src/sim/targeting.ts`. A test shows the Cleric's effect skips an elite dueled by a Duelist.
 - [ ] Fast check passes.
 
 ## Sizing

@@ -1,7 +1,7 @@
 ---
 id: arcanist
 title: Arcanist: the job, its 4 spells and innate passive
-status: todo
+status: active
 priority: must
 type: feature
 outline: false

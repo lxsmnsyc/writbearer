@@ -1,8 +1,14 @@
-import { plainLook } from './held';
+import { heldGear } from './held';
 import type { JobLook } from './types';
 
-// Placeholder: a plain fighter with a sword and a buckler. The sellsword
-// node draws its own look.
-const SELLSWORD_LOOK: JobLook = plainLook('sword', true);
+// The Sellsword: drawn a little larger than the others, with one big sword
+// and nothing else. No shield is drawn, so the blade is the signature shape.
+const SELLSWORD_LOOK: JobLook = {
+  hitFraction: 0.55,
+  size: 1.1,
+  bare: { weapon: 'sword', shield: false },
+  attachments: (weapon) => heldGear(weapon),
+  attack: () => 'slash',
+};
 
 export default SELLSWORD_LOOK;
