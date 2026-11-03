@@ -10,6 +10,7 @@ import {
   SECOND_WIND,
   cleaveRatio,
   hamstringRatio,
+  hamstrungAt,
   rushStun,
   sandBlind,
 } from '../../src/content/jobs/sellsword/spells';
@@ -164,6 +165,20 @@ describe('Hamstring', () => {
     expect(foe.speed).toBeLessThan(fast);
   });
 
+  it('slows more at a higher rank: 30 + 2% a rank', () => {
+    const slowAt = (rank: number): number => {
+      const { sim, sword, foe } = setup(2, 1);
+      sword.skillRanks.set('hamstring', rank);
+      const fast = foe.speed;
+      sword.startCast(HAMSTRING, foe);
+      sim.run(HAMSTRING.windup + 0.02);
+      return 1 - foe.speed / fast;
+    };
+    expect(slowAt(1)).toBeCloseTo(0.32);
+    expect(slowAt(5)).toBeCloseTo(0.4);
+    expect(hamstrungAt(5).slow).toBeLessThan(hamstrungAt(1).slow ?? 1);
+  });
+
   it('wears off after 3 seconds', () => {
     const { sim, sword, foe } = setup(2, 1);
     sword.startCast(HAMSTRING, foe);
@@ -248,5 +263,27 @@ describe('Second Wind', () => {
     sword.hp = Math.floor(max * 0.2);
     blow();
     expect(healed).toHaveLength(1);
+  });
+
+  it('comes back in a new stage, with new units', () => {
+    const wound = (seed: number): number => {
+      const sim = new Sim(seed);
+      spawnBearer(sim, 0, 0);
+      const sword = spawnMerc(sim, 'sellsword', 8, 1, 0, quiet());
+      const foe = spawnMonster(sim, 'hollowSoldier', 8, 6, 0);
+      let n = 0;
+      sim.on(SimEvents.UnitHeal, HealPriority.Post, (event) => {
+        if (event.target === sword) {
+          n++;
+        }
+      });
+      for (let i = 0; i < 2; i++) {
+        sword.hp = Math.floor(sword.derived.maxHp * 0.3);
+        foe.hit(sword, { kind: DamageKind.True, fixed: 1 });
+      }
+      return n;
+    };
+    expect(wound(1)).toBe(1);
+    expect(wound(2)).toBe(1);
   });
 });

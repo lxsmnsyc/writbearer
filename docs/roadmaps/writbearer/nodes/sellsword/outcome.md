@@ -11,7 +11,7 @@ Behavior: Rush aims at the enemy nearest the bearer that is going for it, jumps 
 
 ## Deviations
 
-- `HAMSTRUNG` slows by a fixed 32% (the rank 1 figure) because a status def's `slow` is a constant. The text says 30 + 2r%; `hamstringSlow` is exported but the slow does not grow with rank. A fix needs a per-status slow in `src/sim/status.ts`, which this node does not edit.
+- Hamstring's slow grows with rank (30 + 2r%) through one `StatusDef` per rank (`hamstrungAt`), all with the id 'hamstrung', because a def's `slow` is a constant. `src/sim/status.ts` is untouched.
 - The look uses only existing attachments (a sword). A bigger signature shape needs a new `Attachment` in `src/render/sprites.ts`, outside this node.
 - No shared file was touched. `listeners.ts`, `unit.ts`, `loot.ts` and `sim.ts` are needed only by the upgrades (Pocket Change, Veteran of Many Wars).
 - The new file `src/content/jobs/sellsword/spells.ts` is in the job folder, as the Duelist has.
@@ -22,7 +22,7 @@ Behavior: Rush aims at the enemy nearest the bearer that is going for it, jumps 
 
 ## Gotchas
 
-- Second Wind state is a module-level `WeakSet` of units, so it lasts for a unit's life (a stage). A saved and loaded run builds new units and so gets a new Second Wind.
+- Second Wind state is a module-level `WeakSet` of units. Each stage builds new units, so it resets; a test covers two stages.
 - Rush's `aim` returns null when nobody is attacking the bearer, so the AI skips it. A manual cast needs a target.
 - Pocket Sand has no damage: it only calls `buildUp(BLIND, ...)`. Bribe and Play Dead will patch `release`/`wants`.
 

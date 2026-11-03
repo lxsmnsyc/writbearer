@@ -35,17 +35,29 @@ export const hamstringRatio = (rank: number): number => 110 + rank * 8;
 export const hamstringSlow = (rank: number): number => 30 + rank * 2;
 export const cleaveRatio = (rank: number): number => 100 + rank * 8;
 
+const HAMSTRUNG_AT = new Map<number, StatusDef>();
+
 /**
- * Cut tendons. Slows the target. Move speed is a fixed factor of the status,
- * so it is the rank 1 figure (32%); the rank part of the text is not applied.
+ * Cut tendons. Slows the target by 30 + 2r%. A status def's slow is a
+ * constant, so there is one def per rank, all with the id 'hamstrung'.
  */
-export const HAMSTRUNG: StatusDef = {
-  id: 'hamstrung',
-  name: 'Hamstrung',
-  duration: HAMSTRING_TIME,
-  immunity: 0,
-  slow: 0.68,
-};
+export function hamstrungAt(rank: number): StatusDef {
+  let def = HAMSTRUNG_AT.get(rank);
+  if (!def) {
+    def = {
+      id: 'hamstrung',
+      name: 'Hamstrung',
+      duration: HAMSTRING_TIME,
+      immunity: 0,
+      slow: 1 - hamstringSlow(rank) / 100,
+    };
+    HAMSTRUNG_AT.set(rank, def);
+  }
+  return def;
+}
+
+/** The status at rank 1, for its id. */
+export const HAMSTRUNG: StatusDef = hamstrungAt(1);
 
 // The enemy nearest the bearer that is going for it
 function threatToBearer(u: Unit): Unit | null {
@@ -172,7 +184,7 @@ export const HAMSTRING: Skill = {
       flags: DamageFlags.Skill,
     });
     if (hit) {
-      target.addStatus(HAMSTRUNG, u);
+      target.addStatus(hamstrungAt(rankOf(u, 'hamstring')), u);
     }
   },
 };
