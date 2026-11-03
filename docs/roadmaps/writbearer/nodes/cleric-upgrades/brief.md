@@ -19,15 +19,16 @@ owns:
   - src/content/jobs/cleric/upgrades.ts
   - src/content/cleric.ts
   - test/sim/cleric-upgrades.test.ts
-shared:
-  - src/content/skills.ts
-  - src/content/passives.ts
+shared: []
 reserves: []
 provides: []
 depends_on:
   - on: job-registry
     kind: contract
     via: job-def
+  - on: split-job-skills
+    kind: hard
+    why: moves the job skill code this node edits out of skills.ts and passives.ts into the job modules
 ---
 
 # Cleric: spell ranks to 10 and its 12 elite upgrades
@@ -40,7 +41,7 @@ Finish moving the Cleric to the build model. job-registry already gave it its 4 
 
 - Design: `docs/design/16-builds.md`, the Cleric section.
 - Rules: `contracts/builds.md`. An upgrade is a patch over its spell, or a passive it starts.
-- The skill code exists in `src/content/cleric.ts`, `src/content/skills.ts` and `src/content/passives.ts`; most upgrades reuse it.
+- The skill code exists in `src/content/cleric.ts` (split-job-skills moved it there); most upgrades reuse it. `skills.ts` keeps only shared helpers such as `rankOf` and `inLine`.
 
 ## Acceptance
 
@@ -55,4 +56,4 @@ Mostly reshaping code that exists. M.
 ## Notes for the worker
 
 - Old saves refund this job's tree ranks as shards (build-rules does it); do not add a second path.
-
+- Do not add job code back to `skills.ts` or `passives.ts`.

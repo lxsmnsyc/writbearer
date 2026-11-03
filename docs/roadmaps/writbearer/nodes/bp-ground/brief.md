@@ -20,18 +20,29 @@ owns:
   - test/game/boss-field.test.ts
 shared:
   - src/game/footing.ts
-  - src/gen/stage.ts
-  - src/game/game.ts
-  - src/render/renderer.ts
+  - src/gen/stage/arena.ts
+  - src/gen/stage/collapse.ts
+  - src/game/game/tick.ts
+  - src/render/draw/objectives.ts
   - src/content/minibosses.ts
   - src/game/objective.ts
   - src/game/stage.ts
+  - src/render/floor.ts
 reserves: []
 provides: [boss-field]
 depends_on:
   - on: bp-roll
     kind: contract
     via: boss-def
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Boss field changes: rising water and falling sections
@@ -42,8 +53,9 @@ A `BossField` driver armed when the boss wakes, with two building blocks: water 
 
 ## Context
 
-- Bases: `Floods` in `src/content/minibosses.ts:167`, the Collapse objective in `src/game/objective.ts:262`, `WADING` from `Footing`.
+- Bases: `Floods` in `src/content/minibosses.ts:167`, the Collapse objective in `src/game/objective.ts`, `WADING` from `Footing`.
 - Source: `docs/design/13-bestiary.md#what-the-engine-needs`.
+- Code layout: the boss field is `src/gen/stage/arena.ts` and the collapse is `src/gen/stage/collapse.ts`. Arm the driver in `step` in `src/game/game/tick.ts` (`wakeBoss` is there). Draw next to `drawCollapse` in `src/render/draw/objectives.ts`. Water patches are floor (`src/render/floor.ts`).
 
 ## Acceptance
 

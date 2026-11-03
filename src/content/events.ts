@@ -9,7 +9,8 @@ import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 import { gather } from './materials';
 import { type Offer, rollOffer } from './recruits';
-import { MERCS, type MonsterKind, spawnMonster } from './roster';
+import { JOBS } from './jobs';
+import { type MonsterKind, spawnMonster } from './roster';
 
 // Events, from the overview: a text choice with consequences, in a small
 // safe area on the layer's map. Each rolls what it offers from the `events`
@@ -334,7 +335,7 @@ export const EVENTS: readonly EventDef[] = [
       const flaw = scene.rng.pick(['cowardly', 'greedy']);
       offer.traits = [flaw, ...offer.traits.filter((t) => t !== 'brave' && t !== flaw)].slice(0, 2);
       const wage = Math.round(offer.wage / 2);
-      const job = MERCS[offer.kind].job.name;
+      const job = JOBS[offer.kind].template.job.name;
       return {
         figure: offer.kind,
         text: `${offer.name}, a ${job} who left another escort in the night, asks to walk with the bearer. Half the usual wage, ${wage} gold, and no questions. The Guild would call it ${flaw === 'cowardly' ? 'cowardice' : 'greed'}.`,

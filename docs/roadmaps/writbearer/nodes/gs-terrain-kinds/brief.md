@@ -19,14 +19,18 @@ owns:
   - src/sim/ground.ts
   - test/sim/ground.test.ts
 shared:
-  - src/gen/stage.ts
+  - src/gen/stage/ground.ts
+  - src/gen/stage/types.ts
   - src/game/footing.ts
   - src/render/floor.ts
   - src/sim/sim.ts
   - src/game/stage.ts
 reserves: []
 provides: [terrain]
-depends_on: []
+depends_on:
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Terrain contract and ground kind tables
@@ -37,8 +41,9 @@ Reserve the new ground kinds and a `Ground` query object on the sim, as in the t
 
 ## Context
 
-- Ground today is circles (`Patch` in `src/gen/stage.ts:61`) plus chasm cells; there is no tile grid. `sim.holes` blocks bodies, not sight; `sim.obstacles` blocks both.
+- Ground today is circles (`Patch` in `src/gen/stage/ground.ts`) plus chasm cells; there is no tile grid. `sim.holes` blocks bodies, not sight; `sim.obstacles` blocks both.
 - Research: the scratchpad report is summarized in `contracts/terrain.md`.
+- Registration: a ground kind is a member of `Patch['kind']` and a row field in the `GROUND` table, both in `src/gen/stage/ground.ts`. New `Stage` fields go in `src/gen/stage/types.ts`. `test/gen/stage-snapshot.test.ts` must pass unchanged here, since the same seed must give the same stages.
 - Source: `docs/design/11-stages.md#terrain`.
 
 ## Acceptance
@@ -53,5 +58,5 @@ Thin types, a stub and a move of two switch statements into tables. S.
 
 ## Notes for the worker
 
-- Do not change RNG order in `buildArea`; new rolls in later nodes go last or on a forked stream.
-- Every new `Stage` field is optional: saves store the whole stage (`src/game/save.ts:77`).
+- Do not change RNG order in `buildArea` (now `generateField` in `src/gen/stage/field.ts`); new rolls in later nodes go last or on a forked stream.
+- Every new `Stage` field is optional: saves store the whole stage (`src/game/save.ts`).

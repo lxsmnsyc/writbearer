@@ -8,6 +8,7 @@ import type {
   Range,
   ValuePriority,
 } from './types';
+import type { Projectile } from './projectile';
 import type { Skill } from './skill';
 import type { ActiveStatus, StatusDef } from './status';
 import type Unit from './unit';
@@ -29,6 +30,10 @@ export const enum SimEvents {
   // After every unit has acted in a tick
   Tick = 'Tick',
   UnitRevived = 'UnitRevived',
+  CheckChase = 'CheckChase',
+  CheckProjectile = 'CheckProjectile',
+  CheckSkillRank = 'CheckSkillRank',
+  CheckAttackElements = 'CheckAttackElements',
 }
 
 /**
@@ -146,6 +151,38 @@ export interface TickEvent extends BaseEvent {
   dt: number;
 }
 
+/** Asks how far from the bearer a merc may chase, in tiles. `value` starts at its orders' chase. */
+export interface CheckChaseEvent extends BaseEvent {
+  source: Unit;
+  value: number;
+}
+
+/**
+ * A projectile is about to strike `target`. Disabling the event stops the
+ * projectile there: no hit, and it flies no further.
+ */
+export interface CheckProjectileEvent extends BaseEvent {
+  source: Unit;
+  target: Unit;
+  projectile: Projectile;
+}
+
+/** Asks the rank a unit uses a skill at. `value` starts at the learned rank, at least 1. */
+export interface CheckSkillRankEvent extends BaseEvent {
+  source: Unit;
+  skill: string;
+  value: number;
+}
+
+/**
+ * Asks which elements a unit's attacks may take, for the "weak to my
+ * element" target priority. `elements` starts as the unit's attack element.
+ */
+export interface CheckAttackElementsEvent extends BaseEvent {
+  source: Unit;
+  elements: Element[];
+}
+
 /** Which event carries which shape, on which priority scale. */
 export interface SimEventMap extends EventMap {
   [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
@@ -163,4 +200,8 @@ export interface SimEventMap extends EventMap {
   [SimEvents.StatusRemoved]: [StatusEvent, EventPriority];
   [SimEvents.Tick]: [TickEvent, EventPriority];
   [SimEvents.UnitRevived]: [UnitRevivedEvent, EventPriority];
+  [SimEvents.CheckChase]: [CheckChaseEvent, ValuePriority];
+  [SimEvents.CheckProjectile]: [CheckProjectileEvent, EventPriority];
+  [SimEvents.CheckSkillRank]: [CheckSkillRankEvent, ValuePriority];
+  [SimEvents.CheckAttackElements]: [CheckAttackElementsEvent, ValuePriority];
 }

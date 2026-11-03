@@ -22,9 +22,12 @@ shared:
   - src/sim/unit.ts
   - src/sim/ai.ts
   - src/render/renderer.ts
+  - src/render/draw/light.ts
   - src/render/light.ts
   - src/game/mutators.ts
-  - src/game/game.ts
+  - src/game/game/render.ts
+  - src/game/game/tick.ts
+  - src/game/game/input.ts
   - src/content/roster.ts
   - src/ui/app.tsx
   - src/sim/ground.ts
@@ -34,6 +37,12 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # One lantern: light level, shading, drawn-to monsters
@@ -44,7 +53,8 @@ The bearer's lantern becomes sim state (`Sim.lantern`: radius with multiplier sl
 
 ## Context
 
-- Three numbers exist today: fog sight 7 (`renderer.ts:128`), light radius 6.5 (`:741`), and each monster's `kit.notice` (`ai.ts:428`). Darkness is a renderer-only boolean (`DARK_SHARE`).
+- Three numbers exist today: fog sight 7 (`BEARER_SIGHT` and `MERC_SIGHT` in `src/render/draw/light.ts`), light radius 6.5 (`LANTERN_LIGHT` there), and each monster's `kit.notice` (`ai.ts:428`). Darkness is a renderer-only boolean (`DARK_SHARE`).
+- Code layout: all three renderer numbers and `DARK_SHARE` are in `src/render/draw/light.ts`. `Frame.dark` stays in `src/render/renderer.ts` and is filled in the `Frame` literal in `src/game/game/render.ts`. Add the per-tick call in `step` in `src/game/game/tick.ts`, in the order the brief needs. The shading key goes in `keyDown` in `src/game/game/input.ts`.
 - This node also serves the bosses (Lantern-Eater, Faceless Regent) and later night, the Lamplighter and gs-phase-modifiers: give it slots for night, Darkness and a timed put-out. Night Eyes was dropped from the Warden (doc 16), so no job widens the lantern yet.
 - Introduce one `noticeRange(sim, monster, target)` in `ai.ts` as the single place light, cover and shading change noticing.
 - Source: `docs/design/11-stages.md#light-and-vision`, `13-bestiary.md#the-marches` (Lantern-Eater).

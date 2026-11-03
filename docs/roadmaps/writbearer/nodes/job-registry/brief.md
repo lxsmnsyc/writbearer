@@ -1,7 +1,7 @@
 ---
 id: job-registry
 title: One module per job, with a registry
-status: todo
+status: done
 priority: must
 type: refactor
 outline: false
@@ -47,6 +47,7 @@ depends_on:
   - on: builds-design
     kind: hard
     why: the placeholder and moved jobs get the spells and innate passives drawn there
+spent: 821000
 ---
 
 # One module per job, with a registry
@@ -66,22 +67,22 @@ Move everything that defines a job out of the shared content, UI and render file
 
 ## Steps
 
-- [ ] Add `src/content/jobs/types.ts` and `src/content/jobs/index.ts`.
-- [ ] Move Vanguard, Ranger and Cleric into `src/content/jobs/<kind>/index.ts` with their spells and innate, and placeholder `upgrades.ts`.
-- [ ] Add placeholder `index.ts`, `upgrades.ts`, looks and icons for Sellsword, Warden, Duelist and Arcanist, with hireable false.
-- [ ] Remove `TREES`, `src/ui/skill-tree.tsx` and the skill point path; tree skills that are now upgrades stay in code for the upgrade nodes. Split `test/sim/tree-skills.test.ts` by job into `test/sim/<kind>-upgrades.test.ts` (vanguard, ranger, cleric), skipping cases of skills that are now upgrade placeholders, and delete it.
-- [ ] Add Sellsword and Warden to the `jobs` lists of fitting bases; add any base a new job needs as starter gear.
-- [ ] Derive MercKind, MERCS entries for mercs, DISCIPLINE, HIREABLE, FIGHTERS, STARTER_GEAR and STARTER_BELT from JOBS.
-- [ ] Add `src/render/looks/` with a LOOKS registry; derive the rig's merc kinds, sizes, hit fractions, paper color and sprite attachments from it.
-- [ ] Add `ZONE_LOOKS` and move the four skill zone drawings into it.
-- [ ] Write `test/content/jobs.test.ts`; make the recruit tests read HIREABLE.
-- [ ] Freeze the contract: write the final shape into your outcome so the orchestrator can copy it into `contracts/job-def.md`.
+- [x] Add `src/content/jobs/types.ts` and `src/content/jobs/index.ts`.
+- [x] Move Vanguard, Ranger and Cleric into `src/content/jobs/<kind>/index.ts` with their spells and innate, and placeholder `upgrades.ts`.
+- [x] Add placeholder `index.ts`, `upgrades.ts`, looks and icons for Sellsword, Warden, Duelist and Arcanist, with hireable false.
+- [x] Remove `TREES`, `src/ui/skill-tree.tsx` and the skill point path; tree skills that are now upgrades stay in code for the upgrade nodes. Split `test/sim/tree-skills.test.ts` by job into `test/sim/<kind>-upgrades.test.ts` (vanguard, ranger, cleric), skipping cases of skills that are now upgrade placeholders, and delete it.
+- [x] Add Sellsword and Warden to the `jobs` lists of fitting bases; add any base a new job needs as starter gear.
+- [x] Derive MercKind, MERCS entries for mercs, DISCIPLINE, HIREABLE, FIGHTERS, STARTER_GEAR and STARTER_BELT from JOBS.
+- [x] Add `src/render/looks/` with a LOOKS registry; derive the rig's merc kinds, sizes, hit fractions, paper color and sprite attachments from it.
+- [x] Add `ZONE_LOOKS` and move the four skill zone drawings into it.
+- [x] Write `test/content/jobs.test.ts`; make the recruit tests read HIREABLE.
+- [x] Freeze the contract: write the final shape into your outcome so the orchestrator can copy it into `contracts/job-def.md`.
 
 ## Acceptance
 
-- [ ] `pnpm test` passes. Tests change only where they listed hireable jobs by hand, or tested a tree rule or a skill that is now an upgrade placeholder.
-- [ ] Each of the four placeholder jobs can be spawned with `spawnMerc` and fights in a headless fight; none is offered at the Guild House.
-- [ ] Fast check passes.
+- [x] `pnpm test` passes. Tests change only where they listed hireable jobs by hand, or tested a tree rule or a skill that is now an upgrade placeholder.
+- [x] Each of the four placeholder jobs can be spawned with `spawnMerc` and fights in a headless fight; none is offered at the Guild House.
+- [x] Fast check passes.
 
 ## Sizing
 
@@ -94,3 +95,5 @@ Blast radius high (core registries, removing the tree path); size large (many fi
 - Keep `src/game/save.ts` loading old saves; it reads kinds through HIREABLE.
 - build-rules left a temporary build registry (`contracts/builds.md` v2). Make `buildFor` and `upgradeById` read from JOBS, delete `registerBuild` and `unregisterBuild`, and call `giveSpells(unit, def.spells)` in `spawnMerc` after `skillPoints` is set.
 - Type the registry so `MercKind` stays a literal union; `keyof typeof MERCS` is used widely.
+
+Landed on main by fast-forward: 8659166, 7d59f07 (2026-11-03). Gate decisions: the rebalance stays, a per-job icon map, job-def frozen as built.

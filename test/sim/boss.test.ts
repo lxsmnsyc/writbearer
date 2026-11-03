@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { isFrenzied, spawnBroodMother } from '../../src/content/brood';
 import type { Offer } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc } from '../../src/content/roster';
-import { findNode, learn } from '../../src/content/trees';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { enterStage, spawnParty, wakeBoss } from '../../src/game/stage';
 import dodge from '../support/dodge';
@@ -12,12 +11,7 @@ import { DEFAULT_TOGGLES, Hunt, Priority } from '../../src/sim/ai';
 import Sim from '../../src/sim/sim';
 import { DamageKind, Side } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
-
-const PLAN: Record<Offer['kind'], string[]> = {
-  vanguard: ['challenge', 'sunder', 'crush', 'vow', 'challenge', 'crush', 'vow', 'sunder'],
-  ranger: ['aimedShot', 'snare', 'chargedArrow', 'pinDown', 'aimedShot', 'snare', 'pinDown'],
-  cleric: ['heal', 'smite', 'renew', 'heal', 'smite', 'renew', 'heal'],
-};
+import spendAll from '../support/build';
 
 const mites = (sim: Sim): Unit[] => sim.living(Side.Monster).filter((m) => m.kind === 'mite');
 
@@ -34,13 +28,7 @@ function fight(seed: number, jobs: Offer['kind'][], casters: boolean): boolean {
       }
     : undefined;
   jobs.forEach((job, i) => {
-    const merc = spawnMerc(sim, job, 9, 8, 13 + i * 1.5, toggles);
-    for (const id of PLAN[job]) {
-      const found = findNode(merc, id);
-      if (found) {
-        learn(merc, found.branch, found.node);
-      }
-    }
+    spendAll(spawnMerc(sim, job, 9, 8, 13 + i * 1.5, toggles));
   });
   const mother = spawnBroodMother(sim, 9, 16, 15);
   mother.aware = true;

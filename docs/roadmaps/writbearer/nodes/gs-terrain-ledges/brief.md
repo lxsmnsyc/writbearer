@@ -20,7 +20,7 @@ owns:
   - test/gen/terraces.test.ts
 shared:
   - src/gen/fields.ts
-  - src/gen/stage.ts
+  - src/gen/stage/reach.ts
   - src/sim/ground.ts
 reserves: []
 provides: []
@@ -28,6 +28,9 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Ledges, ramps and the terraces plan
@@ -40,6 +43,7 @@ The Rift Road gets a terraces plan: raised plateaus whose edges are cliffs that 
 
 - There is no height in the sim or renderer today. The sim needs only cliff cells as holes plus a `heightAt` lookup; drawing is gs-terrain-height-view.
 - Plans live in `src/gen/fields.ts` (`Plan` union at :21); keep the new plan in its own file.
+- Cliff cells are holes: add them in `holesOf` in `src/gen/stage/reach.ts`. `navFor` and `ensureReachable` use it. If this node changes generation on purpose, re-record `test/gen/stage-snapshot.test.ts` with `pnpm vitest run test/gen/stage-snapshot.test.ts -u` and say so in the outcome.
 - Source: `docs/design/11-stages.md#terrain`.
 
 ## Acceptance

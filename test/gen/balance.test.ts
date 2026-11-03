@@ -4,7 +4,6 @@ import { RunStreams, Stream } from '../../src/core/seed';
 import { BASE_BY_ID, STARTER_PACK } from '../../src/content/items';
 import type { Offer } from '../../src/content/recruits';
 import { spawnMerc } from '../../src/content/roster';
-import { findNode, learn } from '../../src/content/trees';
 import { Pack } from '../../src/game/inventory';
 import { START_LEVEL, carryParty, enterStage, spawnParty } from '../../src/game/stage';
 import { potionStack } from '../../src/gen/loot';
@@ -14,22 +13,7 @@ import { gainXp, killXp } from '../../src/sim/progress';
 import Sim from '../../src/sim/sim';
 import { Side } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
-
-// How a player might spend each job's first points, in order.
-const PLAN: Record<Offer['kind'], string[]> = {
-  vanguard: ['challenge', 'sunder', 'crush', 'vow', 'challenge', 'crush', 'vow', 'sunder'],
-  ranger: ['aimedShot', 'snare', 'chargedArrow', 'pinDown', 'aimedShot', 'snare', 'pinDown'],
-  cleric: ['heal', 'smite', 'renew', 'heal', 'smite', 'renew', 'heal'],
-};
-
-function spend(merc: Unit, job: Offer['kind']): void {
-  for (const id of PLAN[job]) {
-    const found = findNode(merc, id);
-    if (found) {
-      learn(merc, found.branch, found.node);
-    }
-  }
-}
+import spendAll from '../support/build';
 
 // The bearer walks to the exit, steps behind the nearest merc while
 // monsters near it are awake and see it, and drinks when hurt. Returns whether it
@@ -75,7 +59,7 @@ function run(jobs: Offer['kind'][], seed: string, stages: number): number {
   const bearer = spawnParty(sim, stage, []);
   const mercs = jobs.map((job, i) => {
     const merc = spawnMerc(sim, job, START_LEVEL, stage.entrance.x + 1, stage.entrance.z + i - 1);
-    spend(merc, job);
+    spendAll(merc);
     return merc;
   });
   const pack = new Pack();
@@ -89,7 +73,7 @@ function run(jobs: Offer['kind'][], seed: string, stages: number): number {
     const living = mercs.filter((m) => m.alive);
     living.forEach((merc) => {
       if (gainXp(merc, Math.round(killXp(e.source) / living.length)) > 0) {
-        spend(merc, jobs[mercs.indexOf(merc)]);
+        spendAll(merc);
       }
     });
   });

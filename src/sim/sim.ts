@@ -130,6 +130,22 @@ export function strike(source: Unit, target: Unit, options: HitOptions): ReturnT
   return source.hit(target, { ...options, flags });
 }
 
+// Asks whether anything stops a projectile before it strikes. If so, it ends there.
+function stopped(p: Projectile, target: Unit): boolean {
+  const check = {
+    id: 'CheckProjectile',
+    disabled: false,
+    source: p.source,
+    target,
+    projectile: p,
+  };
+  p.source.sim.emit(SimEvents.CheckProjectile, check);
+  if (check.disabled) {
+    p.done = true;
+  }
+  return check.disabled;
+}
+
 // A homing projectile turns toward its target and lands on reaching it.
 function flyHoming(p: Projectile, dt: number): void {
   const t = p.homing;
@@ -146,7 +162,7 @@ function flyHoming(p: Projectile, dt: number): void {
     p.z = t.z;
     p.done = true;
     // A target forbidden in flight is not struck.
-    if (!forbids(p.source, t)) {
+    if (!forbids(p.source, t) && !stopped(p, t)) {
       strike(p.source, t, p.options);
       p.onHit?.(t);
     }
@@ -195,6 +211,9 @@ function flyStraight(sim: Sim, p: Projectile, dt: number): void {
           continue;
         }
         p.hits.add(u);
+        if (stopped(p, u)) {
+          break;
+        }
         strike(p.source, u, p.options);
         p.onHit?.(u);
         if (!p.pierce) {
@@ -465,6 +484,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     }
     removeDone(this.projectiles);
     this.springTraps(dt);
+    this.nav?.advance(dt);
     updateWarnings(this, dt);
     updateZones(this, dt);
     this.separate();
@@ -531,10 +551,25 @@ export default class Sim extends EventEngine<SimEventMap> {
         const push = BODY - d;
         const nx = (a.x - b.x) / d;
         const nz = (a.z - b.z) / d;
+        const ax = a.x;
+        const az = a.z;
+        const bx = b.x;
+        const bz = b.z;
         a.x += nx * push * share;
         a.z += nz * push * share;
         b.x -= nx * push * (1 - share);
         b.z -= nz * push * (1 - share);
+        // A crowd cannot shove a body into a tile blocked for a while.
+        if (this.nav?.anyShut) {
+          if (this.nav.shut(a.x, a.z) && !this.nav.shut(ax, az)) {
+            a.x = ax;
+            a.z = az;
+          }
+          if (this.nav.shut(b.x, b.z) && !this.nav.shut(bx, bz)) {
+            b.x = bx;
+            b.z = bz;
+          }
+        }
       }
     }
     for (const u of living) {

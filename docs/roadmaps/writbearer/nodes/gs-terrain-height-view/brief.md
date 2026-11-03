@@ -21,6 +21,7 @@ owns:
   - e2e/terraces.spec.ts
 shared:
   - src/render/floor.ts
+  - src/render/draw/standing.ts
   - src/render/renderer.ts
   - src/render/fog.ts
   - src/render/view.ts
@@ -30,6 +31,9 @@ depends_on:
   - on: gs-terrain-ledges
     kind: hard
     why: draws the ledges and heightAt that node adds
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # Drawing height
@@ -42,6 +46,7 @@ The renderer shows ledges: plateau tops raised with one cliff face, ramps sloped
 
 - The floor is one cached canvas per stage (`src/render/floor.ts:45`); fog cells map through `iso(x,z)` at height 0; props and units sort by `x + z`.
 - No render tests exist today: keep the math (lift per cell, ramp interpolation, sort key) in `height.ts` so it can be unit tested.
+- Code layout: the sort key and lift live in `src/render/draw/standing.ts`. `iso`/`body` and the fog draw stay in `src/render/renderer.ts`.
 
 ## Acceptance
 

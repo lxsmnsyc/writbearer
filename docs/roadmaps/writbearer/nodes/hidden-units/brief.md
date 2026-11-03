@@ -25,7 +25,8 @@ shared:
   - src/sim/sim.ts
   - src/sim/mechanics/index.ts
   - src/render/view.ts
-  - src/render/renderer.ts
+  - src/render/draw/figures.ts
+  - src/render/draw/standing.ts
   - src/game/objective.ts
   - src/content/roster.ts
 reserves: []
@@ -37,6 +38,9 @@ depends_on:
   - on: job-registry
     kind: hard
     why: edits spawnRefugee and the assassin monsters in roster.ts, which job-registry rewrites
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # Hidden and disguised units
@@ -64,3 +68,4 @@ Sim plus a little render and objective work; known patterns. M.
 ## Notes for the worker
 
 - Keep the disguised assassin rare (for example one Escort in four) and seeded from the existing stage streams.
+- Gate what is drawn in `seen()` (`src/render/draw/figures.ts`): it covers figures, bars, glows, labels and quarry arrows. `drawStanding` in `src/render/draw/standing.ts` picks what each unit is drawn as.

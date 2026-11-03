@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { JOBS } from '../../src/content/jobs';
 import { spawnMerc } from '../../src/content/roster';
-import { CHALLENGE, CRUSH, INTERCEPT, SHIELD_BASH } from '../../src/content/skills';
-import { learn, treeFor } from '../../src/content/trees';
+import { CHALLENGE, CRUSH, INTERCEPT, SHIELD_WALL_SKILL } from '../../src/content/vanguard';
 import RNG from '../../src/core/rng';
 import { loadMerc, saveMerc } from '../../src/game/save';
 import {
@@ -11,16 +11,15 @@ import {
   offerUpgrades,
   raise,
   rankCap,
-  registerBuild,
   spellOf,
-  unregisterBuild,
 } from '../../src/sim/builds';
 import { gainXp, xpToNext } from '../../src/sim/progress';
 import Sim from '../../src/sim/sim';
 import type Unit from '../../src/sim/unit';
-import { setRank, withSpells, withUpgrade } from '../support/build';
+import { setRank, withUpgrade } from '../support/build';
 
-const SPELLS = [CHALLENGE, CRUSH, SHIELD_BASH, INTERCEPT];
+// The Vanguard's spells, in cast order
+const SPELLS = [INTERCEPT, CHALLENGE, SHIELD_WALL_SKILL, CRUSH];
 
 // A test upgrade per spell: a cheaper spell, and one that starts a passive.
 const upgrade = (spell: string, n: number, extra: Partial<Upgrade> = {}): Upgrade => ({
@@ -32,17 +31,30 @@ const upgrade = (spell: string, n: number, extra: Partial<Upgrade> = {}): Upgrad
   ...extra,
 });
 
-const POOL: Upgrade[] = SPELLS.flatMap((s) => [1, 2, 3].map((n) => upgrade(s.id, n)));
+// Three per spell: Challenge's, Crush's, Shield Wall's, then Intercept's
+const POOL: Upgrade[] = [CHALLENGE, CRUSH, SHIELD_WALL_SKILL, INTERCEPT].flatMap((s) =>
+  [1, 2, 3].map((n) => upgrade(s.id, n)),
+);
 
-// A Vanguard on the build model, with the pool registered as its build.
-const merc = (level = 5, pool = POOL): Unit =>
-  withSpells(spawnMerc(new Sim(1), 'vanguard', level, 0, 0), SPELLS, pool);
+// The Vanguard's own upgrades, put back after each test
+const UPGRADES = JOBS.vanguard.upgrades;
+
+// Stands in for the Vanguard's upgrades, as a later version of the game might.
+function useUpgrades(pool: Upgrade[]): void {
+  JOBS.vanguard.upgrades = pool;
+}
+
+// A Vanguard, with the pool standing in for its upgrades.
+function merc(level = 5, pool = POOL): Unit {
+  useUpgrades(pool);
+  return spawnMerc(new Sim(1), 'vanguard', level, 0, 0);
+}
 
 const roundTrip = <T>(value: T): T => structuredClone(value);
 
 describe('the build model', () => {
   afterEach(() => {
-    unregisterBuild('vanguard');
+    useUpgrades(UPGRADES);
   });
 
   it('caps a spell’s rank by merc level, at most 10', () => {
@@ -101,7 +113,7 @@ describe('the build model', () => {
     expect(cast.cost).toBe(0);
     expect(cast.cooldown).toBe(1);
     expect(cast.release).toBe(CRUSH.release);
-    expect(m.skills[1]).toEqual(cast);
+    expect(m.skills[3]).toEqual(cast);
   });
 
   it('holds one upgrade per spell', () => {
@@ -140,12 +152,12 @@ describe('the build model', () => {
     const m = merc();
     withUpgrade(m, POOL[0]);
     withUpgrade(m, POOL[3]);
-    const planned = upgrade('shieldBash', 7, { patch: undefined });
+    const planned = upgrade('shieldWall', 7, { patch: undefined });
     const pool = [...POOL, planned];
     const offer = offerUpgrades(m, pool, new RNG(7), 3);
     expect(offer).toHaveLength(3);
     for (const u of offer) {
-      expect(['shieldBash', 'intercept']).toContain(u.spell);
+      expect(['shieldWall', 'intercept']).toContain(u.spell);
       expect(u).not.toBe(planned);
     }
     expect(offerUpgrades(m, pool, new RNG(7), 3)).toEqual(offer);
@@ -171,7 +183,7 @@ describe('the build model', () => {
     const m = merc(9);
     withUpgrade(m, POOL[4]);
     // A version where the upgrade was renamed: its old id is not in the build.
-    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL.slice(0, 4) });
+    useUpgrades(POOL.slice(0, 4));
     const lost = loadMerc(new Sim(1), roundTrip(saveMerc(m)), 0, 0);
     expect([...lost.upgrades]).toEqual([['crush', POOL[4].id]]);
     expect(spellOf(lost, CRUSH)).toBe(CRUSH);
@@ -179,27 +191,26 @@ describe('the build model', () => {
     const saved = roundTrip(saveMerc(lost));
     expect(saved.upgrades).toEqual([['crush', POOL[4].id]]);
 
-    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL });
+    useUpgrades(POOL);
     const found = loadMerc(new Sim(1), saved, 0, 0);
     expect(spellOf(found, CRUSH).cost).toBe(0);
   });
 
   it('gives an old save’s tree ranks back as shards', () => {
     // Saved while the Vanguard was on its tree: 3 points spent, 4 left.
-    const old = spawnMerc(new Sim(1), 'vanguard', 8, 0, 0);
-    const branch = treeFor(old)[0];
-    learn(old, branch, branch.nodes[0]);
-    learn(old, branch, branch.nodes[0]);
-    learn(old, branch, branch.nodes[1]);
-    const saved = roundTrip(saveMerc(old));
-    expect(saved.shards).toBeUndefined();
-
-    registerBuild('vanguard', { spells: SPELLS, upgrades: POOL });
+    const saved = roundTrip(saveMerc(merc(8)));
+    delete saved.shards;
+    delete saved.upgrades;
+    saved.skillPoints = 4;
+    saved.ranks = [
+      ['challenge', 2],
+      ['shieldWall', 1],
+    ];
     const back = loadMerc(new Sim(1), saved, 0, 0);
     expect(back.shards).toBe(7);
     expect(back.skillPoints).toBe(0);
     expect(SPELLS.map((s) => back.skillRank(s.id))).toEqual([1, 1, 1, 1]);
-    expect(back.passives.size).toBe(0);
+    expect([...back.passives.keys()]).toEqual(['sunder']);
     expect(back.skills.map((s) => s.id)).toEqual(SPELLS.map((s) => s.id));
   });
 });

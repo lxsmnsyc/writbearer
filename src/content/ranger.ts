@@ -5,12 +5,291 @@ import type Sim from '../sim/sim';
 import { ARROW_SPEED, strike } from '../sim/sim';
 import { type Passive, type Skill, Targeting } from '../sim/skill';
 import { BLEED, ROOTED, SHOCK, SLOWED } from '../sim/statuses';
-import { DamageFlags, DamagePriority, Element, Range, Side } from '../sim/types';
+import { DamageFlags, DamagePriority, Element, Range, Side, ValuePriority } from '../sim/types';
 import type { HitOptions } from '../sim/unit';
 import type Unit from '../sim/unit';
 import { setZone } from '../sim/zone';
-import { listen } from './passives';
-import { inReach, isElite, rankOf } from './skills';
+import listen from './passives';
+import { PIERCE_OVERSHOOT, PIERCE_WIDTH, inLine, inReach, isElite, rankOf } from './skills';
+
+const aimedRatio = (rank: number): number => 200 + rank * 15;
+
+/** Ranger, Hawkeye tier 1. A long, still draw for one heavy arrow. */
+export const AIMED_SHOT: Skill = {
+  id: 'aimedShot',
+  name: 'Aimed Shot',
+  describe: (rank) => `A long draw for one arrow at ${aimedRatio(rank)}% damage.`,
+  cost: 10,
+  cooldown: 5,
+  windup: 1.4,
+  recovery: 0.25,
+  targeting: Targeting.Enemy,
+  wants(u, target) {
+    return inReach(u, target);
+  },
+  elite(_u, target) {
+    return target !== null && isElite(target);
+  },
+  release(u, target, sim) {
+    if (!target?.alive) {
+      return;
+    }
+    sim.fire(u, target, {
+      speed: ARROW_SPEED * 1.3,
+      homing: true,
+      skill: 'aimedShot',
+      options: {
+        range: Range.Ranged,
+        ratio: aimedRatio(rankOf(u, 'aimedShot')),
+        flags: DamageFlags.Skill | DamageFlags.Projectile,
+      },
+    });
+  },
+};
+
+const SNARE_REACH = 7;
+const snareTime = (rank: number): number => 1.5 + rank * 0.25;
+
+// The awake enemy nearest the bearer that is coming for it, if any.
+export function comingForBearer(u: Unit): Unit | null {
+  const bearer = u.sim.bearer;
+  if (!bearer?.alive) {
+    return null;
+  }
+  let best: Unit | null = null;
+  for (const e of u.sim.living(Side.Monster)) {
+    const d = e.distanceTo(bearer);
+    if (e.aware && e.target === bearer && d <= SNARE_REACH && d > 1.5) {
+      if (!best || d < best.distanceTo(bearer)) {
+        best = e;
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Ranger, Trapper tier 1. Throws a snare into the path of an enemy coming
+ * for the bearer. The first enemy to step in is held fast.
+ */
+export const SNARE: Skill = {
+  id: 'snare',
+  name: 'Snare',
+  describe: (rank) =>
+    `Sets a snare in the path of an enemy coming for the bearer. It holds the first enemy in for ${snareTime(rank)} seconds.`,
+  cost: 8,
+  cooldown: 7,
+  windup: 0.4,
+  recovery: 0.3,
+  targeting: Targeting.Self,
+  wants(u, _target, sim) {
+    // One snare at a time.
+    return (
+      comingForBearer(u) !== null && !sim.traps.some((t) => t.owner === u && t.skill === 'snare')
+    );
+  },
+  elite(u) {
+    const e = comingForBearer(u);
+    return e !== null && isElite(e);
+  },
+  release(u, _target, sim) {
+    const e = comingForBearer(u);
+    const bearer = sim.bearer;
+    if (!e || !bearer) {
+      return;
+    }
+    // A step ahead of the enemy, on its way to the bearer.
+    const dx = bearer.x - e.x;
+    const dz = bearer.z - e.z;
+    const d = Math.hypot(dx, dz) || 1;
+    const step = Math.min(1.2, d / 2);
+    sim.traps.push({
+      owner: u,
+      x: e.x + (dx / d) * step,
+      z: e.z + (dz / d) * step,
+      radius: 0.5,
+      life: 20,
+      status: ROOTED,
+      duration: snareTime(rankOf(u, 'snare')),
+      sprung: false,
+      skill: 'snare',
+    });
+  },
+};
+
+const chargedRatio = (rank: number): number => 90 + rank * 8;
+const CHAIN_REACH = 3;
+
+/**
+ * Ranger, Stormcaller tier 1. A Storm arrow that leaps on to one more enemy
+ * near the first. Storm builds up Shock.
+ */
+export const CHARGED_ARROW: Skill = {
+  id: 'chargedArrow',
+  name: 'Charged Arrow',
+  describe: (rank) =>
+    `A Storm arrow for ${chargedRatio(rank)}% damage that chains to one more enemy within ${CHAIN_REACH} tiles.`,
+  cost: 9,
+  cooldown: 4,
+  windup: 0.6,
+  recovery: 0.25,
+  targeting: Targeting.Enemy,
+  wants(u, target) {
+    return inReach(u, target);
+  },
+  elite(_u, target) {
+    return target !== null && isElite(target);
+  },
+  release(u, target, sim) {
+    if (!target?.alive) {
+      return;
+    }
+    const options = {
+      range: Range.Ranged,
+      element: Element.Storm,
+      ratio: chargedRatio(rankOf(u, 'chargedArrow')),
+      flags: DamageFlags.Skill | DamageFlags.Projectile,
+    };
+    sim.fire(u, target, {
+      speed: ARROW_SPEED,
+      homing: true,
+      skill: 'chargedArrow',
+      options,
+      onHit: (first) => {
+        const next = sim
+          .living(Side.Monster)
+          .filter((e) => e !== first && e.distanceTo(first) <= CHAIN_REACH)
+          .sort((a, b) => a.distanceTo(first) - b.distanceTo(first))
+          .at(0);
+        if (next) {
+          // The chain leaps from the first enemy, not from the Ranger.
+          sim.chain(u, first, next, { speed: ARROW_SPEED * 2, skill: 'chargedArrow', options });
+        }
+      },
+    });
+  },
+};
+
+const pierceRatio = (rank: number): number => 150 + rank * 15;
+
+/**
+ * Ranger, Hawkeye tier 4. A long draw, then an arrow that flies straight
+ * through every enemy in its line.
+ */
+export const PIERCING_ARROW: Skill = {
+  id: 'piercingArrow',
+  name: 'Piercing Arrow',
+  describe: (rank) =>
+    `A long draw, then an arrow that hits every enemy in a line for ${pierceRatio(rank)}% damage.`,
+  cost: 14,
+  cooldown: 6,
+  windup: 0.9,
+  recovery: 0.25,
+  targeting: Targeting.Enemy,
+  wants(u, target, sim) {
+    if (!inReach(u, target)) {
+      return false;
+    }
+    // Saved for a line of two or more, an elite, or something after the bearer.
+    return inLine(u, target).length >= 2 || isElite(target) || target.target === sim.bearer;
+  },
+  elite(u, target) {
+    return target !== null && inLine(u, target).some(isElite);
+  },
+  release(u, target, sim) {
+    if (!target) {
+      return;
+    }
+    sim.fire(u, target, {
+      speed: ARROW_SPEED * 1.4,
+      distance: u.kit.reach + PIERCE_OVERSHOOT,
+      radius: PIERCE_WIDTH,
+      pierce: true,
+      skill: 'piercingArrow',
+      options: {
+        range: Range.Ranged,
+        ratio: pierceRatio(rankOf(u, 'piercingArrow')),
+        flags: DamageFlags.Skill | DamageFlags.Projectile,
+      },
+    });
+  },
+};
+
+const pinTime = (rank: number): number => 1 + rank * 0.5;
+
+/**
+ * Ranger, Hawkeye tier 2. An arrow that pins an enemy where it stands. It
+ * will also ground flyers once they exist.
+ */
+export const PIN_DOWN: Skill = {
+  id: 'pinDown',
+  name: 'Pin Down',
+  describe: (rank) => `An arrow that pins an enemy in place for ${pinTime(rank)} seconds.`,
+  cost: 8,
+  cooldown: 8,
+  windup: 0.5,
+  recovery: 0.25,
+  targeting: Targeting.Enemy,
+  wants(u, target, sim) {
+    // For whatever is running at the bearer, or an elite.
+    return (
+      inReach(u, target) &&
+      !target.statuses.has(ROOTED.id) &&
+      (target.target === sim.bearer || isElite(target))
+    );
+  },
+  elite(_u, target) {
+    return target !== null && isElite(target);
+  },
+  release(u, target, sim) {
+    if (!target?.alive) {
+      return;
+    }
+    const time = pinTime(rankOf(u, 'pinDown'));
+    sim.fire(u, target, {
+      speed: ARROW_SPEED,
+      homing: true,
+      skill: 'pinDown',
+      options: {
+        range: Range.Ranged,
+        ratio: 80,
+        flags: DamageFlags.Skill | DamageFlags.Projectile,
+      },
+      onHit: (hit) => {
+        hit.addStatus(ROOTED, u, time);
+      },
+    });
+  },
+};
+
+/** Ranger, Hawkeye tier 3. Longer reach and surer aim. */
+export const EAGLE_EYE: Passive = {
+  id: 'eagleEye',
+  setup: (unit, rank) => ({
+    start: () => {
+      unit.kit.reach += 0.5 * rank;
+      unit.setBonus('eagleEye', [{ stat: 'accuracy', add: 3 * rank }]);
+    },
+    stop: () => {
+      unit.kit.reach -= 0.5 * rank;
+      unit.setBonus('eagleEye', null);
+    },
+  }),
+};
+export const eagleEyeText = (rank: number): string =>
+  `+${0.5 * rank} tiles of reach and +${3 * rank} accuracy.`;
+
+/** Ranger, Stormcaller tier 2. Storm hits build up Shock faster. */
+export const STATIC: Passive = {
+  id: 'static',
+  setup: (unit, rank) =>
+    listen(unit.sim, SimEvents.CheckBuildup, ValuePriority.Multiplicative, (event) => {
+      if (event.source === unit && event.status === SHOCK) {
+        event.value *= 1 + 0.25 * rank;
+      }
+    }),
+};
+export const staticText = (rank: number): string => `+${25 * rank}% Shock buildup.`;
 
 // The Ranger's later skills, from the skill-tree design. First numbers,
 // for balance to settle.
@@ -337,8 +616,8 @@ export const ARC_VOLLEY: Skill = {
 };
 
 const ROD_RADIUS = 2.5;
-const rodTime = (rank: number): number => 5 + rank;
-const rodRatio = (rank: number): number => 35 + rank * 10;
+const rodTime = (rank: number): number => 5 + rank * 0.5;
+const rodRatio = (rank: number): number => 35 + rank * 5;
 
 /**
  * Stormcaller tier 4. Plants a rod that calls lightning: a Storm field

@@ -1,15 +1,14 @@
 import type { MiniBossId } from '../content/minibosses';
 import { CARDS } from '../content/cards';
 import { BASE_BY_ID } from '../content/items';
-import { HIREABLE } from '../content/recruits';
+import { isJobKind } from '../content/jobs';
 import { type MercKind, spawnMerc } from '../content/roster';
-import { findNode } from '../content/trees';
 import { UNIQUE_BY_ID } from '../content/uniques';
 import { AREAS_PER_LAYER, areaOf, layerOf } from '../gen/layers';
 import { freshUid } from '../gen/loot';
 import type { Stage } from '../gen/stage';
 import { type Toggles, copyToggles } from '../sim/ai';
-import { applyUpgrade, buildFor, giveSpells, upgradeById } from '../sim/builds';
+import { applyUpgrade, upgradeById } from '../sim/builds';
 import type { AffixRoll, EquipSlot, Item, ItemBase, Quality } from '../sim/item';
 import type Sim from '../sim/sim';
 import type { BaseStats, Modifier } from '../sim/stats';
@@ -155,7 +154,7 @@ const loadItems = (saves: readonly ItemSave[]): Item[] =>
 
 export function saveMerc(unit: Unit): MercSave {
   return {
-    kind: HIREABLE.find((k) => k === unit.kind) ?? 'vanguard',
+    kind: isJobKind(unit.kind) ? unit.kind : 'vanguard',
     name: unit.name,
     level: unit.level,
     xp: unit.xp,
@@ -202,15 +201,7 @@ export function loadMerc(sim: Sim, s: MercSave, x: number, z: number): Unit {
   unit.statPoints = s.statPoints;
   unit.morale = s.morale;
   unit.discipline = s.discipline;
-  const build = buildFor(unit.kind);
-  if (build && unit.spells.length === 0) {
-    giveSpells(unit, build.spells);
-  }
-  if (unit.spells.length > 0) {
-    loadSpells(unit, s);
-  } else {
-    loadTree(unit, s);
-  }
+  loadSpells(unit, s);
   unit.recalc();
   unit.hp = s.hp;
   unit.mana = s.mana;
@@ -246,27 +237,6 @@ function loadSpells(unit: Unit, s: MercSave): void {
       // An upgrade this version does not know, such as a renamed one, is
       // kept by id: the spell still holds it, and the next save writes it back.
       unit.upgrades.set(spell, id);
-    }
-  }
-}
-
-// A merc on its skill tree: its skills and passives, at the ranks it
-// learned them to.
-function loadTree(unit: Unit, s: MercSave): void {
-  for (const [id, rank] of s.ranks) {
-    const found = findNode(unit, id);
-    if (!found) {
-      continue;
-    }
-    const { node } = found;
-    unit.skillRanks.set(id, rank);
-    if (node.skill) {
-      unit.skills.push(node.skill);
-    }
-    if (node.effect) {
-      const life = node.effect.setup(unit, rank);
-      unit.passives.set(id, life);
-      life.start();
     }
   }
 }

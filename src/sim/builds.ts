@@ -1,3 +1,4 @@
+import { JOBS, JOB_KINDS, isJobKind } from '../content/jobs';
 import type RNG from '../core/rng';
 import type { Passive, Skill } from './skill';
 import type Unit from './unit';
@@ -32,32 +33,29 @@ export const MAX_RANK = 10;
 /** The highest rank a spell may reach at a merc level. */
 export const rankCap = (level: number): number => Math.min(MAX_RANK, 1 + Math.floor(level / 2));
 
-// Builds by merc kind, and every upgrade by id, so saves can find them again.
-const BUILDS = new Map<string, Build>();
-const UPGRADE_BY_ID = new Map<string, Upgrade>();
-
-/** Registers a job's spells and upgrades, by merc kind, over any before. */
-export function registerBuild(kind: string, build: Build): void {
-  unregisterBuild(kind);
-  BUILDS.set(kind, build);
-  for (const upgrade of build.upgrades) {
-    UPGRADE_BY_ID.set(upgrade.id, upgrade);
+/** A merc kind's spells and upgrades, from its job, or undefined for any other kind. */
+export function buildFor(kind: string): Build | undefined {
+  if (!isJobKind(kind)) {
+    return undefined;
   }
+  const def = JOBS[kind];
+  return { spells: [...def.spells], upgrades: def.upgrades };
 }
 
-/** Removes a job's build and its upgrades, for tests. */
-export function unregisterBuild(kind: string): void {
-  for (const upgrade of BUILDS.get(kind)?.upgrades ?? []) {
-    UPGRADE_BY_ID.delete(upgrade.id);
+/**
+ * An upgrade by id, if a job has it. It reads the jobs each time, so a test
+ * that swaps a job's upgrades sees the new ones.
+ */
+export function upgradeById(id: string): Upgrade | undefined {
+  for (const kind of JOB_KINDS) {
+    for (const upgrade of JOBS[kind].upgrades) {
+      if (upgrade.id === id) {
+        return upgrade;
+      }
+    }
   }
-  BUILDS.delete(kind);
+  return undefined;
 }
-
-/** A merc kind's build, or undefined for a job still on its skill tree. */
-export const buildFor = (kind: string): Build | undefined => BUILDS.get(kind);
-
-/** An upgrade by id, if a registered job has it. */
-export const upgradeById = (id: string): Upgrade | undefined => UPGRADE_BY_ID.get(id);
 
 /** Whether an upgrade does anything yet. Ones that do not are never offered. */
 export const isBuilt = (upgrade: Upgrade): boolean =>
@@ -85,7 +83,7 @@ export function giveSpells(unit: Unit, spells: readonly Skill[]): void {
 /** The spell a unit casts, with its elite upgrade applied. */
 export function spellOf(unit: Unit, base: Skill): Skill {
   const id = unit.upgrades.get(base.id);
-  const patch = id === undefined ? undefined : UPGRADE_BY_ID.get(id)?.patch;
+  const patch = id === undefined ? undefined : upgradeById(id)?.patch;
   return patch ? { ...base, ...patch, id: base.id } : base;
 }
 
@@ -135,7 +133,7 @@ export function raise(unit: Unit, spell: string): string | null {
   unit.skillRanks.set(spell, unit.skillRank(spell) + 1);
   unit.shards--;
   const id = unit.upgrades.get(spell);
-  const upgrade = id === undefined ? undefined : UPGRADE_BY_ID.get(id);
+  const upgrade = id === undefined ? undefined : upgradeById(id);
   if (upgrade) {
     startEffect(unit, upgrade);
   }
@@ -190,5 +188,5 @@ export function offerUpgrades(
 /** The upgrade a spell holds, or undefined. */
 export function upgradeOf(unit: Unit, spell: string): Upgrade | undefined {
   const id = unit.upgrades.get(spell);
-  return id === undefined ? undefined : UPGRADE_BY_ID.get(id);
+  return id === undefined ? undefined : upgradeById(id);
 }

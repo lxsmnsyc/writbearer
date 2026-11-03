@@ -17,8 +17,7 @@ import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
-import SkillTree from './skill-tree';
-import SpellPanel from './spell-panel';
+import SpellPanel, { SkillIcon } from './spell-panel';
 import StatSheet from './stat-sheet';
 
 // How many target priorities a merc follows. Discipline will set this later.
@@ -49,6 +48,7 @@ const PRIORITIES: { value: Priority; name: string }[] = [
   { value: Priority.Elites, name: 'Elites and bosses' },
   { value: Priority.Casters, name: 'Casters and healers' },
   { value: Priority.Heralds, name: 'Heralds running for a horn' },
+  { value: Priority.WeakToElement, name: 'Enemies weak to its element' },
 ];
 
 const SKILL_MODES: { value: SkillMode; name: string }[] = [
@@ -104,13 +104,13 @@ export default function MercPanel(props: Props): JSX.Element {
       ? `${props.unit.discipline}${props.unit.disciplineBonus > 0 ? ` +${props.unit.disciplineBonus} from sets` : ''}, ${effectiveDiscipline(props.unit)} in a fight`
       : '';
   const followed = (): number => (version() >= 0 ? prioritiesFollowed(props.unit) : 0);
-  // Points left to spend on a tab: skill points on Skills, stat points on Stats.
+  // Points left to spend on a tab: shards on Skills, stat points on Stats.
   const points = (t: Tab): number => {
     if (version() < 0) {
       return 0;
     }
     if (t === 'skills') {
-      return props.unit.spells.length > 0 ? props.unit.shards : props.unit.skillPoints;
+      return props.unit.shards;
     }
     return t === 'stats' ? props.unit.statPoints : 0;
   };
@@ -381,10 +381,7 @@ export default function MercPanel(props: Props): JSX.Element {
                             {...anchor}
                             class="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent"
                           >
-                            <Icon
-                              name={isIconName(skill.id) ? skill.id : 'points'}
-                              class="size-6"
-                            />
+                            <SkillIcon kind={props.unit.kind} skill={skill.id} class="size-6" />
                           </span>
                         )}
                       </Tip>
@@ -446,18 +443,13 @@ export default function MercPanel(props: Props): JSX.Element {
           </section>
         </Show>
         <Show when={tab() === 'skills'}>
-          <Show
-            when={props.unit.spells.length > 0}
-            fallback={<SkillTree unit={props.unit} version={version()} onSpend={spent} />}
-          >
-            <SpellPanel
-              unit={props.unit}
-              version={version()}
-              onSpend={spent}
-              mode={(id) => skillMode(toggles(), id)}
-              onMode={setSkill}
-            />
-          </Show>
+          <SpellPanel
+            unit={props.unit}
+            version={version()}
+            onSpend={spent}
+            mode={(id) => skillMode(toggles(), id)}
+            onMode={setSkill}
+          />
         </Show>
         <Show when={tab() === 'stats'}>
           <StatSheet unit={props.unit} version={version()} onSpend={spent} />

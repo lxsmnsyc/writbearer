@@ -76,6 +76,7 @@ export const SANCTIFIED: StatusDef = {
   name: 'Sanctified',
   duration: SANCTIFIED_TIME,
   immunity: 0,
+  buff: true,
   setup: (s) => {
     const listener = (event: UnitDamageEvent): void => {
       if (event.target === s.unit) {

@@ -24,6 +24,8 @@ export interface StatusDef {
   slow?: number;
   // The unit runs from the source and cannot fight, as with fear
   flees?: boolean;
+  // A timed gain that can be stolen, such as a Ward or a shield
+  buff?: boolean;
   // Ends early when its source dies, as a taunt does
   endsWithSource?: boolean;
   // Stacks build with each new application, up to this many. Absent means one.
@@ -49,4 +51,40 @@ export interface ActiveStatus {
   // How strong it was made, such as the rank of the skill that gave it
   power: number;
   lifecycle: Lifecycle | null;
+}
+
+/** The buffs on a unit: its active statuses whose kind is marked `buff`. */
+export function buffsOf(unit: Unit): ActiveStatus[] {
+  const out: ActiveStatus[] = [];
+  for (const s of unit.statuses.values()) {
+    if (s.def.buff === true) {
+      out.push(s);
+    }
+  }
+  return out;
+}
+
+/**
+ * Moves the first buff of `from` to `thief`, with its time, power and stacks
+ * left. Returns the thief's new status, or null if `from` had none or the
+ * thief could not take it; then `from` keeps the buff.
+ */
+export function stealBuff(thief: Unit, from: Unit): ActiveStatus | null {
+  const buff = buffsOf(from).at(0);
+  if (!buff) {
+    return null;
+  }
+  const taken = thief.addStatus(buff.def, thief, buff.remaining, buff.power);
+  if (!taken) {
+    return null;
+  }
+  const stacks = Math.min(buff.stacks, buff.def.maxStacks ?? 1);
+  if (taken.stacks < stacks) {
+    taken.stacks = stacks;
+    if (buff.def.modifiers) {
+      thief.recalc();
+    }
+  }
+  from.removeStatus(buff.def.id);
+  return taken;
 }

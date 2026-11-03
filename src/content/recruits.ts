@@ -1,11 +1,11 @@
 import type RNG from '../core/rng';
-import type { MercKind } from './roster';
+import { JOBS, JOB_KINDS, type JobDef, type JobKind } from './jobs';
 import { TRAIT_BY_ID, rollTraits } from './traits';
 import { wageFactor } from './uniques';
 
 /** A merc offered for hire, before it joins. */
 export interface Offer {
-  kind: Exclude<MercKind, 'bearer'>;
+  kind: JobKind;
   name: string;
   level: number;
   traits: string[];
@@ -13,14 +13,25 @@ export interface Offer {
   wage: number;
 }
 
-/** The jobs offered so far. */
-export const HIREABLE: readonly Offer['kind'][] = ['vanguard', 'ranger', 'cleric'];
+// The hireable jobs, in registry order, that pass a test
+function hireable(test: (def: JobDef) => boolean): JobKind[] {
+  const kinds: JobKind[] = [];
+  for (const kind of JOB_KINDS) {
+    if (JOBS[kind].hireable && test(JOBS[kind])) {
+      kinds.push(kind);
+    }
+  }
+  return kinds;
+}
+
+/** The jobs offered at the Guild House. */
+export const HIREABLE: readonly JobKind[] = hireable(() => true);
 
 /**
- * The jobs that can fight alone. The first merc is one of them: a Cleric
- * alone cannot kill what attacks the bearer.
+ * The hireable jobs that can fight alone. The first merc is one of them: a
+ * Cleric alone cannot kill what attacks the bearer.
  */
-export const FIGHTERS: readonly Offer['kind'][] = ['vanguard', 'ranger'];
+export const FIGHTERS: readonly JobKind[] = hireable((def) => def.fighter);
 
 const NAMES = [
   'Odo',

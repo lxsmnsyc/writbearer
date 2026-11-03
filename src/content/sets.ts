@@ -6,7 +6,7 @@ import type Sim from '../sim/sim';
 import { Category } from '../sim/stats';
 import { DamageKind, Element, Range, Side } from '../sim/types';
 import type Unit from '../sim/unit';
-import { listen } from './passives';
+import listen from './passives';
 
 // Squad sets, from the items design: named pieces with fixed stats that
 // help only their wearer, and bonuses for the whole party that unlock as

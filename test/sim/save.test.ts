@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { CARDS } from '../../src/content/cards';
 import { BASE_BY_ID } from '../../src/content/items';
 import { spawnMerc } from '../../src/content/roster';
-import { learn, treeFor } from '../../src/content/trees';
 import { UNIQUE_BY_ID } from '../../src/content/uniques';
 import RNG from '../../src/core/rng';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { loadItem, loadMerc, saveItem, saveMerc } from '../../src/game/save';
 import { makeUnique, rollItem } from '../../src/gen/loot';
+import { raise } from '../../src/sim/builds';
 import { EquipSlot } from '../../src/sim/item';
 import Sim from '../../src/sim/sim';
 import { Rank } from '../../src/sim/types';
@@ -44,8 +44,7 @@ describe('the save', () => {
       name: 'Odo',
       traits: ['loyal'],
     });
-    const branch = treeFor(merc)[0];
-    learn(merc, branch, branch.nodes[0]);
+    expect(raise(merc, 'challenge')).toBeNull();
     merc.raiseStat('str');
     merc.morale = 33;
     merc.discipline = 61;
@@ -86,12 +85,12 @@ describe('the save', () => {
     expect(back.torn).toBe(true);
   });
 
-  it('writes no shards for a merc on its tree, so a later load can refund its ranks', () => {
-    const merc = spawnMerc(new Sim(1), 'cleric', 6, 0, 0);
+  it('keeps the job of a merc not offered at the Guild House yet', () => {
+    const merc = spawnMerc(new Sim(1), 'warden', 6, 0, 0);
     const saved = roundTrip(saveMerc(merc));
-    expect(saved.shards).toBeUndefined();
-    expect(saved.upgrades).toBeUndefined();
-    expect(loadMerc(new Sim(1), saved, 0, 0).spells).toEqual([]);
+    expect(saved.kind).toBe('warden');
+    expect(saved.shards).toBe(5);
+    expect(loadMerc(new Sim(1), saved, 0, 0).spells).toEqual(merc.spells);
   });
 
   it('picks the random streams up where they stood', () => {

@@ -23,9 +23,10 @@ owns:
   - test/sim/boss-pool.test.ts
   - test/game/boss-roll.test.ts
 shared:
-  - src/game/game.ts
+  - src/game/game/route.ts
   - src/gen/graph.ts
-  - src/gen/stage.ts
+  - src/gen/stage/types.ts
+  - src/gen/stage/arena.ts
   - src/game/stage.ts
   - src/ui/map.tsx
   - src/game/compendium.ts
@@ -40,6 +41,12 @@ depends_on:
   - on: roster-balance
     kind: hard
     why: edits roster.ts, icons.ts, view.ts and map.tsx, which the starting-jobs nodes change; start after they merge
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Boss registry, pool roll and map label
@@ -50,7 +57,7 @@ Move the four bosses into `src/content/bosses/` as `BossDef` modules (the boss-d
 
 ## Context
 
-- Today `spawnBoss` (`src/content/bosses.ts:208`) indexes a fixed four by layer; the Brood Mother lives in `brood.ts`; `MapNode` and `Stage` have no boss id; the map labels the node 'Boss' (`src/ui/map.tsx`).
+- Today `spawnBoss` (`src/content/bosses.ts`) indexes a fixed four by layer; the Brood Mother lives in `brood.ts`; `MapNode` and `Stage` have no boss id; the map labels the node 'Boss' (`src/ui/map.tsx`).
 - `streams.area(...)` makes a fresh RNG per key, is never saved and shifts nothing: roll on `area(1, Stream.Map, BOSS_ROLL + depth)`.
 - Source: `docs/design/13-bestiary.md#bosses`.
 
@@ -70,3 +77,4 @@ Many files, mostly moves and thin hooks. M.
 - Pools are fixed at the designed three per layer, so seeds do not change meaning as bosses land.
 - Keep `spawnBoss(sim, layer, ...)` working without an id; `test/sim/bosses.test.ts` is not yours to change.
 - New boss kinds must reach `MONSTER_ORDER` in the compendium.
+- Pick the boss id in `buildStage` in `src/game/game/route.ts`. Its RNG draws go after the existing ones. Add `bossId` as an optional field of `Stage` in `src/gen/stage/types.ts`. The boss field is built in `src/gen/stage/arena.ts`.

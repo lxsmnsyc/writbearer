@@ -1,9 +1,33 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
+import { JOBS, type SpellIcon, isJobKind } from '../content/jobs';
 import { MAX_RANK, cannotRaise, raise, rankCap, spellOf, upgradeOf } from '../sim/builds';
 import { SkillMode } from '../sim/skill';
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Icon, Notice, Segmented, Tip } from './kit';
+
+// A job's own icon for one of its spells, if it has one
+function ownIcon(kind: string, spell: string): SpellIcon | undefined {
+  return isJobKind(kind) ? JOBS[kind].icons[spell] : undefined;
+}
+
+/**
+ * A skill's icon: the merc job's own, else the shared one by skill id, else
+ * a plain one.
+ */
+export function SkillIcon(props: { kind: string; skill: string; class?: string }): JSX.Element {
+  return (
+    <Show
+      when={ownIcon(props.kind, props.skill)}
+      fallback={
+        <Icon name={isIconName(props.skill) ? props.skill : 'points'} class={props.class} />
+      }
+    >
+      {(own) => <Dynamic component={own()} class={props.class ?? 'size-5'} aria-hidden />}
+    </Show>
+  );
+}
 
 const SKILL_MODES: { value: SkillMode; name: string }[] = [
   { value: SkillMode.Auto, name: 'Auto' },
@@ -66,7 +90,7 @@ export default function SpellPanel(props: Props): JSX.Element {
                       {...anchor}
                       class="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent"
                     >
-                      <Icon name={isIconName(base.id) ? base.id : 'points'} class="size-6" />
+                      <SkillIcon kind={props.unit.kind} skill={base.id} class="size-6" />
                     </span>
                   )}
                 </Tip>

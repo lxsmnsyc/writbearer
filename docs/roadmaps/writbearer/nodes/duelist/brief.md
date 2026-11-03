@@ -1,7 +1,7 @@
 ---
 id: duelist
 title: Duelist: the job, its 4 spells and innate passive
-status: todo
+status: active
 priority: must
 type: feature
 outline: false

@@ -19,9 +19,10 @@ owns:
   - src/game/braziers.ts
   - test/game/braziers.test.ts
 shared:
-  - src/gen/stage.ts
-  - src/game/game.ts
-  - src/render/renderer.ts
+  - src/gen/stage/field.ts
+  - src/gen/stage/props.ts
+  - src/game/game/walkups.ts
+  - src/render/draw/props/fires.ts
   - src/sim/ground.ts
 reserves: []
 provides: []
@@ -32,6 +33,15 @@ depends_on:
   - on: gs-terrain-lantern
     kind: hard
     why: shares the sim light list and the notice rule that node adds
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Brazier circles
@@ -42,8 +52,9 @@ A fight field may hold a ring of unlit braziers. The bearer walks up to light it
 
 ## Context
 
-- Braziers and torches are decor props today (`src/gen/stage.ts:24`, exits at :424, boss stair at :1376); levers show the walk-up interaction pattern (`game.ts` `workMaze`).
+- Braziers and torches are decor props today (`PropKind` in `src/gen/stage/props.ts`; exit torches and braziers come from `placeExits` in `src/gen/stage/exits.ts`, the boss stair from `src/gen/stage/arena.ts`); levers show the walk-up interaction pattern (`workWalkUps` in `src/game/game/walkups.ts`).
 - gs-horde-kinds will reuse lit braziers for 'hold the light': expose `Prop.lit` and `litAt`.
+- Registration: append a `WalkUp` to `WALK_UPS` in `src/game/game/walkups.ts`. Draw and light come from the `brazier` entry of `PROP_LOOKS` in `src/render/draw/props/fires.ts`. Place the ring in `generateField` in `src/gen/stage/field.ts`, after the existing rolls.
 - Source: `docs/design/11-stages.md#points-of-interest`.
 
 ## Acceptance
