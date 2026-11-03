@@ -59,9 +59,9 @@ describe('the job registry', () => {
       }
     }
     expect(ids.size).toBe(84);
-    // Built upgrades are the ones with a patch or an effect (the upgrade nodes add them).
-    for (const upgrade of JOB_KINDS.flatMap((k) => JOBS[k].upgrades).filter(isBuilt)) {
-      expect(upgrade.patch ?? upgrade.effect, upgrade.id).toBeDefined();
+    // Each upgrade node adds the line for its job when it builds the 12.
+    for (const upgrade of JOBS.arcanist.upgrades) {
+      expect(isBuilt(upgrade), upgrade.id).toBe(true);
     }
   });
 
