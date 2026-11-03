@@ -6,6 +6,9 @@ name: Release
 on:
   push:
     branches: [main]
+    # Roadmaps, debates, proposals and decisions carry no changesets.
+    paths-ignore:
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
