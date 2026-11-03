@@ -1,7 +1,7 @@
 ---
 id: sellsword
 title: Sellsword: the job, its 4 spells and innate passive
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
@@ -72,6 +72,7 @@ Job data, a look, 4 spells and a passive in its own files, plus small engine hoo
 - Bribe makes a non-elite Human enemy leave the fight: it walks off the field and is removed, dropping nothing.
 - Blind is `BLIND` in `src/sim/statuses.ts` (job-hooks); apply it, do not redefine it.
 - Play Dead uses the targeting contract: while it lies still, monsters may not target it.
+- Area and multi-target spells (Cleave, Pocket Sand) take victims from `areaVictims` or `hostiles(u)` (`src/sim/targeting.ts`), never `sim.living(Side.Monster)`, so a Duel's bond holds (`nodes/duelist/outcome.md`).
 - Cutpurse steals one timed buff: a status with `buff: true` (job-hooks).
 - Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `upgrades.ts` or `src/content/items.ts`.

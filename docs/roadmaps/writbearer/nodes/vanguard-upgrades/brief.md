@@ -47,6 +47,7 @@ Finish moving the Vanguard to the build model. job-registry already gave it its 
 
 - [ ] All 12 upgrades have a patch or effect, and each has a test in `test/sim/vanguard-upgrades.test.ts`.
 - [ ] The Vanguard cases job-registry moved into `test/sim/vanguard-upgrades.test.ts` cover spells and upgrades, or are deleted when the skill is gone.
+- [ ] Duel gap: during a Duel, other mercs must not reach the dueled elite (`docs/design/16-builds.md` Duel; `nodes/duelist/outcome.md`). `challenged` (`src/content/vanguard.ts`) and the `inLine` victims of Fault Line take their victims through `hostiles(u)` or `canTarget(u, e)` from `src/sim/targeting.ts`, not `sim.living(Side.Monster)`. A test shows Challenge does not taunt an elite dueled by a Duelist.
 - [ ] Fast check passes.
 
 ## Sizing
