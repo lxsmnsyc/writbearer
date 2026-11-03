@@ -1,7 +1,7 @@
 ---
 id: job-registry
 title: One module per job, with a registry
-status: todo
+status: active
 priority: must
 type: refactor
 outline: false
