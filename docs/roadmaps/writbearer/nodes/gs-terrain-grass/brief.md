@@ -33,6 +33,12 @@ depends_on:
   - on: hidden-units
     kind: hard
     why: both edit the monster notice check in thinkMonster; build on its version
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Tall grass and fungus cover

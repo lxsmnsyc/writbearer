@@ -30,6 +30,9 @@ depends_on:
   - on: gs-terrain-ledges
     kind: hard
     why: draws the ledges and heightAt that node adds
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # Drawing height

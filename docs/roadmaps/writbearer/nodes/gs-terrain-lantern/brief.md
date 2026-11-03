@@ -34,6 +34,12 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # One lantern: light level, shading, drawn-to monsters

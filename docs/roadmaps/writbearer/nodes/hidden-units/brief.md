@@ -37,6 +37,9 @@ depends_on:
   - on: job-registry
     kind: hard
     why: edits spawnRefugee and the assassin monsters in roster.ts, which job-registry rewrites
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # Hidden and disguised units

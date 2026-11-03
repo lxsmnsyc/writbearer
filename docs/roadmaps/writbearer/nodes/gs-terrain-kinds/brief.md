@@ -26,7 +26,10 @@ shared:
   - src/game/stage.ts
 reserves: []
 provides: [terrain]
-depends_on: []
+depends_on:
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Terrain contract and ground kind tables

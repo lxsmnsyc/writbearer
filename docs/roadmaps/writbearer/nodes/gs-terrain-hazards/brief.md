@@ -25,7 +25,16 @@ shared:
   - src/render/renderer.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Falling rocks, pits and a trap field

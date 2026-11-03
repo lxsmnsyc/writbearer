@@ -32,6 +32,9 @@ depends_on:
   - on: build-rules
     kind: contract
     via: builds
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
 ---
 
 # Elite upgrade offers: Waystations and the Mastery road reward

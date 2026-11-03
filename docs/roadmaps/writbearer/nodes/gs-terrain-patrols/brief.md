@@ -29,6 +29,9 @@ depends_on:
   - on: targeting-rules
     kind: hard
     why: adds a branch to thinkMonster, the function that node rewrites
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Patrolling packs

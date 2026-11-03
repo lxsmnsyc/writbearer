@@ -23,7 +23,10 @@ shared:
   - src/render/effects.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-renderer
+    kind: hard
+    why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
 ---
 
 # Distant landmarks

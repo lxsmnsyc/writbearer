@@ -38,6 +38,9 @@ depends_on:
   - on: job-hooks
     kind: contract
     via: job-hooks
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
 ---
 
 # Sellsword: its 12 elite upgrades

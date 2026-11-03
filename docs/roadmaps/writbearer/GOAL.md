@@ -56,7 +56,7 @@ In order. Only starting-jobs is broken into briefs; the rest are outline nodes, 
 
 ## Shared files
 
-`plan.py` warns about files that many detailed nodes edit. The job and upgrade nodes of starting-jobs no longer edit core simulation files. `job-hooks` adds the hooks they need first (`contracts/job-hooks.md`). Each job's spells, passives and statuses live in its own module. Most of the remaining overlap is the terrain and boss nodes of later milestones. They edit `src/gen/stage.ts` (2,251 lines), `src/render/renderer.ts` (2,178 lines) and `src/game/game.ts` (2,651 lines). Those nodes are spread across waves, so they are not split first. Merge in the order `plan.py status` prints, and split one of those three by feature in a behavior-preserving node if merges start to conflict.
+`plan.py` warns about files that many detailed nodes edit. The job and upgrade nodes of starting-jobs no longer edit core simulation files. `job-hooks` adds the hooks they need first (`contracts/job-hooks.md`). Each job's spells, passives and statuses live in its own module. Most of the remaining overlap is the terrain and boss nodes of later milestones. They edit `src/gen/stage.ts` (2,251 lines), `src/render/renderer.ts` (2,178 lines) and `src/game/game.ts` (2,651 lines). Four behavior-preserving split nodes run first (maintainer, 2026-11-03): split-job-skills (`src/content/skills.ts`, `passives.ts`), split-game, split-renderer and split-stage-gen. The nodes that edit those files depend on them with `hard` edges. The small shared files (`src/sim/*.ts`, `src/render/zones.ts`, `floor.ts`, `src/game/stage.ts`) are not split: merge in the order `plan.py status` prints.
 
 ## Numbered resources
 

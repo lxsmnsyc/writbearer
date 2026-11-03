@@ -40,6 +40,12 @@ depends_on:
   - on: roster-balance
     kind: hard
     why: edits roster.ts, icons.ts, view.ts and map.tsx, which the starting-jobs nodes change; start after they merge
+  - on: split-game
+    kind: hard
+    why: moves game.ts features into modules under src/game/game/; this node edits the moved code
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Boss registry, pool roll and map label

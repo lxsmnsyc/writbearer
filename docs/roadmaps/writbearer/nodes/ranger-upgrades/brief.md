@@ -28,6 +28,9 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
+  - on: split-job-skills
+    kind: hard
+    why: moves the job skill code this node edits out of skills.ts and passives.ts into the job modules
 ---
 
 # Ranger: spell ranks to 10 and its 12 elite upgrades

@@ -28,6 +28,9 @@ depends_on:
   - on: gs-terrain-kinds
     kind: contract
     via: terrain
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Ledges, ramps and the terraces plan

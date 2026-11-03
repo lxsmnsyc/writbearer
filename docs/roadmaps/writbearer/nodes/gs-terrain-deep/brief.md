@@ -32,6 +32,9 @@ depends_on:
   - on: arcanist-upgrades
     kind: hard
     why: uses the temporary nav block API and the Frost hit that node adds
+  - on: split-stage-gen
+    kind: hard
+    why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
 ---
 
 # Deep water and Frost ice
