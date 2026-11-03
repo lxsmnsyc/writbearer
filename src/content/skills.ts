@@ -590,6 +590,9 @@ export const INTERCEPT: Skill = {
 
 // How far the Cleric's prayers reach, in tiles.
 export const PRAYER_REACH = 6;
+// 20 a rank, not doc 16's 10: the other spells' gains are halved, but at 10
+// three mercs beat the layer-1 boss in only 4 of 6 seeds, and
+// test/sim/bosses.test.ts needs 5.
 const healAmount = (u: Unit, rank: number): number => 40 + rank * 20 + u.derived.matkMax;
 // Allies below this share of health are worth a Heal.
 const HEAL_BELOW = 0.7;

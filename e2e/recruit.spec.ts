@@ -1,6 +1,21 @@
-import { expect, test } from '@playwright/test';
-import { HIREABLE } from '../src/content/recruits';
+import { type Page, expect, test } from '@playwright/test';
 import { enterGuild, hire, recruits, talkTo, titlePanel } from './support/guild';
+
+// The hireable jobs, read from the game the dev server runs. The job modules
+// import their icons through the icons plugin, which only the server has.
+async function hireable(page: Page): Promise<string[]> {
+  const path = '/src/content/recruits.ts';
+  return page.evaluate(async (from) => {
+    const mod: unknown = await import(from);
+    const list: unknown =
+      mod !== null && typeof mod === 'object' && 'HIREABLE' in mod ? mod.HIREABLE : [];
+    const kinds: string[] = [];
+    for (const kind of Array.isArray(list) ? list : []) {
+      kinds.push(String(kind));
+    }
+    return kinds;
+  }, path);
+}
 
 test('a run begins in the Guild House: a recruit of every hireable job and one more, the first one free', async ({
   page,
@@ -8,6 +23,7 @@ test('a run begins in the Guild House: a recruit of every hireable job and one m
   await page.goto('/?seed=ASHEN');
   await expect(titlePanel(page)).toBeVisible();
   await enterGuild(page);
+  const HIREABLE = await hireable(page);
   const waiting = await recruits(page);
   expect(waiting).toHaveLength(HIREABLE.length + 1);
   expect(new Set(waiting.map((r) => r.name)).size).toBe(HIREABLE.length + 1);
@@ -27,6 +43,7 @@ test('a run begins in the Guild House: a recruit of every hireable job and one m
 test('the same seed offers the same recruits', async ({ page }) => {
   const names = async (): Promise<string[]> => {
     await page.goto('/?seed=WRIT');
+    const HIREABLE = await hireable(page);
     await expect.poll(async () => (await recruits(page)).length).toBe(HIREABLE.length + 1);
     return (await recruits(page)).map((r) => `${r.name}/${r.kind}`);
   };
@@ -35,6 +52,7 @@ test('the same seed offers the same recruits', async ({ page }) => {
 
 test('the road out stays shut until a fighter is hired', async ({ page }) => {
   await enterGuild(page);
+  const HIREABLE = await hireable(page);
   const cleric = (await recruits(page)).find((r) => r.kind === 'cleric')!;
   await hire(page, cleric);
   const canvas = page.locator('canvas');

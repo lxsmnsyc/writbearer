@@ -1,3 +1,7 @@
+import GiHealing from '~icons/game-icons/healing';
+import GiHolyWater from '~icons/game-icons/holy-water';
+import GiMagicShield from '~icons/game-icons/magic-shield';
+import GiSunSpear from '~icons/game-icons/sun-spear';
 import { Range } from '../../../sim/types';
 import { AEGIS, SACRED_GROUND, WARD, aegisText } from '../../cleric';
 import { HEAL, SMITE } from '../../skills';
@@ -31,6 +35,12 @@ const CLERIC: JobDef = {
     ['healingDraught', 1],
     ['manaTincture', 2],
   ],
+  icons: {
+    ward: GiMagicShield,
+    heal: GiHealing,
+    sacredGround: GiHolyWater,
+    smite: GiSunSpear,
+  },
 };
 
 export default CLERIC;

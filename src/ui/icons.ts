@@ -2,7 +2,6 @@ import type { ComponentProps, JSX } from 'solid-js';
 import GiAnkh from '~icons/game-icons/ankh';
 import GiAnvil from '~icons/game-icons/anvil';
 import GiAnvilImpact from '~icons/game-icons/anvil-impact';
-import GiArrowScope from '~icons/game-icons/arrow-scope';
 import GiBarbedArrow from '~icons/game-icons/barbed-arrow';
 import GiBellShield from '~icons/game-icons/bell-shield';
 import GiBiceps from '~icons/game-icons/biceps';
@@ -19,7 +18,6 @@ import GiCampfire from '~icons/game-icons/campfire';
 import GiCardPickup from '~icons/game-icons/card-pickup';
 import GiCauldron from '~icons/game-icons/cauldron';
 import GiChainMail from '~icons/game-icons/chain-mail';
-import GiChargedArrow from '~icons/game-icons/charged-arrow';
 import GiCheckedShield from '~icons/game-icons/checked-shield';
 import GiChemicalDrop from '~icons/game-icons/chemical-drop';
 import GiCloak from '~icons/game-icons/cloak';
@@ -31,7 +29,6 @@ import GiCrownedSkull from '~icons/game-icons/crowned-skull';
 import GiCultist from '~icons/game-icons/cultist';
 import GiCutDiamond from '~icons/game-icons/cut-diamond';
 import GiDeathSkull from '~icons/game-icons/death-skull';
-import GiDefensiveWall from '~icons/game-icons/defensive-wall';
 import GiDervishSwords from '~icons/game-icons/dervish-swords';
 import GiDiabloSkull from '~icons/game-icons/diablo-skull';
 import GiDrop from '~icons/game-icons/drop';
@@ -51,7 +48,6 @@ import GiFootprint from '~icons/game-icons/footprint';
 import GiGemPendant from '~icons/game-icons/gem-pendant';
 import GiGuardedTower from '~icons/game-icons/guarded-tower';
 import GiGhost from '~icons/game-icons/ghost';
-import GiHammerDrop from '~icons/game-icons/hammer-drop';
 import GiHangingSpider from '~icons/game-icons/hanging-spider';
 import GiHeadshot from '~icons/game-icons/headshot';
 import GiHealing from '~icons/game-icons/healing';
@@ -61,7 +57,6 @@ import GiHeartPlus from '~icons/game-icons/heart-plus';
 import GiHeartWings from '~icons/game-icons/heart-wings';
 import GiHelp from '~icons/game-icons/help';
 import GiHolySymbol from '~icons/game-icons/holy-symbol';
-import GiHolyWater from '~icons/game-icons/holy-water';
 import GiHood from '~icons/game-icons/hood';
 import GiHoodedFigure from '~icons/game-icons/hooded-figure';
 import GiHouse from '~icons/game-icons/house';
@@ -73,11 +68,9 @@ import GiLeatherBoot from '~icons/game-icons/leather-boot';
 import GiLeatherVest from '~icons/game-icons/leather-vest';
 import GiLightningBow from '~icons/game-icons/lightning-bow';
 import GiLightningStorm from '~icons/game-icons/lightning-storm';
-import GiLightningTree from '~icons/game-icons/lightning-tree';
 import GiLinkedRings from '~icons/game-icons/linked-rings';
 import GiLockedChest from '~icons/game-icons/locked-chest';
 import GiMagicPotion from '~icons/game-icons/magic-potion';
-import GiMagicShield from '~icons/game-icons/magic-shield';
 import GiMaze from '~icons/game-icons/maze';
 import GiMeditation from '~icons/game-icons/meditation';
 import GiMetalBar from '~icons/game-icons/metal-bar';
@@ -101,11 +94,9 @@ import GiShamblingZombie from '~icons/game-icons/shambling-zombie';
 import GiShield from '~icons/game-icons/shield';
 import GiShieldBash from '~icons/game-icons/shield-bash';
 import GiShieldEchoes from '~icons/game-icons/shield-echoes';
-import GiShieldImpact from '~icons/game-icons/shield-impact';
 import GiShieldOpposition from '~icons/game-icons/shield-opposition';
 import GiShieldReflect from '~icons/game-icons/shield-reflect';
 import GiShoppingBag from '~icons/game-icons/shopping-bag';
-import GiShouting from '~icons/game-icons/shouting';
 import GiSkullCrack from '~icons/game-icons/skull-crack';
 import GiSkullCrossedBones from '~icons/game-icons/skull-crossed-bones';
 import GiSling from '~icons/game-icons/sling';
@@ -121,7 +112,6 @@ import GiSprint from '~icons/game-icons/sprint';
 import GiStiletto from '~icons/game-icons/stiletto';
 import GiStoneWall from '~icons/game-icons/stone-wall';
 import GiSunPriest from '~icons/game-icons/sun-priest';
-import GiSunSpear from '~icons/game-icons/sun-spear';
 import GiSunbeams from '~icons/game-icons/sunbeams';
 import GiSupersonicArrow from '~icons/game-icons/supersonic-arrow';
 import GiSwordman from '~icons/game-icons/swordman';
@@ -139,7 +129,6 @@ import GiVisoredHelm from '~icons/game-icons/visored-helm';
 import GiWeight from '~icons/game-icons/weight';
 import GiWizardFace from '~icons/game-icons/wizard-face';
 import GiWizardStaff from '~icons/game-icons/wizard-staff';
-import GiWolfTrap from '~icons/game-icons/wolf-trap';
 
 // Icons from game-icons.net, by Lorc, Delapouite and others, under CC BY 3.0.
 // Each is compiled into the bundle only as it is imported here.
@@ -183,47 +172,37 @@ export const ICONS = {
   radiantEssence: GiSunbeams,
   blessing: GiAnvilImpact,
   // Skills and tree nodes, by id
-  challenge: GiShouting,
-  shieldWall: GiDefensiveWall,
   bastion: GiShieldEchoes,
   rampart: GiStoneWall,
   immovable: GiMountains,
   sunder: GiBrokenShield,
-  crush: GiHammerDrop,
   shieldBash: GiShieldBash,
   faultLine: GiEarthCrack,
   earthshaker: GiEarthSpit,
   vow: GiShieldReflect,
-  intercept: GiShieldImpact,
   sharedBurden: GiLinkedRings,
   banner: GiKnightBanner,
   lastLine: GiShieldOpposition,
-  aimedShot: GiArrowScope,
   pinDown: GiBarbedArrow,
   eagleEye: GiEagleEmblem,
   piercingArrow: GiSupersonicArrow,
   killshot: GiHeadshot,
-  snare: GiWolfTrap,
   rearguard: GiFootprint,
   bait: GiTargetDummy,
   spikeField: GiSpikes,
   killingGround: GiSpikedFence,
-  chargedArrow: GiChargedArrow,
   static: GiElectric,
   arcVolley: GiLightningBow,
-  lightningRod: GiLightningTree,
   thunderhead: GiLightningStorm,
+  // Also a Respite on the map. The Cleric's Heal brings its own copy.
   heal: GiHealing,
   renew: GiRegeneration,
   cleanse: GiSparkles,
   resurrection: GiAnkh,
   martyr: GiHeartWings,
-  ward: GiMagicShield,
-  sacredGround: GiHolyWater,
   wallOfFaith: GiCrossShield,
   veil: GiEnergyShield,
   aegis: GiBellShield,
-  smite: GiSunSpear,
   holyLight: GiSunbeams,
   turnUndead: GiSkullCrack,
   consecrate: GiHolySymbol,

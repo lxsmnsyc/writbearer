@@ -64,6 +64,8 @@ const SELLSWORD: JobDef = {
   upgrades: SELLSWORD_UPGRADES,
   starterGear: ['armingSword', 'buckler', 'jerkin'],
   starterBelt: [['healingDraught', 2]],
+  // Its spell icons come with its spells.
+  icons: {},
 };
 
 export default SELLSWORD;

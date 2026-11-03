@@ -1,3 +1,7 @@
+import GiArrowScope from '~icons/game-icons/arrow-scope';
+import GiChargedArrow from '~icons/game-icons/charged-arrow';
+import GiLightningTree from '~icons/game-icons/lightning-tree';
+import GiWolfTrap from '~icons/game-icons/wolf-trap';
 import { Range } from '../../../sim/types';
 import { STATIC, staticText } from '../../passives';
 import { LIGHTNING_ROD } from '../../ranger';
@@ -30,6 +34,12 @@ const RANGER: JobDef = {
     ['healingDraught', 2],
     ['manaTincture', 1],
   ],
+  icons: {
+    snare: GiWolfTrap,
+    lightningRod: GiLightningTree,
+    aimedShot: GiArrowScope,
+    chargedArrow: GiChargedArrow,
+  },
 };
 
 export default RANGER;

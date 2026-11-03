@@ -57,6 +57,8 @@ const DUELIST: JobDef = {
   upgrades: DUELIST_UPGRADES,
   starterGear: ['stiletto', 'buckler', 'jerkin'],
   starterBelt: [['healingDraught', 2]],
+  // Its spell icons come with its spells.
+  icons: {},
 };
 
 export default DUELIST;

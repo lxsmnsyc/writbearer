@@ -7,7 +7,7 @@ import type { JobDef } from './types';
 import VANGUARD from './vanguard';
 import WARDEN from './warden';
 
-export type { Innate, JobDef, Role, Template } from './types';
+export type { Innate, JobDef, Role, SpellIcon, Template } from './types';
 
 /** Every merc job's kind. The Guild House offers the hireable ones in this order. */
 export const JOB_KINDS = [

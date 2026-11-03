@@ -41,6 +41,10 @@ describe('the job registry', () => {
         ).toHaveLength(3);
       }
       expect(buildFor(kind)?.spells.map((s) => s.id)).toEqual(spells);
+      // Its own icons are only for its own spells.
+      for (const id of Object.keys(def.icons)) {
+        expect(spells, `${kind} icon ${id}`).toContain(id);
+      }
     }
   });
 

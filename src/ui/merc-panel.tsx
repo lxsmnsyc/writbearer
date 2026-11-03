@@ -17,7 +17,7 @@ import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
-import SpellPanel from './spell-panel';
+import SpellPanel, { SkillIcon } from './spell-panel';
 import StatSheet from './stat-sheet';
 
 // How many target priorities a merc follows. Discipline will set this later.
@@ -380,10 +380,7 @@ export default function MercPanel(props: Props): JSX.Element {
                             {...anchor}
                             class="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent"
                           >
-                            <Icon
-                              name={isIconName(skill.id) ? skill.id : 'points'}
-                              class="size-6"
-                            />
+                            <SkillIcon kind={props.unit.kind} skill={skill.id} class="size-6" />
                           </span>
                         )}
                       </Tip>

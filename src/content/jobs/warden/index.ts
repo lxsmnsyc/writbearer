@@ -63,6 +63,8 @@ const WARDEN: JobDef = {
   upgrades: WARDEN_UPGRADES,
   starterGear: ['flangedMace', 'buckler', 'hauberk'],
   starterBelt: [['healingDraught', 2]],
+  // Its spell icons come with its spells.
+  icons: {},
 };
 
 export default WARDEN;

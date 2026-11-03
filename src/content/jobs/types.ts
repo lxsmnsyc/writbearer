@@ -1,3 +1,4 @@
+import type { ComponentProps, JSX } from 'solid-js';
 import type { Hunt } from '../../sim/ai';
 import type { Upgrade } from '../../sim/builds';
 import type { Passive, Skill } from '../../sim/skill';
@@ -23,6 +24,13 @@ export interface Template {
 
 /** The slot a job fills at the Guild House. */
 export type Role = 'guard' | 'striker' | 'support';
+
+/**
+ * An icon from game-icons.net, imported as `~icons/game-icons/<name>`. Only
+ * the interface draws it: the simulation never calls it, and tests stub
+ * every `~icons` import (vitest.config.ts).
+ */
+export type SpellIcon = (props: ComponentProps<'svg'>) => JSX.Element;
 
 /** A job's innate passive: known from level 1, at rank 1, with no shard to raise it. */
 export interface Innate {
@@ -58,4 +66,7 @@ export interface JobDef {
   // Ids of item bases it arrives wearing, and the potions on its belt
   starterGear: readonly string[];
   starterBelt: readonly (readonly [string, number])[];
+  // Its own spell icons, by spell id. The spell panel falls back to the
+  // shared icons of src/ui/icons.ts, then to a plain one.
+  icons: Readonly<Partial<Record<string, SpellIcon>>>;
 }

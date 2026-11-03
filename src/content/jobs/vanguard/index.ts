@@ -1,3 +1,7 @@
+import GiDefensiveWall from '~icons/game-icons/defensive-wall';
+import GiHammerDrop from '~icons/game-icons/hammer-drop';
+import GiShieldImpact from '~icons/game-icons/shield-impact';
+import GiShouting from '~icons/game-icons/shouting';
 import { Range } from '../../../sim/types';
 import { SUNDER, sunderText } from '../../passives';
 import { CHALLENGE, CRUSH, INTERCEPT } from '../../skills';
@@ -27,6 +31,12 @@ const VANGUARD: JobDef = {
   upgrades: VANGUARD_UPGRADES,
   starterGear: ['armingSword', 'towerShield', 'hauberk'],
   starterBelt: [['healingDraught', 2]],
+  icons: {
+    intercept: GiShieldImpact,
+    challenge: GiShouting,
+    shieldWall: GiDefensiveWall,
+    crush: GiHammerDrop,
+  },
 };
 
 export default VANGUARD;

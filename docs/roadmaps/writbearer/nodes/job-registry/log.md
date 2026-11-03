@@ -13,3 +13,4 @@
 - shout.test Focus: Lightning Rod killed both husks before the test checked. Spells off in that test.
 - Skipped (it.skip) every case of a skill that is now an upgrade placeholder, with `teach` from test/support/build.ts so the upgrade nodes can turn them back on.
 - e2e/orders.spec.ts tested the tree UI. Rewrote its two tree cases for the spell panel. Not run (e2e port rule).
+- Review fixes: per-job icon map on JobDef (user decision). Job modules import ~icons, so vitest aliases ~icons to a stub and e2e/recruit.spec reads HIREABLE from the dev server instead of importing src. Moved the 12 built spell icons into their job modules; heal stays shared for the map's Respite. Sacred Ground gain floored to whole numbers; balance tests still pass.

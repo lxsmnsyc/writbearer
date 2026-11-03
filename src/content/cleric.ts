@@ -101,8 +101,10 @@ export const WARD: Skill = {
 
 const SACRED_RADIUS = 2.2;
 const SACRED_TIME = 8;
+// Health a second at a rank, before magic attack: 2.5 a rank, rounded down
+const sacredBase = (rank: number): number => 6 + Math.floor(rank * 2.5);
 const sacredHeal = (u: Unit, rank: number): number =>
-  6 + rank * 2.5 + Math.round(u.derived.matkMax * 0.25);
+  sacredBase(rank) + Math.round(u.derived.matkMax * 0.25);
 
 // The hurt ally with the most hurt allies around it, if two or more are
 const hurtCluster = (u: Unit): Unit | null => {
@@ -117,7 +119,7 @@ export const SACRED_GROUND: Skill = {
   id: 'sacredGround',
   name: 'Sacred Ground',
   describe: (rank) =>
-    `Hallows the ground ${SACRED_RADIUS} tiles around an ally for ${SACRED_TIME} seconds. Allies on it heal ${6 + rank * 2.5}, plus a quarter of the Cleric's magic attack, each second.`,
+    `Hallows the ground ${SACRED_RADIUS} tiles around an ally for ${SACRED_TIME} seconds. Allies on it heal ${sacredBase(rank)}, plus a quarter of the Cleric's magic attack, each second.`,
   cost: 18,
   cooldown: 14,
   windup: 0.7,

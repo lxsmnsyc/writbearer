@@ -66,6 +66,8 @@ const ARCANIST: JobDef = {
     ['healingDraught', 1],
     ['manaTincture', 2],
   ],
+  // Its spell icons come with its spells.
+  icons: {},
 };
 
 export default ARCANIST;
