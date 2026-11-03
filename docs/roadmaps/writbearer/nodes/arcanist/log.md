@@ -1,0 +1,3 @@
+- Elemental Sense built and tested first: all three cases pass through affinity() and the damage pipeline.
+- Template changed to Ranged, reach 5.5, so spells and staff attacks work from range.
+- Look reuses robe and plain staff (no new Attachment: sprites.ts is not owned).
