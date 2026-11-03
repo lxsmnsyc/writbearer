@@ -1,7 +1,7 @@
 ---
 id: split-game
 title: Split game.ts by feature
-status: active
+status: done
 priority: must
 type: refactor
 outline: false
@@ -16,6 +16,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-03
+spent: 337600
 owns:
   - src/game/game.ts
   - src/game/game/**

@@ -19,9 +19,7 @@ owns:
   - src/content/jobs/vanguard/upgrades.ts
   - src/content/vanguard.ts
   - test/sim/vanguard-upgrades.test.ts
-shared:
-  - src/content/skills.ts
-  - src/content/passives.ts
+shared: []
 reserves: []
 provides: []
 depends_on:
@@ -43,7 +41,7 @@ Finish moving the Vanguard to the build model. job-registry already gave it its 
 
 - Design: `docs/design/16-builds.md`, the Vanguard section (the doc's worked example).
 - Rules: `contracts/builds.md`. An upgrade is a patch over its spell, or a passive it starts.
-- The skill code exists in `src/content/vanguard.ts`, `src/content/skills.ts` and `src/content/passives.ts`; most upgrades reuse it.
+- The skill code exists in `src/content/vanguard.ts` (split-job-skills moved it there); most upgrades reuse it. `skills.ts` keeps only shared helpers such as `rankOf` and `inLine`.
 
 ## Acceptance
 
@@ -59,3 +57,4 @@ Mostly reshaping code that exists. M.
 
 - Old saves refund this job's tree ranks as shards (build-rules does it); do not add a second path.
 - Charge needs knockback, which is not built (cc-job-systems). Build it without the push and note it in the outcome.
+- Do not add job code back to `skills.ts` or `passives.ts`.

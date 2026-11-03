@@ -20,7 +20,7 @@ owns:
   - test/game/deep-water.test.ts
 shared:
   - src/gen/fields.ts
-  - src/gen/stage.ts
+  - src/gen/stage/reach.ts
   - src/render/floor.ts
   - src/sim/nav.ts
 reserves: []
@@ -45,9 +45,10 @@ Flooded caverns in the Undercroft and some lower fields hold deep water that blo
 
 ## Context
 
-- Deep cells are holes: add unfrozen deep water to `holesOf` (`src/gen/stage.ts:1446`) so `ensureReachable` sees it.
-- Runtime changes edit `sim.holes` and call `sim.setWorld(sim.floor)`, as pits do (`src/game/game.ts:1217`).
+- Deep cells are holes: add unfrozen deep water to `holesOf` (`src/gen/stage/reach.ts`) so `ensureReachable` sees it.
+- Runtime changes edit `sim.holes` and call `sim.setWorld(sim.floor)`, as pits do (the `Hazards` callback in `enter`, `src/game/game/areas.ts`).
 - Source: `docs/design/11-stages.md#terrain`.
+- The stage snapshot test (`test/gen/stage-snapshot.test.ts`) hashes seeded stages. If this node changes generation on purpose, re-record it with `pnpm vitest run test/gen/stage-snapshot.test.ts -u` and say so in the outcome.
 
 ## Acceptance
 

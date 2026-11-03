@@ -20,12 +20,14 @@ owns:
   - test/game/boss-field.test.ts
 shared:
   - src/game/footing.ts
-  - src/gen/stage.ts
-  - src/game/game.ts
-  - src/render/renderer.ts
+  - src/gen/stage/arena.ts
+  - src/gen/stage/collapse.ts
+  - src/game/game/tick.ts
+  - src/render/draw/objectives.ts
   - src/content/minibosses.ts
   - src/game/objective.ts
   - src/game/stage.ts
+  - src/render/floor.ts
 reserves: []
 provides: [boss-field]
 depends_on:
@@ -51,8 +53,9 @@ A `BossField` driver armed when the boss wakes, with two building blocks: water 
 
 ## Context
 
-- Bases: `Floods` in `src/content/minibosses.ts:167`, the Collapse objective in `src/game/objective.ts:262`, `WADING` from `Footing`.
+- Bases: `Floods` in `src/content/minibosses.ts:167`, the Collapse objective in `src/game/objective.ts`, `WADING` from `Footing`.
 - Source: `docs/design/13-bestiary.md#what-the-engine-needs`.
+- Code layout: the boss field is `src/gen/stage/arena.ts` and the collapse is `src/gen/stage/collapse.ts`. Arm the driver in `step` in `src/game/game/tick.ts` (`wakeBoss` is there). Draw next to `drawCollapse` in `src/render/draw/objectives.ts`. Water patches are floor (`src/render/floor.ts`).
 
 ## Acceptance
 

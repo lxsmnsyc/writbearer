@@ -18,8 +18,9 @@ added: 2026-10-26
 owns:
   - src/game/cover.ts
   - test/game/cover.test.ts
+  - src/render/draw/cover.ts
 shared:
-  - src/gen/stage.ts
+  - src/gen/stage/ground.ts
   - src/sim/ai.ts
   - src/render/floor.ts
   - src/render/renderer.ts
@@ -52,6 +53,8 @@ Open fields hold patches of tall grass (surface layers) and fungus (the two lowe
 - Notice check: `thinkMonster` in `src/sim/ai.ts` (~423) uses `kit.notice` and `sim.sees`.
 - Dead-grass tufts in `src/render/floor.ts:241` are decoration only today.
 - Source: `docs/design/11-stages.md#terrain`.
+- A node that changes generation on purpose re-records `test/gen/stage-snapshot.test.ts` with `pnpm vitest run test/gen/stage-snapshot.test.ts -u` and says so in the outcome.
+- Open-field ground is laid in `src/gen/stage/ground.ts`; roads are on `stage.roads` and `onRoads` is in `src/gen/stage/exits.ts`. Draw the overlay in a new module under `src/render/draw/`, called after `drawStanding` in `render()` in `src/render/renderer.ts`.
 
 ## Acceptance
 

@@ -1,7 +1,7 @@
 ---
 id: split-job-skills
 title: Move job skill code out of skills.ts and passives.ts
-status: active
+status: done
 priority: must
 type: refactor
 outline: false
@@ -16,6 +16,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-03
+spent: 135400
 owns:
   - src/content/skills.ts
   - src/content/passives.ts

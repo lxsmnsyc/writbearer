@@ -50,6 +50,7 @@ Add the engine hooks in `contracts/job-hooks.md`, so the Sellsword, Warden, Duel
 - The engine already runs on events with priorities (`sim.on` in `src/sim/mechanics/damage.ts` and `hit.ts`); passives attach listeners in `Passive.setup` (`src/sim/skill.ts`).
 - The hooks come from the job briefs' notes: Inferno (friendly fire), Glacial Wall (blocked tiles), Elemental Sense (target priority), Tether (chase), Cover (projectiles), Blind (Sellsword, reused by Lamplighter and monsters), Cutpurse (buff flag), Veteran of Many Wars (bonus ranks).
 - Toggles and chase: `src/sim/ai.ts` near line 177. Projectile flight: `flyHoming` and `flyStraight` in `src/sim/sim.ts`.
+- `src/content/skills.ts` now holds only shared helpers (`isElite`, `rankOf`, `inLine`). The CheckSkillRank change goes in `rankOf`. Job skill code lives in `src/content/<kind>.ts`.
 
 ## Steps
 

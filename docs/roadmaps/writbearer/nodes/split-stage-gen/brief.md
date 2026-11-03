@@ -1,7 +1,7 @@
 ---
 id: split-stage-gen
 title: Split gen/stage.ts by feature
-status: active
+status: done
 priority: should
 type: refactor
 outline: false
@@ -16,6 +16,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-03
+spent: 232600
 owns:
   - src/gen/stage.ts
   - src/gen/stage/**

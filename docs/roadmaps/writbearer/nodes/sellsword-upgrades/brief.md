@@ -22,7 +22,7 @@ shared:
   - src/sim/unit.ts
   - src/gen/loot.ts
   - src/sim/sim.ts
-  - src/game/game.ts
+  - src/game/game/listeners.ts
 reserves: []
 provides: []
 depends_on:
@@ -76,3 +76,4 @@ Build the Sellsword's 12 elite upgrades (3 per spell) as `builds-design` drew th
 - Cutpurse steals one timed buff: a status with `buff: true` (job-hooks).
 - Spells, passives and job statuses live in the job's module and attach with `sim.on` listeners (job-hooks contract). Do not edit `src/sim/statuses.ts`, `src/sim/mechanics/`, `src/sim/ai.ts` or `src/sim/skill.ts`; if a hook is missing, write `contracts/job-hooks.change-request.md`.
 - Do not edit the registries, `index.ts` or `src/content/items.ts`.
+- Kill drops (Pocket Change) hook in `src/game/game/listeners.ts`. Game code is split by feature under `src/game/game/`; `game.ts` is a facade.

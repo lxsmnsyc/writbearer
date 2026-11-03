@@ -21,6 +21,7 @@ owns:
 shared:
   - src/render/renderer.ts
   - src/render/effects.ts
+  - src/render/draw/glow.ts
 reserves: []
 provides: []
 depends_on:
@@ -38,8 +39,9 @@ Beyond each exit the party sees what lies ahead from afar: smoke for a Camp, lig
 ## Context
 
 - The next area is not generated until the party nears it, so landmarks come from `exit.ahead` only.
-- Pattern: the captain's pennant that shows in the dark (`renderer.ts:990`).
+- Pattern: the captain's pennant that shows in the dark (`drawGlow` in `src/render/draw/glow.ts`).
 - Source: `docs/design/11-stages.md#seamless-connections`.
+- Code layout: `src/render/renderer.ts` only gets the call line in `render()`. Signposts are drawn by `drawSigns` in `src/render/draw/exits.ts`; read it for the exit pattern.
 
 ## Acceptance
 

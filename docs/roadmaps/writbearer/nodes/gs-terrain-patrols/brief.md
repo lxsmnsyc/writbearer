@@ -19,7 +19,7 @@ owns:
   - src/sim/patrol.ts
   - test/sim/patrol.test.ts
 shared:
-  - src/gen/stage.ts
+  - src/gen/stage/packs.ts
   - src/sim/ai.ts
   - src/sim/unit.ts
   - src/game/stage.ts
@@ -42,8 +42,9 @@ Some idle packs walk a route between points of interest, the leader first and th
 
 ## Context
 
-- A pack is one point (`Pack` in `src/gen/stage.ts:67`); idle monsters return early in `thinkMonster` and never move; `wakePack` wakes only within 3 tiles (`ai.ts:385`).
+- A pack is one point (`Pack` in `src/gen/stage/packs.ts`); idle monsters return early in `thinkMonster` and never move; `wakePack` wakes only within 3 tiles (`ai.ts:385`).
 - Source: `docs/design/11-stages.md#packs`.
+- `placePacks` is in `src/gen/stage/packs.ts`. The site pack is `packs[0]`, the lair `packs[1]`, the watch `packs[2]`; the roaming packs follow, then packs `dealBosses` adds. Re-record `test/gen/stage-snapshot.test.ts` with `-u` if generation changes on purpose, and say so in the outcome.
 
 ## Acceptance
 

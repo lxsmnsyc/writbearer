@@ -21,7 +21,9 @@ owns:
   - test/game/mastery.test.ts
 shared:
   - src/gen/graph.ts
-  - src/game/game.ts
+  - src/game/game/rewards.ts
+  - src/game/game/station.ts
+  - src/game/game/saving.ts
   - src/game/save.ts
   - src/ui/station.tsx
   - src/ui/icons.ts
@@ -50,8 +52,8 @@ Give mercs their elite upgrades during a run, as `docs/design/16-builds.md` says
 ## Context
 
 - Rules: `contracts/builds.md` (`offerUpgrades`, `applyUpgrade`).
-- Rewards: `Reward` in `src/gen/graph.ts`; their chests and spoils in `Game.spoilsOf` (`src/game/game.ts`); signposts in `docs/design/14-gauntlets.md#rewards-shown-on-the-road`.
-- The Waystation screen is `src/ui/station.tsx`.
+- Rewards: `Reward` in `src/gen/graph.ts`; their chests and spoils in `spoilsOf` and the `REWARDS` table (`src/game/game/rewards.ts`); signposts in `docs/design/14-gauntlets.md#rewards-shown-on-the-road`.
+- The Waystation screen is `src/ui/station.tsx`. The visit hook is `visitStation` in `src/game/game/station.ts`. The open offer joins the run snapshot in `src/game/game/saving.ts`.
 - Offers are drawn from a run stream so a saved run offers the same cards after load.
 
 ## Acceptance
@@ -69,3 +71,4 @@ One reward kind, one offer screen, a hook at the Waystation. M.
 
 - Build and test against a test job with spells and upgrades from `test/support/build.ts`; the real jobs land later.
 - Add `mastery` at the end of `Reward` and give it a weight in the road reward draw; new RNG draws go last so existing seeds keep their maps.
+- Add a `REWARDS` entry for `mastery` in `src/game/game/rewards.ts` and a `BONUS_PAYS` line. The entry has `fill(c)`, which runs as the chest opens, and an optional `done(g, better)`, which runs when the objective is done. Put the offer in `done`, since it opens when the fight is won.
