@@ -7,6 +7,8 @@ import type Unit from '../../sim/unit';
 import { gainXp, killXp } from '../../sim/progress';
 import { rollCards, rollDrops, rollSetPiece, rollUnique } from '../../gen/loot';
 import { gather, materialsFrom } from '../../content/materials';
+import { countWeaponUse, survivePhase } from '../../content/jobs/sellsword/upgrades';
+import { AREAS_PER_LAYER } from '../../gen/layers';
 import { applySets } from '../../content/sets';
 import type GameState from './state';
 import { endRun } from './saving';
@@ -18,6 +20,26 @@ const MAX_SHAKE = 3;
 
 // Hangs the run's listeners on a fresh sim.
 export default function watchSim(g: GameState): void {
+  // Spells that cost gold, such as Bribe, pay from the pack.
+  g.sim.purse = {
+    get gold() {
+      return g.pack.gold;
+    },
+    set gold(value: number) {
+      g.pack.gold = value;
+    },
+  };
+  // Run-long counts: the phases each Sellsword survives, and how long it
+  // fights with each kind of weapon.
+  let phase: number | null = null;
+  g.sim.on(SimEvents.Tick, EventPriority.Post, (event) => {
+    const now = Math.floor(g.stageIndex / AREAS_PER_LAYER);
+    if (phase !== null && now > phase) {
+      survivePhase(g.sim);
+    }
+    phase = now;
+    countWeaponUse(g.sim, event.dt);
+  });
   g.sim.on(SimEvents.UnitDamage, DamagePriority.Post, (event) => {
     if (event.target === g.bearer && event.value > 0) {
       g.bonus?.hurt();
@@ -50,7 +72,12 @@ export default function watchSim(g: GameState): void {
       shareXp(g, event.source);
       g.scatter(
         [
-          ...rollDrops(g.streams.get(1, Stream.Loot), event.source.level, event.source.rank),
+          ...rollDrops(
+            g.streams.get(1, Stream.Loot),
+            event.source.level,
+            event.source.rank,
+            event.source.bounty,
+          ),
           ...rollCards(g.streams.get(1, Stream.Loot), event.source.kind, event.source.rank),
           ...[
             rollUnique(g.streams.get(1, Stream.Loot), event.source.level, event.source.rank),

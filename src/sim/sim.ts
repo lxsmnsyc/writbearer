@@ -272,6 +272,9 @@ export default class Sim extends EventEngine<SimEventMap> {
   time = 0;
   // Counts up each time the party enters a new area, for once-an-area effects
   area = 0;
+  // The party's gold, for spells that spend it, such as Bribe. The run sets
+  // it; without one, nothing can be paid for.
+  purse: { gold: number } | null = null;
   // When each of the bearer's shouts can be given again, by shout
   readonly shoutReady: Partial<Record<number, number>> = {};
 
