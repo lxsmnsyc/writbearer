@@ -1,8 +1,16 @@
 import type { Lifecycle } from '../core/lifecycle';
-import { SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
+import { type CheckHitEvent, SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
 import type { BaseStat } from './stats';
 import type { ActiveStatus, StatusDef } from './status';
-import { DamageFlags, DamageKind, DamagePriority, Element, HealPriority, Race } from './types';
+import {
+  DamageFlags,
+  DamageKind,
+  DamagePriority,
+  Element,
+  HealPriority,
+  Race,
+  ValuePriority,
+} from './types';
 import type Unit from './unit';
 
 // First numbers for statuses. A starting point for balance, not final values.
@@ -217,6 +225,7 @@ export const MENDING: StatusDef = {
   name: 'Mending',
   duration: POTION_TIME,
   immunity: 0,
+  buff: true,
   tick: restore('health'),
 };
 
@@ -226,6 +235,7 @@ export const REFRESHING: StatusDef = {
   name: 'Refreshing',
   duration: POTION_TIME,
   immunity: 0,
+  buff: true,
   tick: restore('mana'),
 };
 
@@ -235,6 +245,7 @@ export const RENEWED: StatusDef = {
   name: 'Renewed',
   duration: 6,
   immunity: 0,
+  buff: true,
   tick: (s, dt) => {
     if (Math.floor(s.elapsed) !== Math.floor(s.elapsed - dt)) {
       s.source.heal(s.unit, s.power);
@@ -281,6 +292,7 @@ export const SHIELD_WALL: StatusDef = {
   name: 'Shield Wall',
   duration: 3,
   immunity: 0,
+  buff: true,
   slow: 0,
   setup: (s) => {
     const listener = (event: UnitDamageEvent): void => {
@@ -304,6 +316,37 @@ export const SHIELD_WALL: StatusDef = {
       },
       stop: () => {
         s.unit.sim.off(SimEvents.UnitDamage, DamagePriority.Block, listener);
+      },
+    };
+  },
+};
+
+// Points of hit chance a blinded attacker loses.
+const BLIND_MISS = 30;
+
+/**
+ * Sand or light in the eyes. Built up by the Sellsword's Pocket Sand and
+ * reused by other jobs and monsters. Its physical hits miss more often.
+ * Resisted by DEX.
+ */
+export const BLIND: StatusDef = {
+  id: 'blind',
+  name: 'Blind',
+  duration: 4,
+  immunity: 3,
+  threshold: threshold('dex'),
+  setup: (s) => {
+    const listener = (event: CheckHitEvent): void => {
+      if (event.source === s.unit) {
+        event.hitChance -= BLIND_MISS;
+      }
+    };
+    return {
+      start: () => {
+        s.unit.sim.on(SimEvents.CheckHit, ValuePriority.Additive, listener);
+      },
+      stop: () => {
+        s.unit.sim.off(SimEvents.CheckHit, ValuePriority.Additive, listener);
       },
     };
   },

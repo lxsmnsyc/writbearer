@@ -295,8 +295,21 @@ export default class Unit {
       return true;
     }
     const step = Math.min(d - stop, this.speed * dt);
-    this.x += (dx / d) * step;
-    this.z += (dz / d) * step;
+    const nx = this.x + (dx / d) * step;
+    const nz = this.z + (dz / d) * step;
+    // Tiles blocked for a while, such as a wall of ice, cannot be entered.
+    const nav = this.sim.nav;
+    // A body inside one may only move toward open ground.
+    if (
+      nav?.anyShut &&
+      nav.shut(nx, nz) &&
+      (!nav.shut(this.x, this.z) || nav.exitDistance(nx, nz) >= nav.exitDistance(this.x, this.z))
+    ) {
+      this.angle = Math.atan2(dz, dx);
+      return false;
+    }
+    this.x = nx;
+    this.z = nz;
     this.angle = Math.atan2(dz, dx);
     return d - step <= stop;
   }

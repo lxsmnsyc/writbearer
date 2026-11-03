@@ -148,10 +148,72 @@ export default class Nav {
     }
   }
 
+  // Cells shut for a while, such as by a wall of ice, and the seconds left
+  private readonly shutFor = new Map<number, number>();
+
+  /**
+   * Blocks tiles for a while. A tile is [x, z] and covers the tile that
+   * starts at those whole numbers. Paths go round them, and bodies cannot
+   * step into them. A body already inside may leave.
+   */
+  block(tiles: readonly (readonly [number, number])[], seconds: number): void {
+    for (const [tx, tz] of tiles) {
+      for (let a = 0; a < RES; a++) {
+        for (let b = 0; b < RES; b++) {
+          const k = this.cell(tx + (a + 0.5) / RES, tz + (b + 0.5) / RES);
+          if (k >= 0) {
+            this.shutFor.set(k, Math.max(this.shutFor.get(k) ?? 0, seconds));
+          }
+        }
+      }
+    }
+  }
+
+  /** Whether a point is in a cell blocked for a while. */
+  shut(x: number, z: number): boolean {
+    const k = this.cell(x, z);
+    return k >= 0 && this.shutFor.has(k);
+  }
+
+  /** Whether any tile is blocked for a while. */
+  get anyShut(): boolean {
+    return this.shutFor.size > 0;
+  }
+
+  /**
+   * How far a point inside a blocked tile is from open ground, to within a
+   * few hundredths of a tile. 0 outside one.
+   */
+  exitDistance(x: number, z: number): number {
+    if (!this.shut(x, z)) {
+      return 0;
+    }
+    for (let r = 0.05; r <= 3; r += 0.05) {
+      for (let s = 0; s < 16; s++) {
+        const a = (s / 16) * Math.PI * 2;
+        if (!this.shut(x + Math.cos(a) * r, z + Math.sin(a) * r)) {
+          return r;
+        }
+      }
+    }
+    return 3;
+  }
+
+  /** Counts down the blocked tiles and opens those spent. */
+  advance(dt: number): void {
+    for (const [k, left] of this.shutFor) {
+      if (left <= dt) {
+        this.shutFor.delete(k);
+      } else {
+        this.shutFor.set(k, left - dt);
+      }
+    }
+  }
+
   /** Whether a body can stand at a point. */
   walkable(x: number, z: number): boolean {
     const k = this.cell(x, z);
-    return k >= 0 && this.blocked[k] === 0;
+    return k >= 0 && this.blocked[k] === 0 && !this.shutFor.has(k);
   }
 
   // Each open cell's region of cells joined to it, and each region's size,
@@ -165,7 +227,7 @@ export default class Nav {
    */
   roomy(x: number, z: number): boolean {
     const k = this.cell(x, z);
-    if (k < 0 || this.blocked[k] === 1) {
+    if (k < 0 || this.blocked[k] === 1 || this.shutFor.has(k)) {
       return false;
     }
     this.regions ??= this.label();
@@ -338,7 +400,12 @@ export default class Nav {
 
   private open(i: number, j: number): boolean {
     return (
-      i >= 0 && j >= 0 && i < this.cols && j < this.rows && this.blocked[j * this.cols + i] === 0
+      i >= 0 &&
+      j >= 0 &&
+      i < this.cols &&
+      j < this.rows &&
+      this.blocked[j * this.cols + i] === 0 &&
+      !this.shutFor.has(j * this.cols + i)
     );
   }
 
@@ -347,7 +414,7 @@ export default class Nav {
     if (k < 0) {
       return -1;
     }
-    if (this.blocked[k] === 0) {
+    if (this.blocked[k] === 0 && !this.shutFor.has(k)) {
       return k;
     }
     const i0 = k % this.cols;

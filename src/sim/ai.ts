@@ -1,3 +1,5 @@
+import { affinity } from './elements';
+import { SimEvents } from './events';
 import { honoursElites, prioritiesFollowed } from './morale';
 import { Shout, acting, responseDelay } from './shout';
 import type Sim from './sim';
@@ -28,6 +30,8 @@ export const enum Priority {
   Casters = 4,
   // Heralds running to blow a horn
   Heralds = 5,
+  // Enemies weakest to the merc's attack element, or to any element it may attack with
+  WeakToElement = 6,
 }
 
 /** The player's settings for one merc. */
@@ -111,6 +115,33 @@ function nearest(from: Unit, units: Unit[]): Unit | null {
   return best;
 }
 
+// The enemies that take the most damage from the merc's attack elements, if
+// any takes more than normal. CheckAttackElements lets a job add elements.
+function weakest(merc: Unit, enemies: Unit[]): Unit[] {
+  const check = {
+    id: 'CheckAttackElements',
+    disabled: false,
+    source: merc,
+    elements: [merc.attackElement],
+  };
+  merc.sim.emit(SimEvents.CheckAttackElements, check);
+  let best = 100;
+  let out: Unit[] = [];
+  for (const e of enemies) {
+    let score = 0;
+    for (const element of check.elements) {
+      score = Math.max(score, affinity(element, e.element, e.elementLevel));
+    }
+    if (score > best) {
+      best = score;
+      out = [e];
+    } else if (score === best && out.length > 0) {
+      out.push(e);
+    }
+  }
+  return out;
+}
+
 function pick(merc: Unit, toggles: Toggles, bearer: Unit | null, enemies: Unit[]): Unit | null {
   for (const p of toggles.priorities) {
     let pool: Unit[];
@@ -122,6 +153,8 @@ function pick(merc: Unit, toggles: Toggles, bearer: Unit | null, enemies: Unit[]
       pool = enemies.filter((e) => e.skills.length > 0);
     } else if (p === Priority.Heralds) {
       pool = enemies.filter((e) => e.alarm !== null);
+    } else if (p === Priority.WeakToElement) {
+      pool = weakest(merc, enemies);
     } else {
       pool = enemies;
     }
@@ -278,8 +311,12 @@ function thinkMerc(sim: Sim, u: Unit, dt: number): void {
   } else if (heard?.shout === Shout.Hold) {
     toggles = { ...toggles, stance: Stance.Hold };
   }
+  // How far the merc may chase, after its orders, traits and shouts
+  const chaseCheck = { id: 'CheckChase', disabled: false, source: u, value: toggles.chase };
+  sim.emit(SimEvents.CheckChase, chaseCheck);
+  const chase = chaseCheck.value;
   const enemies = allowed(u, sim.living(Side.Monster)).filter((e) => {
-    if (bearer && e.distanceTo(bearer) > toggles.chase) {
+    if (bearer && e.distanceTo(bearer) > chase) {
       return false;
     }
     if (toggles.stance === Stance.Hold) {

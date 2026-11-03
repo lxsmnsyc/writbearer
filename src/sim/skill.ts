@@ -1,5 +1,7 @@
 import type { Lifecycle } from '../core/lifecycle';
 import type Sim from './sim';
+import { allowed } from './targeting';
+import { DamageFlags } from './types';
 import type Unit from './unit';
 
 /** How a merc may use one of its skills. The player sets it per skill. */
@@ -48,6 +50,11 @@ export interface Skill {
    * instead of whom the merc is fighting. Null means nobody needs it.
    */
   aim?: (unit: Unit, sim: Sim) => Unit | null;
+  /**
+   * Its area hits also reach the caster's own side, as Inferno does. The
+   * function form decides per caster. Read it through `areaVictims`.
+   */
+  friendlyFire?: boolean | ((unit: Unit) => boolean);
   /** Whether a use would reach an elite or a boss, for the Elites mode. */
   elite: (unit: Unit, target: Unit | null, sim: Sim) => boolean;
   /** The effect, on the release frame. */
@@ -69,4 +76,40 @@ export interface Cast {
 export interface Passive {
   id: string;
   setup: (unit: Unit, rank: number) => Lifecycle;
+}
+
+/** One unit an area skill hits, and the damage flags for that hit. */
+export interface Victim {
+  target: Unit;
+  flags: number;
+}
+
+/**
+ * Whom an area skill hits within `radius` tiles of a point: the foes the
+ * caster may target, and, when the skill has `friendlyFire` for this caster,
+ * the living units of its own side other than the caster. Their hits carry
+ * `AoE`, and `FriendlyFire` for the caster's own side.
+ */
+export function areaVictims(
+  source: Unit,
+  skill: Skill,
+  at: { x: number; z: number },
+  radius: number,
+): Victim[] {
+  const out: Victim[] = [];
+  const near = (u: Unit): boolean => Math.hypot(u.x - at.x, u.z - at.z) <= radius;
+  for (const target of allowed(source, source.sim.foes(source.side))) {
+    if (near(target)) {
+      out.push({ target, flags: DamageFlags.AoE });
+    }
+  }
+  const ff = skill.friendlyFire;
+  if (ff === true || (typeof ff === 'function' && ff(source))) {
+    for (const target of source.sim.living(source.side)) {
+      if (target !== source && near(target)) {
+        out.push({ target, flags: DamageFlags.AoE | DamageFlags.FriendlyFire });
+      }
+    }
+  }
+  return out;
 }

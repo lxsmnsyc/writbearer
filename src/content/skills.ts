@@ -1,3 +1,4 @@
+import { type CheckSkillRankEvent, SimEvents } from '../sim/events';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 
@@ -5,8 +6,19 @@ import type Unit from '../sim/unit';
 // values. Every number that grows with rank says so in its skill's text.
 
 export const isElite = (u: Unit): boolean => u.rank !== Rank.Normal;
-// The rank a unit has in a skill, at least 1 while it is being used.
-export const rankOf = (u: Unit, id: string): number => Math.max(1, u.skillRank(id));
+// The rank a unit uses a skill at: the learned rank, at least 1 while it is
+// being used, and what CheckSkillRank listeners add, such as a bonus rank.
+export function rankOf(u: Unit, id: string): number {
+  const check: CheckSkillRankEvent = {
+    id: 'CheckSkillRank',
+    disabled: false,
+    source: u,
+    skill: id,
+    value: Math.max(1, u.skillRank(id)),
+  };
+  u.sim.emit(SimEvents.CheckSkillRank, check);
+  return check.value;
+}
 export const inReach = (u: Unit, target: Unit | null): target is Unit =>
   target !== null && u.distanceTo(target) <= u.kit.reach;
 
