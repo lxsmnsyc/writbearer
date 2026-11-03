@@ -1,9 +1,11 @@
+import RNG from '../core/rng';
 import { giveAffixes } from '../content/affixes';
 import { spawnBoss } from '../content/bosses';
 import { MINI_BOSSES, spawnMiniBoss } from '../content/minibosses';
 import {
   type MercKind,
   spawnBearer,
+  spawnDisguisedAssassin,
   spawnMerc,
   spawnMonster,
   spawnRefugee,
@@ -115,6 +117,23 @@ function followersOf(pack: Pack, layer: number): string[] {
   return Array.from({ length: FOLLOWERS + layer }, (_, i) => pool[i % pool.length]);
 }
 
+// Of every four Escorts, one hides an assassin among its refugees. Which
+// refugee it is comes from a stream seeded by the stage, so the same seed
+// always gives the same Escort. Returns its index, or -1.
+const ASSASSIN_CHANCE = 0.25;
+
+export function assassinAmong(stage: Stage, count: number): number {
+  if (count === 0) {
+    return -1;
+  }
+  const rng = new RNG(
+    Math.imul(stage.index + 1, 0x9e3779b1) ^
+      Math.imul(Math.round(stage.entrance.z * 100) + 7, 0x85ebca6b) ^
+      Math.imul(stage.width * 31 + stage.depth, 0xc2b2ae35),
+  );
+  return rng.chance(ASSASSIN_CHANCE) ? rng.int(0, count - 1) : -1;
+}
+
 // Spawns a stage's packs, and its boss a level above them.
 function spawnStage(sim: Sim, stage: Stage): Unit | null {
   for (const pack of stage.packs) {
@@ -166,9 +185,12 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
     post.aware = true;
   }
   // An Escort's refugees wait by the entrance, as hardy as the area is deep.
-  for (const r of stage.refugees ?? []) {
-    spawnRefugee(sim, monsterLevel(stage.index), r.x, r.z);
-  }
+  const refugees = stage.refugees ?? [];
+  const assassin = assassinAmong(stage, refugees.length);
+  refugees.forEach((r, i) => {
+    const spawnOne = i === assassin ? spawnDisguisedAssassin : spawnRefugee;
+    spawnOne(sim, monsterLevel(stage.index), r.x, r.z);
+  });
   // A boss stands a level above the layer's last packs would.
   return stage.boss
     ? spawnBoss(sim, stage.biome, monsterLevel(stage.index) + 1, stage.boss.x, stage.boss.z)

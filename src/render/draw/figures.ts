@@ -46,23 +46,25 @@ const BOSS_BAR = 1.7;
 /** How high over a unit's feet its health bar floats, in design pixels. */
 export function barHeight(u: Unit): number {
   const elite = u.rank === Rank.Normal ? 1 : 1.25;
-  if (u.kind === 'bearer') {
+  // A disguised unit has the bar of the kind it passes for.
+  const kind = u.disguise ?? u.kind;
+  if (kind === 'bearer') {
     return 36;
   }
-  if (u.kind === 'crawler') {
+  if (kind === 'crawler') {
     return 16 * elite;
   }
-  if (u.kind === 'broodMother') {
+  if (kind === 'broodMother') {
     return 34;
   }
   // The other bosses are drawn as their kind, larger.
   if (u.rank === Rank.Boss) {
     return 44 * BOSS_BAR;
   }
-  if (u.kind === 'mite') {
+  if (kind === 'mite') {
     return 10 * elite;
   }
-  if (u.kind === 'hollowed') {
+  if (kind === 'hollowed') {
     return 38 * elite;
   }
   return 44 * elite;
@@ -70,6 +72,10 @@ export function barHeight(u: Unit): number {
 
 // How visible a unit is, 0 to 1. The party and its wards are always seen.
 export function seen(fog: Fogs, u: Unit, x: number, z: number): number {
+  // A hidden enemy is not drawn at all.
+  if (u.hidden && u.side === Side.Monster) {
+    return 0;
+  }
   if (u.side !== Side.Monster) {
     return 1;
   }

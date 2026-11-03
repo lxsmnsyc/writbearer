@@ -13,6 +13,7 @@ import { Targeting } from './skill';
 import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
+import { reveal } from './concealment';
 
 // The fixed simulation step: 20 ticks per second.
 export const TICK = 0.05;
@@ -118,6 +119,10 @@ function turnSlowly(facing: readonly (readonly [Unit, number])[], dt: number): v
  * Returns the damage event, or null on a miss.
  */
 export function strike(source: Unit, target: Unit, options: HitOptions): ReturnType<Unit['hit']> {
+  // A hidden or disguised unit gives itself away by striking
+  if (source.hidden || source.disguise) {
+    reveal(source, target);
+  }
   let flags = options.flags ?? 0;
   if (target.isFlankedBy(source)) {
     flags |= DamageFlags.Flank;

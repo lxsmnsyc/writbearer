@@ -1,0 +1,2 @@
+- Built the sim side first (fields, reveal, CheckTarget listener, damage listener, strike hook), then the disguised assassin in roster, stage and ai, then the objective counts and render gating.
+- The assassin is a Hollowed template on Side.Ward with disguise 'refugee', so it needs no new figure kind.

@@ -34,6 +34,7 @@ export const enum SimEvents {
   CheckProjectile = 'CheckProjectile',
   CheckSkillRank = 'CheckSkillRank',
   CheckAttackElements = 'CheckAttackElements',
+  UnitRevealed = 'UnitRevealed',
 }
 
 /**
@@ -100,6 +101,12 @@ export interface UnitHealEvent extends BaseEvent {
 export interface UnitDiesEvent extends BaseEvent {
   source: Unit;
   killer: Unit | null;
+}
+
+/** A hidden or disguised unit is revealed. */
+export interface UnitRevealedEvent extends BaseEvent {
+  source: Unit;
+  by: Unit | null;
 }
 
 /** Asks the final mana cost of a skill. `value` starts at the skill's cost. */
@@ -204,4 +211,5 @@ export interface SimEventMap extends EventMap {
   [SimEvents.CheckProjectile]: [CheckProjectileEvent, EventPriority];
   [SimEvents.CheckSkillRank]: [CheckSkillRankEvent, ValuePriority];
   [SimEvents.CheckAttackElements]: [CheckAttackElementsEvent, ValuePriority];
+  [SimEvents.UnitRevealed]: [UnitRevealedEvent, EventPriority];
 }

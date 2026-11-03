@@ -1,13 +1,14 @@
 ---
 id: arcanist
 title: Arcanist: the job, its 4 spells and innate passive
-status: active
+status: done
 priority: must
 type: feature
 outline: false
 milestone: starting-jobs
 target:
 from:
+spent: 198184
 size: M
 spike: false
 verify: pnpm vitest run test/sim/arcanist.test.ts && pnpm vitest run test/content/jobs.test.ts
@@ -52,10 +53,10 @@ Make the Arcanist (striker) a real job under the build model of `docs/design/16-
 
 ## Acceptance
 
-- [ ] Elemental Sense is built and tested first, before the other spells: a target that takes more from Fire gets Firebolt, one that takes more from Frost gets Frost Shard, and one that takes neither more gets Firebolt. If a case cannot pass through `src/sim/elements.ts` and `src/sim/mechanics/damage.ts`, stop and write the failing case in `outcome.md`: that is the trigger for the split fallback (`debate/debate.md`).
-- [ ] A headless fight with the Arcanist in the party plays out, in `test/sim/arcanist.test.ts`.
-- [ ] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
-- [ ] Fast check passes.
+- [x] Elemental Sense is built and tested first, before the other spells: a target that takes more from Fire gets Firebolt, one that takes more from Frost gets Frost Shard, and one that takes neither more gets Firebolt. If a case cannot pass through `src/sim/elements.ts` and `src/sim/mechanics/damage.ts`, stop and write the failing case in `outcome.md`: that is the trigger for the split fallback (`debate/debate.md`).
+- [x] A headless fight with the Arcanist in the party plays out, in `test/sim/arcanist.test.ts`.
+- [x] Each of the 4 spells and the innate passive has a test, in the style of `test/sim/tree-skills.test.ts`.
+- [x] Fast check passes.
 
 ## Sizing
 

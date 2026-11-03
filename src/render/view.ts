@@ -130,8 +130,9 @@ export class Views {
   /** The rig's view of a unit, `alpha` of the way from the last tick to this one. */
   rig(u: Unit, alpha: number): RigUnit {
     const v = this.get(u);
-    const figure = FIGURE[u.kind];
-    const kind = figure?.kind ?? u.kind;
+    // A disguised unit is drawn as the kind it passes for.
+    const figure = u.disguise === null ? FIGURE[u.kind] : undefined;
+    const kind = figure?.kind ?? u.disguise ?? u.kind;
     if (!isKind(kind)) {
       throw new Error(`No figure for unit kind "${kind}"`);
     }

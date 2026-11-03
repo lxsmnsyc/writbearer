@@ -7,6 +7,7 @@ import setupHitMechanics from './hit';
 import setupSkillMechanics from './skill';
 import setupZoneMechanics from './zones';
 import setupMorale from '../morale';
+import setupConcealment from '../concealment';
 
 /**
  * Registers the base mechanics. They come before any skill or item, so they
@@ -21,4 +22,5 @@ export default function setupMechanics(sim: Sim): void {
   setupSkillMechanics(sim);
   setupZoneMechanics(sim);
   setupMorale(sim);
+  setupConcealment(sim);
 }
