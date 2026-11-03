@@ -1,7 +1,7 @@
 ---
 name: job-def
-version: 1
-status: draft
+version: 2
+status: frozen
 defined_by: job-registry
 ---
 
@@ -13,45 +13,71 @@ One module per job, registered in one place, so the four new jobs and their upgr
 
 ## Interface
 
-A first shape. job-registry may change names while it builds, then writes the final shape into this file's interface section through its outcome.
+Frozen at v2, as job-registry built it (see `nodes/job-registry/outcome.md`).
 
 ```ts
 // src/content/jobs/types.ts
+export interface Template { job; base; weapon; kit; modifiers?; race?; rank?; element?;
+  elementLevel?; attackElement?; hunt?; skills? } // moved here from roster.ts; roster re-exports it
 export type Role = 'guard' | 'striker' | 'support';
-export type { Template } from '../roster'; // exported from roster.ts
-
+export interface Innate { name: string; effect: Passive; describe: () => string } // rank 1, never raised
+export type SpellIcon = (props: ComponentProps<'svg'>) => JSX.Element; // solid-js types, type-only import
 export interface JobDef {
-  kind: string; // MercKind key, e.g. 'warden'
-  name: string; // 'Warden'; the name item bases list in `jobs`
-  template: Template; // job stats, base stats, bare weapon, kit
+  kind: string;            // key in JOBS, LOOKS and ICONS
+  template: Template;      // template.job.name is the name item bases list in `jobs`
   discipline: number;
   role: Role;
-  fighter: boolean; // can kill what attacks the bearer alone
-  hireable: boolean; // offered at the Guild House; false until roster-balance
-  blurb: string; // one line on the offer card
-  icon: string; // an IconName from src/ui/icons.ts (job-registry adds icons for all seven jobs)
-  spells: [Skill, Skill, Skill, Skill]; // in cast priority order (builds contract)
-  innate: { name: string; effect: Passive; describe: () => string };
-  upgrades: Upgrade[]; // 12, 3 per spell (builds contract)
-  starterGear: string[]; // ids of bases in items.ts
-  starterBelt: [string, number][];
+  fighter: boolean;
+  hireable: boolean;       // false for the four new jobs until roster-balance
+  blurb: string;           // offer card line
+  spells: readonly [Skill, Skill, Skill, Skill]; // cast order, last is the filler
+  innate: Innate;
+  upgrades: Upgrade[];     // 12, 3 per spell
+  starterGear: readonly string[];
+  starterBelt: readonly (readonly [string, number])[];
+  icons: Readonly<Partial<Record<string, SpellIcon>>>; // own spell icons, by spell id
 }
+
+// src/content/jobs/index.ts
+export const JOB_KINDS = ['vanguard','ranger','cleric','sellsword','warden','duelist','arcanist'] as const;
+export type JobKind = (typeof JOB_KINDS)[number];
+export const JOBS: Record<JobKind, JobDef>;
+export const isJobKind: (kind: string) => kind is JobKind;
+
+// src/content/jobs/designed.ts: placeholders
+designedSpell(id, name, summary, cost, cooldown): Skill   // wants() is always false
+designedUpgrade(id, spell, name, summary): Upgrade        // no patch, no effect: never offered
+designedInnate(id, name, summary): Innate                 // a passive that does nothing
+// src/content/jobs/stats.ts: stats(...), job(...) template shorthands (roster uses them too)
 
 // src/render/looks/types.ts
+export type HeldWeapon = 'sword' | 'mace' | 'bow' | 'dagger' | 'staff';
+export type Attack = 'slash' | 'shoot' | 'cast';
 export interface JobLook {
-  hitFraction: number; // as HIT_FRACTION
-  size: number; // as KIND_SIZE
-  attachments: ...; // what sprites.ts draws on the shared body, as for the first three jobs
+  hitFraction: number;
+  size: number;
+  bare: { weapon: HeldWeapon | null; shield: boolean }; // when gear is unknown
+  attachments: (weapon: HeldWeapon | null, shield: boolean) => readonly Attachment[];
+  attack: (weapon: HeldWeapon | null) => Attack;
 }
+// src/render/looks/held.ts: heldGear(weapon, asStaff?), swingOrShoot, plainLook(weapon, shield)
+// src/render/looks/index.ts: LOOKS: Record<JobKind, JobLook>, isJobLook(kind)
+
+// src/render/zones.ts
+export type ZoneLook = (ctx: CanvasRenderingContext2D, at: Pt, zone: Zone, iso: Iso) => void;
+export const ZONE_LOOKS: Partial<Record<string, ZoneLook>>; // banner, lightningRod, bait, rampart, spikeField
 ```
 
-Files, all created by job-registry, for all seven jobs:
+Files per job, for all seven:
 
-- `src/content/jobs/<kind>/index.ts` exports `<KIND>: JobDef` (for example `WARDEN`).
-- `src/content/jobs/<kind>/upgrades.ts` exports `<KIND>_UPGRADES: Upgrade[]` (for example `WARDEN_UPGRADES`). `index.ts` imports it.
-- `src/content/jobs/index.ts`: JOBS, all seven registered.
-- `src/render/looks/<kind>.ts` and `src/render/looks/index.ts`: LOOKS, all seven registered.
-- `src/render/zones.ts`: ZONE_LOOKS, with the five skill zones drawn today (`banner`, `lightningRod`, `bait`, `rampart`, `spikeField`).
+- `src/content/jobs/<kind>/index.ts` default-exports the JobDef.
+- `src/content/jobs/<kind>/upgrades.ts` default-exports the `Upgrade[]`. `index.ts` imports it.
+- `src/render/looks/<kind>.ts` default-exports the JobLook.
+- A job node edits only these, never the registries (`src/content/jobs/index.ts`, `src/render/looks/index.ts`).
+
+Spell icons: a job module imports its icons from `~icons/...` and lists them in `icons` by spell id. `SkillIcon` (`src/ui/spell-panel.tsx`) draws the job's own icon, then `ICONS[spell id]`, then the `points` icon. Job nodes never edit `src/ui/icons.ts`. Unit icons for all seven jobs are already there. e2e specs cannot import job modules (Node cannot load `~icons`), so they read job data from the page.
+
+Layering: `src/sim/builds.ts` imports JOBS from `src/content` at runtime. It is the only module under `src/sim` that may. Later nodes pass content to the sim through hooks and arguments.
 
 ## Behavior
 
@@ -76,3 +102,4 @@ The placeholder modules are the stub: every new job can be spawned with `spawnMe
 
 - v1: initial.
 - v1 (draft, 2026-10-27): trees replaced by spells, innate and upgrades after the build-variety gate.
+- v2 (2026-11-03): frozen as built. `name` and `icon` dropped from JobDef (`template.job.name`; the ICONS key is the kind). Default exports per module. `JOB_KINDS` tuple and `MercKind = 'bearer' | JobKind`. `MERCS` removed, `hitFraction()` replaces `HIT_FRACTION`. JobLook gets `bare`, `attachments()`, `attack()`. `ZONE_LOOKS` is a Partial record. New `icons` map on JobDef (user decision at the gate).

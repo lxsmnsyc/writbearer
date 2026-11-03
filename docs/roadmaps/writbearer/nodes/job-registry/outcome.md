@@ -113,7 +113,7 @@ The three built jobs lose these skills until their upgrade node lands: Vanguard:
 - `pnpm vitest run test/content/jobs.test.ts`: 7 passed.
 - `pnpm typecheck`: exit 0. `oxlint src test e2e`: exit 0. `pnpm test`: 56 files, 436 passed, 24 skipped (run twice, the same).
 - `pnpm build`: ok.
-- `pnpm test:e2e` not run, as instructed. e2e/recruit.spec.ts now imports `src/content/recruits` and orders.spec.ts has new spell-panel cases: both unverified.
+- `pnpm test:e2e` (orchestrator, after the review fixes): 22 passed, 2 failed. The failures are compendium.spec.ts and save.spec.ts, the two known failures on main that stale-e2e covers. recruit.spec.ts and orders.spec.ts pass.
 
 ## Size
 
