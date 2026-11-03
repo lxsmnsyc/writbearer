@@ -18,7 +18,7 @@ export const inReach = (u: Unit, target: Unit | null): target is Unit =>
 // ---------- Vanguard ----------
 
 const CHALLENGE_RADIUS = 3;
-const challengeTime = (rank: number): number => 3 + rank * 0.5;
+const challengeTime = (rank: number): number => 3 + rank * 0.25;
 
 // Awake monsters within the Challenge's reach.
 function challenged(u: Unit): Unit[] {
@@ -62,8 +62,8 @@ export const CHALLENGE: Skill = {
   },
 };
 
-const crushRatio = (rank: number): number => 140 + rank * 20;
-export const crushEarth = (rank: number): number => 30 + rank * 10;
+const crushRatio = (rank: number): number => 140 + rank * 10;
+export const crushEarth = (rank: number): number => 30 + rank * 5;
 
 /**
  * Vanguard, Breaker tier 2. A heavy overhead blow that builds up Earth,
@@ -148,7 +148,7 @@ export const SHIELD_BASH: Skill = {
 
 // ---------- Ranger ----------
 
-const aimedRatio = (rank: number): number => 200 + rank * 30;
+const aimedRatio = (rank: number): number => 200 + rank * 15;
 
 /** Ranger, Hawkeye tier 1. A long, still draw for one heavy arrow. */
 export const AIMED_SHOT: Skill = {
@@ -184,7 +184,7 @@ export const AIMED_SHOT: Skill = {
 };
 
 const SNARE_REACH = 7;
-const snareTime = (rank: number): number => 1.5 + rank * 0.5;
+const snareTime = (rank: number): number => 1.5 + rank * 0.25;
 
 // The awake enemy nearest the bearer that is coming for it, if any.
 export function comingForBearer(u: Unit): Unit | null {
@@ -253,7 +253,7 @@ export const SNARE: Skill = {
   },
 };
 
-const chargedRatio = (rank: number): number => 90 + rank * 15;
+const chargedRatio = (rank: number): number => 90 + rank * 8;
 const CHAIN_REACH = 3;
 
 /**
@@ -523,7 +523,7 @@ export const PIN_DOWN: Skill = {
   },
 };
 
-const interceptReach = (rank: number): number => 4 + rank;
+const interceptReach = (rank: number): number => 4 + rank * 0.5;
 
 // The enemy nearest the bearer that is going for it.
 function threatToBearer(u: Unit): Unit | null {
@@ -726,7 +726,7 @@ export const RESURRECTION: Skill = {
 };
 
 const SMITE_REACH = 5;
-const smiteRatio = (rank: number): number => 110 + rank * 20;
+const smiteRatio = (rank: number): number => 110 + rank * 10;
 // Smite burns the Undead and the Occult harder.
 const SMITE_BANE = 1.5;
 

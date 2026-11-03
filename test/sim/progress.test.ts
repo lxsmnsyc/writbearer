@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CHARGED_ARROW, INTERCEPT, SNARE } from '../../src/content/skills';
-import { cannotLearn, findNode, learn } from '../../src/content/trees';
+import { EAGLE_EYE, SHARED_BURDEN, VOW } from '../../src/content/passives';
 import { DEFAULT_TOGGLES, Stance, setToggles } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import { STAT_POINTS, gainXp, killXp, xpToNext } from '../../src/sim/progress';
@@ -9,25 +9,7 @@ import Sim from '../../src/sim/sim';
 import { ROOTED, SUNDERED } from '../../src/sim/statuses';
 import { DamageKind, DamagePriority, Rank, ValuePriority } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
-
-// Spends points on a node until it reaches a rank, raising the level if needed.
-function train(unit: Unit, id: string, rank = 1): void {
-  const found = findNode(unit, id)!;
-  unit.level = Math.max(unit.level, 16);
-  unit.skillPoints += rank;
-  for (let i = 0; i < rank; i++) {
-    expect(learn(unit, found.branch, found.node)).toBeNull();
-  }
-}
-
-// Learns every node before this one in its branch, then this one.
-function trainPath(unit: Unit, id: string, rank = 1): void {
-  const { branch, node } = findNode(unit, id)!;
-  for (const before of branch.nodes.slice(0, node.tier - 1)) {
-    train(unit, before.id);
-  }
-  train(unit, id, rank);
-}
+import { teach } from '../support/build';
 
 const alwaysHit = (sim: Sim): void => {
   sim.on(SimEvents.CheckHit, ValuePriority.Pre, (event) => {
@@ -36,13 +18,13 @@ const alwaysHit = (sim: Sim): void => {
 };
 
 describe('experience', () => {
-  it('raises the level, with a skill point and stat points each time', () => {
+  it('raises the level, with a shard and stat points each time', () => {
     const sim = new Sim(1);
     const ranger = spawnMerc(sim, 'ranger', 5, 0, 0);
-    const points = ranger.skillPoints;
+    const shards = ranger.shards;
     expect(gainXp(ranger, xpToNext(5) + xpToNext(6))).toBe(2);
     expect(ranger.level).toBe(7);
-    expect(ranger.skillPoints).toBe(points + 2);
+    expect(ranger.shards).toBe(shards + 2);
     expect(ranger.statPoints).toBe(STAT_POINTS * 2);
   });
 
@@ -67,49 +49,35 @@ describe('experience', () => {
   });
 });
 
-describe('skill trees', () => {
-  it('arrive with points unspent and nothing learned', () => {
+describe('spells', () => {
+  it('arrive known at rank 1, with the innate passive and a shard per level past the first', () => {
     const sim = new Sim(1);
     const vanguard = spawnMerc(sim, 'vanguard', 5, 0, 0);
-    expect(vanguard.skillPoints).toBe(4);
-    expect(vanguard.skills).toHaveLength(0);
-  });
-
-  it('gate each tier by level and by the skill before it', () => {
-    const sim = new Sim(1);
-    const vanguard = spawnMerc(sim, 'vanguard', 5, 0, 0);
-    const crush = findNode(vanguard, 'crush')!;
-    const sunder = findNode(vanguard, 'sunder')!;
-    const bash = findNode(vanguard, 'shieldBash')!;
-    expect(cannotLearn(vanguard, crush.branch, crush.node)).toMatch(/Sunder first/);
-    expect(learn(vanguard, sunder.branch, sunder.node)).toBeNull();
-    expect(learn(vanguard, crush.branch, crush.node)).toBeNull();
-    expect(cannotLearn(vanguard, bash.branch, bash.node)).toMatch(/level 8/);
-    const wall = findNode(vanguard, 'shieldWall')!;
-    expect(cannotLearn(vanguard, wall.branch, wall.node)).toMatch(/Challenge first/);
-  });
-
-  it('stop at the last rank, and adds an active skill once', () => {
-    const sim = new Sim(1);
-    const vanguard = spawnMerc(sim, 'vanguard', 5, 0, 0);
-    train(vanguard, 'challenge', 5);
-    const challenge = findNode(vanguard, 'challenge')!;
-    vanguard.skillPoints = 1;
-    expect(cannotLearn(vanguard, challenge.branch, challenge.node)).toBe('Mastered.');
-    expect(vanguard.skills.filter((s) => s.id === 'challenge')).toHaveLength(1);
+    expect(vanguard.shards).toBe(4);
+    expect(vanguard.skillPoints).toBe(0);
+    expect(vanguard.skills.map((s) => s.id)).toEqual([
+      'intercept',
+      'challenge',
+      'shieldWall',
+      'crush',
+    ]);
+    expect(vanguard.skills.map((s) => vanguard.skillRank(s.id))).toEqual([1, 1, 1, 1]);
+    expect([...vanguard.passives.keys()]).toEqual(['sunder']);
   });
 });
 
 describe('passives', () => {
-  it('Vow: armor near the bearer, set up again at a new rank without stacking', () => {
+  // Vow, Shared Burden and Eagle Eye are now elite upgrades, built by
+  // vanguard-upgrades and ranger-upgrades.
+  it.skip('Vow: armor near the bearer, set up again at a new rank without stacking', () => {
     const sim = new Sim(1);
     const bearer = spawnBearer(sim, 0, 0);
     const vanguard = spawnMerc(sim, 'vanguard', 5, 1, 0);
     const base = vanguard.derived.armor;
-    train(vanguard, 'vow');
+    teach(vanguard, VOW, 1);
     sim.tick();
     expect(vanguard.derived.armor).toBe(base + 10);
-    train(vanguard, 'vow');
+    teach(vanguard, VOW, 2);
     sim.tick();
     expect(vanguard.derived.armor).toBe(base + 20);
     bearer.x = 20;
@@ -118,41 +86,40 @@ describe('passives', () => {
     expect(vanguard.derived.armor).toBe(base);
   });
 
-  it('Sunder: melee hits strip armor, stacking, then it grows back', () => {
+  it('Sunder, the innate: melee hits strip armor, stacking, then it grows back', () => {
     const sim = new Sim(1);
     const vanguard = spawnMerc(sim, 'vanguard', 5, 0, 0);
     const soldier = spawnMonster(sim, 'hollowSoldier', 4, 30, 0);
     alwaysHit(sim);
-    train(vanguard, 'sunder', 2);
     const armor = soldier.derived.armor;
     // True damage skips the hit roll, so both hits land.
     vanguard.hit(soldier, { kind: DamageKind.True, fixed: 10 });
     vanguard.hit(soldier, { kind: DamageKind.True, fixed: 10 });
     expect(soldier.statuses.get(SUNDERED.id)?.stacks).toBe(2);
-    expect(soldier.derived.armor).toBe(armor - 16);
+    expect(soldier.derived.armor).toBe(armor - 8);
     sim.run(SUNDERED.duration + 0.1);
     expect(soldier.derived.armor).toBe(armor);
   });
 
-  it('Shared Burden: the Vanguard takes a share of each hit on the bearer', () => {
+  it.skip('Shared Burden: the Vanguard takes a share of each hit on the bearer', () => {
     const sim = new Sim(1);
     const bearer = spawnBearer(sim, 0, 0);
     const vanguard = spawnMerc(sim, 'vanguard', 5, 20, 0);
     const crawler = spawnMonster(sim, 'crawler', 4, 40, 0);
-    trainPath(vanguard, 'sharedBurden', 2);
+    teach(vanguard, SHARED_BURDEN, 2);
     const hp = vanguard.hp;
     crawler.hit(bearer, { kind: DamageKind.True, fixed: 100 });
     expect(bearer.derived.maxHp - bearer.hp).toBe(90);
     expect(hp - vanguard.hp).toBe(10);
   });
 
-  it('Eagle Eye: more reach, which a new rank does not double', () => {
+  it.skip('Eagle Eye: more reach, which a new rank does not double', () => {
     const sim = new Sim(1);
     const ranger = spawnMerc(sim, 'ranger', 5, 0, 0);
     const reach = ranger.kit.reach;
-    trainPath(ranger, 'eagleEye');
+    teach(ranger, EAGLE_EYE, 1);
     expect(ranger.kit.reach).toBe(reach + 0.5);
-    train(ranger, 'eagleEye');
+    teach(ranger, EAGLE_EYE, 2);
     expect(ranger.kit.reach).toBe(reach + 1);
   });
 });

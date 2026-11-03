@@ -4,13 +4,15 @@ import { Race, Range } from '../sim/types';
 
 // First item data. A starting point for balance, not final values.
 
+// Job names, as item bases list them. Gear for jobs not offered yet still
+// drops, as the design says about half of all drops fit someone in the party.
 const VANGUARD = ['Vanguard'];
 const RANGER = ['Ranger'];
-// Jobs not in the game yet. Their gear still drops, as the design says about
-// half of all drops fit someone in the party.
 const ARCANIST = ['Arcanist'];
 const DUELIST = ['Duelist'];
 const CLERIC = ['Cleric'];
+const SELLSWORD = ['Sellsword'];
+const WARDEN = ['Warden'];
 
 export const BASES: readonly ItemBase[] = [
   // Weapons
@@ -22,7 +24,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 50,
     maxSockets: 3,
-    jobs: VANGUARD,
+    jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     damage: { min: { min: 25, max: 31 }, max: { min: 33, max: 39 } },
   },
   {
@@ -33,7 +35,7 @@ export const BASES: readonly ItemBase[] = [
     level: 4,
     weight: 70,
     maxSockets: 3,
-    jobs: VANGUARD,
+    jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     damage: { min: { min: 30, max: 36 }, max: { min: 38, max: 46 } },
   },
   {
@@ -112,7 +114,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 90,
     maxSockets: 2,
-    jobs: VANGUARD,
+    jobs: [...VANGUARD, ...WARDEN],
     armor: { min: 16, max: 24 },
     block: { chance: 35, amount: 60 },
   },
@@ -123,7 +125,7 @@ export const BASES: readonly ItemBase[] = [
     level: 2,
     weight: 30,
     maxSockets: 2,
-    jobs: [...VANGUARD, ...DUELIST],
+    jobs: [...VANGUARD, ...DUELIST, ...SELLSWORD, ...WARDEN],
     armor: { min: 6, max: 10 },
     block: { chance: 20, amount: 45 },
   },
@@ -144,7 +146,7 @@ export const BASES: readonly ItemBase[] = [
     level: 3,
     weight: 30,
     maxSockets: 2,
-    jobs: VANGUARD,
+    jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     armor: { min: 10, max: 15 },
   },
   {
@@ -163,7 +165,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 120,
     maxSockets: 3,
-    jobs: VANGUARD,
+    jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     armor: { min: 44, max: 56 },
   },
   {
@@ -447,26 +449,11 @@ export const RARE_SECOND = [
   'Keeper',
 ];
 
-/** Potions each merc arrives with on its belt, and the bearer in its pack. */
-export const STARTER_BELT: Record<string, [string, number][]> = {
-  vanguard: [['healingDraught', 2]],
-  ranger: [
-    ['healingDraught', 2],
-    ['manaTincture', 1],
-  ],
-  cleric: [
-    ['healingDraught', 1],
-    ['manaTincture', 2],
-  ],
-};
+/**
+ * Potions the bearer arrives with in its pack. Each merc's gear and belt are
+ * in its job module (src/content/jobs).
+ */
 export const STARTER_PACK: [string, number][] = [
   ['healingDraught', 4],
   ['manaTincture', 2],
 ];
-
-/** The gear each merc arrives with. Plain, middle-of-the-range copies. */
-export const STARTER_GEAR: Record<string, string[]> = {
-  vanguard: ['armingSword', 'towerShield', 'hauberk'],
-  ranger: ['huntingBow', 'jerkin'],
-  cleric: ['pilgrimStaff', 'vestments'],
-};

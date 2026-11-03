@@ -1,14 +1,16 @@
+import type { JobKind } from '../content/jobs';
+import { LOOKS, isJobLook } from './looks';
+
 // Cut-paper figures on a 3D skeleton.
 // Each figure is a set of joints in its own space, turned to face any angle
 // and projected into the isometric view. Paper pieces are drawn between the
 // projected joints and sorted back to front, so a body narrows when seen from
 // the side and limbs pass in front of or behind it as it turns.
 
+/** A kind the rig can draw: the bearer, a merc job (src/render/looks) or a monster. */
 export type Kind =
   | 'bearer'
-  | 'vanguard'
-  | 'ranger'
-  | 'cleric'
+  | JobKind
   | 'hollowSoldier'
   | 'hollowArcher'
   | 'hollowShieldbearer'
@@ -25,13 +27,9 @@ export type Kind =
   | 'broodMother'
   | 'refugee';
 
-// Where in each drawn attack (0 to 1) the blow lands or the arrow leaves.
-// The view lines the simulation's hit frame up with it.
 const KINDS = new Set<string>([
   'bearer',
-  'vanguard',
-  'ranger',
-  'cleric',
+  ...Object.keys(LOOKS),
   'hollowSoldier',
   'hollowArcher',
   'hollowShieldbearer',
@@ -64,11 +62,11 @@ const hollowGuard = (kind: Kind): boolean =>
 export const isCrawler = (kind: string): boolean =>
   kind === 'crawler' || kind === 'mite' || kind === 'bloat' || kind === 'broodMother';
 
-export const HIT_FRACTION: Record<Kind, number> = {
+// The kinds that are not merc jobs. Each merc job's figure is in its look.
+type OtherKind = Exclude<Kind, JobKind>;
+
+const OTHER_HIT: Record<OtherKind, number> = {
   bearer: 1,
-  vanguard: 0.6,
-  ranger: 0.7,
-  cleric: 0.7,
   hollowSoldier: 0.65,
   hornBearer: 0.6,
   hollowArcher: 0.7,
@@ -86,6 +84,14 @@ export const HIT_FRACTION: Record<Kind, number> = {
   broodMother: 0.5,
   refugee: 1,
 };
+
+/**
+ * Where in a kind's drawn attack (0 to 1) the blow lands or the arrow
+ * leaves. The view lines the simulation's hit frame up with it.
+ */
+export function hitFraction(kind: Kind): number {
+  return isJobLook(kind) ? LOOKS[kind].hitFraction : OTHER_HIT[kind];
+}
 
 export interface Pt {
   x: number;
@@ -166,11 +172,8 @@ const CUT = [0.3, -0.4, 0.5, -0.2, 0.1, -0.5, 0.4, -0.3, 0.2, -0.1];
 
 // How big each figure is drawn. The bearer is small; a mite is a crawler not
 // yet grown.
-const KIND_SIZE: Record<Kind, number> = {
+const OTHER_SIZE: Record<OtherKind, number> = {
   bearer: 0.82,
-  vanguard: 1,
-  ranger: 1,
-  cleric: 1,
   hollowSoldier: 1,
   hornBearer: 0.95,
   hollowArcher: 1,
@@ -197,7 +200,7 @@ const sizeOf = (u: RigUnit): number => {
   if (u.named) {
     grown = 1.45;
   }
-  return KIND_SIZE[u.kind] * grown;
+  return (isJobLook(u.kind) ? LOOKS[u.kind].size : OTHER_SIZE[u.kind]) * grown;
 };
 
 // ---------- projection ----------
@@ -407,7 +410,7 @@ export function paperColor(kind: Kind, C: Palette): string {
   if (kind === 'bearer') {
     return C.bearer;
   }
-  if (kind === 'vanguard' || kind === 'ranger' || kind === 'cleric') {
+  if (isJobLook(kind)) {
     return C.merc;
   }
   if (
@@ -570,7 +573,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     const bowHand = add(sk.chest, v(26, -4, 6));
     let pull = 0;
     if (a >= 0) {
-      const ph = phases(a, HIT_FRACTION.hollowArcher, HIT_FRACTION.hollowArcher + 0.1);
+      const ph = phases(a, OTHER_HIT.hollowArcher, OTHER_HIT.hollowArcher + 0.1);
       pull = ph.strike > 0 || ph.recover > 0 ? 0 : ph.windup;
     }
     const drawHand = add(sk.chest, v(22 - pull * 18, 2, 6));
@@ -582,7 +585,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     // The sling whirled overhead, faster as it winds up, then let fly.
     const hand = add(sk.head, v(4, 6, 10));
     reach(sk, 'R', hand, v(-1, 1, 0));
-    const speed = a >= 0 && a < HIT_FRACTION.penitentSlinger ? 22 : 9;
+    const speed = a >= 0 && a < OTHER_HIT.penitentSlinger ? 22 : 9;
     g.sling = { hand: sk.handR, angle: time * speed };
   }
   if (u.kind === 'hollowShieldbearer') {
@@ -624,7 +627,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     // The staff of the eye, held upright. The hymn lifts it high, then plants it.
     let hand = add(sk.chest, v(10, 10, -4));
     if (a >= 0) {
-      const ph = phases(a, HIT_FRACTION.cantor, HIT_FRACTION.cantor + 0.08);
+      const ph = phases(a, OTHER_HIT.cantor, OTHER_HIT.cantor + 0.08);
       const up = add(sk.head, v(6, 8, 18));
       hand = handPath(ph, hand, up, hand);
       reach(sk, 'L', add(sk.head, v(8, -6, 6)), v(-1, -1, 0));

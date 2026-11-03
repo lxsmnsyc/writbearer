@@ -337,8 +337,8 @@ export const ARC_VOLLEY: Skill = {
 };
 
 const ROD_RADIUS = 2.5;
-const rodTime = (rank: number): number => 5 + rank;
-const rodRatio = (rank: number): number => 35 + rank * 10;
+const rodTime = (rank: number): number => 5 + rank * 0.5;
+const rodRatio = (rank: number): number => 35 + rank * 5;
 
 /**
  * Stormcaller tier 4. Plants a rod that calls lightning: a Storm field

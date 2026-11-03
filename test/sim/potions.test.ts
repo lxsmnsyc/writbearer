@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BASE_BY_ID } from '../../src/content/items';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { findNode, learn } from '../../src/content/trees';
 import { BELT_STACK, Pack, beltToPack, packToBelt } from '../../src/game/inventory';
 import { potionStack } from '../../src/gen/loot';
 import { DEFAULT_TOGGLES, DRINK_AT, setToggles } from '../../src/sim/ai';
@@ -54,13 +53,13 @@ describe('drinking', () => {
     ranger.belt[0] = null;
     ranger.belt[1] = potionStack(MANA, 1);
     ranger.mana = 0;
-    // No skills yet: mana is no use to it.
+    // No spells to cast: mana is no use to it.
+    const spells = ranger.skills.splice(0);
     const crawler = spawnMonster(sim, 'crawler', 4, 3, 0);
     crawler.aware = true;
     sim.run(0.5);
     expect(ranger.belt[1]).not.toBeNull();
-    const aimed = findNode(ranger, 'aimedShot')!;
-    learn(ranger, aimed.branch, aimed.node);
+    ranger.skills.push(...spells);
     ranger.mana = 0;
     sim.run(0.5);
     expect(ranger.belt[1]).toBeNull();

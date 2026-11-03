@@ -1,16 +1,17 @@
 import { For, type JSX, Show, createSignal } from 'solid-js';
 import type { Offer } from '../content/recruits';
-import { MERCS } from '../content/roster';
+import { JOBS } from '../content/jobs';
 import { TRAIT_BY_ID } from '../content/traits';
-import { TREES } from '../content/trees';
 import { Button, Icon, Notice, Segmented, Tip } from './kit';
 
-// What each job does, in a line, for players choosing between them.
-const ROLE: Record<Offer['kind'], string> = {
-  vanguard: 'Tank. Holds the line with a tower shield and taunts.',
-  ranger: 'Ranged damage. Picks off threats with a bow and sets snares.',
-  cleric: 'Healer. Mends the party, raises its dead, smites the Undead.',
-};
+// Its 4 spells, in the order it casts them
+function spellNames(kind: Offer['kind']): string {
+  const names: string[] = [];
+  for (const spell of JOBS[kind].spells) {
+    names.push(spell.name);
+  }
+  return names.join(', ');
+}
 
 interface CardProps {
   offer: Offer;
@@ -21,7 +22,7 @@ interface CardProps {
 
 /** One merc offered for hire: its job, name, traits and wage. */
 export function OfferCard(props: CardProps): JSX.Element {
-  const job = (): string => MERCS[props.offer.kind].job.name;
+  const job = (): string => JOBS[props.offer.kind].template.job.name;
   return (
     <article
       class="flex w-72 flex-col rounded-xl bg-white/3 p-4 ring-1 ring-white/8"
@@ -40,10 +41,8 @@ export function OfferCard(props: CardProps): JSX.Element {
           </p>
         </div>
       </div>
-      <p class="mt-3 text-sm text-neutral-300">{ROLE[props.offer.kind]}</p>
-      <p class="mt-2 text-xs text-neutral-500">
-        Branches: {(TREES[job()] ?? []).map((b) => b.name).join(', ')}
-      </p>
+      <p class="mt-3 text-sm text-neutral-300">{JOBS[props.offer.kind].blurb}</p>
+      <p class="mt-2 text-xs text-neutral-500">Spells: {spellNames(props.offer.kind)}</p>
       <Show when={props.offer.traits.length > 0}>
         <ul class="mt-3 space-y-1.5 text-xs">
           <For each={props.offer.traits}>

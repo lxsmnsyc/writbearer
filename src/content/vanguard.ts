@@ -22,7 +22,7 @@ const pressing = (u: Unit, r: number): Unit[] =>
 
 // ---------- Bulwark ----------
 
-const wallTime = (rank: number): number => 2 + rank * 0.5;
+const wallTime = (rank: number): number => 2 + rank * 0.25;
 
 /**
  * Bulwark tier 2. Plants its feet behind its shield: every physical blow

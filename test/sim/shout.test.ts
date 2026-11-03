@@ -81,6 +81,8 @@ describe('shouts', () => {
     spawnBearer(sim, 0, 0);
     const merc = spawnMerc(sim, 'ranger', 5, 1, 0);
     merc.discipline = 100;
+    // No spells: Lightning Rod would kill both husks before the test looks.
+    merc.skills.length = 0;
     const near = spawnMonster(sim, 'husk', 4, 3, 0);
     const far = spawnMonster(sim, 'husk', 4, 5, 1);
     for (const m of [near, far]) {

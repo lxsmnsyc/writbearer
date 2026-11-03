@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { findNode, learn } from '../../src/content/trees';
 import { AIMED_SHOT } from '../../src/content/skills';
 import { DEFAULT_TOGGLES, Priority } from '../../src/sim/ai';
 import { SkillMode } from '../../src/sim/skill';
@@ -69,8 +68,6 @@ describe('Discipline', () => {
         ...DEFAULT_TOGGLES,
         skills: { aimedShot: SkillMode.Elites },
       });
-      const found = findNode(ranger, 'aimedShot')!;
-      learn(ranger, found.branch, found.node);
       ranger.discipline = discipline;
       spawnMonster(sim, 'crawler', 4, 4, 0).aware = true;
       sim.tick();

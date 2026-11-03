@@ -1,96 +1,30 @@
 import { Hunt, type Toggles } from '../sim/ai';
+import { giveSpells } from '../sim/builds';
 import type Sim from '../sim/sim';
-import type { Skill } from '../sim/skill';
-import type { BaseStats, Job, Modifier, Weapon } from '../sim/stats';
+import type { Modifier } from '../sim/stats';
 import { Element, Race, Range, Rank, Side } from '../sim/types';
-import Unit, { type Kit } from '../sim/unit';
+import Unit from '../sim/unit';
 import { plainItem, potionStack } from '../gen/loot';
 import { slotFor } from '../sim/item';
-import { BASE_BY_ID, STARTER_BELT, STARTER_GEAR } from './items';
+import { BASE_BY_ID } from './items';
+import { JOBS, type JobKind, type Template } from './jobs';
+import { job, stats } from './jobs/stats';
 import { BURST, HYMN } from './skills';
 import { applyTraits } from './traits';
 
-// First numbers for the starting jobs and the first monsters. They are a
-// starting point for balance, not final values.
+export type { Template } from './jobs';
 
-interface Template {
-  job: Job;
-  base: BaseStats;
-  weapon: Weapon;
-  kit: Partial<Kit>;
-  modifiers?: Modifier[];
-  race?: Race;
-  rank?: Rank;
-  element?: Element;
-  elementLevel?: number;
-  attackElement?: Element;
-  hunt?: Hunt;
-  skills?: Skill[];
-}
+// First numbers for the bearer and the first monsters. They are a starting
+// point for balance, not final values. Each merc job's numbers are in its
+// own module under src/content/jobs.
 
-const stats = (
-  str: number,
-  agi: number,
-  vit: number,
-  int: number,
-  dex: number,
-  wil: number,
-): BaseStats => ({
-  str,
-  agi,
-  vit,
-  int,
-  dex,
-  wil,
-});
-
-const job = (
-  name: string,
-  baseHp: number,
-  hpPerLevel: number,
-  baseMana: number,
-  range: Range,
-): Job => ({
-  name,
-  baseHp,
-  hpPerLevel,
-  baseMana,
-  manaPerLevel: 4,
-  range,
-});
-
-export const MERCS = {
-  // The bearer cannot fight. Its stats only decide how much it can take.
-  bearer: {
-    job: job('Bearer', 190, 8, 0, Range.Melee),
-    base: stats(1, 5, 5, 5, 5, 5),
-    weapon: { min: 0, max: 0, matk: 0 },
-    kit: { reach: 0, interval: 0, moveSpeed: 2.4 },
-  },
-  vanguard: {
-    job: job('Vanguard', 300, 30, 40, Range.Melee),
-    base: stats(14, 5, 16, 1, 8, 6),
-    // Bare hands. Its sword, shield and mail come as starter gear.
-    weapon: { min: 6, max: 10, matk: 0 },
-    kit: { reach: 1.1, interval: 1.0, hitAt: 0.55, moveSpeed: 2.6 },
-  },
-  ranger: {
-    job: job('Ranger', 180, 18, 60, Range.Ranged),
-    base: stats(5, 10, 8, 3, 18, 6),
-    // Bare hands. Its bow and jerkin come as starter gear.
-    weapon: { min: 4, max: 8, matk: 0 },
-    kit: { reach: 5.5, interval: 1.1, hitAt: 0.7, moveSpeed: 2.7 },
-  },
-  // A priest of the old faith, before the Church went under. It mends the
-  // party and raises its dead. Its holy fire burns the Undead and the mad.
-  cleric: {
-    job: job('Cleric', 220, 20, 90, Range.Melee),
-    base: stats(6, 5, 10, 14, 8, 12),
-    // Bare hands. Its staff and vestments come as starter gear.
-    weapon: { min: 4, max: 7, matk: 0 },
-    kit: { reach: 1.0, interval: 1.2, hitAt: 0.55, moveSpeed: 2.6 },
-  },
-} satisfies Record<string, Template>;
+// The bearer cannot fight. Its stats only decide how much it can take.
+const BEARER: Template = {
+  job: job('Bearer', 190, 8, 0, Range.Melee),
+  base: stats(1, 5, 5, 5, 5, 5),
+  weapon: { min: 0, max: 0, matk: 0 },
+  kit: { reach: 0, interval: 0, moveSpeed: 2.4 },
+};
 
 export const MONSTERS = {
   // One of the Old King's dead. It goes for the bearer.
@@ -315,15 +249,8 @@ export const MONSTERS = {
   },
 } satisfies Record<string, Template>;
 
-export type MercKind = keyof typeof MERCS;
-
-// Each job's Discipline before levels and traits. Soldiers drill; priests
-// keep their vows; hunters go their own way.
-const DISCIPLINE: Record<Exclude<MercKind, 'bearer'>, number> = {
-  vanguard: 40,
-  ranger: 35,
-  cleric: 45,
-};
+/** The bearer, or a merc job. */
+export type MercKind = 'bearer' | JobKind;
 export type MonsterKind = keyof typeof MONSTERS;
 
 function spawn(
@@ -377,25 +304,26 @@ export function spawnRefugee(sim: Sim, level: number, x: number, z: number): Uni
 }
 
 export function spawnBearer(sim: Sim, x: number, z: number): Unit {
-  const unit = spawn(sim, 'bearer', MERCS.bearer, Side.Party, 1, x, z);
+  const unit = spawn(sim, 'bearer', BEARER, Side.Party, 1, x, z);
   sim.bearer = unit;
   return unit;
 }
 
 export function spawnMerc(
   sim: Sim,
-  kind: Exclude<MercKind, 'bearer'>,
+  kind: JobKind,
   level: number,
   x: number,
   z: number,
   toggles?: Toggles,
   profile: { name?: string; traits?: readonly string[] } = {},
 ): Unit {
-  const unit = spawn(sim, kind, MERCS[kind], Side.Party, level, x, z, toggles, profile.name);
+  const def = JOBS[kind];
+  const unit = spawn(sim, kind, def.template, Side.Party, level, x, z, toggles, profile.name);
   // Discipline starts from the job, one more per level, then the traits.
-  unit.discipline = DISCIPLINE[kind] + level;
+  unit.discipline = def.discipline + level;
   applyTraits(unit, profile.traits ?? []);
-  for (const id of STARTER_GEAR[kind] ?? []) {
+  for (const id of def.starterGear) {
     const base = BASE_BY_ID.get(id);
     const item = base && plainItem(base);
     const slot = item && slotFor(item);
@@ -403,14 +331,20 @@ export function spawnMerc(
       unit.equip(slot, item);
     }
   }
-  STARTER_BELT[kind]?.forEach(([id, count], i) => {
+  for (const [i, [id, count]] of def.starterBelt.entries()) {
     const base = BASE_BY_ID.get(id);
     if (base) {
       unit.belt[i] = potionStack(base, count);
     }
-  });
-  // Recruits arrive with their skill points unspent, one per level past the first.
+  }
+  // It knows its 4 spells at rank 1, and arrives with a shard per level
+  // past the first, unspent. giveSpells turns the points into shards.
   unit.skillPoints = level - 1;
+  giveSpells(unit, def.spells);
+  // The innate passive is known from the start, at rank 1.
+  const innate = def.innate.effect.setup(unit, 1);
+  unit.passives.set(def.innate.effect.id, innate);
+  innate.start();
   unit.hp = unit.derived.maxHp;
   unit.mana = unit.derived.maxMana;
   return unit;

@@ -2,7 +2,7 @@ import type Sim from '../sim/sim';
 import { EquipSlot, ItemType } from '../sim/item';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
-import { HIT_FRACTION, type Kind, type RigUnit, isKind } from './rig';
+import { type Kind, type RigUnit, hitFraction, isKind } from './rig';
 
 // Matches the simulation's recovery after a blow.
 const RECOVERY = 0.2;
@@ -159,7 +159,7 @@ export class Views {
 // drawn blow lands on the same frame as the damage.
 // A skill with no pose of its own is drawn as a slower basic attack.
 function attackProgress(u: Unit, kind: Kind): number {
-  const h = HIT_FRACTION[kind];
+  const h = hitFraction(kind);
   if (u.cast && !SHOUTS.has(u.cast.skill.id)) {
     return progress(u.cast.t, u.cast.skill.windup, u.cast.skill.recovery, h);
   }

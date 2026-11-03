@@ -69,7 +69,7 @@ export const martyrText = (): string =>
 
 // ---------- Sanctuary ----------
 
-const wardAmount = (u: Unit, rank: number): number => 30 + rank * 15 + u.derived.matkMax;
+const wardAmount = (u: Unit, rank: number): number => 30 + rank * 8 + u.derived.matkMax;
 
 /**
  * Sanctuary tier 1. A Ward on an ally or the bearer: a pool that takes
@@ -79,7 +79,7 @@ export const WARD: Skill = {
   id: 'ward',
   name: 'Ward',
   describe: (rank) =>
-    `Gives an ally or the bearer a Ward of ${30 + rank * 15}, plus the Cleric's magic attack, that absorbs magical damage.`,
+    `Gives an ally or the bearer a Ward of ${30 + rank * 8}, plus the Cleric's magic attack, that absorbs magical damage.`,
   cost: 10,
   cooldown: 4,
   windup: 0.4,
@@ -102,7 +102,7 @@ export const WARD: Skill = {
 const SACRED_RADIUS = 2.2;
 const SACRED_TIME = 8;
 const sacredHeal = (u: Unit, rank: number): number =>
-  6 + rank * 5 + Math.round(u.derived.matkMax * 0.25);
+  6 + rank * 2.5 + Math.round(u.derived.matkMax * 0.25);
 
 // The hurt ally with the most hurt allies around it, if two or more are
 const hurtCluster = (u: Unit): Unit | null => {
@@ -117,7 +117,7 @@ export const SACRED_GROUND: Skill = {
   id: 'sacredGround',
   name: 'Sacred Ground',
   describe: (rank) =>
-    `Hallows the ground ${SACRED_RADIUS} tiles around an ally for ${SACRED_TIME} seconds. Allies on it heal ${6 + rank * 5}, plus a quarter of the Cleric's magic attack, each second.`,
+    `Hallows the ground ${SACRED_RADIUS} tiles around an ally for ${SACRED_TIME} seconds. Allies on it heal ${6 + rank * 2.5}, plus a quarter of the Cleric's magic attack, each second.`,
   cost: 18,
   cooldown: 14,
   windup: 0.7,

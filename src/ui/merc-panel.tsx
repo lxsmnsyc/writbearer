@@ -17,7 +17,6 @@ import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
-import SkillTree from './skill-tree';
 import SpellPanel from './spell-panel';
 import StatSheet from './stat-sheet';
 
@@ -104,13 +103,13 @@ export default function MercPanel(props: Props): JSX.Element {
       ? `${props.unit.discipline}${props.unit.disciplineBonus > 0 ? ` +${props.unit.disciplineBonus} from sets` : ''}, ${effectiveDiscipline(props.unit)} in a fight`
       : '';
   const followed = (): number => (version() >= 0 ? prioritiesFollowed(props.unit) : 0);
-  // Points left to spend on a tab: skill points on Skills, stat points on Stats.
+  // Points left to spend on a tab: shards on Skills, stat points on Stats.
   const points = (t: Tab): number => {
     if (version() < 0) {
       return 0;
     }
     if (t === 'skills') {
-      return props.unit.spells.length > 0 ? props.unit.shards : props.unit.skillPoints;
+      return props.unit.shards;
     }
     return t === 'stats' ? props.unit.statPoints : 0;
   };
@@ -446,18 +445,13 @@ export default function MercPanel(props: Props): JSX.Element {
           </section>
         </Show>
         <Show when={tab() === 'skills'}>
-          <Show
-            when={props.unit.spells.length > 0}
-            fallback={<SkillTree unit={props.unit} version={version()} onSpend={spent} />}
-          >
-            <SpellPanel
-              unit={props.unit}
-              version={version()}
-              onSpend={spent}
-              mode={(id) => skillMode(toggles(), id)}
-              onMode={setSkill}
-            />
-          </Show>
+          <SpellPanel
+            unit={props.unit}
+            version={version()}
+            onSpend={spent}
+            mode={(id) => skillMode(toggles(), id)}
+            onMode={setSkill}
+          />
         </Show>
         <Show when={tab() === 'stats'}>
           <StatSheet unit={props.unit} version={version()} onSpend={spent} />

@@ -117,7 +117,8 @@ import RNG from '../core/rng';
 import { RESTED, shiftMorale } from '../sim/morale';
 import { ALL_SHOUTS, SHOUTS, Shout, cooldownLeft, cry } from '../sim/shout';
 import { FIGHTERS, type Offer, rollOffer, rollStartingOffers, wageFor } from '../content/recruits';
-import { MERCS, MONSTERS, type MonsterKind, spawnMerc } from '../content/roster';
+import { JOBS } from '../content/jobs';
+import { MONSTERS, type MonsterKind, spawnMerc } from '../content/roster';
 import { applySets } from '../content/sets';
 import {
   START_LEVEL,
@@ -634,7 +635,7 @@ export default class Game {
         w.met = true;
         this.compendium.meet({
           name: w.offer.name,
-          job: MERCS[w.offer.kind].job.name,
+          job: JOBS[w.offer.kind].template.job.name,
           traits: w.offer.traits,
           level: w.offer.level,
         });
@@ -1606,7 +1607,7 @@ export default class Game {
       kind: w.offer.kind,
       x: w.x,
       z: w.z,
-      label: `${w.offer.name}, ${MERCS[w.offer.kind].job.name}`,
+      label: `${w.offer.name}, ${JOBS[w.offer.kind].template.job.name}`,
       fallen: false,
     }));
     const e = this.encounter;

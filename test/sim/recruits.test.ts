@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FIGHTERS, rollOffer, rollStartingOffers, wageFor } from '../../src/content/recruits';
+import {
+  FIGHTERS,
+  HIREABLE,
+  rollOffer,
+  rollStartingOffers,
+  wageFor,
+} from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CLEANSE, HEAL, RENEW, RESURRECTION, SMITE } from '../../src/content/skills';
 import { TRAIT_BY_ID, rollTraits } from '../../src/content/traits';
@@ -15,7 +21,7 @@ import { DREAD, POISON, STUN } from '../../src/sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority } from '../../src/sim/types';
 
 describe('offers', () => {
-  it('start a run with four recruits: every job, one more fighter, no name twice, the same for the same seed', () => {
+  it('start a run with a recruit of every hireable job and one more fighter, no name twice, the same for the same seed', () => {
     for (const seed of ['ASHEN', 'BRINE', 'COAL', 'DUSK', 'EMBER']) {
       const roll = (): string[] =>
         rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5).map(
@@ -23,10 +29,12 @@ describe('offers', () => {
         );
       const offers = roll();
       const kinds = offers.map((o) => o.split(':')[0]);
-      expect(offers).toHaveLength(4);
-      expect(new Set(kinds)).toEqual(new Set(['vanguard', 'ranger', 'cleric']));
-      expect(kinds.filter((k) => (FIGHTERS as readonly string[]).includes(k))).toHaveLength(3);
-      expect(new Set(offers.map((o) => o.split(':')[1])).size).toBe(4);
+      expect(offers).toHaveLength(HIREABLE.length + 1);
+      expect(new Set(kinds)).toEqual(new Set(HIREABLE));
+      expect(kinds.filter((k) => (FIGHTERS as readonly string[]).includes(k))).toHaveLength(
+        FIGHTERS.length + 1,
+      );
+      expect(new Set(offers.map((o) => o.split(':')[1])).size).toBe(HIREABLE.length + 1);
       expect(roll()).toEqual(offers);
     }
   });
@@ -150,6 +158,8 @@ describe('the Cleric', () => {
     const bearer = spawnBearer(sim, 0, 0);
     const cleric = spawnMerc(sim, 'cleric', 5, 1, 0);
     bearer.hp = 50;
+    // Renew alone: the Cleric's own spells would heal the bearer too.
+    cleric.skills.length = 0;
     cleric.startCast(RENEW, bearer);
     sim.run(RENEW.windup + 3.05);
     expect(bearer.hp).toBe(50 + 3 * 14);
@@ -213,6 +223,6 @@ describe('the Cleric', () => {
     });
     cleric.startCast(SMITE, soldier);
     sim.run(SMITE.windup + 0.05);
-    expect(ratios[0]).toBe(130 * 1.5);
+    expect(ratios[0]).toBe(120 * 1.5);
   });
 });

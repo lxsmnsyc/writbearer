@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { type MonsterKind, spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
+import { JOBS } from '../../src/content/jobs';
 import { Priority, Stance, type Toggles } from '../../src/sim/ai';
+import { SkillMode } from '../../src/sim/skill';
 import Sim from '../../src/sim/sim';
 import { Side } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
@@ -92,11 +94,18 @@ describe('a fight with no rendering', () => {
   });
 
   it('keeps the bearer safer in an ambush when mercs put "attacking the bearer" first', () => {
+    // Spells off, so only the order of targets differs between the two.
+    const SPELLS_OFF: Record<string, SkillMode> = {};
+    for (const merc of ['vanguard', 'ranger'] as const) {
+      for (const spell of JOBS[merc].spells) {
+        SPELLS_OFF[spell.id] = SkillMode.Off;
+      }
+    }
     const damageTaken = (priorities: Priority[]): number => {
       let total = 0;
       for (const seed of [1, 2, 3, 4, 5, 6]) {
         const f = fight(seed, AMBUSH, {
-          toggles: { stance: Stance.Guard, priorities, chase: 9, skills: {}, drinkAt: 0.3 },
+          toggles: { stance: Stance.Guard, priorities, chase: 9, skills: SPELLS_OFF, drinkAt: 0.3 },
         });
         // An ambush is sprung, not noticed: every monster starts awake.
         for (const m of f.monsters) {

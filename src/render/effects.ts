@@ -1,5 +1,6 @@
 import RNG from '../core/rng';
 import { SimEvents } from '../sim/events';
+import { EquipSlot, ItemType } from '../sim/item';
 import type Sim from '../sim/sim';
 import { DamagePriority, HealPriority, Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -271,7 +272,8 @@ export class Effects {
         fling('limb');
       }
       fling('chunk');
-      if (u.kind === 'vanguard') {
+      // A merc's shield flies off with it.
+      if (u.equipment.get(EquipSlot.Offhand)?.base.type === ItemType.Shield) {
         fling('shield', C.merc);
       }
     }

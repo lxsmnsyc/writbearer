@@ -45,6 +45,7 @@ import { C, quantize } from './palette';
 import { type Iso, type RigUnit, drawShadow, drawUnit, emissives, isKind, look } from './rig';
 import { drawSprite, isSprited, spriteLantern } from './sprites';
 import type { Views } from './view';
+import { ZONE_LOOKS } from './zones';
 
 // The frame is drawn small and scaled up with no smoothing.
 export const W = 384;
@@ -1205,34 +1206,11 @@ export default class Renderer {
       const c = iso(z.x, z.z);
       const x = Math.round(c.x);
       const y = Math.round(c.y);
-      ctx.fillStyle = color;
-      if (z.kind === 'banner' || z.kind === 'lightningRod') {
-        // A pole, with a flag or a spark at its top
-        ctx.fillStyle = C.wood;
-        ctx.fillRect(x, y - 16, 1, 16);
-        ctx.fillStyle = z.kind === 'banner' ? C.blood : C.storm;
-        ctx.fillRect(x + 1, y - 16, z.kind === 'banner' ? 5 : 2, z.kind === 'banner' ? 4 : 2);
-      } else if (z.kind === 'bait') {
-        // A straw dummy on a stake
-        ctx.fillStyle = C.cloth;
-        ctx.fillRect(x - 1, y - 9, 3, 7);
-        ctx.fillRect(x - 3, y - 7, 7, 1);
-        ctx.fillStyle = C.wood;
-        ctx.fillRect(x, y - 2, 1, 2);
-      } else if (z.kind === 'rampart') {
-        // Stones heaped into a short wall
-        ctx.fillStyle = C.stoneA;
-        ctx.fillRect(x - 5, y - 4, 11, 4);
-        ctx.fillStyle = C.stoneLine;
-        ctx.fillRect(x - 5, y - 2, 11, 1);
-      } else if (z.kind === 'spikeField') {
-        ctx.fillStyle = C.bone;
-        for (let i = 0; i < 7; i++) {
-          const a = i * 2.4;
-          const p = iso(z.x + Math.cos(a) * z.r * 0.6, z.z + Math.sin(a) * z.r * 0.6);
-          ctx.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 2);
-        }
+      const mark = ZONE_LOOKS[z.kind];
+      if (mark) {
+        mark(ctx, { x, y }, z, iso);
       } else {
+        ctx.fillStyle = color;
         ctx.fillRect(x - 1, y - 1, 3, 2);
       }
       ctx.globalAlpha = 1;

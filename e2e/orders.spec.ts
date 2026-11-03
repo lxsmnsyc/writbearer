@@ -83,10 +83,7 @@ test('clicking a merc on the canvas does not open its orders', async ({ page }) 
 test('each skill can be set to Auto, Elites or Off, and the setting stays', async ({ page }) => {
   await page.keyboard.press('1');
   const panel = page.getByRole('complementary', { name: 'Orders for Vanguard' });
-  // Recruits arrive with points unspent: learn Challenge first.
-  await panel.getByRole('tab', { name: /Skills/ }).click();
-  await panel.getByRole('button', { name: /^Challenge, rank 0/ }).click();
-  await expect(panel.getByRole('button', { name: /^Challenge, rank 1/ })).toBeVisible();
+  // Recruits arrive knowing their 4 spells.
   await panel.getByRole('tab', { name: 'Orders' }).click();
   const challenge = panel.getByRole('radiogroup', { name: 'Use Challenge' });
   await expect(challenge.getByRole('radio', { name: 'Auto' })).toHaveAttribute(
@@ -102,12 +99,15 @@ test('each skill can be set to Auto, Elites or Off, and the setting stays', asyn
   );
 });
 
-test('a skill needs the one before it in its branch, and its tier level', async ({ page }) => {
+test('a shard raises a spell a rank, up to the cap of the merc level', async ({ page }) => {
   await page.keyboard.press('1');
   const panel = page.getByRole('complementary', { name: 'Orders for Vanguard' });
   await panel.getByRole('tab', { name: /Skills/ }).click();
-  await panel.getByRole('button', { name: /^Crush, rank 0/ }).click();
-  await expect(panel.getByRole('alert')).toContainText('Needs Sunder first');
-  await panel.getByRole('button', { name: /^Shield Bash, rank 0/ }).click();
-  await expect(panel.getByRole('alert')).toContainText('Needs level 8');
+  const spells = panel.getByRole('region', { name: 'Spells' });
+  // A level 5 recruit: 4 shards, and its spells stop at rank 3.
+  await spells.getByRole('button', { name: 'Raise Crush' }).click();
+  await spells.getByRole('button', { name: 'Raise Crush' }).click();
+  await expect(spells.getByText('Rank 3/3')).toBeVisible();
+  await spells.getByRole('button', { name: 'Raise Crush' }).click();
+  await expect(spells.getByRole('alert')).toContainText('Needs level 6');
 });

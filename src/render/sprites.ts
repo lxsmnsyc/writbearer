@@ -1,5 +1,4 @@
 import {
-  HIT_FRACTION,
   type Kind,
   type Palette,
   type Part,
@@ -14,6 +13,7 @@ import {
   fill,
   handPath,
   hexAt,
+  hitFraction,
   hull,
   look,
   norm,
@@ -26,6 +26,7 @@ import {
   taper,
   v,
 } from './rig';
+import { LOOKS, isJobLook } from './looks';
 
 // Sprites for the party, after Ragnarok Online's: one shared body with its
 // actions in eight facings, and attachments for what it carries and wears.
@@ -168,7 +169,7 @@ function pose(u: RigUnit, action: Action, time: number): Pose {
   const p: Pose = { action, sk, pull: 0, nocked: false, sway: 0 };
   const a = u.atk;
   if (action === 'slash') {
-    const ph = phases(a, 0.5, HIT_FRACTION.vanguard + 0.05);
+    const ph = phases(a, 0.5, hitFraction('vanguard') + 0.05);
     reach(sk, 'R', handPath(ph, v(10, 14, 56), v(-8, 12, 108), v(30, 6, 52)), v(-1, 1, 0));
   } else if (action === 'shout') {
     // The weapon raised high, then brought down before the chest.
@@ -181,7 +182,7 @@ function pose(u: RigUnit, action: Action, time: number): Pose {
     const grip = add(sk.shoulderL, v(30, 6, 0));
     reach(sk, 'L', grip, v(0, -1, -0.3));
     if (a >= 0) {
-      const ph = phases(a, HIT_FRACTION.ranger, HIT_FRACTION.ranger + 0.08);
+      const ph = phases(a, hitFraction('ranger'), hitFraction('ranger') + 0.08);
       p.pull = ph.strike > 0 ? 1 - ph.strike : ph.windup;
       if (ph.recover > 0) {
         p.pull = 0;
@@ -189,13 +190,13 @@ function pose(u: RigUnit, action: Action, time: number): Pose {
     }
     const nock = add(grip, v(-4, 0, 0));
     const cheek = add(sk.neck, v(2, 6, 2));
-    const released = a >= HIT_FRACTION.ranger && a < 0.9 ? add(cheek, v(-8, 8, 4)) : null;
+    const released = a >= hitFraction('ranger') && a < 0.9 ? add(cheek, v(-8, 8, 4)) : null;
     reach(sk, 'R', released ?? add(nock, scale(sub(cheek, nock), p.pull)), v(-1, 1, 0));
-    p.nocked = a >= 0 && a < HIT_FRACTION.ranger && p.pull > 0;
+    p.nocked = a >= 0 && a < hitFraction('ranger') && p.pull > 0;
   } else if (action === 'cast') {
     // The weapon lifted high, then planted. The free hand is raised.
     const rest = add(sk.chest, v(10, 10, -4));
-    const ph = phases(a, HIT_FRACTION.cleric, HIT_FRACTION.cleric + 0.08);
+    const ph = phases(a, hitFraction('cleric'), hitFraction('cleric') + 0.08);
     reach(sk, 'R', handPath(ph, rest, add(sk.head, v(6, 8, 18)), rest), v(-1, 1, 0));
     reach(sk, 'L', add(sk.head, v(10, -4, 4)), v(-1, -1, 0));
   }
@@ -573,30 +574,7 @@ function sheetOf(l: Look, C: Palette): Sheet {
 
 /** The kinds drawn from sprites: the bearer, the mercs and the refugees. */
 export const isSprited = (kind: Kind): boolean =>
-  kind === 'bearer' ||
-  kind === 'vanguard' ||
-  kind === 'ranger' ||
-  kind === 'cleric' ||
-  kind === 'refugee';
-
-// A weapon as an attachment
-type Weapon = NonNullable<NonNullable<RigUnit['held']>['weapon']>;
-
-const WEAPON: Record<Weapon, Attachment> = {
-  sword: 'sword',
-  mace: 'mace',
-  bow: 'bow',
-  dagger: 'dagger',
-  staff: 'staff',
-};
-
-// A held weapon as attachments: none, or its own. A Cleric's staff is the sunburst staff.
-function held(weapon: Weapon | null, asStaff: Attachment = 'staff'): Attachment[] {
-  if (!weapon) {
-    return [];
-  }
-  return [weapon === 'staff' ? asStaff : WEAPON[weapon]];
-}
+  kind === 'bearer' || kind === 'refugee' || isJobLook(kind);
 
 /** What a party figure looks like: its body and what it carries. */
 export function lookOf(u: RigUnit): Look {
@@ -609,35 +587,18 @@ export function lookOf(u: RigUnit): Look {
     };
   }
   // A refugee: small, hooded and robed, in plain cloth, carrying nothing
-  if (u.kind === 'refugee') {
+  if (!isJobLook(u.kind)) {
     return { paper: 'cloth', size: 0.78, attachments: ['hood', 'robe'], attack: 'slash' };
   }
-  const paper = 'merc';
-  if (u.kind === 'ranger') {
-    const weapon = u.held ? u.held.weapon : 'bow';
-    return {
-      paper,
-      size: 1,
-      attachments: ['hood', ...held(weapon)],
-      attack: weapon === 'bow' ? 'shoot' : 'slash',
-    };
-  }
-  if (u.kind === 'cleric') {
-    const weapon = u.held ? u.held.weapon : 'staff';
-    return {
-      paper,
-      size: 1,
-      attachments: ['robe', 'sash', ...held(weapon, 'sunStaff')],
-      attack: 'cast',
-    };
-  }
-  const weapon = u.held ? u.held.weapon : 'sword';
-  const shield = u.held?.shield ?? true;
+  // A merc: its job's look, with what it holds
+  const job = LOOKS[u.kind];
+  const weapon = u.held ? u.held.weapon : job.bare.weapon;
+  const shield = u.held ? u.held.shield : job.bare.shield;
   return {
-    paper,
-    size: 1,
-    attachments: [...held(weapon), ...(shield ? ['towerShield' as const] : [])],
-    attack: weapon === 'bow' ? 'shoot' : 'slash',
+    paper: 'merc',
+    size: job.size,
+    attachments: job.attachments(weapon, shield),
+    attack: job.attack(weapon),
   };
 }
 

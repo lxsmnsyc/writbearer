@@ -42,6 +42,7 @@ import GiElectric from '~icons/game-icons/electric';
 import GiEnergyShield from '~icons/game-icons/energy-shield';
 import GiFallingRocks from '~icons/game-icons/falling-rocks';
 import GiFeather from '~icons/game-icons/feather';
+import GiFencer from '~icons/game-icons/fencer';
 import GiFireRay from '~icons/game-icons/fire-ray';
 import GiFlagObjective from '~icons/game-icons/flag-objective';
 import GiFlangedMace from '~icons/game-icons/flanged-mace';
@@ -109,6 +110,7 @@ import GiSkullCrack from '~icons/game-icons/skull-crack';
 import GiSkullCrossedBones from '~icons/game-icons/skull-crossed-bones';
 import GiSling from '~icons/game-icons/sling';
 import GiSparkles from '~icons/game-icons/sparkles';
+import GiSpartanHelmet from '~icons/game-icons/spartan-helmet';
 import GiSpiderAlt from '~icons/game-icons/spider-alt';
 import GiSpiderFace from '~icons/game-icons/spider-face';
 import GiSpikedFence from '~icons/game-icons/spiked-fence';
@@ -122,6 +124,7 @@ import GiSunPriest from '~icons/game-icons/sun-priest';
 import GiSunSpear from '~icons/game-icons/sun-spear';
 import GiSunbeams from '~icons/game-icons/sunbeams';
 import GiSupersonicArrow from '~icons/game-icons/supersonic-arrow';
+import GiSwordman from '~icons/game-icons/swordman';
 import GiTargetDummy from '~icons/game-icons/target-dummy';
 import GiTargeted from '~icons/game-icons/targeted';
 import GiTargeting from '~icons/game-icons/targeting';
@@ -134,6 +137,7 @@ import GiUpgrade from '~icons/game-icons/upgrade';
 import GiVillage from '~icons/game-icons/village';
 import GiVisoredHelm from '~icons/game-icons/visored-helm';
 import GiWeight from '~icons/game-icons/weight';
+import GiWizardFace from '~icons/game-icons/wizard-face';
 import GiWizardStaff from '~icons/game-icons/wizard-staff';
 import GiWolfTrap from '~icons/game-icons/wolf-trap';
 
@@ -230,6 +234,10 @@ export const ICONS = {
   vanguard: GiBlackKnightHelm,
   ranger: GiBowman,
   cleric: GiSunPriest,
+  sellsword: GiSwordman,
+  warden: GiSpartanHelmet,
+  duelist: GiFencer,
+  arcanist: GiWizardFace,
   hollowSoldier: GiDeathSkull,
   hornBearer: GiHuntingHorn,
   hollowShieldbearer: GiGuardedTower,
