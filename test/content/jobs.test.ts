@@ -59,8 +59,10 @@ describe('the job registry', () => {
       }
     }
     expect(ids.size).toBe(84);
-    // None is built yet: the upgrade nodes add patches and effects.
-    expect(JOB_KINDS.flatMap((k) => JOBS[k].upgrades).filter(isBuilt)).toEqual([]);
+    // Each upgrade node adds the line for its job when it builds the 12.
+    for (const upgrade of JOBS.arcanist.upgrades) {
+      expect(isBuilt(upgrade), upgrade.id).toBe(true);
+    }
   });
 
   it('gives every job a look, and starter gear that resolves to bases it may wear', () => {

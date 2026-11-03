@@ -41,6 +41,20 @@ export const ZONE_LOOKS: Partial<Record<string, ZoneLook>> = {
     ctx.fillStyle = C.stoneLine;
     ctx.fillRect(x - 5, y - 2, 11, 1);
   },
+  // A slab of ice, standing where the wall is
+  iceWall: (ctx, { x, y }) => {
+    ctx.fillStyle = C.frost;
+    ctx.fillRect(x - 6, y - 7, 13, 7);
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(x - 6, y - 7, 13, 1);
+  },
+  // A crack in the ground, glowing
+  volcano: (ctx, { x, y }) => {
+    ctx.fillStyle = C.blood;
+    ctx.fillRect(x - 4, y - 1, 9, 2);
+    ctx.fillStyle = C.flame;
+    ctx.fillRect(x - 2, y - 1, 5, 1);
+  },
   // Spikes scattered over the field
   spikeField: (ctx, _at, z, iso) => {
     ctx.fillStyle = C.bone;
