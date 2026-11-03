@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { JOBS } from '../../src/content/jobs';
 import { spawnMerc } from '../../src/content/roster';
-import { CHALLENGE, CRUSH, INTERCEPT } from '../../src/content/skills';
-import { SHIELD_WALL_SKILL } from '../../src/content/vanguard';
+import { CHALLENGE, CRUSH, INTERCEPT, SHIELD_WALL_SKILL } from '../../src/content/vanguard';
 import RNG from '../../src/core/rng';
 import { loadMerc, saveMerc } from '../../src/game/save';
 import {

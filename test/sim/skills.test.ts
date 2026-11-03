@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { EventPriority } from '../../src/core/event-emitter';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { CHALLENGE, PIERCING_ARROW } from '../../src/content/skills';
+import { PIERCING_ARROW } from '../../src/content/ranger';
+import { CHALLENGE } from '../../src/content/vanguard';
 import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim, { ARROW_SPEED } from '../../src/sim/sim';

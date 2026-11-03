@@ -3,12 +3,10 @@ import GiChargedArrow from '~icons/game-icons/charged-arrow';
 import GiLightningTree from '~icons/game-icons/lightning-tree';
 import GiWolfTrap from '~icons/game-icons/wolf-trap';
 import { Range } from '../../../sim/types';
-import { STATIC, staticText } from '../../passives';
-import { LIGHTNING_ROD } from '../../ranger';
-import { AIMED_SHOT, CHARGED_ARROW, SNARE } from '../../skills';
 import { job, stats } from '../stats';
 import type { JobDef } from '../types';
 import RANGER_UPGRADES from './upgrades';
+import { AIMED_SHOT, CHARGED_ARROW, LIGHTNING_ROD, SNARE, STATIC, staticText } from '../../ranger';
 
 // A striker with a bow: kills from behind the guard and punishes groups with
 // Storm. Hunters go their own way.

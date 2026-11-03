@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { CHARGED_ARROW, INTERCEPT, SNARE } from '../../src/content/skills';
-import { EAGLE_EYE, SHARED_BURDEN, VOW } from '../../src/content/passives';
+import { CHARGED_ARROW, EAGLE_EYE, SNARE } from '../../src/content/ranger';
+import { INTERCEPT, SHARED_BURDEN, VOW } from '../../src/content/vanguard';
 import { DEFAULT_TOGGLES, Stance, setToggles } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import { STAT_POINTS, gainXp, killXp, xpToNext } from '../../src/sim/progress';

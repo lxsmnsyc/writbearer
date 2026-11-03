@@ -3,12 +3,10 @@ import GiHammerDrop from '~icons/game-icons/hammer-drop';
 import GiShieldImpact from '~icons/game-icons/shield-impact';
 import GiShouting from '~icons/game-icons/shouting';
 import { Range } from '../../../sim/types';
-import { SUNDER, sunderText } from '../../passives';
-import { CHALLENGE, CRUSH, INTERCEPT } from '../../skills';
-import { SHIELD_WALL_SKILL } from '../../vanguard';
 import { job, stats } from '../stats';
 import type { JobDef } from '../types';
 import VANGUARD_UPGRADES from './upgrades';
+import { CHALLENGE, CRUSH, INTERCEPT, SHIELD_WALL_SKILL, SUNDER, sunderText } from '../../vanguard';
 
 // The guard: holds the line with a tower shield and taunts. Soldiers drill,
 // so it starts well disciplined.

@@ -7,7 +7,7 @@ import {
   wageFor,
 } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { CLEANSE, HEAL, RENEW, RESURRECTION, SMITE } from '../../src/content/skills';
+import { CLEANSE, HEAL, RENEW, RESURRECTION, SMITE } from '../../src/content/cleric';
 import { TRAIT_BY_ID, rollTraits } from '../../src/content/traits';
 import RNG from '../../src/core/rng';
 import { START_GOLD } from '../../src/game/game';

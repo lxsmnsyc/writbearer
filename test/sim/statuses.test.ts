@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnMerc, spawnMonster } from '../../src/content/roster';
-import { CHALLENGE, SHIELD_BASH } from '../../src/content/skills';
+import { CHALLENGE, SHIELD_BASH } from '../../src/content/vanguard';
 import { SimEvents } from '../../src/sim/events';
 import Sim from '../../src/sim/sim';
 import { CHILL, FREEZE, POISON, STUN } from '../../src/sim/statuses';

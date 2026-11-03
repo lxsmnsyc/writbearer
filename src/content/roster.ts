@@ -9,7 +9,7 @@ import { slotFor } from '../sim/item';
 import { BASE_BY_ID } from './items';
 import { JOBS, type JobKind, type Template } from './jobs';
 import { job, stats } from './jobs/stats';
-import { BURST, HYMN } from './skills';
+import { BURST, HYMN } from './monster-skills';
 import { applyTraits } from './traits';
 
 export type { Template } from './jobs';

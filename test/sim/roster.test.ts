@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { HYMN, SHIELD_BASH } from '../../src/content/skills';
+import { HYMN } from '../../src/content/monster-skills';
+import { SHIELD_BASH } from '../../src/content/vanguard';
 import { DEFAULT_TOGGLES, Priority, Stance } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim from '../../src/sim/sim';

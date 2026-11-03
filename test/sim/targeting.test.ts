@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { HEAL } from '../../src/content/skills';
+import { HEAL } from '../../src/content/cleric';
 import { Shout } from '../../src/sim/shout';
 import { type Skill, Targeting } from '../../src/sim/skill';
 import { setZone } from '../../src/sim/zone';

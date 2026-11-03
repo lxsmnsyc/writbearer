@@ -3,11 +3,10 @@ import GiHolyWater from '~icons/game-icons/holy-water';
 import GiMagicShield from '~icons/game-icons/magic-shield';
 import GiSunSpear from '~icons/game-icons/sun-spear';
 import { Range } from '../../../sim/types';
-import { AEGIS, SACRED_GROUND, WARD, aegisText } from '../../cleric';
-import { HEAL, SMITE } from '../../skills';
 import { job, stats } from '../stats';
 import type { JobDef } from '../types';
 import CLERIC_UPGRADES from './upgrades';
+import { AEGIS, HEAL, SACRED_GROUND, SMITE, WARD, aegisText } from '../../cleric';
 
 // A priest of the old faith, before the Church went under. It mends the
 // party and raises its dead. Its holy fire burns the Undead and the mad.

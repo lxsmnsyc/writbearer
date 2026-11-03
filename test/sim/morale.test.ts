@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { AIMED_SHOT } from '../../src/content/skills';
+import { AIMED_SHOT } from '../../src/content/ranger';
 import { DEFAULT_TOGGLES, Priority } from '../../src/sim/ai';
 import { SkillMode } from '../../src/sim/skill';
 import {
