@@ -1,7 +1,7 @@
 ---
 id: job-hooks
 title: Engine hooks for the four new jobs
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
