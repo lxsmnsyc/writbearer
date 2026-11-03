@@ -24,13 +24,17 @@ export const fireboltRatio = (rank: number): number => 100 + rank * 8;
 export const fireboltBurn = (rank: number): number => 20 + rank * 2;
 
 // The spell as this unit casts it, with its elite upgrade applied
-function castAs(u: Unit, base: Skill): Skill {
+export function castAs(u: Unit, base: Skill): Skill {
   return u.skills.find((s) => s.id === base.id) ?? base;
 }
 
 // Who the ring of a nova or the blast of a fireball hits at a spot
-const blast = (u: Unit, spell: Skill, at: { x: number; z: number }, radius: number): Victim[] =>
-  areaVictims(u, castAs(u, spell), at, radius);
+export const blast = (
+  u: Unit,
+  spell: Skill,
+  at: { x: number; z: number },
+  radius: number,
+): Victim[] => areaVictims(u, castAs(u, spell), at, radius);
 
 /**
  * Arcanist spell 1. A ring of Frost around the Arcanist that answers whatever

@@ -59,8 +59,10 @@ describe('the job registry', () => {
       }
     }
     expect(ids.size).toBe(84);
-    // None is built yet: the upgrade nodes add patches and effects.
-    expect(JOB_KINDS.flatMap((k) => JOBS[k].upgrades).filter(isBuilt)).toEqual([]);
+    // Built upgrades are the ones with a patch or an effect (the upgrade nodes add them).
+    for (const upgrade of JOB_KINDS.flatMap((k) => JOBS[k].upgrades).filter(isBuilt)) {
+      expect(upgrade.patch ?? upgrade.effect, upgrade.id).toBeDefined();
+    }
   });
 
   it('gives every job a look, and starter gear that resolves to bases it may wear', () => {
