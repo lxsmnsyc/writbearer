@@ -1,7 +1,7 @@
 ---
 name: concealment
-version: 1
-status: draft
+version: 2
+status: frozen
 defined_by: hidden-units
 ---
 
@@ -17,9 +17,12 @@ Hidden and disguised units. A hidden unit cannot be noticed or targeted by the o
 // src/sim/unit.ts
 hidden: boolean; // false by default
 disguise: string | null; // kind it is drawn and listed as, or null
+onReveal: ((by: Unit | null) => void) | null; // run once by reveal; the assassin turns here
+fuse: number; // seconds until a disguised ward turns by itself; counts down once it has joined the bearer
 
 // src/sim/concealment.ts
 export function reveal(u: Unit, by: Unit | null): void; // clears hidden and disguise, runs the unit's onReveal, emits UnitRevealed
+export default function setupConcealment(sim: Sim): void; // CheckTarget and noticing listeners, set up by src/sim/mechanics/index.ts
 
 // src/sim/events.ts
 SimEvents.UnitRevealed = 'UnitRevealed' // { source: Unit (the revealed unit), by: Unit | null }, same priority type as UnitDies
@@ -43,3 +46,4 @@ SimEvents.UnitRevealed = 'UnitRevealed' // { source: Unit (the revealed unit), b
 ## Changes
 
 - v1: initial.
+- v2 (2026-11-03, frozen): as built by hidden-units. Added `Unit.onReveal`, `Unit.fuse` and `setupConcealment(sim)`. The assassin (kind `hollowed`, `disguise: 'refugee'`) is picked 1 in 4 Escorts by `assassinAmong` in `src/game/stage.ts` and turns on a 12 s fuse after joining the bearer.

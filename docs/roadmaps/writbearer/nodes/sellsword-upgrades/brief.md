@@ -67,6 +67,7 @@ Build the Sellsword's 12 elite upgrades (3 per spell) as `builds-design` drew th
 
 ## Notes for the worker
 
+- `test/content/jobs.test.ts` asserts that each job's built upgrades are all built, one line per job (arcanist-upgrades added the Arcanist's). Add this job's line there; do not rewrite the others.
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
 - Veteran of Many Wars adds bonus ranks to Cleave: a CheckSkillRank listener (job-hooks), not a change to spent shards.
 - Weapon Habit reads the existing `ItemBase.weapon` (`WeaponKind` in `src/sim/item.ts`).
