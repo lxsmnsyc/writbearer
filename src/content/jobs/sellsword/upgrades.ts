@@ -160,9 +160,17 @@ export const BRIBED: StatusDef = {
   immunity: 0,
   flees: true,
   tick: (s, dt) => {
-    // On its last tick it is gone: removed, not killed.
-    if (s.remaining <= dt && s.unit.alive) {
-      s.unit.sim.units.delete(s.unit);
+    // On its last tick it is gone: removed, not killed, so no death listener
+    // runs and it drops nothing. It reads as not alive, so objectives that
+    // keep their own lists of units (an Ambush's or a Horde's waves) count it
+    // as gone.
+    const u = s.unit;
+    if (s.remaining <= dt && u.alive) {
+      u.alive = false;
+      u.cast = null;
+      u.swing = -1;
+      u.target = null;
+      u.sim.units.delete(u);
     }
   },
 };

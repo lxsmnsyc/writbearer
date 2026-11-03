@@ -9,7 +9,7 @@
 | Rush | Shield Rush | patch: Rush, then `TAUNTED` on the target for 3 s if the Sellsword reached it |
 | Rush | Chain Rush | effect: marks Rush's target on `UnitSkillRelease` Pre; if it dies within 2 s, releases Rush again, free, at `RUSH.aim` (the next enemy going for the bearer). Chains again on another kill |
 | Rush | Knock Aside | patch: Rush, then pushes the target 2 tiles straight away from the bearer, in 0.25-tile steps that stop at an unwalkable tile |
-| Pocket Sand | Bribe | patch: cost 12 mana, `aim` picks the nearest non-elite Human monster within 4 tiles the party can pay for. Release pays `bribeGold` (10 + 4 per level) from `sim.purse` and adds `BRIBED` (flees, 3 s). On its last tick the unit is deleted from `sim.units`: no `UnitDies`, so no drops or experience. effect: CheckTarget forbids targeting to and from a bribed unit |
+| Pocket Sand | Bribe | patch: cost 12 mana, `aim` picks the nearest non-elite Human monster within 4 tiles the party can pay for. Release pays `bribeGold` (10 + 4 per level) from `sim.purse` and adds `BRIBED` (flees, 3 s). On its last tick the unit is set `alive = false` (cast and swing cleared) and deleted from `sim.units`. No `UnitDies` is emitted, so it drops nothing and gives no experience. effect: CheckTarget forbids targeting to and from a bribed unit |
 | Pocket Sand | Play Dead | effect: `UnitDies` Pre disables the death once per `sim.area`, sets hp to 1, adds Blind buildup (Pocket Sand's amount) to enemies within 3 tiles, and adds `PLAYING_DEAD` (disables, 3 s). Monsters may not target it meanwhile (CheckTarget). When the status ends it has at least 20% health |
 | Pocket Sand | Salt the Wound | effect: `UnitDamage` Amplify, x1.15 on party hits against a blinded enemy, once per hit even with two Sellswords |
 | Hamstring | Low Blow | effect: `CheckHit` Additive, +25 crit rate against a blinded or slowed target (any status with `slow < 1`), on all its hits |
@@ -28,7 +28,7 @@ Engine and game pieces:
 - `src/game/game/listeners.ts` (`watchSim`): sets `sim.purse` to read and write `g.pack.gold`; a Tick listener calls `survivePhase(sim)` when `floor(stageIndex / AREAS_PER_LAYER)` rises and `countWeaponUse(sim, dt)` every tick; passes `event.source.bounty` to `rollDrops`.
 - Exports for tests and later nodes: `BRIBED`, `PLAYING_DEAD`, `bribeGold`, `heldKind`, `habitOf`, `countWeaponUse`, `phasesSurvived`, `survivePhase` and the number constants.
 
-Tests: `test/sim/sellsword-upgrades.test.ts`, 21 tests, at least one per upgrade, plus the save round trip of `tally`, the gold bounty in `rollDrops`, and that only Sellswords get counts. `test/content/jobs.test.ts` has the Sellsword's "all built" line.
+Tests: `test/sim/sellsword-upgrades.test.ts`, 23 tests: at least one per upgrade; an Ambush that finishes once its last wave units are bribed away; the save round trip of `tally`, and a save without `tally` loading; the gold bounty in `rollDrops`; and that only Sellswords get counts. `test/content/jobs.test.ts` has the Sellsword's "all built" line.
 
 ## Deviations
 
@@ -46,7 +46,7 @@ Tests: `test/sim/sellsword-upgrades.test.ts`, 21 tests, at least one per upgrade
 
 ## Gotchas
 
-- A bribed unit is removed from `sim.units` without `UnitDies`. Game code that holds a monster by reference (an objective or a horn post herald) sees it vanish rather than die. Only non-elite Humans can be bribed, so bosses and mini-bosses are safe.
+- A bribed unit leaves without `UnitDies`: it reads `alive === false` and is gone from `sim.units`, but no death listener runs. Objectives that keep their own unit lists (Ambush and Horde `came`, defence checks, "left" counts) read `alive`, so they count it as gone. Code that must react to it leaving has to check `alive`, not listen for deaths. Only non-elite Humans can be bribed, so bosses and mini-bosses are safe.
 - `SECOND_WIND` (sellsword node) uses a module `WeakSet` and claims each stage builds new units. In the game the party's units carry over between areas in one `Sim` (`carryParty`), so Second Wind fires once per run, not per stage. Play Dead avoids this by keying on `sim.area`. Worth a fix in a sellsword follow-up.
 - Weapon Habit has no attack speed stat to read: it shortens `unit.cooldown` on the tick a basic attack starts. Anything else that edits the cooldown on that same tick could stack with it.
 - Chain Rush and Knock Aside call `RUSH.release`; if Rush changes how it moves, these follow.
@@ -58,9 +58,9 @@ Tests: `test/sim/sellsword-upgrades.test.ts`, 21 tests, at least one per upgrade
 
 ## Verification
 
-- `pnpm vitest run test/sim/sellsword-upgrades.test.ts`: 21 passed.
+- `pnpm vitest run test/sim/sellsword-upgrades.test.ts`: 23 passed. The Ambush test fails with the `alive = false` line removed.
 - `pnpm typecheck`: pass. `pnpm lint`: pass.
-- `pnpm test`: 65 files, 580 passed, 24 skipped in one run. In an earlier run two unrelated files (`test/game/spawn.test.ts`, `test/sim/concealment.test.ts`) timed out under load from other worktrees; they pass on rerun.
+- `pnpm test` after the review fix: 65 files, 582 passed, 24 skipped. In an earlier run two unrelated files (`test/game/spawn.test.ts`, `test/sim/concealment.test.ts`) timed out under load from other worktrees; they pass on rerun.
 - `pnpm test:e2e` not run (port 5199).
 
 ## Size

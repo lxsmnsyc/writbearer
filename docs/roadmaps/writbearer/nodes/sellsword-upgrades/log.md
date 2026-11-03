@@ -6,3 +6,4 @@
 - Built all 12 in upgrades.ts; 21 tests in test/sim/sellsword-upgrades.test.ts. Added the Sellsword line to test/content/jobs.test.ts.
 - Salt the Wound test: other Amplify listeners and later steps vary, so it compares the blind/seeing ratio at Amplify.
 - Full `pnpm test`: two unrelated files timed out once under load from other worktrees; they pass on rerun.
+- Review fix (blocking): Bribe left the unit `alive`, so an Ambush or Horde with a bribed wave unit never finished. BRIBED now sets `alive = false`, clears cast, swing and target, then removes it, still without UnitDies. Added an Ambush test (fails without the fix) and save tests: tally round trip, and a save without tally.

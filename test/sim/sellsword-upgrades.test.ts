@@ -24,7 +24,11 @@ import SELLSWORD_UPGRADES, {
 } from '../../src/content/jobs/sellsword/upgrades';
 import { type MonsterKind, spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { rankOf } from '../../src/content/skills';
-import { loadMerc, saveMerc } from '../../src/game/save';
+import ObjectiveRun from '../../src/game/objective';
+import { type MercSave, loadMerc, saveMerc } from '../../src/game/save';
+import { enterStage, spawnParty } from '../../src/game/stage';
+import { generateStage } from '../../src/gen/stage';
+import { updateWarnings } from '../../src/sim/warning';
 import { rollDrops } from '../../src/gen/loot';
 import RNG from '../../src/core/rng';
 import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
@@ -213,6 +217,8 @@ describe('Pocket Sand upgrades', () => {
     expect(human.x).toBeGreaterThan(x);
     sim.run(2.5);
     expect(sim.units.has(human)).toBe(false);
+    expect(human.alive).toBe(false);
+    expect(human.cast).toBeNull();
     expect(deaths).toBe(0);
   });
 
@@ -395,9 +401,27 @@ describe('Cleave upgrades', () => {
     survivePhase(sim);
     sword.tally.set('habit.sword', 12);
     const saved = saveMerc(sword);
+    expect(saved.tally).toEqual([
+      ['phases', 1],
+      ['habit.sword', 12],
+    ]);
     const back = loadMerc(new Sim(1), saved, 0, 0);
+    expect([...back.tally]).toEqual(saved.tally);
     expect(phasesSurvived(back)).toBe(1);
     expect(habitOf(back)).toBe('sword');
+    expect(rankOf(back, 'cleave')).toBe(rankOf(sword, 'cleave'));
+  });
+
+  it('writes no counts for a merc without any, and loads a save from before them', () => {
+    const { sword } = sellswordWith('veteranOfManyWars');
+    const saved = saveMerc(sword);
+    expect('tally' in saved).toBe(false);
+    const old: MercSave = { ...saved };
+    delete old.tally;
+    const back = loadMerc(new Sim(1), old, 0, 0);
+    expect(back.tally.size).toBe(0);
+    expect(phasesSurvived(back)).toBe(0);
+    expect(habitOf(back)).toBeNull();
     expect(rankOf(back, 'cleave')).toBe(rankOf(sword, 'cleave'));
   });
 
@@ -448,5 +472,44 @@ describe('Cleave upgrades', () => {
     countWeaponUse(sim, 1);
     expect(other.tally.size).toBe(0);
     expect(sim.living(Side.Party)).toContain(other);
+  });
+});
+
+describe('a bribed wave', () => {
+  it('lets an Ambush finish once its last units are bribed away', () => {
+    const s = generateStage(new RNG(6), 12, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'ambush',
+    });
+    const sim = new Sim(1);
+    enterStage(sim, s);
+    const bearer = spawnParty(sim, s, []);
+    const run = new ObjectiveRun('ambush', s);
+    const step = (seconds: number): void => {
+      for (let t = 0; t < seconds; t += 0.05) {
+        run.update(sim, 0.05, 14);
+        updateWarnings(sim, 0.05);
+      }
+    };
+    step(2);
+    const fire = s.rest!;
+    bearer.x = fire.x - 3;
+    bearer.z = fire.z;
+    step(2);
+    const came = sim.living(Side.Monster);
+    expect(came.length).toBeGreaterThan(0);
+    let deaths = 0;
+    sim.on(SimEvents.UnitDies, EventPriority.Post, () => {
+      deaths++;
+    });
+    for (const m of came) {
+      m.addStatus(BRIBED, bearer);
+      m.tickStatuses(BRIBED.duration + 0.1);
+    }
+    expect(sim.living(Side.Monster)).toHaveLength(0);
+    step(0.05);
+    expect(run.done).toBe(true);
+    expect(deaths).toBe(0);
   });
 });
