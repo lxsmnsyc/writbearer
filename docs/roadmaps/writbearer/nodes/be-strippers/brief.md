@@ -1,7 +1,7 @@
 ---
 id: be-strippers
 title: Strippers: disable an item for the stage
-status: todo
+status: active
 priority: should
 type: feature
 story:
