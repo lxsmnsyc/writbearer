@@ -4,6 +4,8 @@ import RNG from '../../src/core/rng';
 import { RunStreams } from '../../src/core/seed';
 import watchTheft from '../../src/game/game/theft';
 import { type GroundItem, Pack } from '../../src/game/inventory';
+import ObjectiveRun from '../../src/game/objective';
+import { generateStage } from '../../src/gen/stage';
 import { loadItem, saveItem } from '../../src/game/save';
 import { rollItem } from '../../src/gen/loot';
 import { SimEvents } from '../../src/sim/events';
@@ -144,5 +146,20 @@ describe('thieves', () => {
     const saved = r.pack.items.map((i) => saveItem(i));
     const loaded = saved.map((s) => loadItem(s)?.base.id ?? '').sort((a, b) => a.localeCompare(b));
     expect(loaded).toEqual(all);
+  });
+
+  it('does not leave a Hunt waiting for a thief that got away', () => {
+    const r = rig(3);
+    const stage = generateStage(new RNG(3), 2, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'hunt',
+    });
+    const hunt = new ObjectiveRun('hunt', stage);
+    r.thief.marked = true;
+    expect(hunt.update(r.sim, DT, 5)).toBe(false);
+    runUntil(r.sim, () => !r.thief.alive);
+    expect(r.thief.alive).toBe(false);
+    expect(hunt.update(r.sim, DT, 5)).toBe(true);
   });
 });

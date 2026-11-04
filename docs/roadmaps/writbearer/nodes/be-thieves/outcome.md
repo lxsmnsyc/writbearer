@@ -15,7 +15,6 @@
 - `Pocket.pick()` takes no `rng` (the brief had `pick(rng)`): the game side owns its seeded area stream.
 - Edited `src/content/jobs/types.ts` to add `Template.thief` (not an owned or shared path); one appended field.
 - No `src/ui/log.ts` exists; the log line goes through `g.say`. `src/game/inventory.ts` is unchanged.
-- The acceptance item "a Hunt or Horde that counted it completes" is covered only by the `alive` false and removed-from-`sim.units` checks; the objectives test `alive`. No `ObjectiveRun` test.
 - The pack-screen mid-drag check was not done.
 
 ## Stubs left
@@ -25,7 +24,7 @@
 ## Gotchas
 
 - A theft takes a whole pack stack (a potion stack goes in one).
-- The once-per-area limit is one theft per thief unit, not per `sim.area`.
+- The once-per-area limit is one theft per thief unit, not keyed on the area, so several thieves in one area could empty the pack. be-monsters-deep (Tithe-Taker) should add an area-keyed guard.
 - `test/sim/concealment.test.ts` can time out under load; passes alone.
 - Ground items clear at an area change, so an item still on a dead thief's spot when the party leaves is lost, never duplicated.
 

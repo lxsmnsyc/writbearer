@@ -17,7 +17,6 @@ function goldShare(gold: number): number {
 // Id offset of the area streams thefts draw from
 const THEFT_STREAM = 7000;
 
-// Hangs the pack on the sim as the thieves' pocket.
 /** The parts of the run a theft touches. */
 export interface TheftHost {
   sim: GameState['sim'];
@@ -30,6 +29,7 @@ export interface TheftHost {
   say(line: string): void;
 }
 
+// Hangs the pack on the sim as the thieves' pocket.
 export default function watchTheft(g: TheftHost): void {
   // One stream per area, so a load into an area repeats its thefts
   let drawn: { index: number; rng: RNG } | null = null;
