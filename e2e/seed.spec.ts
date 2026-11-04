@@ -2,7 +2,7 @@ import { type Page, expect, test } from '@playwright/test';
 import { recruits, titlePanel } from './support/guild';
 
 const offers = async (page: Page): Promise<string[]> => {
-  await expect.poll(async () => (await recruits(page)).length).toBe(4);
+  await expect.poll(async () => (await recruits(page)).length).toBe(5);
   return (await recruits(page)).map((r) => `${r.name}/${r.kind}`);
 };
 

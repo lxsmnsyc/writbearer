@@ -63,6 +63,30 @@ describe('each layer', () => {
       expect(two, `layer ${layer}`).toBeLessThanOrEqual(2);
     }
   });
+
+  it('boss is beaten as often by a Warden, a Duelist and an Arcanist, with no Cleric', () => {
+    for (const layer of [1, 2, 3]) {
+      const won = SEEDS.filter((s) => fight(s, layer, ['warden', 'duelist', 'arcanist'])).length;
+      expect(won, `layer ${layer}`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('boss is beaten in at least half the fights with each new job in the party', () => {
+    // Each new job takes the place of the old job in its slot.
+    const parties: Offer['kind'][][] = [
+      ['warden', 'ranger', 'cleric'],
+      ['vanguard', 'sellsword', 'cleric'],
+      ['vanguard', 'duelist', 'cleric'],
+      ['vanguard', 'arcanist', 'cleric'],
+    ];
+    for (const party of parties) {
+      let won = 0;
+      for (const layer of [1, 2, 3]) {
+        won += SEEDS.filter((s) => fight(s, layer, party)).length;
+      }
+      expect(won, party.join(', ')).toBeGreaterThanOrEqual(SEEDS.length * 1.5);
+    }
+  }, 120000);
 });
 
 describe('the Gatekeeper', () => {

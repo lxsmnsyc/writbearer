@@ -9,8 +9,8 @@ test('a run is saved as it enters the first area, and can be continued after a r
     0,
   );
   await enterGuild(page);
-  // Only a Vanguard or a Ranger lets the Guild send the party out.
-  const fighter = (await recruits(page)).find((r) => r.kind === 'vanguard' || r.kind === 'ranger')!;
+  // Every job but the Cleric is a fighter, and lets the Guild send the party out.
+  const fighter = (await recruits(page)).find((r) => r.kind !== 'cleric')!;
   const name = fighter.name;
   await hire(page, fighter);
 

@@ -220,11 +220,11 @@ describe('Elemental Sense', () => {
 });
 
 describe('the Arcanist job', () => {
-  it('has 4 spells in cast order, Elemental Sense and its look, and is not offered yet', () => {
+  it('has 4 spells in cast order, Elemental Sense and its look, and is offered', () => {
     const def = JOBS.arcanist;
     expect(def.spells.map((s) => s.id)).toEqual(SPELLS);
     expect(def.spells).toEqual([FROST_NOVA, FIREBALL, FROST_SHARD, FIREBOLT]);
-    expect(def.hireable).toBe(false);
+    expect(def.hireable).toBe(true);
     expect(def.role).toBe('striker');
     expect(Object.keys(def.icons).sort()).toEqual([...SPELLS].sort());
     expect(def.spells[0].cost).toBe(14);

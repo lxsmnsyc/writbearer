@@ -1,36 +1,87 @@
 import { type Page, expect, test } from '@playwright/test';
 import { enterGuild, hire, recruits, talkTo, titlePanel } from './support/guild';
 
-// The hireable jobs, read from the game the dev server runs. The job modules
-// import their icons through the icons plugin, which only the server has.
-async function hireable(page: Page): Promise<string[]> {
+// A list of job kinds from the recruits module the dev server runs, such as
+// HIREABLE. The job modules import their icons through the icons plugin,
+// which only the server has.
+async function kinds(page: Page, name: 'HIREABLE' | 'FIGHTERS'): Promise<string[]> {
   const path = '/src/content/recruits.ts';
-  return page.evaluate(async (from) => {
-    const mod: unknown = await import(from);
-    const list: unknown =
-      mod !== null && typeof mod === 'object' && 'HIREABLE' in mod ? mod.HIREABLE : [];
-    const kinds: string[] = [];
-    for (const kind of Array.isArray(list) ? list : []) {
-      kinds.push(String(kind));
-    }
-    return kinds;
-  }, path);
+  return page.evaluate(
+    async ([from, key]) => {
+      const mod: unknown = await import(from);
+      const list: unknown =
+        mod !== null && typeof mod === 'object'
+          ? Object.getOwnPropertyDescriptor(mod, key)?.value
+          : [];
+      const out: string[] = [];
+      for (const kind of Array.isArray(list) ? list : []) {
+        out.push(String(kind));
+      }
+      return out;
+    },
+    [path, name] as const,
+  );
 }
 
-test('a run begins in the Guild House: a recruit of every hireable job and one more, the first one free', async ({
+// The names of the Guild House recruits of the seed ASHEN, cheapest first,
+// from the same draw the game makes.
+async function byWage(page: Page): Promise<string[]> {
+  const paths = ['/src/content/recruits.ts', '/src/core/seed.ts', '/src/game/stage.ts'] as const;
+  return page.evaluate(async (from) => {
+    const read = (mod: unknown, key: string): unknown =>
+      mod !== null && typeof mod === 'object'
+        ? Object.getOwnPropertyDescriptor(mod, key)?.value
+        : undefined;
+    const content: unknown = await import(from[0]);
+    const seed: unknown = await import(from[1]);
+    const stage: unknown = await import(from[2]);
+    const Streams = read(seed, 'RunStreams');
+    const roll = read(content, 'rollStartingOffers');
+    if (typeof Streams !== 'function' || typeof roll !== 'function') {
+      return [];
+    }
+    const streams: unknown = Reflect.construct(Streams, ['ASHEN']);
+    const get = read(Object.getPrototypeOf(streams), 'get');
+    if (typeof get !== 'function') {
+      return [];
+    }
+    // Stream.Recruits is 'recruits', a const enum the browser cannot import.
+    const rng: unknown = Reflect.apply(get, streams, [1, 'recruits']);
+    const offers: unknown = Reflect.apply(roll, null, [rng, read(stage, 'START_LEVEL')]);
+    const list: { name: string; wage: number }[] = [];
+    for (const o of Array.isArray(offers) ? offers : []) {
+      list.push({ name: String(read(o, 'name')), wage: Number(read(o, 'wage')) });
+    }
+    list.sort((x, y) => x.wage - y.wage);
+    const names: string[] = [];
+    for (const o of list) {
+      names.push(o.name);
+    }
+    return names;
+  }, paths);
+}
+
+// The Guild House offers five recruits, drawn by slot.
+const OFFERS = 5;
+
+test('a run begins in the Guild House: five recruits of five jobs, the first one free', async ({
   page,
 }) => {
   await page.goto('/?seed=ASHEN');
   await expect(titlePanel(page)).toBeVisible();
   await enterGuild(page);
-  const HIREABLE = await hireable(page);
+  const HIREABLE = await kinds(page, 'HIREABLE');
+  const FIGHTERS = await kinds(page, 'FIGHTERS');
   const waiting = await recruits(page);
-  expect(waiting).toHaveLength(HIREABLE.length + 1);
-  expect(new Set(waiting.map((r) => r.name)).size).toBe(HIREABLE.length + 1);
-  expect(new Set(waiting.map((r) => r.kind))).toEqual(new Set(HIREABLE));
+  expect(waiting).toHaveLength(OFFERS);
+  expect(new Set(waiting.map((r) => r.name)).size).toBe(OFFERS);
+  expect(new Set(waiting.map((r) => r.kind)).size).toBe(OFFERS);
+  for (const r of waiting) {
+    expect(HIREABLE).toContain(r.kind);
+  }
 
   const party = page.getByRole('navigation', { name: 'Party' });
-  const fighter = waiting.find((r) => r.kind !== 'cleric')!;
+  const fighter = waiting.find((r) => FIGHTERS.includes(r.kind))!;
   await hire(page, fighter);
   await expect(party.getByRole('button')).toHaveCount(1);
   await expect(party.getByRole('button').first()).toContainText(fighter.name);
@@ -43,16 +94,36 @@ test('a run begins in the Guild House: a recruit of every hireable job and one m
 test('the same seed offers the same recruits', async ({ page }) => {
   const names = async (): Promise<string[]> => {
     await page.goto('/?seed=WRIT');
-    const HIREABLE = await hireable(page);
-    await expect.poll(async () => (await recruits(page)).length).toBe(HIREABLE.length + 1);
+    await expect.poll(async () => (await recruits(page)).length).toBe(OFFERS);
     return (await recruits(page)).map((r) => `${r.name}/${r.kind}`);
   };
   expect(await names()).toEqual(await names());
 });
 
+test('four of the five may be hired; the fifth stays at the Guild House', async ({ page }) => {
+  test.setTimeout(180_000);
+  await enterGuild(page);
+  const party = page.getByRole('navigation', { name: 'Party' });
+  // The dearest one first, which the Guild pays, so the purse covers the
+  // three cheapest after it.
+  const order = await byWage(page);
+  for (let n = 1; n <= 4; n++) {
+    const next = (await recruits(page)).find((r) => r.name === order[n === 1 ? 4 : n - 2])!;
+    await hire(page, next);
+    await expect(party.getByRole('button')).toHaveCount(n);
+  }
+  const fifth = await recruits(page);
+  expect(fifth).toHaveLength(1);
+  expect(fifth[0].name).toBe(order[3]);
+  const dialog = await talkTo(page, fifth[0]);
+  await dialog.getByRole('button', { name: /Take|Hire/ }).click();
+  await expect(dialog.getByText('The party is full: 4 mercs at most.')).toBeVisible();
+  await expect(party.getByRole('button')).toHaveCount(4);
+  expect(await recruits(page)).toHaveLength(1);
+});
+
 test('the road out stays shut until a fighter is hired', async ({ page }) => {
   await enterGuild(page);
-  const HIREABLE = await hireable(page);
   const cleric = (await recruits(page)).find((r) => r.kind === 'cleric')!;
   await hire(page, cleric);
   const canvas = page.locator('canvas');
@@ -70,5 +141,5 @@ test('the road out stays shut until a fighter is hired', async ({ page }) => {
   await page.mouse.click(box.x + sx * box.width, box.y + sy * box.height);
   await page.waitForTimeout(3000);
   // Still in the Guild House, its other recruits waiting
-  expect((await recruits(page)).length).toBe(HIREABLE.length);
+  expect((await recruits(page)).length).toBe(OFFERS - 1);
 });

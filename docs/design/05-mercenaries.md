@@ -5,7 +5,7 @@
 - Up to 4 active mercs and 2 on the bench.
 - Four keeps the AI readable and the screen clear. It still leaves room for a tank, a damage dealer, a support and one flexible slot.
 - The bench can only be swapped at a Camp or a Town.
-- The run starts with 1 merc, picked from 3 offers rolled from the seed.
+- The run starts at the Guild House with 5 recruits rolled from the seed, drawn by slot. The player hires up to 4 of them.
 
 ### Recruiting window
 
@@ -26,9 +26,9 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 
 ### In the game so far
 
-- A run begins at the Guild House at the rim, before the first phase: a small, lit, safe field where four recruits wait, rolled from the `recruits` stream. The same seed gives the same recruits. There is one of each job and one more fighter, each under a different name. Clicking one walks the bearer over to talk to it. The Guild pays for the first hired; the others cost their wage from the Guild's purse of 300 gold, three wages of a level 6 merc, so a full party of four can set out. A quartermaster's stall sells potions. The road east into the first phase opens once a Vanguard or a Ranger has joined: a Cleric alone cannot kill what attacks the bearer.
-- The jobs offered so far are the Vanguard, the Ranger and the Cleric. Each offer has a name, 1 or 2 traits and a wage.
-- In the story, no one is hired after the Guild House: no wandering mercs by fires, and none at Camps or Towns. Losses are made good at a Temple, or not at all. In endless mode an area may hold a wandering merc by a campfire, 60% of the time, and Camps and Towns have one. Clicking it opens its offer. Hiring costs its wage in gold. The party holds 4 mercs at most, living or dead.
+- A run begins at the Guild House at the rim, before the first phase: a small, lit, safe field where five recruits wait, rolled from the `recruits` stream. The same seed gives the same recruits. They are drawn by slot: a guard, a striker, a support and two more of any job, five different jobs, each under a different name (see [starting offers](12-new-jobs.md#starting-offers)). Clicking one walks the bearer over to talk to it. The player hires up to four; the fifth stays at the Guild House. The Guild pays for the first hired; the others cost their wage from the Guild's purse of 300 gold, three wages of a level 6 merc. A quartermaster's stall sells potions. The road east into the first phase opens once a fighter has joined, any job but the Cleric: a Cleric alone cannot kill what attacks the bearer.
+- All seven starting jobs are offered: Vanguard and Warden (guards), Ranger, Sellsword, Duelist and Arcanist (strikers), and Cleric (support). Each offer has a name, 1 or 2 traits and a wage.
+- In the story, no one is hired after the Guild House: no wandering mercs by fires, and none at Camps or Towns. Losses are made good at a Temple, or not at all. In endless mode an area may hold a wandering merc by a campfire, 60% of the time, and Camps and Towns have one, of any hireable job. Clicking it opens its offer. Hiring costs its wage in gold. The party holds 4 mercs at most, living or dead.
 - Traits in the game: Brave (dread never takes hold), Cowardly (runs from the nearest enemy below 25% health), Greedy (×1.5 wage), Loyal (stays closer, chases 2 tiles less, ×0.9 wage), Glory-seeker (goes for elites first), Veteran (one more target priority, ×1.2 wage), Bloodthirsty (chases 3 tiles further) and Devout (dread builds up at half the rate). Drunkard and Hates a job wait for morale.
 - The Cleric's Mercy branch is in the game up to Resurrection, and Smite opens Inquisition. Sanctuary waits for Ward to have magical damage to absorb.
 - A killing blow of 30% of max health or more, or a critical one, tears the body apart. A torn merc cannot be resurrected.
@@ -175,9 +175,8 @@ Occult Dread lowers morale, so it also lowers effective Discipline for a while.
 
 ## Skill trees
 
-- Each job has 3 branches of 5 skills. The last skill of each branch is a capstone.
+- In the game, each job has 4 spells, 1 innate passive and 12 elite upgrades, raised with shards ([builds](16-builds.md)). The trees of [skill trees](09-skill-trees.md) are the pool they came from.
 - Skills are active or passive. Both use the same `setup` shape. See [combat engine](03-combat-engine.md#skill-definition).
-- The rules and every tree are in [skill trees](09-skill-trees.md).
 
 ## Autonomy
 
@@ -292,5 +291,5 @@ Based on rAthena, where a dead character stays on the ground until it is resurre
 | Necromancer | Summons | Occult | Raises dead enemies. Morale penalty with Clerics. |
 
 - Every job is available from the first run.
-- The 3 offers at the start of a run come from the simpler jobs: Sellsword, Vanguard, Warden, Duelist, Ranger, Arcanist and Cleric.
+- The 5 recruits at the start of a run come from the simpler jobs: Sellsword, Vanguard, Warden, Duelist, Ranger, Arcanist and Cleric.
 - The other jobs appear later through taverns, events and wandering mercs.

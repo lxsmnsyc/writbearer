@@ -77,7 +77,7 @@ export function generateWaystation(
 }
 
 /** How many recruits wait at the Guild House. */
-export const GUILD_RECRUITS = 4;
+export const GUILD_RECRUITS = 5;
 
 /**
  * The Guild House at the rim, where a run begins: a small safe field where
@@ -89,7 +89,7 @@ export function generateGuild(rng: RNG, ahead: Ahead[], sides?: readonly ExitSid
   const { stage, add } = smallField(rng, 0, 'guild', ahead, 0, sides);
   const mid = { x: stage.width / 2, z: stage.depth / 2 };
   stage.recruits = Array.from({ length: GUILD_RECRUITS }, (_, i) => ({
-    x: mid.x - 4.5 + i * 3,
+    x: mid.x - 5 + i * 2.5,
     z: mid.z - 4,
   }));
   add('banner', mid.x - 6.5, mid.z - 5.5);

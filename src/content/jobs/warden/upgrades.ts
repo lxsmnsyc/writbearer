@@ -102,7 +102,7 @@ const SHIELD_WARD_CAP = 0.5;
 
 /**
  * During Cover, the Warden takes 40% of a hit Interpose shares instead of
- * 70%; the bearer is still spared the 70%. What it takes becomes Ward.
+ * INTERPOSE_SHARE; the bearer is still spared that share. What it takes becomes Ward.
  */
 const LIVING_SHIELD: Passive = {
   id: 'livingShield',

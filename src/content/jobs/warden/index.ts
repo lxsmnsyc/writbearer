@@ -10,7 +10,7 @@ import WARDEN_UPGRADES from './upgrades';
 
 // The bodyguard: stands by the bearer and punishes anyone who touches them.
 // Spells, innate and statuses are drawn in docs/design/16-builds.md and live
-// in ./spells. Not offered until roster-balance.
+// in ./spells.
 
 export * from './spells';
 
@@ -26,7 +26,7 @@ const WARDEN: JobDef = {
   discipline: 40,
   role: 'guard',
   fighter: true,
-  hireable: false,
+  hireable: true,
   blurb: 'Bodyguard. Takes the blows meant for the bearer and hunts whoever struck.',
   spells: [COVER, EXECUTE, TRIPWIRE, PURSUE],
   innate: { name: 'Interpose', effect: INTERPOSE, describe: interposeText },

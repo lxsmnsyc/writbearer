@@ -56,7 +56,9 @@ The work still to build from these notes is planned in [roadmaps](../roadmaps/RE
 | Compendium | Hides monster, boss, card and unique details until discovered once. Only the UI hides them. |
 | Squad sets | Added after uniques are tested. |
 | Stages | Open fields, as in Diablo 2, joined seamlessly. Paths collapse behind the party. Bosses fight in closed arenas. |
-| Recruiting | Only in phases 1 and 2. Phases 3 and 4 are for building the party. |
+| Recruiting | Only in phases 1 and 2. Phases 3 and 4 are for building the party. In the game so far, the story hires only at the Guild House. |
+| Starting recruits | Five at the Guild House, drawn by slot: a guard, a striker, a support and two more, five jobs. The player hires up to four. |
+| Builds | Model B of doc 16: 4 spells, 1 innate and 12 elite upgrades per job; shards raise spell ranks. |
 | Shortcuts | No supplies resource. A shortcut costs the skipped content and saves souls. |
 | Controls | Click-to-move and WASD both work. Every key can be rebound. |
 | Pause | Menus pause the game. |

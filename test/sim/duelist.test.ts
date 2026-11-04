@@ -62,11 +62,11 @@ function toggles(...on: string[]): Toggles {
 }
 
 describe('the Duelist job', () => {
-  it('has 4 spells in cast order and Riposte, and is not offered yet', () => {
+  it('has 4 spells in cast order and Riposte, and is offered', () => {
     const def = JOBS.duelist;
     expect(def.spells.map((s) => s.id)).toEqual(['duel', 'shadowstep', 'lunge', 'flurry']);
     expect(def.innate.effect).toBe(RIPOSTE);
-    expect(def.hireable).toBe(false);
+    expect(def.hireable).toBe(true);
     expect(def.role).toBe('striker');
   });
 

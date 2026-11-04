@@ -1,5 +1,5 @@
 import type RNG from '../core/rng';
-import { JOBS, JOB_KINDS, type JobDef, type JobKind } from './jobs';
+import { JOBS, JOB_KINDS, type JobDef, type JobKind, type Role } from './jobs';
 import { TRAIT_BY_ID, rollTraits } from './traits';
 import { wageFactor } from './uniques';
 
@@ -96,13 +96,49 @@ export function rollOffer(
   };
 }
 
+/** How many recruits wait at the Guild House at the start of a run. */
+export const STARTING_OFFERS = 5;
+
+/** The slots drawn first at the Guild House, one job each. */
+export const SLOTS: readonly Role[] = ['guard', 'striker', 'support'];
+
 /**
- * The recruits at the Guild House at the start of a run: one of each job
- * and one more fighter, each under a different name.
+ * The jobs of the Guild House recruits: one per slot, then any others up to
+ * STARTING_OFFERS, no job twice. If none of them is a fighter, the last
+ * one drawn gives way to one.
+ */
+export function rollStartingJobs(rng: RNG): JobKind[] {
+  const jobs: JobKind[] = [];
+  const free = (kind: JobKind): boolean => !jobs.includes(kind);
+  // One job for each slot
+  for (const role of SLOTS) {
+    const kinds = hireable((def) => def.role === role).filter(free);
+    if (kinds.length > 0) {
+      jobs.push(rng.pick(kinds));
+    }
+  }
+  // Then any job not drawn yet
+  while (jobs.length < STARTING_OFFERS) {
+    const kinds = HIREABLE.filter(free);
+    if (kinds.length === 0) {
+      break;
+    }
+    jobs.push(rng.pick(kinds));
+  }
+  // A Cleric alone cannot kill what attacks the bearer.
+  const fighters = FIGHTERS.filter(free);
+  if (!jobs.some((kind) => JOBS[kind].fighter) && fighters.length > 0) {
+    jobs[jobs.length - 1] = rng.pick(fighters);
+  }
+  return rng.shuffle(jobs);
+}
+
+/**
+ * The recruits at the Guild House at the start of a run, drawn by slot
+ * (rollStartingJobs), each under a different name.
  */
 export function rollStartingOffers(rng: RNG, level: number): Offer[] {
-  const jobs = [...HIREABLE, rng.pick(FIGHTERS)];
-  rng.shuffle(jobs);
+  const jobs = rollStartingJobs(rng);
   const offers: Offer[] = [];
   for (const kind of jobs) {
     let offer = rollOffer(rng, level, [kind]);

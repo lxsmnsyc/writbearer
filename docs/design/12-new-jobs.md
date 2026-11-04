@@ -6,8 +6,7 @@ Draft. Six jobs to add to the fourteen in [mercenaries](05-mercenaries.md#jobs).
 
 | State | Jobs |
 |---|---|
-| In the game | Vanguard, Ranger, Cleric |
-| Full trees designed, not built | Sellsword, Warden, Duelist, Arcanist. See [skill trees](09-skill-trees.md#starting-jobs). |
+| In the game | Vanguard, Warden, Ranger, Sellsword, Duelist, Arcanist, Cleric. Each has 4 spells, an innate and 12 elite upgrades ([builds](16-builds.md), [in the game so far](09-skill-trees.md#in-the-game-so-far)). |
 | Outlines only | Bard, Alchemist, Sapper, Beastmaster, Scout, Hexblade, Necromancer. See [other jobs](09-skill-trees.md#other-jobs). |
 | New in this file | Lamplighter, Berserker, Monk, Sage, Medium, Arbalist |
 
@@ -259,16 +258,16 @@ Zones on the ground already exist. See `src/sim/zone.ts`.
 
 ## Starting offers
 
-In the story, the Guild House is the only place to hire. So its four recruits must cover a party and still vary from run to run.
+In the story, the Guild House is the only place to hire. So its five recruits must cover a party and still vary from run to run. The player hires up to four of them.
 
-| Recruit | Drawn from |
-|---|---|
-| A guard | Vanguard, Warden, Monk |
-| A striker | Ranger, Duelist, Arcanist, Berserker, Arbalist, Sellsword |
-| A support | Cleric, Sage, Medium, Bard, Lamplighter |
-| One more | Any job, the outlines included once they are built |
+| Recruit | Drawn from | In the game so far |
+|---|---|---|
+| A guard | Vanguard, Warden, Monk | Vanguard, Warden |
+| A striker | Ranger, Duelist, Arcanist, Berserker, Arbalist, Sellsword | Ranger, Sellsword, Duelist, Arcanist |
+| A support | Cleric, Sage, Medium, Bard, Lamplighter | Cleric |
+| Two more | Any job, the outlines included once they are built | Any of the seven |
 
 - No two recruits share a job.
 - The road out still needs a recruit that can kill what attacks the bearer. A guard or a striker counts.
-- The deserter Event and endless mode's wandering mercs draw from every job.
+- The deserter Event and endless mode's wandering mercs draw from every hireable job.
 - Every job is available from the first run. There are no unlocks.
