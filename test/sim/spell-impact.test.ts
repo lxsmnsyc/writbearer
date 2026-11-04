@@ -20,7 +20,7 @@ const PACK_LEVEL = 6;
 // Two Crawlers go for whoever is nearest, two Hollowed run for the bearer.
 const PACK = ['crawler', 'crawler', 'hollowed', 'hollowed'] as const;
 const LIMIT = 180;
-const SEEDS = [1, 2, 3, 4];
+const SEEDS = Array.from({ length: 32 }, (_, i) => i + 1);
 
 interface Fight {
   // Seconds to the last kill, LIMIT if the pack outlasts it
@@ -138,15 +138,17 @@ describe('spell impact', () => {
     }
   });
 
-  it('clears faster with the pack upgrade of the Duelist (Whirlwind) and the Warden (Trap Field)', () => {
-    for (const [kind, upgrade] of [
-      ['duelist', 'whirlwind'],
-      ['warden', 'trapField'],
-    ] as const) {
-      const up = measure(kind, true, upgrade);
-      const r = results.get(kind)!;
-      report(`impact ${kind} + ${upgrade}: ${round(up)}`);
-      expect(up.time, kind).toBeLessThan(r.basic.time);
-    }
+  it("clears faster with the Duelist's Whirlwind than with its base spells", () => {
+    const up = measure('duelist', true, 'whirlwind');
+    report(`impact duelist + whirlwind: ${round(up)}`);
+    expect(up.time).toBeLessThan(results.get('duelist')!.spells.time);
+  });
+
+  it("clears faster with the Warden's Trap Field than with basic attacks", () => {
+    // Trap Field slows and marks but deals no damage: against its base
+    // spells it is faster on some seeds and slower on others.
+    const up = measure('warden', true, 'trapField');
+    report(`impact warden + trapField: ${round(up)}`);
+    expect(up.time).toBeLessThan(results.get('warden')!.basic.time);
   });
 });

@@ -1,27 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
-import { enterGuild, hire, recruits, talkTo, titlePanel } from './support/guild';
-
-// A list of job kinds from the recruits module the dev server runs, such as
-// HIREABLE. The job modules import their icons through the icons plugin,
-// which only the server has.
-async function kinds(page: Page, name: 'HIREABLE' | 'FIGHTERS'): Promise<string[]> {
-  const path = '/src/content/recruits.ts';
-  return page.evaluate(
-    async ([from, key]) => {
-      const mod: unknown = await import(from);
-      const list: unknown =
-        mod !== null && typeof mod === 'object'
-          ? Object.getOwnPropertyDescriptor(mod, key)?.value
-          : [];
-      const out: string[] = [];
-      for (const kind of Array.isArray(list) ? list : []) {
-        out.push(String(kind));
-      }
-      return out;
-    },
-    [path, name] as const,
-  );
-}
+import { enterGuild, hire, kinds, recruits, talkTo, titlePanel } from './support/guild';
 
 // The names of the Guild House recruits of the seed ASHEN, cheapest first,
 // from the same draw the game makes.

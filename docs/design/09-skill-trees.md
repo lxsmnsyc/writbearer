@@ -55,6 +55,7 @@ Where the game differs from doc 16, because doc 16's numbers fail the layer-1 bo
 - Heal gains 20 a rank, not 10.
 - Crush costs 10 mana with a 6 s cooldown, not 8 and 3.
 - Charged Arrow's cooldown is 3.5 s, not 2.5 s.
+- A Storm arrow's chain (Charged Arrow, and the Arc Volley and Thunderhead arrows) hits for 1.5 times the arrow's ratio. Doc 16 gives the chain no ratio of its own; without it the Ranger clears a pack only 1.48 times as fast with its spells (32 seeds), below the 1.5 the roadmap asks.
 - Interpose works within 3 tiles of the bearer, not 2, and takes 80% of the hit, not 70%. The Warden also chases nothing farther than 4 tiles from the bearer. Without these a party with no Cleric loses every boss fight.
 
 Other notes:

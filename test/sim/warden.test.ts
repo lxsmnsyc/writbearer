@@ -77,6 +77,19 @@ describe('Interpose', () => {
     expect(foe.statuses.get(MARKED.id)?.remaining).toBeCloseTo(6, 0);
   });
 
+  it('still takes its share at 2.5 tiles from the bearer', () => {
+    const sim = new Sim(1);
+    alwaysHit(sim);
+    const bearer = spawnBearer(sim, 0, 0);
+    const warden = spawnMerc(sim, 'warden', 10, -2.5, 0);
+    const foe = spawnMonster(sim, 'hollowSoldier', 5, 3, 0);
+    const hp = warden.hp;
+    const bearerHp = bearer.hp;
+    blow(foe, bearer, 100);
+    expect(bearerHp - bearer.hp).toBe(20);
+    expect(hp - warden.hp).toBe(80);
+  });
+
   it('takes nothing from farther away, but the attacker is still marked', () => {
     const sim = new Sim(1);
     alwaysHit(sim);

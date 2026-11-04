@@ -10,6 +10,7 @@ import {
   copyToggles,
   skillMode,
 } from '../sim/ai';
+import { SimEvents } from '../sim/events';
 import { SkillMode } from '../sim/skill';
 import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
@@ -80,6 +81,14 @@ interface Props {
  * One merc's sheet: standing orders, skill tree and stats. The game is
  * paused while it is open.
  */
+// How far the merc chases with its orders at `chase`, after what its job
+// and traits change, such as the Warden's Interpose
+function chaseOf(unit: Unit, chase: number): number {
+  const check = { id: 'CheckChase', disabled: false, source: unit, value: chase };
+  unit.sim.emit(SimEvents.CheckChase, check);
+  return check.value;
+}
+
 export default function MercPanel(props: Props): JSX.Element {
   const [tab, setTab] = createSignal<Tab>('orders');
   // Bumped when a skill or stat point is spent, so the panel reads the merc again.
@@ -438,7 +447,7 @@ export default function MercPanel(props: Props): JSX.Element {
               }}
             />
             <p class="text-xs text-neutral-500">
-              Chases enemies up to {toggles().chase} tiles from the bearer.
+              Chases enemies up to {chaseOf(props.unit, toggles().chase)} tiles from the bearer.
             </p>
           </section>
         </Show>

@@ -10,3 +10,5 @@
 - Inbox check: doc values with the rest of this branch: Heal +10 -> VRC 4 6 5 (layer 1 fails); Crush 8/3 -> 1 6 6; Charged Arrow 2.5 s -> 1 6 5 and boss.test Brood Mother 0 of 4 needed. All three still fail; reverted.
 - e2e: save.spec picked Vanguard/Ranger, ASHEN now draws neither; seed.spec expected 4. Both one-line fixes. Fifth-recruit test hires the dearest first (free), then the three cheapest, wages read from the same draw in the page.
 - Full checks green: typecheck, lint, test (69 files, 685 passed, 3 skipped), e2e 25 passed.
+- Review round: impact over 32 seeds gave Ranger x1.48. Chain reach 3 -> 4: no change. Lightning Rod 35 -> 45 / 55 + 5r: x1.50 / x1.53, but VRC layer 1 fell to 2 / 3 of 6. Chain at 1.25 / 1.5 / 2 times the arrow: x1.51 / x1.54 / x1.73, boss tests pass. Kept 1.5. Merc sheet shows the capped chase; Interpose case at 2.5 tiles; Whirlwind compared with base spells; save.spec reads FIGHTERS through the shared `kinds` helper.
+- Review checks: fast check green (one concealment timeout, passed on rerun); e2e first run 2 failed under load (4.4 min), both passed alone, full rerun 25 passed.
