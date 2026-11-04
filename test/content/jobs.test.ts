@@ -63,6 +63,9 @@ describe('the job registry', () => {
     for (const upgrade of JOBS.arcanist.upgrades) {
       expect(isBuilt(upgrade), upgrade.id).toBe(true);
     }
+    for (const upgrade of JOBS.cleric.upgrades) {
+      expect(isBuilt(upgrade), upgrade.id).toBe(true);
+    }
     for (const upgrade of JOBS.duelist.upgrades) {
       expect(isBuilt(upgrade), upgrade.id).toBe(true);
     }
