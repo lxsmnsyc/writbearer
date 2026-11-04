@@ -64,4 +64,15 @@ export const ZONE_LOOKS: Partial<Record<string, ZoneLook>> = {
       ctx.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 2);
     }
   },
+  // Warden's Trap Field: wires strung across the field, through its middle
+  trapField: (ctx, _at, z, iso) => {
+    ctx.fillStyle = C.bone;
+    for (let i = 0; i < 3; i++) {
+      const a = (i * Math.PI) / 3;
+      for (let t = -0.8; t <= 0.8; t += 0.2) {
+        const p = iso(z.x + Math.cos(a) * z.r * t, z.z + Math.sin(a) * z.r * t);
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+      }
+    }
+  },
 };

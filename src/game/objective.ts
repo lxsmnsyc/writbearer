@@ -1,5 +1,6 @@
 import { giveAffixes } from '../content/affixes';
 import { MINI_BOSSES, spawnMiniBoss } from '../content/minibosses';
+import { ambushersArrive, springAmbush } from '../content/jobs/warden/upgrades';
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
 import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
@@ -260,6 +261,8 @@ export default class ObjectiveRun {
       return;
     }
     this.started = true;
+    // A Warden with Never Surprised saw it coming.
+    springAmbush(sim, this.stage.entrance);
     for (const wave of this.stage.waves ?? []) {
       this.summon(sim, wave, level, AMBUSH_WARNING);
     }
@@ -421,6 +424,7 @@ export default class ObjectiveRun {
   // A wave's monsters, already in the fight
   private bring(sim: Sim, wave: Wave, level: number): void {
     const units: Unit[] = [];
+    const first = this.came.length;
     // A mini-boss leads it, with its escort.
     if (wave.mini) {
       const { boss, escort } = spawnMiniBoss(
@@ -463,6 +467,9 @@ export default class ObjectiveRun {
         units.filter((u) => u !== leader),
         wave.affixes,
       );
+    }
+    if (this.kind === 'ambush') {
+      ambushersArrive(sim, this.came.slice(first));
     }
   }
 
