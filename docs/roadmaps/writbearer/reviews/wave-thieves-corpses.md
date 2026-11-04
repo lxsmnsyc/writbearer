@@ -6,7 +6,7 @@ Ran 3 workers, not 4: the machine has 8 GB RAM and a load average near 7.
 
 - concealment-timeout: direct commit c7591ef. The Escort test runs 200 seeds and checks determinism on every fourth one; the rate band is unchanged. A fresh review proved it: two concurrent full `pnpm test` runs time out on the base and pass on the branch. Spent about 81k tokens.
 
-## Waiting for the maintainer
+## Merged by the maintainer (PRs #21, #22; main 8f6b27b: typecheck, lint, 702 tests pass)
 
 - cc-corpses: PR #21, fresh review clean. Outside owned paths: `src/game/save.ts` (optional `rested` field) and `src/game/town.ts` (Temple raise check). Nits left: no save round trip test for `rested`; the Respite `revive(1)` now skips rested mercs. Worker, reviewer about 117k tokens.
 - be-thieves: PR #22, fresh review should-fix, fixed in 5ef53b7 (Hunt objective test, comment placement). Outside owned paths: `Template.thief` in `src/content/jobs/types.ts`. Worker, reviewer about 142k tokens before the fix round.

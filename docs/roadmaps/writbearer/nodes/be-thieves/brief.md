@@ -1,7 +1,7 @@
 ---
 id: be-thieves
 title: Thieves: take an item from the pack and run
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 147527
 owns:
   - src/sim/theft.ts
   - src/sim/ai/thief.ts
@@ -58,21 +58,21 @@ A thief monster runs at the bearer, takes an item (or gold) from the pack, and r
 
 ## Steps
 
-- [ ] `src/sim/leave.ts`: `leaveMap(u)`, the one shared exit path for a unit that is not killed (same effect as Bribe's last tick). Switch nothing else over; Bribe stays as it is.
-- [ ] `src/sim/theft.ts`: the `Pocket` port (`pick(rng): Loot | null`, `take(loot)`, `give(loot, at)`), `steal(thief, sim)` and `dropLoot(thief)` on its death. The loot sits on the thief unit as a field; add it with a one-line append in `unit.ts` only if `Unit` has no free slot for it (prefer a `WeakMap` in `theft.ts` and no change to `unit.ts`).
-- [ ] `src/game/game/theft.ts`: implement the port. Choose from the pack by rule: not an equipped item, not a potion on a belt, not a key or quest item; gold if the pack has no item. Drops go to `g.ground`. Log a line.
-- [ ] `src/sim/ai/thief.ts`: step order is (1) go for the bearer ignoring others, (2) strike once to steal, (3) run to the nearest open exit and `leaveMap`. A stun, root or snare stops the run; killing it drops the loot. Insert it as one step in `src/sim/ai/monster.ts`.
-- [ ] Template flag for a thief in `roster.ts` and a log line when something is stolen or recovered.
+- [x] `src/sim/leave.ts`: `leaveMap(u)`, the one shared exit path for a unit that is not killed (same effect as Bribe's last tick). Switch nothing else over; Bribe stays as it is.
+- [x] `src/sim/theft.ts`: the `Pocket` port (`pick(rng): Loot | null`, `take(loot)`, `give(loot, at)`), `steal(thief, sim)` and `dropLoot(thief)` on its death. The loot sits on the thief unit as a field; add it with a one-line append in `unit.ts` only if `Unit` has no free slot for it (prefer a `WeakMap` in `theft.ts` and no change to `unit.ts`).
+- [x] `src/game/game/theft.ts`: implement the port. Choose from the pack by rule: not an equipped item, not a potion on a belt, not a key or quest item; gold if the pack has no item. Drops go to `g.ground`. Log a line.
+- [x] `src/sim/ai/thief.ts`: step order is (1) go for the bearer ignoring others, (2) strike once to steal, (3) run to the nearest open exit and `leaveMap`. A stun, root or snare stops the run; killing it drops the loot. Insert it as one step in `src/sim/ai/monster.ts`.
+- [x] Template flag for a thief in `roster.ts` and a log line when something is stolen or recovered.
 
 ## Acceptance
 
-- [ ] A test thief (test-only template) takes exactly one item from a pack of three, leaves the equipment alone, and runs to the exit; the pack has one fewer item.
-- [ ] Killing the thief before it leaves drops the item on the ground and the bearer can pick it up; the pack holds it again.
-- [ ] A thief that reaches the exit is gone: `alive` false, removed from `sim.units`, no `UnitDies` event, the item lost, and the objective is not stuck waiting for it (a Hunt or Horde that counted it completes).
-- [ ] Gold is taken only when the pack has no item; the amount is a share, never the whole purse.
-- [ ] An empty pack: the thief does nothing and attacks like any monster.
-- [ ] A save taken at the next area's entrance after a theft has the item missing or restored, never duplicated: a test saves and loads (`src/game/save.ts`) around a stolen and a recovered item.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
+- [x] A test thief (test-only template) takes exactly one item from a pack of three, leaves the equipment alone, and runs to the exit; the pack has one fewer item.
+- [x] Killing the thief before it leaves drops the item on the ground and the bearer can pick it up; the pack holds it again.
+- [x] A thief that reaches the exit is gone: `alive` false, removed from `sim.units`, no `UnitDies` event, the item lost, and the objective is not stuck waiting for it (a Hunt or Horde that counted it completes).
+- [x] Gold is taken only when the pack has no item; the amount is a share, never the whole purse.
+- [x] An empty pack: the thief does nothing and attacks like any monster.
+- [x] A save taken at the next area's entrance after a theft has the item missing or restored, never duplicated: a test saves and loads (`src/game/save.ts`) around a stolen and a recovered item.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
 
 ## Sizing
 

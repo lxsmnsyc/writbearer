@@ -1,7 +1,7 @@
 ---
 id: cc-corpses
 title: Corpses laid to rest
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 116811
 owns:
   - src/sim/events/cc-corpses.ts
   - src/sim/corpse.ts
@@ -50,20 +50,20 @@ One set of rules for "can this body still be raised", shared by every mechanic t
 
 ## Steps
 
-- [ ] `src/sim/corpse.ts`: `isCorpse(unit)` (dead, did die, still in the sim), `canRaise(unit)` (corpse, not torn, not rested, no guard forbids), `layToRest(unit, by)` (marks it in a module `WeakSet<Unit>`, emits `UnitLaidToRest`), `isRested(unit)`, `corpsesNear(sim, side, at, radius)`.
-- [ ] `addRestGuard(fn: (unit: Unit) => boolean)`: a guard that can forbid raising within some area, returns a `Lifecycle`-style remover. Consecrate will register one over its zone; this node writes no Consecrate.
-- [ ] `SimEvents.UnitLaidToRest` appended to `src/sim/events.ts`.
-- [ ] `Unit.revive` returns false for a rested or guarded body (one line calling `canRaise`); the Creditor's reveal filters with `canRaise`.
-- [ ] A rested body does not come back at the next area either (the carry-over of party units goes through `revive` or `carryParty`; check `src/game/stage.ts`).
-- [ ] Tests: raise works on a plain corpse; fails on torn, rested and guarded; `reveal` leaves rested mercs dead; a Bribed (left, not dead) merc is never a corpse; guard removal restores raising.
+- [x] `src/sim/corpse.ts`: `isCorpse(unit)` (dead, did die, still in the sim), `canRaise(unit)` (corpse, not torn, not rested, no guard forbids), `layToRest(unit, by)` (marks it in a module `WeakSet<Unit>`, emits `UnitLaidToRest`), `isRested(unit)`, `corpsesNear(sim, side, at, radius)`.
+- [x] `addRestGuard(fn: (unit: Unit) => boolean)`: a guard that can forbid raising within some area, returns a `Lifecycle`-style remover. Consecrate will register one over its zone; this node writes no Consecrate.
+- [x] `SimEvents.UnitLaidToRest` appended to `src/sim/events.ts`.
+- [x] `Unit.revive` returns false for a rested or guarded body (one line calling `canRaise`); the Creditor's reveal filters with `canRaise`.
+- [x] A rested body does not come back at the next area either (the carry-over of party units goes through `revive` or `carryParty`; check `src/game/stage.ts`).
+- [x] Tests: raise works on a plain corpse; fails on torn, rested and guarded; `reveal` leaves rested mercs dead; a Bribed (left, not dead) merc is never a corpse; guard removal restores raising.
 
 ## Acceptance
 
-- [ ] `canRaise` is false for a torn, rested or guarded body and true otherwise; `revive` and `reveal` obey it.
-- [ ] `layToRest` emits `UnitLaidToRest` once and is idempotent.
-- [ ] A unit that left without dying is not a corpse.
-- [ ] `pnpm vitest run test/sim/corpse.test.ts` and `test/sim/creditor.test.ts` pass.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
+- [x] `canRaise` is false for a torn, rested or guarded body and true otherwise; `revive` and `reveal` obey it.
+- [x] `layToRest` emits `UnitLaidToRest` once and is idempotent.
+- [x] A unit that left without dying is not a corpse.
+- [x] `pnpm vitest run test/sim/corpse.test.ts` and `test/sim/creditor.test.ts` pass.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
 
 ## Sizing
 
