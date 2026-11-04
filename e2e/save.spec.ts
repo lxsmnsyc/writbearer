@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { enterGuild, hire, recruits, titlePanel } from './support/guild';
+import { enterGuild, hire, kinds, recruits, titlePanel } from './support/guild';
 
 test('a run is saved as it enters the first area, and can be continued after a reload', async ({
   page,
@@ -9,8 +9,9 @@ test('a run is saved as it enters the first area, and can be continued after a r
     0,
   );
   await enterGuild(page);
-  // Only a Vanguard or a Ranger lets the Guild send the party out.
-  const fighter = (await recruits(page)).find((r) => r.kind === 'vanguard' || r.kind === 'ranger')!;
+  // Only a fighter lets the Guild send the party out.
+  const FIGHTERS = await kinds(page, 'FIGHTERS');
+  const fighter = (await recruits(page)).find((r) => FIGHTERS.includes(r.kind))!;
   const name = fighter.name;
   await hire(page, fighter);
 

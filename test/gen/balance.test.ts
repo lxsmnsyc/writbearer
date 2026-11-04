@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EventPriority } from '../../src/core/event-emitter';
 import { RunStreams, Stream } from '../../src/core/seed';
 import { BASE_BY_ID, STARTER_PACK } from '../../src/content/items';
-import type { Offer } from '../../src/content/recruits';
+import { HIREABLE, type Offer } from '../../src/content/recruits';
 import { spawnMerc } from '../../src/content/roster';
 import { Pack } from '../../src/game/inventory';
 import { START_LEVEL, carryParty, enterStage, spawnParty } from '../../src/game/stage';
@@ -90,11 +90,11 @@ function run(jobs: Offer['kind'][], seed: string, stages: number): number {
 }
 
 describe('balance', () => {
-  it('lets a lone merc of any job see the bearer through the first two stages', () => {
+  it('lets a lone merc of any hireable job see the bearer through the first two stages', () => {
     const seeds = Array.from({ length: 12 }, (_, i) => `B${i}`);
-    for (const job of ['vanguard', 'ranger', 'cleric'] as const) {
+    for (const job of HIREABLE) {
       const cleared = seeds.filter((seed) => run([job], seed, 2) === 2).length;
       expect(cleared, job).toBeGreaterThanOrEqual(11);
     }
-  }, 120000);
+  }, 300000);
 });

@@ -9,7 +9,6 @@ import { DUEL, FLURRY, LUNGE, RIPOSTE, SHADOWSTEP, riposteText } from './spells'
 import DUELIST_UPGRADES from './upgrades';
 
 // Daggers and swords: fast hits on one target, and a duel with the elite.
-// Not offered until roster-balance.
 const DUELIST: JobDef = {
   kind: 'duelist',
   template: {
@@ -22,7 +21,7 @@ const DUELIST: JobDef = {
   discipline: 35,
   role: 'striker',
   fighter: true,
-  hireable: false,
+  hireable: true,
   blurb: 'Skirmisher. Strikes from behind and duels the elite.',
   spells: [DUEL, SHADOWSTEP, LUNGE, FLURRY],
   innate: { name: 'Riposte', effect: RIPOSTE, describe: riposteText },

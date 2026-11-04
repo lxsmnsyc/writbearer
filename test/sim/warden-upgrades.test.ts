@@ -137,21 +137,21 @@ describe('the Warden upgrades', () => {
 });
 
 describe('Cover upgrades', () => {
-  it('Living Shield: during Cover the Warden takes 40%, not 70%, and gains it as Ward', () => {
+  it('Living Shield: during Cover the Warden takes 40%, not 80%, and gains it as Ward', () => {
     const { sim, warden, bearer } = wardenWith('livingShield');
     const m = foe(sim, -1, 0);
     warden.addStatus(COVERING, warden, 5);
     const hp = warden.hp;
     const bearerHp = bearer.hp;
     blow(m, bearer);
-    expect(bearerHp - bearer.hp).toBe(30);
+    expect(bearerHp - bearer.hp).toBe(20);
     expect(hp - warden.hp).toBe(40);
     expect(warden.ward).toBe(40);
     // Outside Cover, Interpose is as before.
     warden.removeStatus(COVERING.id);
     const after = warden.hp;
     blow(m, bearer);
-    expect(after - warden.hp).toBe(70);
+    expect(after - warden.hp).toBe(80);
     expect(warden.ward).toBe(40);
   });
 
@@ -178,7 +178,8 @@ describe('Cover upgrades', () => {
     warden.removeStatus(COVERING.id);
     const after = { id: 'CheckChase', disabled: false, source: warden, value: 10 };
     sim.emit(SimEvents.CheckChase, after);
-    expect(after.value).toBe(10);
+    // Interpose alone keeps it within 4 tiles.
+    expect(after.value).toBe(4);
   });
 
   it('Retaliate: during Cover, a foe in reach that hurts the bearer takes a free attack', () => {

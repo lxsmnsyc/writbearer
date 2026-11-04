@@ -3,7 +3,15 @@ import { strike } from '../../../sim/sim';
 import { type Passive, type Skill, Targeting } from '../../../sim/skill';
 import type { StatusDef } from '../../../sim/status';
 import { STUN } from '../../../sim/statuses';
-import { DamageFlags, DamageKind, DamagePriority, Range, Rank, Side } from '../../../sim/types';
+import {
+  DamageFlags,
+  DamageKind,
+  DamagePriority,
+  Range,
+  Rank,
+  Side,
+  ValuePriority,
+} from '../../../sim/types';
 import type Unit from '../../../sim/unit';
 import listen from '../../passives';
 import { inReach, isElite, rankOf } from '../../skills';
@@ -12,8 +20,10 @@ import { inReach, isElite, rankOf } from '../../skills';
 // docs/design/16-builds.md. The job itself is in ./index.
 
 const MARK_TIME = 6;
-const INTERPOSE_REACH = 2;
-export const INTERPOSE_SHARE = 0.7;
+const INTERPOSE_REACH = 3;
+// How far from the bearer the Warden chases an enemy, at most
+export const INTERPOSE_CHASE = 4;
+export const INTERPOSE_SHARE = 0.8;
 const EXECUTE_BELOW = 0.2;
 const PURSUE_REACH = 6;
 
@@ -45,13 +55,15 @@ function stepTo(u: Unit, x: number, z: number, face: Unit | null): void {
 }
 
 /**
- * Warden, innate. Within 2 tiles of the bearer, takes 70% of every hit aimed
- * at the bearer. An enemy that damages the bearer is marked for 6 seconds.
+ * Warden, innate. Within INTERPOSE_REACH tiles of the bearer, takes 80% of
+ * every hit aimed at the bearer. An enemy that damages the bearer is marked
+ * for 6 seconds. It chases nothing farther than INTERPOSE_CHASE tiles from
+ * the bearer, so it stays near enough to step in; Pursue still leaps out.
  */
 export const INTERPOSE: Passive = {
   id: 'interpose',
-  setup: (unit) =>
-    listen(unit.sim, SimEvents.UnitDamage, DamagePriority.Pre, (event) => {
+  setup: (unit) => {
+    const share = listen(unit.sim, SimEvents.UnitDamage, DamagePriority.Pre, (event) => {
       const bearer = unit.sim.bearer;
       if (
         event.target !== bearer ||
@@ -77,10 +89,26 @@ export const INTERPOSE: Passive = {
           flags: DamageFlags.Redirected,
         });
       }
-    }),
+    });
+    const chase = listen(unit.sim, SimEvents.CheckChase, ValuePriority.Exact, (event) => {
+      if (event.source === unit) {
+        event.value = Math.min(event.value, INTERPOSE_CHASE);
+      }
+    });
+    return {
+      start: () => {
+        share.start();
+        chase.start();
+      },
+      stop: () => {
+        share.stop();
+        chase.stop();
+      },
+    };
+  },
 };
 export const interposeText = (): string =>
-  `Within ${INTERPOSE_REACH} tiles of the bearer, takes ${INTERPOSE_SHARE * 100}% of every hit aimed at the bearer. An enemy that damages the bearer is marked for ${MARK_TIME} seconds.`;
+  `Within ${INTERPOSE_REACH} tiles of the bearer, takes ${INTERPOSE_SHARE * 100}% of every hit aimed at the bearer, and chases nothing farther than ${INTERPOSE_CHASE} tiles from it. An enemy that damages the bearer is marked for ${MARK_TIME} seconds.`;
 
 // ---------- Cover ----------
 

@@ -17,7 +17,7 @@ import ARCANIST_UPGRADES from './upgrades';
 
 // Fire and Frost magic: area spells, and a bolt picked by what the target
 // is weak to. The highest damage of the starting jobs, at some risk to its
-// friends once it takes Inferno. Not offered until roster-balance.
+// friends once it takes Inferno.
 const ARCANIST: JobDef = {
   kind: 'arcanist',
   template: {
@@ -30,7 +30,7 @@ const ARCANIST: JobDef = {
   discipline: 40,
   role: 'striker',
   fighter: true,
-  hireable: false,
+  hireable: true,
   blurb: 'Mage. Burns and freezes whole packs, at some risk to its friends.',
   spells: [FROST_NOVA, FIREBALL, FROST_SHARD, FIREBOLT],
   innate: { name: 'Elemental Sense', effect: ELEMENTAL_SENSE, describe: elementalSenseText },

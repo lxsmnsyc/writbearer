@@ -140,8 +140,13 @@ export const SNARE: Skill = {
 
 export const chargedRatio = (rank: number): number => 90 + rank * 8;
 const CHAIN_REACH = 3;
+// The leap hits harder than the arrow: the chain is the pack-clearing part.
+export const CHAIN_SHARE = 1.5;
 
-/** Fires a Storm arrow that leaps on to one more enemy near the first. */
+/**
+ * Fires a Storm arrow that leaps on to one more enemy near the first, the
+ * leap at CHAIN_SHARE times the arrow's ratio.
+ */
 export function stormArrow(
   u: Unit,
   target: Unit,
@@ -169,7 +174,11 @@ export function stormArrow(
         .at(0);
       if (next) {
         // The chain leaps from the first enemy, not from the Ranger.
-        sim.chain(u, first, next, { speed: ARROW_SPEED * 2, skill, options });
+        sim.chain(u, first, next, {
+          speed: ARROW_SPEED * 2,
+          skill,
+          options: { ...options, ratio: (options.ratio ?? 100) * CHAIN_SHARE },
+        });
       }
     },
   });
@@ -183,7 +192,7 @@ export const CHARGED_ARROW: Skill = {
   id: 'chargedArrow',
   name: 'Charged Arrow',
   describe: (rank) =>
-    `A Storm arrow for ${chargedRatio(rank)}% damage that chains to one more enemy within ${CHAIN_REACH} tiles.`,
+    `A Storm arrow for ${chargedRatio(rank)}% damage that chains to one more enemy within ${CHAIN_REACH} tiles, for ${chargedRatio(rank) * CHAIN_SHARE}%.`,
   cost: 9,
   cooldown: 3.5,
   windup: 0.6,

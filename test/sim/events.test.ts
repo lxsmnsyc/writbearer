@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { HIREABLE } from '../../src/content/recruits';
 import {
   EVENTS,
   EVENT_BY_ID,
@@ -229,10 +230,10 @@ describe('the Events', () => {
     expect(s.pack.materials.get('iron')).toBe(2);
   });
 
-  it('a deserter comes at half the wage, with a flaw', () => {
+  it('a deserter of any hireable job comes at half the wage, with a flaw', () => {
     for (let seed = 1; seed <= 10; seed++) {
       const s = begin('deserter', seed);
-      expect(['vanguard', 'ranger', 'cleric']).toContain(s.play.figure);
+      expect(HIREABLE).toContain(s.play.figure);
       expect(s.play.text).toMatch(/cowardice|greed/);
       choose(s.play, 'Take');
       expect(s.hired).toHaveLength(1);

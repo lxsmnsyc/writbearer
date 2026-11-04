@@ -9,7 +9,6 @@ import { CLEAVE, HAMSTRING, POCKET_SAND, RUSH, SECOND_WIND, secondWindText } fro
 import SELLSWORD_UPGRADES from './upgrades';
 
 // A cheap generalist that wins by wearing enemies down and by not dying.
-// Not offered until roster-balance.
 
 const SELLSWORD: JobDef = {
   kind: 'sellsword',
@@ -24,7 +23,7 @@ const SELLSWORD: JobDef = {
   discipline: 30,
   role: 'striker',
   fighter: true,
-  hireable: false,
+  hireable: true,
   blurb: 'Generalist. Wears enemies down with dirty tricks and refuses to die.',
   spells: [RUSH, POCKET_SAND, HAMSTRING, CLEAVE],
   innate: { name: 'Second Wind', effect: SECOND_WIND, describe: secondWindText },

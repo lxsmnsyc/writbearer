@@ -75,11 +75,11 @@ function setup(seed: number, x: number, z = 0): { sim: Sim; sword: Unit; foe: Un
 }
 
 describe('the Sellsword job', () => {
-  it('has 4 spells in cast order and Second Wind, and is not offered yet', () => {
+  it('has 4 spells in cast order and Second Wind, and is offered', () => {
     const def = JOBS.sellsword;
     expect(def.spells.map((s) => s.id)).toEqual(['rush', 'pocketSand', 'hamstring', 'cleave']);
     expect(def.innate.effect).toBe(SECOND_WIND);
-    expect(def.hireable).toBe(false);
+    expect(def.hireable).toBe(true);
     expect(def.role).toBe('striker');
   });
 

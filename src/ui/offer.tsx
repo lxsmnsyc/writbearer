@@ -122,8 +122,8 @@ export function StartPicker(props: StartProps): JSX.Element {
           when={props.endless}
           fallback={
             <>
-              The Guild sends the Writ down into the Hollow. Four recruits wait at the Guild House:
-              the Guild pays the first, and its purse holds{' '}
+              The Guild sends the Writ down into the Hollow. Five recruits wait at the Guild House,
+              and four may go: the Guild pays the first, and its purse holds{' '}
               <span class="font-semibold text-accent">{props.gold} gold</span> for the others. No
               one is left to hire below.
             </>

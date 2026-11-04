@@ -40,7 +40,7 @@ describe('the Warden job', () => {
   it('has its four spells in cast order and Interpose as the innate', () => {
     expect(WARDEN.spells.map((s) => s.id)).toEqual(['cover', 'execute', 'tripwire', 'pursue']);
     expect(WARDEN.innate.name).toBe('Interpose');
-    expect(WARDEN.hireable).toBe(false);
+    expect(WARDEN.hireable).toBe(true);
   });
 
   it('plays out a fight beside the bearer and wins it', () => {
@@ -61,7 +61,7 @@ describe('the Warden job', () => {
 });
 
 describe('Interpose', () => {
-  it('takes 70% of a hit aimed at the bearer from within 2 tiles, and marks the attacker', () => {
+  it('takes 80% of a hit aimed at the bearer from within 3 tiles, and marks the attacker', () => {
     const sim = new Sim(1);
     alwaysHit(sim);
     const bearer = spawnBearer(sim, 0, 0);
@@ -71,10 +71,23 @@ describe('Interpose', () => {
     const hp = warden.hp;
     const bearerHp = bearer.hp;
     blow(foe, bearer, 100);
-    expect(bearerHp - bearer.hp).toBe(30);
-    expect(hp - warden.hp).toBe(70);
+    expect(bearerHp - bearer.hp).toBe(20);
+    expect(hp - warden.hp).toBe(80);
     expect(isMarked(foe)).toBe(true);
     expect(foe.statuses.get(MARKED.id)?.remaining).toBeCloseTo(6, 0);
+  });
+
+  it('still takes its share at 2.5 tiles from the bearer', () => {
+    const sim = new Sim(1);
+    alwaysHit(sim);
+    const bearer = spawnBearer(sim, 0, 0);
+    const warden = spawnMerc(sim, 'warden', 10, -2.5, 0);
+    const foe = spawnMonster(sim, 'hollowSoldier', 5, 3, 0);
+    const hp = warden.hp;
+    const bearerHp = bearer.hp;
+    blow(foe, bearer, 100);
+    expect(bearerHp - bearer.hp).toBe(20);
+    expect(hp - warden.hp).toBe(80);
   });
 
   it('takes nothing from farther away, but the attacker is still marked', () => {

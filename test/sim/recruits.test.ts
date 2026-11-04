@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   FIGHTERS,
   HIREABLE,
+  STARTING_OFFERS,
   rollOffer,
   rollStartingOffers,
   wageFor,
 } from '../../src/content/recruits';
+import { JOBS } from '../../src/content/jobs';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { HEAL, SMITE } from '../../src/content/cleric';
 import { TRAIT_BY_ID, rollTraits } from '../../src/content/traits';
@@ -21,22 +23,55 @@ import { DREAD } from '../../src/sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority } from '../../src/sim/types';
 
 describe('offers', () => {
-  it('start a run with a recruit of every hireable job and one more fighter, no name twice, the same for the same seed', () => {
-    for (const seed of ['ASHEN', 'BRINE', 'COAL', 'DUSK', 'EMBER']) {
-      const roll = (): string[] =>
-        rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5).map(
-          (o) => `${o.kind}:${o.name}:${o.traits.join('+')}`,
-        );
-      const offers = roll();
-      const kinds = offers.map((o) => o.split(':')[0]);
-      expect(offers).toHaveLength(HIREABLE.length + 1);
-      expect(new Set(kinds)).toEqual(new Set(HIREABLE));
-      expect(kinds.filter((k) => (FIGHTERS as readonly string[]).includes(k))).toHaveLength(
-        FIGHTERS.length + 1,
-      );
-      expect(new Set(offers.map((o) => o.split(':')[1])).size).toBe(HIREABLE.length + 1);
-      expect(roll()).toEqual(offers);
+  it('start a run with five recruits by slot: a guard, a striker, a support, five jobs, a fighter', () => {
+    for (let i = 0; i < 200; i++) {
+      const seed = `S${i}`;
+      const offers = rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5);
+      const kinds = offers.map((o) => o.kind);
+      expect(offers, seed).toHaveLength(STARTING_OFFERS);
+      expect(new Set(kinds).size, seed).toBe(STARTING_OFFERS);
+      for (const role of ['guard', 'striker', 'support'] as const) {
+        expect(
+          kinds.some((k) => JOBS[k].role === role),
+          `${seed} ${role}`,
+        ).toBe(true);
+      }
+      expect(
+        kinds.some((k) => (FIGHTERS as readonly string[]).includes(k)),
+        seed,
+      ).toBe(true);
+      expect(
+        kinds.every((k) => (HIREABLE as readonly string[]).includes(k)),
+        seed,
+      ).toBe(true);
+      expect(new Set(offers.map((o) => o.name)).size, seed).toBe(STARTING_OFFERS);
     }
+  });
+
+  it('draw the same recruits for the same seed, and every job over many seeds', () => {
+    const roll = (seed: string): string[] =>
+      rollStartingOffers(new RunStreams(seed).get(1, Stream.Recruits), 5).map(
+        (o) => `${o.kind}:${o.name}:${o.traits.join('+')}`,
+      );
+    const seen = new Set<string>();
+    for (const seed of ['ASHEN', 'BRINE', 'COAL', 'DUSK', 'EMBER', 'WRIT']) {
+      expect(roll(seed)).toEqual(roll(seed));
+    }
+    for (let i = 0; i < 50; i++) {
+      for (const offer of roll(`S${i}`)) {
+        seen.add(offer.split(':')[0]);
+      }
+    }
+    expect(seen).toEqual(new Set(HIREABLE));
+  });
+
+  it('draw the deserter and the wanderers by the fire from every hireable job', () => {
+    const rng = new RNG(5);
+    const seen = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      seen.add(rollOffer(rng, 5).kind);
+    }
+    expect(seen).toEqual(new Set(HIREABLE));
   });
 
   it('start with gold enough to hire three recruits beside the one the Guild pays for', () => {
@@ -79,9 +114,9 @@ describe('offers', () => {
     expect(fires(true)).toBeGreaterThan(0);
   });
 
-  it('wait four at the Guild House, before the road into the first phase', () => {
+  it('wait five at the Guild House, before the road into the first phase', () => {
     const stage = generateGuild(new RNG(1), ['combat']);
-    expect(stage.recruits).toHaveLength(4);
+    expect(stage.recruits).toHaveLength(STARTING_OFFERS);
     expect(stage.packs).toHaveLength(0);
     expect(stage.town).toBeDefined();
     expect(stage.exits).toHaveLength(1);
