@@ -1,7 +1,7 @@
 ---
 id: split-unit
 title: Split src/sim/unit.ts by feature
-status: todo
+status: active
 priority: should
 type: refactor
 outline: false

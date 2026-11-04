@@ -1,7 +1,7 @@
 ---
 id: split-events
 title: Split src/sim/events.ts by feature
-status: todo
+status: active
 priority: should
 type: refactor
 outline: false

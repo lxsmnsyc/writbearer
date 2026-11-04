@@ -1,7 +1,7 @@
 ---
 id: split-ai
 title: Split src/sim/ai.ts by feature
-status: todo
+status: active
 priority: should
 type: refactor
 outline: false

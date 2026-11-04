@@ -1,7 +1,7 @@
 ---
 id: split-roster
 title: Split src/content/roster.ts by feature
-status: todo
+status: active
 priority: should
 type: refactor
 outline: false
