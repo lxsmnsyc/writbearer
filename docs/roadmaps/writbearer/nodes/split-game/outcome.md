@@ -12,27 +12,27 @@ How the pieces fit:
 
 Where each feature lives:
 
-| Module | What it holds (old `Game` members) |
-|---|---|
-| `types.ts` | `GameHooks`, `GameOptions`, `EventView`, `ComingGroup`, `BonusStatus` |
-| `run.ts` | `reset` (start or resume a run, pick the start place), `resumeArea`, `setSeed`, `setEndless`, `shareLink` |
-| `saving.ts` | `snapshot`, `persist`, `endRun` |
-| `listeners.ts` | default `watchSim`: the sim listeners `reset` hung (heavy-hit stop and shake, revive, deaths and kill drops, key drops), plus `shareXp` |
-| `route.ts` | layer map and roads: `here`, `aheadOf`, `fightsAhead`, `rollMap`, `biome`, `region`, `goTo`, `buildStage`, `sidesAhead`, `pickMiniBoss`, `layerMap`, `sidesToward` |
-| `areas.ts` | moving between areas: `enter`, `leave`, `joinArea`, `workGround`, `blockRoad`, `seam`, `cross`, `settleBehind`, `collapse`, `descend`, `buildWaystation`; `moveOn` is the tick's cross, settle and fade step; `names`; `TOMB_STREAM`, `GUILD_STREAM`, `WAYSTATION_STREAM`, `COLLAPSE_*` |
-| `fight.ts` | `objectiveStatus`, `exitsOpen`, `checkObjective`, `soundAlarms`, `relieve`, `reportArea`, `directorStatus`, `noteMonsters` |
-| `rewards.ts` | `REWARDS` table, `BONUS_PAYS`, `spoilsOf`, `cardHere`, `layChest` (the chest and gold laid when an objective is done), `materialList` |
-| `pickups.ts` | `drop`, `loot` (ground pickups and chest opening), `pickUp`, `pickItem`, `chestAt`, `PICK_REACH` |
-| `walkups.ts` | `WALK_UPS` table (key, levers), `workWalkUps` (was `workMaze`), `openGates` |
-| `encounter.ts` | Events: `beginEvent`, `figures`, `eventView`, `visitEvent`, `chooseEvent`, `closeEvent` |
-| `recruits.ts` | `hire`, `endTalk`, `join`, `meet`, `recruitAt` |
-| `station.ts` | Waystation post, Town well, Camp fire: `visitStation`, `visitTown`, `closeStation`, `closeTown`, `rest`, `dues`, `pay`, `store`, `takeOut` |
-| `smith.ts` | `smithable`, `refineItem`, `socketItem`, `craft`, `salvage`, `raise`, `buy`, `sell` |
-| `tomb.ts` | `breakSeal`, `endFinale`, `FINALE_KEYS` |
-| `shouts.ts` | `shout`, `shoutBar`, `enemyAtPointer`, `SHOUT_KEY` |
-| `input.ts` | `keyDown` (gets the `Game` to call its public methods), `mouseMove`, `mouseDown`, `exitAt`, `steer` |
-| `tick.ts` | `advance` (one frame: pause, hit-stop, fixed ticks) and `step` (one tick, every per-tick check in the old order); `MAX_FRAME` |
-| `render.ts` | default `render`: the `Frame` passed to the renderer, and the canvas `dataset` for e2e |
+| Module         | What it holds (old `Game` members)                                                                                                                                                                                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`     | `GameHooks`, `GameOptions`, `EventView`, `ComingGroup`, `BonusStatus`                                                                                                                                                                                                                   |
+| `run.ts`       | `reset` (start or resume a run, pick the start place), `resumeArea`, `setSeed`, `setEndless`, `shareLink`                                                                                                                                                                               |
+| `saving.ts`    | `snapshot`, `persist`, `endRun`                                                                                                                                                                                                                                                         |
+| `listeners.ts` | default `watchSim`: the sim listeners `reset` hung (heavy-hit stop and shake, revive, deaths and kill drops, key drops), plus `shareXp`                                                                                                                                                 |
+| `route.ts`     | layer map and roads: `here`, `aheadOf`, `fightsAhead`, `rollMap`, `biome`, `region`, `goTo`, `buildStage`, `sidesAhead`, `pickMiniBoss`, `layerMap`, `sidesToward`                                                                                                                      |
+| `areas.ts`     | moving between areas: `enter`, `leave`, `joinArea`, `workGround`, `blockRoad`, `seam`, `cross`, `settleBehind`, `collapse`, `descend`, `buildWaystation`; `moveOn` is the tick's cross, settle and fade step; `names`; `TOMB_STREAM`, `GUILD_STREAM`, `WAYSTATION_STREAM`, `COLLAPSE_*` |
+| `fight.ts`     | `objectiveStatus`, `exitsOpen`, `checkObjective`, `soundAlarms`, `relieve`, `reportArea`, `directorStatus`, `noteMonsters`                                                                                                                                                              |
+| `rewards.ts`   | `REWARDS` table, `BONUS_PAYS`, `spoilsOf`, `cardHere`, `layChest` (the chest and gold laid when an objective is done), `materialList`                                                                                                                                                   |
+| `pickups.ts`   | `drop`, `loot` (ground pickups and chest opening), `pickUp`, `pickItem`, `chestAt`, `PICK_REACH`                                                                                                                                                                                        |
+| `walkups.ts`   | `WALK_UPS` table (key, levers), `workWalkUps` (was `workMaze`), `openGates`                                                                                                                                                                                                             |
+| `encounter.ts` | Events: `beginEvent`, `figures`, `eventView`, `visitEvent`, `chooseEvent`, `closeEvent`                                                                                                                                                                                                 |
+| `recruits.ts`  | `hire`, `endTalk`, `join`, `meet`, `recruitAt`                                                                                                                                                                                                                                          |
+| `station.ts`   | Waystation post, Town well, Camp fire: `visitStation`, `visitTown`, `closeStation`, `closeTown`, `rest`, `dues`, `pay`, `store`, `takeOut`                                                                                                                                              |
+| `smith.ts`     | `smithable`, `refineItem`, `socketItem`, `craft`, `salvage`, `raise`, `buy`, `sell`                                                                                                                                                                                                     |
+| `tomb.ts`      | `breakSeal`, `endFinale`, `FINALE_KEYS`                                                                                                                                                                                                                                                 |
+| `shouts.ts`    | `shout`, `shoutBar`, `enemyAtPointer`, `SHOUT_KEY`                                                                                                                                                                                                                                      |
+| `input.ts`     | `keyDown` (gets the `Game` to call its public methods), `mouseMove`, `mouseDown`, `exitAt`, `steer`                                                                                                                                                                                     |
+| `tick.ts`      | `advance` (one frame: pause, hit-stop, fixed ticks) and `step` (one tick, every per-tick check in the old order); `MAX_FRAME`                                                                                                                                                           |
+| `render.ts`    | default `render`: the `Frame` passed to the renderer, and the canvas `dataset` for e2e                                                                                                                                                                                                  |
 
 Registration points:
 

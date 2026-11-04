@@ -17,17 +17,17 @@ The mercs act on their own, so the player cannot aim element combos directly. El
 
 ## Element set
 
-| Element | rAthena match | Effect of buildup |
-|---|---|---|
-| Neutral | Neutral | None. Default for weapons. |
-| Fire | Fire | Burn: damage over time. |
-| Frost | Water | Chill, then Freeze. |
-| Storm | Wind | Shock: a short stun. Storm skills can chain to nearby targets. |
-| Earth | Earth | Petrify: the target cannot act. |
-| Venom | Poison | Poison: damage over time that ignores armor. Also cuts healing received. |
-| Radiant | Holy | Sear: builds only on the Undead and the Occult. While it lasts, they take 20% more damage from the other side. |
-| Occult | Shadow | Dread: drains morale and Ward. Causes fear. |
-| Spectral | Ghost | Defense only for most units. Neutral attacks deal 90% to 50% against it, by level. |
+| Element  | rAthena match | Effect of buildup                                                                                              |
+| -------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
+| Neutral  | Neutral       | None. Default for weapons.                                                                                     |
+| Fire     | Fire          | Burn: damage over time.                                                                                        |
+| Frost    | Water         | Chill, then Freeze.                                                                                            |
+| Storm    | Wind          | Shock: a short stun. Storm skills can chain to nearby targets.                                                 |
+| Earth    | Earth         | Petrify: the target cannot act.                                                                                |
+| Venom    | Poison        | Poison: damage over time that ignores armor. Also cuts healing received.                                       |
+| Radiant  | Holy          | Sear: builds only on the Undead and the Occult. While it lasts, they take 20% more damage from the other side. |
+| Occult   | Shadow        | Dread: drains morale and Ward. Causes fear.                                                                    |
+| Spectral | Ghost         | Defense only for most units. Neutral attacks deal 90% to 50% against it, by level.                             |
 
 - The four natural elements form a cycle, as in rAthena: Frost beats Fire, Fire beats Earth, Earth beats Storm, Storm beats Frost.
 - Radiant and Occult oppose each other.
@@ -43,21 +43,21 @@ The values are rAthena renewal's (`db/re/attr_fix.yml`, levels 1 to 3), with Wat
 
 Example rows (attack element against a Fire target):
 
-| Attack | Fire 1 | Fire 2 | Fire 3 |
-|---|---|---|---|
-| Neutral | 100% | 100% | 100% |
-| Fire | 25% | 0% | 0% |
-| Frost | 150% | 175% | 200% |
-| Earth | 90% | 80% | 70% |
+| Attack  | Fire 1 | Fire 2 | Fire 3 |
+| ------- | ------ | ------ | ------ |
+| Neutral | 100%   | 100%   | 100%   |
+| Fire    | 25%    | 0%     | 0%     |
+| Frost   | 150%   | 175%   | 200%   |
+| Earth   | 90%    | 80%    | 70%    |
 
 Example rows against a Spectral target:
 
-| Attack | Spectral 1 | Spectral 2 | Spectral 3 |
-|---|---|---|---|
-| Neutral | 90% | 70% | 50% |
-| Fire, Frost, Storm, Earth | 100% | 100% | 100% |
-| Venom | 75% | 75% | 50% |
-| Spectral | 125% | 150% | 175% |
+| Attack                    | Spectral 1 | Spectral 2 | Spectral 3 |
+| ------------------------- | ---------- | ---------- | ---------- |
+| Neutral                   | 90%        | 70%        | 50%        |
+| Fire, Frost, Storm, Earth | 100%       | 100%       | 100%       |
+| Venom                     | 75%        | 75%        | 50%        |
+| Spectral                  | 125%       | 150%       | 175%       |
 
 Values above 100% are weak points. Renewal is gentler on Neutral against Spectral than pre-renewal was, so Spectral targets are a cost, not a wall.
 

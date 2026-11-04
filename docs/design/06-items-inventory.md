@@ -19,16 +19,16 @@ Equipment and inventory follow rAthena: fixed equipment slots, refine levels, ca
 
 Each merc has 8 equipment slots and a belt.
 
-| Slot | Holds |
-|---|---|
-| Weapon | Main weapon. Two-handed weapons also fill Offhand. |
-| Offhand | Shield, second weapon, focus or quiver. |
-| Head | Helmets, hoods, circlets. |
-| Body | Armor. |
-| Cloak | Element and status resistance, as rAthena's garment slot. |
-| Boots | Move speed and evasion. |
-| Accessory 1 | Rings, amulets, charms. |
-| Accessory 2 | Rings, amulets, charms. |
+| Slot        | Holds                                                     |
+| ----------- | --------------------------------------------------------- |
+| Weapon      | Main weapon. Two-handed weapons also fill Offhand.        |
+| Offhand     | Shield, second weapon, focus or quiver.                   |
+| Head        | Helmets, hoods, circlets.                                 |
+| Body        | Armor.                                                    |
+| Cloak       | Element and status resistance, as rAthena's garment slot. |
+| Boots       | Move speed and evasion.                                   |
+| Accessory 1 | Rings, amulets, charms.                                   |
+| Accessory 2 | Rings, amulets, charms.                                   |
 
 rAthena's three head slots are merged into one. Three would add little for an autonomous merc.
 
@@ -80,20 +80,20 @@ Equipment weight:
 
 - **Cards and gems:** every monster kind but the Creditor drops its card: 3% of the time from a normal monster, 25% from an elite, always from a boss. Any monster may also drop a gem: 2%, 15% from an elite, 50% from a boss. In the pack, Socket beside a card sets it into the first item the chosen merc wears that it fits and that has a free socket, under the same fight rule as gear. It stays in that item for good, and works while the item is worn. Hovering an item lists its sockets and what is in them.
 
-| Card | Fits | Effect |
-|---|---|---|
-| Mite | Accessory | +3 AGI. |
-| Husk | Body | +10% max health. |
-| Crawler | Weapon | Basic attacks add 15 Poison buildup. |
-| Hollow Soldier | Shield | +15% armor. |
-| Penitent | Weapon | +20% damage to Humans. |
-| Cantor | Accessory | +4 INT, +10% max mana. |
-| Hollowed | Head | Dread builds up at half the rate. |
-| Brood Mother | Body | +25% max health. -10% attack. |
-| Gatekeeper | Shield | +40% armor. -15 evasion. |
-| Abbess | Accessory | +25% damage to the Undead. -15% max mana. |
-| Hollowed Saint | Weapon | Basic attacks add 25 Dread buildup. Takes 15% more Occult damage. |
-| Garnet, Topaz, Onyx, Opal | Any | +2 STR, DEX, VIT or INT. |
+| Card                      | Fits      | Effect                                                            |
+| ------------------------- | --------- | ----------------------------------------------------------------- |
+| Mite                      | Accessory | +3 AGI.                                                           |
+| Husk                      | Body      | +10% max health.                                                  |
+| Crawler                   | Weapon    | Basic attacks add 15 Poison buildup.                              |
+| Hollow Soldier            | Shield    | +15% armor.                                                       |
+| Penitent                  | Weapon    | +20% damage to Humans.                                            |
+| Cantor                    | Accessory | +4 INT, +10% max mana.                                            |
+| Hollowed                  | Head      | Dread builds up at half the rate.                                 |
+| Brood Mother              | Body      | +25% max health. -10% attack.                                     |
+| Gatekeeper                | Shield    | +40% armor. -15 evasion.                                          |
+| Abbess                    | Accessory | +25% damage to the Undead. -15% max mana.                         |
+| Hollowed Saint            | Weapon    | Basic attacks add 25 Dread buildup. Takes 15% more Occult damage. |
+| Garnet, Topaz, Onyx, Opal | Any       | +2 STR, DEX, VIT or INT.                                          |
 
 - **Towns:** the Marches and the Rift Road each have one Town on their map, in the fourth or fifth column; below them no one is left. Walking to its well opens the Town, with four services, paid from the `craft` stream:
   - **Smith:** refines a weapon or armor, in the pack or worn, from +0 to +10. Each level adds 3 attack to a weapon or 2 armor to armor, for 25 gold times the next level. To +4 it always works. Past it the chance falls from 60% at +5 to 10% at +10; a failure breaks the item with its cards, unless the player chose to spend a Smith's Blessing, which costs a level instead. The Smith also adds a socket, up to the item's limit, for 150 gold times the next socket: 75% of the time; otherwise the item breaks.
@@ -104,17 +104,17 @@ Equipment weight:
 
 - **Uniques:** a slain monster drops one 0.4% of the time, an elite 4%, a boss 30%, of those its level allows. Each is a named item on a fixed base, with its values rolled in their ranges, a fixed number of sockets the smith cannot add to, and a line of lore. Their names show in a darker gold.
 
-| Unique | Base | Bonuses | Effect |
-|---|---|---|---|
-| Debtor's Chain | Flanged mace | +30 to 50% attack | Its wearer's wage doubles. |
-| The Last Contract | Hauberk, 1 socket | +20 to 40 armor | When the bearer would die, its wearer takes the blow and dies instead, its body whole. Once an area. |
-| Widow's Lantern | Amulet | -10 to 20% Occult damage taken, +2 to 4 WIL | |
-| Penitent's Lash | Stiletto | +25 to 40% attack | Each blow it lands costs its wielder 3% of max health. |
-| Gravewarden's Bulwark | Tower shield, 1 socket | +8 to 12% block, -20 to 30% damage from the Undead | |
-| Saint's Reliquary | Censer | | Its wielder's heals restore 25 to 40% more. |
-| Mire Treads | Boots | +3 to 5 AGI | Cannot be rooted. |
-| Thornhide | Jerkin | | Melee attackers take 20 to 30% of their blow back. |
-| The Hollow Crown | Kettle helm | +15 to 25% attack | Dread builds up twice as fast. |
+| Unique                | Base                   | Bonuses                                            | Effect                                                                                               |
+| --------------------- | ---------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Debtor's Chain        | Flanged mace           | +30 to 50% attack                                  | Its wearer's wage doubles.                                                                           |
+| The Last Contract     | Hauberk, 1 socket      | +20 to 40 armor                                    | When the bearer would die, its wearer takes the blow and dies instead, its body whole. Once an area. |
+| Widow's Lantern       | Amulet                 | -10 to 20% Occult damage taken, +2 to 4 WIL        |                                                                                                      |
+| Penitent's Lash       | Stiletto               | +25 to 40% attack                                  | Each blow it lands costs its wielder 3% of max health.                                               |
+| Gravewarden's Bulwark | Tower shield, 1 socket | +8 to 12% block, -20 to 30% damage from the Undead |                                                                                                      |
+| Saint's Reliquary     | Censer                 |                                                    | Its wielder's heals restore 25 to 40% more.                                                          |
+| Mire Treads           | Boots                  | +3 to 5 AGI                                        | Cannot be rooted.                                                                                    |
+| Thornhide             | Jerkin                 |                                                    | Melee attackers take 20 to 30% of their blow back.                                                   |
+| The Hollow Crown      | Kettle helm            | +15 to 25% attack                                  | Dread builds up twice as fast.                                                                       |
 
 The design's Widow's Lantern reveals invisible enemies and its Rimecaller turns Frost spells: both wait for those to exist.
 
@@ -130,16 +130,16 @@ Static data for each kind of item.
 interface ItemBase {
   id: ItemId;
   name: string;
-  type: ItemType;            // Weapon, Armor, Consumable, Card, Material, Quest, Trade
+  type: ItemType; // Weapon, Armor, Consumable, Card, Material, Quest, Trade
   slot?: EquipSlot;
-  weaponType?: WeaponType;   // attack speed, reach, skill requirements
-  tier: Tier;                // Normal, Exceptional, Elite
-  level: number;             // item base level, as Diablo 2's qlvl
+  weaponType?: WeaponType; // attack speed, reach, skill requirements
+  tier: Tier; // Normal, Exceptional, Elite
+  level: number; // item base level, as Diablo 2's qlvl
   weight: number;
   stackMax: number;
   requirements: { str?: number; dex?: number; int?: number; level?: number };
-  base: BaseRolls;           // damage range, armor range, block, magic attack
-  maxSockets: number;        // 0 to 4
+  base: BaseRolls; // damage range, armor range, block, magic attack
+  maxSockets: number; // 0 to 4
   refinable: boolean;
 }
 ```
@@ -152,7 +152,7 @@ Runtime data for one copy.
 interface ItemCopy {
   uid: number;
   base: ItemId;
-  itemLevel: number;          // level of the stage or monster that dropped it
+  itemLevel: number; // level of the stage or monster that dropped it
   quality: Quality;
   baseRolls: Record<string, number>; // rolled damage or armor within the base range
   affixes: { id: AffixId; values: number[] }[];
@@ -171,16 +171,16 @@ interface ItemCopy {
 
 Based on Diablo 2.
 
-| Quality | Affixes | Max sockets | Notes |
-|---|---|---|---|
-| Inferior | 0 | 2 | Lower base rolls. Cheap. |
-| Normal | 0 | 4 | The best base for cards. |
-| Superior | 0 | 3 | Higher base rolls. |
-| Magic | 1 prefix, 1 suffix at most | 2 | |
-| Rare | 3 to 6, at most 3 prefixes and 3 suffixes | 1 | Can carry an element. |
-| Unique | Fixed list, each value rolled in a range | 0 or 1, fixed per item | Named items with special effects. |
-| Squad set | Fixed list plus set bonuses | 0 | See below. |
-| Cursed | Strong affixes plus a behavior change | 1 | This game's own quality. |
+| Quality   | Affixes                                   | Max sockets            | Notes                             |
+| --------- | ----------------------------------------- | ---------------------- | --------------------------------- |
+| Inferior  | 0                                         | 2                      | Lower base rolls. Cheap.          |
+| Normal    | 0                                         | 4                      | The best base for cards.          |
+| Superior  | 0                                         | 3                      | Higher base rolls.                |
+| Magic     | 1 prefix, 1 suffix at most                | 2                      |                                   |
+| Rare      | 3 to 6, at most 3 prefixes and 3 suffixes | 1                      | Can carry an element.             |
+| Unique    | Fixed list, each value rolled in a range  | 0 or 1, fixed per item | Named items with special effects. |
+| Squad set | Fixed list plus set bonuses               | 0                      | See below.                        |
+| Cursed    | Strong affixes plus a behavior change     | 1                      | This game's own quality.          |
 
 The fewer affixes an item has, the more sockets it can have. This gives two ways to gear a merc:
 
@@ -227,25 +227,25 @@ Why it fits this game:
 
 Example: Oath of the Iron Company, 4 pieces.
 
-| Piece | Slot | Own stats |
-|---|---|---|
-| Iron Company Helm | Head | +armor, +VIT |
-| Iron Company Hauberk | Body | +armor, -10% damage from ranged |
-| Iron Company Banner | Offhand | +block, +morale |
-| Iron Company Signet | Accessory | +Discipline 5 |
+| Piece                | Slot      | Own stats                       |
+| -------------------- | --------- | ------------------------------- |
+| Iron Company Helm    | Head      | +armor, +VIT                    |
+| Iron Company Hauberk | Body      | +armor, -10% damage from ranged |
+| Iron Company Banner  | Offhand   | +block, +morale                 |
+| Iron Company Signet  | Accessory | +Discipline 5                   |
 
-| Pieces worn in the party | Bonus |
-|---|---|
-| 2 | Every merc gets +10% armor. |
-| 3 | Every merc gets +10 Discipline. |
-| 4 | The citizen gets a Ward that refills after each fight. |
+| Pieces worn in the party | Bonus                                                  |
+| ------------------------ | ------------------------------------------------------ |
+| 2                        | Every merc gets +10% armor.                            |
+| 3                        | Every merc gets +10 Discipline.                        |
+| 4                        | The citizen gets a Ward that refills after each fight. |
 
 Example: Rites of the Pale Choir, 3 pieces, for Radiant mercs.
 
-| Pieces worn in the party | Bonus |
-|---|---|
-| 2 | Radiant damage +15% for the party. |
-| 3 | Once per stage, the first merc to die is resurrected at 30% health. |
+| Pieces worn in the party | Bonus                                                               |
+| ------------------------ | ------------------------------------------------------------------- |
+| 2                        | Radiant damage +15% for the party.                                  |
+| 3                        | Once per stage, the first merc to die is resurrected at 30% health. |
 
 ## Affixes
 
@@ -253,12 +253,12 @@ Example: Rites of the Pale Choir, 3 pieces, for Radiant mercs.
 interface Affix {
   id: AffixId;
   kind: 'prefix' | 'suffix';
-  group: string;            // only one affix per group on an item
-  level: number;            // minimum item level, as Diablo 2's alvl
-  frequency: number;        // weight in the pool
-  itemTypes: ItemType[];    // where it can roll
-  rolls: Roll[];            // value ranges
-  bonuses: Bonus[];         // what the values do
+  group: string; // only one affix per group on an item
+  level: number; // minimum item level, as Diablo 2's alvl
+  frequency: number; // weight in the pool
+  itemTypes: ItemType[]; // where it can roll
+  rolls: Roll[]; // value ranges
+  bonuses: Bonus[]; // what the values do
 }
 
 interface Roll {
@@ -279,14 +279,14 @@ Bonuses are data, not code, as rAthena's `bonus` script commands.
 ```ts
 type Bonus =
   | { stat: Stat; add: number }
-  | { addDamage: Category; target: string; percent: number }   // +20% against Undead
+  | { addDamage: Category; target: string; percent: number } // +20% against Undead
   | { reduceDamage: Category; source: string; percent: number } // -15% from Fire
   | { attackElement: Element }
   | { defenseElement: Element; level: number }
   | { skill: SkillId; rank: number }
   | { onHit: StatusId; buildup: number }
   | { autocast: SkillId; rank: number; chance: number; trigger: 'attack' | 'hit' }
-  | { effect: EffectId };                                        // runs a setup() for complex effects
+  | { effect: EffectId }; // runs a setup() for complex effects
 ```
 
 - `addDamage` and `reduceDamage` feed the Amplify and Reduce steps. Bonuses in one category add. Different categories multiply. See [combat engine](03-combat-engine.md#amplify-and-reduce).
@@ -301,12 +301,12 @@ rAthena's cards and Diablo 2's sockets are the same idea. This game uses monster
 - An item has 0 to 4 sockets.
 - The limit is the lower of the quality limit (see [quality](#quality)) and the slot limit below.
 
-| Slot | Max sockets |
-|---|---|
-| Two-handed weapon, Body | 4 |
-| One-handed weapon, Offhand | 3 |
-| Head | 2 |
-| Cloak, Boots, Accessory | 1 |
+| Slot                       | Max sockets |
+| -------------------------- | ----------- |
+| Two-handed weapon, Body    | 4           |
+| One-handed weapon, Offhand | 3           |
+| Head                       | 2           |
+| Cloak, Boots, Accessory    | 1           |
 
 - Sockets are rolled when the item drops.
 - A Blacksmith can add one socket to an item that has fewer than its limit. The attempt can fail and break the item, as rAthena's socket enchant.
@@ -324,20 +324,20 @@ rAthena's cards and Diablo 2's sockets are the same idea. This game uses monster
 
 Card families, based on rAthena's item bonuses:
 
-| Family | rAthena bonus | Example |
-|---|---|---|
-| Stat | `bStr`, `bVit` | +3 STR. |
-| Damage category | `bAddRace`, `bAddEle` | +20% damage against Undead. |
-| Reduction category | `bSubRace`, `bSubEle` | -15% damage from Fire. |
-| Defense element | `bDefEle` | Venom defense element level 1. |
-| Status on hit | `bAddEff` | Adds Freeze buildup on hit. |
-| Autocast on attack | `bAutoSpell` | 5% chance to cast Firebolt rank 3 on attack. |
-| Autocast when hit | `bAutoSpellWhenHit` | 5% chance to cast Heal rank 2 on self when hit. |
-| Skill grant | `bonus skill` | The merc can use Hide, even if its job cannot. |
-| Mana and health gain | `bSPDrainValue`, `bSPGainValue` | +3 mana per hit. +10 mana per kill. |
-| Loot | `bAddMonsterDropItem` | Kills by this merc have a chance to drop a potion. |
-| Trade-off | Phen, Ghostring | Strong effect with a clear cost. Mostly boss cards. |
-| Combo | rAthena card combos | Extra bonus when certain cards are on the same merc. |
+| Family               | rAthena bonus                   | Example                                              |
+| -------------------- | ------------------------------- | ---------------------------------------------------- |
+| Stat                 | `bStr`, `bVit`                  | +3 STR.                                              |
+| Damage category      | `bAddRace`, `bAddEle`           | +20% damage against Undead.                          |
+| Reduction category   | `bSubRace`, `bSubEle`           | -15% damage from Fire.                               |
+| Defense element      | `bDefEle`                       | Venom defense element level 1.                       |
+| Status on hit        | `bAddEff`                       | Adds Freeze buildup on hit.                          |
+| Autocast on attack   | `bAutoSpell`                    | 5% chance to cast Firebolt rank 3 on attack.         |
+| Autocast when hit    | `bAutoSpellWhenHit`             | 5% chance to cast Heal rank 2 on self when hit.      |
+| Skill grant          | `bonus skill`                   | The merc can use Hide, even if its job cannot.       |
+| Mana and health gain | `bSPDrainValue`, `bSPGainValue` | +3 mana per hit. +10 mana per kill.                  |
+| Loot                 | `bAddMonsterDropItem`           | Kills by this merc have a chance to drop a potion.   |
+| Trade-off            | Phen, Ghostring                 | Strong effect with a clear cost. Mostly boss cards.  |
+| Combo                | rAthena card combos             | Extra bonus when certain cards are on the same merc. |
 
 Autocast rules:
 
@@ -352,18 +352,18 @@ Granted skills get their own per-skill toggle, as if the merc had learned them.
 
 Example cards:
 
-| Card | Slot | Effect |
-|---|---|---|
-| Gravedigger | Weapon | +20% damage against Undead. |
-| Bog Hag | Cloak | Venom defense element level 1. |
-| Iron Golem | Body | +25% armor. -10% move speed. |
-| Ember Imp | Weapon | 5% chance to cast Firebolt rank 3 on attack. |
-| Hedge Witch | Body | 4% chance to cast Heal rank 2 on self when hit. |
-| Footpad | Accessory | Grants Hide. Based on rAthena's Smokie card. |
-| Leech Swarm | Weapon | +2 mana per hit. |
+| Card         | Slot      | Effect                                                                               |
+| ------------ | --------- | ------------------------------------------------------------------------------------ |
+| Gravedigger  | Weapon    | +20% damage against Undead.                                                          |
+| Bog Hag      | Cloak     | Venom defense element level 1.                                                       |
+| Iron Golem   | Body      | +25% armor. -10% move speed.                                                         |
+| Ember Imp    | Weapon    | 5% chance to cast Firebolt rank 3 on attack.                                         |
+| Hedge Witch  | Body      | 4% chance to cast Heal rank 2 on self when hit.                                      |
+| Footpad      | Accessory | Grants Hide. Based on rAthena's Smokie card.                                         |
+| Leech Swarm  | Weapon    | +2 mana per hit.                                                                     |
 | Will-o'-Wisp | Accessory | The merc's casts cannot be interrupted. -20% max mana. Based on rAthena's Phen card. |
-| Wraith | Body | Spectral defense element. -25% max health. Based on rAthena's Ghostring card. |
-| Kidnapper | Boots | +15% move speed while the citizen is within 3 tiles. |
+| Wraith       | Body      | Spectral defense element. -25% max health. Based on rAthena's Ghostring card.        |
+| Kidnapper    | Boots     | +15% move speed while the citizen is within 3 tiles.                                 |
 
 ## Crafting
 
@@ -395,14 +395,14 @@ Based on Inotia 3's synthesis system, with crafted equipment as in Diablo 2.
 
 ### What can be crafted
 
-| Category | Examples | Purpose |
-|---|---|---|
-| Consumables | Potions, resurrection items, bombs, identify scrolls | A steady supply for the belts. |
-| Equipment | The recipe fixes the base item and 1 or 2 affixes. The other affixes are rolled, as Diablo 2's crafted items. | Lets the player aim for what the party needs. |
-| Bags and upgrades | Bigger pack, extra belt slot, caravan upgrades | Based on Inotia's bags. |
-| Smith's Blessing | Rare materials | Protects one refine attempt. |
-| Rerolls | Reroll a Magic item's affixes. Add a socket. Raise the base to the next tier. | Gives surplus drops a use, as Diablo 2's Horadric Cube. |
-| Card fusion | 3 cards make 1 random card of the next tier | Gives duplicate cards a use. |
+| Category          | Examples                                                                                                      | Purpose                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Consumables       | Potions, resurrection items, bombs, identify scrolls                                                          | A steady supply for the belts.                          |
+| Equipment         | The recipe fixes the base item and 1 or 2 affixes. The other affixes are rolled, as Diablo 2's crafted items. | Lets the player aim for what the party needs.           |
+| Bags and upgrades | Bigger pack, extra belt slot, caravan upgrades                                                                | Based on Inotia's bags.                                 |
+| Smith's Blessing  | Rare materials                                                                                                | Protects one refine attempt.                            |
+| Rerolls           | Reroll a Magic item's affixes. Add a socket. Raise the base to the next tier.                                 | Gives surplus drops a use, as Diablo 2's Horadric Cube. |
+| Card fusion       | 3 cards make 1 random card of the next tier                                                                   | Gives duplicate cards a use.                            |
 
 - Cards cannot be crafted directly. Each card still has to come from its monster.
 - Crafting rolls use the `craft` stream.
@@ -421,12 +421,12 @@ A run has 4 phases of 8 nodes. About 19 of the nodes are fights, including 4 bos
 
 ### Focus per phase
 
-| Phase | Focus |
-|---|---|
-| 1 | Recruit. Fill the slots with Normal and Magic items. Learn the first recipes. |
-| 2 | Finish recruiting. Rares, the first cards, the first crafted pieces. |
-| 3 | Sockets, cards and refines. |
-| 4 | Final upgrades and preparing for the boss. |
+| Phase | Focus                                                                         |
+| ----- | ----------------------------------------------------------------------------- |
+| 1     | Recruit. Fill the slots with Normal and Magic items. Learn the first recipes. |
+| 2     | Finish recruiting. Rares, the first cards, the first crafted pieces.          |
+| 3     | Sockets, cards and refines.                                                   |
+| 4     | Final upgrades and preparing for the boss.                                    |
 
 ### Target at the final boss
 

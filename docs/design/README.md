@@ -29,48 +29,48 @@ The work still to build from these notes is planned in [roadmaps](../roadmaps/RE
 
 ## Decisions so far
 
-| Topic | Decision |
-|---|---|
-| Title | Writbearer. |
-| Combat timing | Real-time, on a fixed simulation tick. |
-| View | Isometric, with an orthographic camera. |
-| Platform | Desktop first, running in the browser. |
-| Language | TypeScript. |
-| Citizen | Never deals damage. |
-| Merc control | Toggles, not a full rule list. |
-| Tone | Adult. |
-| Skill cost | Mana for every skill. Basic attacks are free. |
-| Damage model | Physical and magical split, resolved through an event engine with before, current and after steps. |
-| Damage formulas | Based on rAthena's order of steps, without size. |
-| Friendly fire | Off. Only skills that declare it hurt their own side. |
-| Elements | As in rAthena and Diablo 2. Spectral is included. No custom status reactions. |
-| Mana gain | Regeneration, items, cards and potions, as in rAthena and Diablo 2. |
-| Death | A merc's corpse stays until it is resurrected, as in rAthena. |
-| Jobs | Permanent, as in Inotia. |
-| Sockets | Up to 4. Fewer on higher qualities. |
-| Refine failure | Breaks the item and its cards. |
-| Vault | Storage for the current run. Opens only at the start of each phase. |
-| Crafting | Recipes and materials, based on Inotia 3. Unlimited Recipe Book. |
-| Card drops | 3% normal, 25% elite, 100% boss. |
-| Between runs | Only the compendium and one suspended run are stored. No unlocks. |
-| Compendium | Hides monster, boss, card and unique details until discovered once. Only the UI hides them. |
-| Squad sets | Added after uniques are tested. |
-| Stages | Open fields, as in Diablo 2, joined seamlessly. Paths collapse behind the party. Bosses fight in closed arenas. |
-| Recruiting | Only in phases 1 and 2. Phases 3 and 4 are for building the party. In the game so far, the story hires only at the Guild House. |
-| Starting recruits | Five at the Guild House, drawn by slot: a guard, a striker, a support and two more, five jobs. The player hires up to four. |
-| Builds | Model B of doc 16: 4 spells, 1 innate and 12 elite upgrades per job; shards raise spell ranks. |
-| Shortcuts | No supplies resource. A shortcut costs the skipped content and saves souls. |
-| Controls | Click-to-move and WASD both work. Every key can be rebound. |
-| Pause | Menus pause the game. |
-| Story twist | The citizen is the final boss. At the end the player loses control, and the hired mercs must beat the citizen. |
-| Run length | 4 phases, 60 to 75 minutes. No stage time limit. |
-| Figure design | Cut paper: flat angular shapes, tapered limbs, no face, on a 3D skeleton that faces any angle. Claude builds the art in code. |
-| Visual tone | Greyscale and mature, with the Church's blood rites and gore. Color is information: red for blood and danger, gold for light and the bearer, teal for the dead and magic. |
-| Pixel art | Drawn at 384×216, snapped to the palette, scaled up 3×. The lantern lights hard rings. |
-| Rendering | Canvas 2D. A move to Three.js is to be weighed later. |
-| Party sprites | As Ragnarok Online's: one shared body with its actions in 8 facings, and attachments for gear. Each look is baked once into a sheet and copied whole each frame. See `src/render/sprites.ts`. Monsters are still cut from paper each frame. |
-| Item stats | Randomized per copy, in the style of Diablo 2. |
-| Equipment and inventory | Based on rAthena: slots, refine, sockets for monster cards, weight limits. |
+| Topic                   | Decision                                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title                   | Writbearer.                                                                                                                                                                                                                                 |
+| Combat timing           | Real-time, on a fixed simulation tick.                                                                                                                                                                                                      |
+| View                    | Isometric, with an orthographic camera.                                                                                                                                                                                                     |
+| Platform                | Desktop first, running in the browser.                                                                                                                                                                                                      |
+| Language                | TypeScript.                                                                                                                                                                                                                                 |
+| Citizen                 | Never deals damage.                                                                                                                                                                                                                         |
+| Merc control            | Toggles, not a full rule list.                                                                                                                                                                                                              |
+| Tone                    | Adult.                                                                                                                                                                                                                                      |
+| Skill cost              | Mana for every skill. Basic attacks are free.                                                                                                                                                                                               |
+| Damage model            | Physical and magical split, resolved through an event engine with before, current and after steps.                                                                                                                                          |
+| Damage formulas         | Based on rAthena's order of steps, without size.                                                                                                                                                                                            |
+| Friendly fire           | Off. Only skills that declare it hurt their own side.                                                                                                                                                                                       |
+| Elements                | As in rAthena and Diablo 2. Spectral is included. No custom status reactions.                                                                                                                                                               |
+| Mana gain               | Regeneration, items, cards and potions, as in rAthena and Diablo 2.                                                                                                                                                                         |
+| Death                   | A merc's corpse stays until it is resurrected, as in rAthena.                                                                                                                                                                               |
+| Jobs                    | Permanent, as in Inotia.                                                                                                                                                                                                                    |
+| Sockets                 | Up to 4. Fewer on higher qualities.                                                                                                                                                                                                         |
+| Refine failure          | Breaks the item and its cards.                                                                                                                                                                                                              |
+| Vault                   | Storage for the current run. Opens only at the start of each phase.                                                                                                                                                                         |
+| Crafting                | Recipes and materials, based on Inotia 3. Unlimited Recipe Book.                                                                                                                                                                            |
+| Card drops              | 3% normal, 25% elite, 100% boss.                                                                                                                                                                                                            |
+| Between runs            | Only the compendium and one suspended run are stored. No unlocks.                                                                                                                                                                           |
+| Compendium              | Hides monster, boss, card and unique details until discovered once. Only the UI hides them.                                                                                                                                                 |
+| Squad sets              | Added after uniques are tested.                                                                                                                                                                                                             |
+| Stages                  | Open fields, as in Diablo 2, joined seamlessly. Paths collapse behind the party. Bosses fight in closed arenas.                                                                                                                             |
+| Recruiting              | Only in phases 1 and 2. Phases 3 and 4 are for building the party. In the game so far, the story hires only at the Guild House.                                                                                                             |
+| Starting recruits       | Five at the Guild House, drawn by slot: a guard, a striker, a support and two more, five jobs. The player hires up to four.                                                                                                                 |
+| Builds                  | Model B of doc 16: 4 spells, 1 innate and 12 elite upgrades per job; shards raise spell ranks.                                                                                                                                              |
+| Shortcuts               | No supplies resource. A shortcut costs the skipped content and saves souls.                                                                                                                                                                 |
+| Controls                | Click-to-move and WASD both work. Every key can be rebound.                                                                                                                                                                                 |
+| Pause                   | Menus pause the game.                                                                                                                                                                                                                       |
+| Story twist             | The citizen is the final boss. At the end the player loses control, and the hired mercs must beat the citizen.                                                                                                                              |
+| Run length              | 4 phases, 60 to 75 minutes. No stage time limit.                                                                                                                                                                                            |
+| Figure design           | Cut paper: flat angular shapes, tapered limbs, no face, on a 3D skeleton that faces any angle. Claude builds the art in code.                                                                                                               |
+| Visual tone             | Greyscale and mature, with the Church's blood rites and gore. Color is information: red for blood and danger, gold for light and the bearer, teal for the dead and magic.                                                                   |
+| Pixel art               | Drawn at 384×216, snapped to the palette, scaled up 3×. The lantern lights hard rings.                                                                                                                                                      |
+| Rendering               | Canvas 2D. A move to Three.js is to be weighed later.                                                                                                                                                                                       |
+| Party sprites           | As Ragnarok Online's: one shared body with its actions in 8 facings, and attachments for gear. Each look is baked once into a sheet and copied whole each frame. See `src/render/sprites.ts`. Monsters are still cut from paper each frame. |
+| Item stats              | Randomized per copy, in the style of Diablo 2.                                                                                                                                                                                              |
+| Equipment and inventory | Based on rAthena: slots, refine, sockets for monster cards, weight limits.                                                                                                                                                                  |
 
 ## References
 

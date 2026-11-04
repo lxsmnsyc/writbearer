@@ -5,6 +5,7 @@ import { allowed, forbids } from '../targeting';
 import type Unit from '../unit';
 import type { Zone } from '../zone';
 import { engage, nearest } from './common';
+import flyerStep from './flyer';
 import thiefStep from './thief';
 
 /** What a monster goes for. */
@@ -244,6 +245,7 @@ export const MONSTER_STEPS: MonsterStep[] = [
   heraldStep,
   lureStep,
   thiefStep,
+  flyerStep,
   skillStep,
   supportStep,
   pursueStep,

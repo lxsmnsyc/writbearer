@@ -18,15 +18,15 @@
 
 Seconds to clear the pack, and bearer health lost (damage taken less healing), mean of seeds 1 to 32:
 
-| Job | With spells | Basic only | Speed-up | Bearer lost, spells | Bearer lost, basic |
-|---|---|---|---|---|---|
-| Vanguard | 19.5 s | 22.1 s | x1.13 | 156 | 558 |
-| Warden | 19.7 s | 29.3 s | x1.48 | 327 | 531 |
-| Ranger | 11.2 s | 17.3 s | x1.54 | 153 | 427 |
-| Sellsword | 11.9 s | 22.0 s | x1.85 | 180 | 559 |
-| Duelist | 14.6 s | 18.9 s | x1.29 | 347 | 521 |
-| Arcanist | 9.8 s | 41.6 s | x4.26 | 364 | 1042 |
-| Cleric | 26.5 s | 55.6 s | x2.10 | 42 (took 538) | 1426 |
+| Job       | With spells | Basic only | Speed-up | Bearer lost, spells | Bearer lost, basic |
+| --------- | ----------- | ---------- | -------- | ------------------- | ------------------ |
+| Vanguard  | 19.5 s      | 22.1 s     | x1.13    | 156                 | 558                |
+| Warden    | 19.7 s      | 29.3 s     | x1.48    | 327                 | 531                |
+| Ranger    | 11.2 s      | 17.3 s     | x1.54    | 153                 | 427                |
+| Sellsword | 11.9 s      | 22.0 s     | x1.85    | 180                 | 559                |
+| Duelist   | 14.6 s      | 18.9 s     | x1.29    | 347                 | 521                |
+| Arcanist  | 9.8 s       | 41.6 s     | x4.26    | 364                 | 1042               |
+| Cleric    | 26.5 s      | 55.6 s     | x2.10    | 42 (took 538)       | 1426               |
 
 - The Ranger was x1.48 over 32 seeds before the chain change below (x1.58 on the first 4 seeds only).
 - Duelist with Whirlwind: 9.0 s, bearer lost 232. The test now compares it with its base spells (14.6 s), not with basic attacks.
@@ -37,15 +37,15 @@ Seconds to clear the pack, and bearer health lost (damage taken less healing), m
 
 Wins on layers 1 / 2 / 3, `test/sim/bosses.test.ts` fight, over seeds 1 to 24 (the tests themselves use seeds 1 to 6). Measured after the review round, with the chain change:
 
-| Party | Wins of 24 |
-|---|---|
-| Vanguard, Ranger, Cleric | 18 / 24 / 23 (review, before the chain change: 19 / 24 / 23) |
-| Vanguard, Ranger (must lose) | 0 / 1 / 4 |
-| Warden, Duelist, Arcanist | 22 / 20 / 21 (was 0 / 0 / 0 on 6 seeds before tuning) |
-| Warden, Ranger, Cleric | 23 / 24 / 17 |
-| Vanguard, Sellsword, Cleric | 5 / 22 / 23 |
-| Vanguard, Duelist, Cleric | 7 / 15 / 18 |
-| Vanguard, Arcanist, Cleric | 24 / 22 / 24 |
+| Party                        | Wins of 24                                                   |
+| ---------------------------- | ------------------------------------------------------------ |
+| Vanguard, Ranger, Cleric     | 18 / 24 / 23 (review, before the chain change: 19 / 24 / 23) |
+| Vanguard, Ranger (must lose) | 0 / 1 / 4                                                    |
+| Warden, Duelist, Arcanist    | 22 / 20 / 21 (was 0 / 0 / 0 on 6 seeds before tuning)        |
+| Warden, Ranger, Cleric       | 23 / 24 / 17                                                 |
+| Vanguard, Sellsword, Cleric  | 5 / 22 / 23                                                  |
+| Vanguard, Duelist, Cleric    | 7 / 15 / 18                                                  |
+| Vanguard, Arcanist, Cleric   | 24 / 22 / 24                                                 |
 
 - Cleric parties with the Sellsword or the Duelist win the layer-1 boss (Gatekeeper) only 5 and 7 of 24. The test's 9-of-18 limit over three layers does not catch it. For cc-tuning.
 - On seeds 1 to 6, Warden, Duelist, Arcanist win 5 / 5 / 6 and Vanguard, Ranger, Cleric 6 / 6 / 5.

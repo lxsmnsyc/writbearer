@@ -17,14 +17,14 @@ Draft. Improvements to the fight areas: the Hunt, the Horde and the Labyrinth, a
 
 As Hades's doors. Each signpost shows the objective and the reward.
 
-| Reward | What the chest holds |
-|---|---|
-| Gold | A large pile of gold. |
-| Arms | An item of Magic quality or better, for a job in the party. |
-| Cards | A monster card from the area's monsters. |
-| Materials | Crafting materials, and a Smith's Blessing in the deeper layers. |
-| Respite | The party is healed when it is done, and the dead are not torn apart while the area lasts. |
-| Lore | A piece of the Old King's regalia or an earlier bearer's remains. Only where the lore places one. |
+| Reward    | What the chest holds                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------- |
+| Gold      | A large pile of gold.                                                                             |
+| Arms      | An item of Magic quality or better, for a job in the party.                                       |
+| Cards     | A monster card from the area's monsters.                                                          |
+| Materials | Crafting materials, and a Smith's Blessing in the deeper layers.                                  |
+| Respite   | The party is healed when it is done, and the dead are not torn apart while the area lasts.        |
+| Lore      | A piece of the Old King's regalia or an earlier bearer's remains. Only where the lore places one. |
 
 - The reward is rolled from the `map` stream, so the map and the signposts agree.
 - The layer map shows each area's reward icon beside its objective.
@@ -48,14 +48,14 @@ As Aghanim's Labyrinth's room grades. Each gauntlet has one bonus challenge, sho
 - Failing it only loses the upgrade. The objective still opens the exits.
 - The Labyrinth's "the bearer takes no hit" becomes one of these.
 
-| Challenge | Met when |
-|---|---|
-| Untouched | The bearer takes no hit. |
-| No losses | No merc dies. |
-| Swift | The objective is done within a set time. |
-| Thorough | Every pack in the area is dead. |
-| Silent | No horn is blown and no bell is rung. |
-| In order | The marked monsters of a Hunt die in the order shown. |
+| Challenge | Met when                                              |
+| --------- | ----------------------------------------------------- |
+| Untouched | The bearer takes no hit.                              |
+| No losses | No merc dies.                                         |
+| Swift     | The objective is done within a set time.              |
+| Thorough  | Every pack in the area is dead.                       |
+| Silent    | No horn is blown and no bell is rung.                 |
+| In order  | The marked monsters of a Hunt die in the order shown. |
 
 In the game so far (`src/game/bonus.ts`):
 
@@ -71,18 +71,18 @@ In the game so far (`src/game/bonus.ts`):
 
 As Aghanim's Labyrinth's room modifiers. From the Rift Road down, a gauntlet may roll one mutator. An Elite gauntlet always rolls one, and two in the Sunken Crown. The mutator shows on the signpost.
 
-| Mutator | What it does |
-|---|---|
-| Darkness | The party's light is halved. |
-| Fog | No one sees past 4 tiles, monsters included. |
-| Blood moon | Monsters below half health deal more damage. |
+| Mutator       | What it does                                                                |
+| ------------- | --------------------------------------------------------------------------- |
+| Darkness      | The party's light is halved.                                                |
+| Fog           | No one sees past 4 tiles, monsters included.                                |
+| Blood moon    | Monsters below half health deal more damage.                                |
 | Restless dead | Bodies not torn apart rise as Husks after 10 seconds, the party's dead too. |
-| Volatile | Monsters burst when they die, shown on the ground first. |
-| Alarmed | Every pack has a Horn-Bearer, and horn posts stand on the field. |
-| Shield wall | Every pack has a Shieldbearer. |
-| Plague | No health returns outside a fight, and potions heal less. |
-| Frenzy | Monsters move faster but have less health. |
-| Rich | Monsters drop twice the gold and materials. The packs are bigger. |
+| Volatile      | Monsters burst when they die, shown on the ground first.                    |
+| Alarmed       | Every pack has a Horn-Bearer, and horn posts stand on the field.            |
+| Shield wall   | Every pack has a Shieldbearer.                                              |
+| Plague        | No health returns outside a fight, and potions heal less.                   |
+| Frenzy        | Monsters move faster but have less health.                                  |
+| Rich          | Monsters drop twice the gold and materials. The packs are bigger.           |
 
 - A mutator raises the area's reward by one step, so a harder road can be chosen on purpose.
 - Mutators come from the `map` stream.
@@ -147,22 +147,22 @@ Planned: the Labyrinth becomes an obstacle course with a start, an end and on av
 - **Levers and gates.** Some corridors are closed by gates. A lever elsewhere opens them. Some levers open a shortcut back to the entrance side.
 - **More traps, with patterns.** Each trap keeps a fixed rhythm, so the player can learn its timing.
 
-| Trap | What it does |
-|---|---|
-| Spike grate | Today's trap. A square that strikes on a rhythm. |
-| Fire vent | Today's trap. A circle of fire on a rhythm. |
-| Arrow slit | Fires a bolt along a corridor, shown as a line first. |
-| Swinging blade | Sweeps across a corridor, back and forth. |
-| Falling floor | A square of floor that drops away after it is stepped on, shown first. It stays open, which can cut a route. |
-| Gas vent | Leaves a Venom cloud that lasts a few seconds. |
+| Trap           | What it does                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Spike grate    | Today's trap. A square that strikes on a rhythm.                                                             |
+| Fire vent      | Today's trap. A circle of fire on a rhythm.                                                                  |
+| Arrow slit     | Fires a bolt along a corridor, shown as a line first.                                                        |
+| Swinging blade | Sweeps across a corridor, back and forth.                                                                    |
+| Falling floor  | A square of floor that drops away after it is stepped on, shown first. It stays open, which can cut a route. |
+| Gas vent       | Leaves a Venom cloud that lasts a few seconds.                                                               |
 
 More traps to come, after Aghanim's Labyrinth's:
 
-| Trap | What it does |
-|---|---|
-| Flamethrower | A jet of fire that shuts a stretch of the path for a while, shown first, then goes out. It points one fixed way, or turns in a slow circle, so the way past it opens and closes as it sweeps. |
+| Trap           | What it does                                                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flamethrower   | A jet of fire that shuts a stretch of the path for a while, shown first, then goes out. It points one fixed way, or turns in a slow circle, so the way past it opens and closes as it sweeps.     |
 | Pressure plate | A plate on the floor that does nothing until someone steps on it. After a short delay, shown on the ground, it strikes where it lies, then sets itself again. Unlike the falling floor, it stays. |
-| Arrow launcher | A launcher at one end of a path that shoots arrows down it, each a projectile that flies its length. It reaches much farther than an arrow slit, which strikes only its own corridor. |
+| Arrow launcher | A launcher at one end of a path that shoots arrows down it, each a projectile that flies its length. It reaches much farther than an arrow slit, which strikes only its own corridor.             |
 
 - In the game so far, reworked as [the level director](15-director.md#the-labyrinth-reworked) asks:
   - No monsters. The Labyrinth rolls no Thorough bonus, and no mutator but Darkness.
@@ -179,14 +179,14 @@ More traps to come, after Aghanim's Labyrinth's:
 
 ## New kinds of gauntlet
 
-| Gauntlet | Objective | Where | Inspired by |
-|---|---|---|---|
-| Escort | Refugees follow the bearer. Reach the exit with at least half of them alive. | Marches, Rift Road | The Refugee node in the [overview](01-overview.md#stage-node-types). |
-| Vault | A locked vault on the field. Its key is on a mini-boss, and traps guard it. Opening it is the reward. | All | The Treasure node. |
-| Silence | Horn posts stand across the field. Destroy every post before its Horn-Bearer reaches it. | Rift Road | The alarms in [stages](11-stages.md#alarms). |
-| Ritual | The bearer must stand on three sigils in turn, 15 seconds each. Waves come while it stands. | Undercroft, Crown | Aghanim's Labyrinth's hold-the-point rooms. The bearer breaking the Church's sigils is a clue to the twist. |
-| Collapse | The floor falls away from the west. Reach the exit before it does. Packs stand in the way. | Rift Road | The Bridge-Warden's fight, on a smaller scale. |
-| Ambush | The area looks like a safe Camp. Packs surround the party once the bearer reaches the fire. | All | The Ambush node. |
+| Gauntlet | Objective                                                                                             | Where              | Inspired by                                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Escort   | Refugees follow the bearer. Reach the exit with at least half of them alive.                          | Marches, Rift Road | The Refugee node in the [overview](01-overview.md#stage-node-types).                                        |
+| Vault    | A locked vault on the field. Its key is on a mini-boss, and traps guard it. Opening it is the reward. | All                | The Treasure node.                                                                                          |
+| Silence  | Horn posts stand across the field. Destroy every post before its Horn-Bearer reaches it.              | Rift Road          | The alarms in [stages](11-stages.md#alarms).                                                                |
+| Ritual   | The bearer must stand on three sigils in turn, 15 seconds each. Waves come while it stands.           | Undercroft, Crown  | Aghanim's Labyrinth's hold-the-point rooms. The bearer breaking the Church's sigils is a clue to the twist. |
+| Collapse | The floor falls away from the west. Reach the exit before it does. Packs stand in the way.            | Rift Road          | The Bridge-Warden's fight, on a smaller scale.                                                              |
+| Ambush   | The area looks like a safe Camp. Packs surround the party once the bearer reaches the fire.           | All                | The Ambush node.                                                                                            |
 
 - Each new kind keeps the rules above: a reward on the road, a bonus challenge, mutators and mini-bosses.
 - In the game so far, the Escort is in (`src/game/objective.ts`, `thinkWard` in `src/sim/ai.ts`):
@@ -237,12 +237,12 @@ More traps to come, after Aghanim's Labyrinth's:
 
 ## Kinds by layer
 
-| Layer | Gauntlets |
-|---|---|
-| Marches | Hunt, Horde, Labyrinth (Hedge), Escort |
-| Rift Road | Hunt, Horde (Breach), Labyrinth, Silence, Collapse |
-| Undercroft | Hunt, Horde (Rising), Labyrinth (Catacomb), Vault, Ritual |
-| Sunken Crown | Hunt, Horde, Labyrinth (Catacomb), Ritual, Ambush |
+| Layer        | Gauntlets                                                 |
+| ------------ | --------------------------------------------------------- |
+| Marches      | Hunt, Horde, Labyrinth (Hedge), Escort                    |
+| Rift Road    | Hunt, Horde (Breach), Labyrinth, Silence, Collapse        |
+| Undercroft   | Hunt, Horde (Rising), Labyrinth (Catacomb), Vault, Ritual |
+| Sunken Crown | Hunt, Horde, Labyrinth (Catacomb), Ritual, Ambush         |
 
 ## Order to build in
 

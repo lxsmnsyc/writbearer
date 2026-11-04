@@ -67,12 +67,12 @@ Inside a phase, the world is one continuous place, as Diablo 2's areas. The stag
 
 Target: 60 to 75 minutes for a full run.
 
-| Part | Count | Time |
-|---|---|---|
-| Phases | 4. The last one ends at the capital with the final boss. | |
-| Nodes visited per phase | 8 | 15 to 18 minutes per phase |
-| Combat stage | 60% of nodes | 1.5 to 3 minutes each |
-| Other nodes | 40% of nodes | about 1 minute each, with menus |
+| Part                    | Count                                                    | Time                            |
+| ----------------------- | -------------------------------------------------------- | ------------------------------- |
+| Phases                  | 4. The last one ends at the capital with the final boss. |                                 |
+| Nodes visited per phase | 8                                                        | 15 to 18 minutes per phase      |
+| Combat stage            | 60% of nodes                                             | 1.5 to 3 minutes each           |
+| Other nodes             | 40% of nodes                                             | about 1 minute each, with menus |
 
 - A run can be saved and resumed at any node.
 
@@ -110,13 +110,13 @@ The compendium records what the player has discovered. It unlocks no power. It c
 
 The UI hides details the player has not discovered in any run yet.
 
-| Entry | Hidden until | What shows before that |
-|---|---|---|
-| Monster | The player beats that monster kind once | Name and model. Race, element, level, weak points, skills and card show as "?". |
-| Boss | The player beats that boss once | Name and model. Its mechanics show as "?". |
-| Card | The player acquires it once | Its name, once seen in a drop. Its effect shows as "?" until picked up. |
-| Unique or set piece | The player acquires it once | The compendium shows its silhouette. Its value ranges appear after the first copy. |
-| Recipe | The player learns it once | Not listed. |
+| Entry               | Hidden until                            | What shows before that                                                             |
+| ------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| Monster             | The player beats that monster kind once | Name and model. Race, element, level, weak points, skills and card show as "?".    |
+| Boss                | The player beats that boss once         | Name and model. Its mechanics show as "?".                                         |
+| Card                | The player acquires it once             | Its name, once seen in a drop. Its effect shows as "?" until picked up.            |
+| Unique or set piece | The player acquires it once             | The compendium shows its silhouette. Its value ranges appear after the first copy. |
+| Recipe              | The player learns it once               | Not listed.                                                                        |
 
 - Only the UI hides details. The mercs' AI always reads the real data. A merc with the "weak to my element" toggle still picks the right target against an unknown monster.
 - Hidden details affect how the player plans: which mercs to bring, which gear to craft, which path to take. They never weaken the mercs.

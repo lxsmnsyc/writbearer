@@ -11,12 +11,12 @@
 
 Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building the party the player already has.
 
-| Phase | Focus |
-|---|---|
-| 1 | Gather mercs. Taverns, wandering mercs and events offer recruits. |
-| 2 | Finish the roster. The last chance to recruit. |
-| 3 | Build: gear, cards, refines, skill points. No recruits. |
-| 4 | Build and prepare for the final fight. No recruits. |
+| Phase | Focus                                                             |
+| ----- | ----------------------------------------------------------------- |
+| 1     | Gather mercs. Taverns, wandering mercs and events offer recruits. |
+| 2     | Finish the roster. The last chance to recruit.                    |
+| 3     | Build: gear, cards, refines, skill points. No recruits.           |
+| 4     | Build and prepare for the final fight. No recruits.               |
 
 - In phases 3 and 4, no tavern, wandering merc or event offers a recruit.
 - A merc lost in phases 3 or 4 cannot be replaced. Dismissing one shrinks the party for good. Resurrection matters more.
@@ -54,21 +54,21 @@ Mercs can only be recruited in phases 1 and 2. Phases 3 and 4 are for building t
 Morale is how a merc feels about the job, from 0 to 100. Every merc starts at 60; a Loyal one at 75.
 
 | Morale | From | Discipline kept in a fight |
-|---|---|---|
-| High | 75 | 100% |
-| Normal | 40 | 90% |
-| Low | 15 | 70% |
-| Broken | 0 | 50% |
+| ------ | ---- | -------------------------- |
+| High   | 75   | 100%                       |
+| Normal | 40   | 90%                        |
+| Low    | 15   | 70%                        |
+| Broken | 0    | 50%                        |
 
-| Event | Morale |
-|---|---|
-| Wage paid | +10 |
-| Wage unpaid | -40 |
-| Rest at a Camp | +10 |
-| An elite slain | +4 |
-| A boss slain | +15 |
-| A fellow merc dies | -10 |
-| Dread takes hold | -8 |
+| Event              | Morale |
+| ------------------ | ------ |
+| Wage paid          | +10    |
+| Wage unpaid        | -40    |
+| Rest at a Camp     | +10    |
+| An elite slain     | +4     |
+| A boss slain       | +15    |
+| A fellow merc dies | -10    |
+| Dread takes hold   | -8     |
 
 - A Loyal merc loses half as much.
 - A merc whose morale is Broken deserts as the party takes a road on, with what it wears. One unpaid wage leaves a merc Low; a second, or a bad fight on top, breaks it.
@@ -78,14 +78,14 @@ Morale is how a merc feels about the job, from 0 to 100. Every merc starts at 60
 
 The player raises stats with points on level up.
 
-| Stat | Effect |
-|---|---|
-| STR | Melee attack. Carry limit for equipment. |
-| AGI | Attack speed. Evasion. A little move speed. |
-| VIT | Max health. Physical soft defense. Resists stun and bleed. |
-| INT | Magic attack. Max mana. Element buildup. |
-| DEX | Accuracy. Ranged attack. Crit rate. Shorter cast time. |
-| WIL | Mana regeneration. Magical soft defense. Resists fear, silence and curse. Morale. |
+| Stat | Effect                                                                            |
+| ---- | --------------------------------------------------------------------------------- |
+| STR  | Melee attack. Carry limit for equipment.                                          |
+| AGI  | Attack speed. Evasion. A little move speed.                                       |
+| VIT  | Max health. Physical soft defense. Resists stun and bleed.                        |
+| INT  | Magic attack. Max mana. Element buildup.                                          |
+| DEX  | Accuracy. Ranged attack. Crit rate. Shorter cast time.                            |
+| WIL  | Mana regeneration. Magical soft defense. Resists fear, silence and curse. Morale. |
 
 The first five follow rAthena. WIL replaces LUK, since mercs do not loot and luck-based drops belong to the citizen.
 
@@ -121,23 +121,23 @@ effective = discipline * moraleFactor
 ```
 
 | Morale | Factor |
-|---|---|
-| High | 100% |
-| Normal | 90% |
-| Low | 70% |
-| Broken | 50% |
+| ------ | ------ |
+| High   | 100%   |
+| Normal | 90%    |
+| Low    | 70%    |
+| Broken | 50%    |
 
 Occult Dread lowers morale, so it also lowers effective Discipline for a while.
 
 #### Effect 1: how many toggles the merc follows
 
 | Effective Discipline | Target priorities | Behavior flags | "Save for elites" on skills |
-|---|---|---|---|
-| 0 to 19 | 1 | 1 | No |
-| 20 to 39 | 2 | 2 | Yes |
-| 40 to 59 | 2 | 3 | Yes |
-| 60 to 79 | 3 | 4 | Yes |
-| 80 to 100 | 3 | All | Yes |
+| -------------------- | ----------------- | -------------- | --------------------------- |
+| 0 to 19              | 1                 | 1              | No                          |
+| 20 to 39             | 2                 | 2              | Yes                         |
+| 40 to 59             | 2                 | 3              | Yes                         |
+| 60 to 79             | 3                 | 4              | Yes                         |
+| 80 to 100            | 3                 | All            | Yes                         |
 
 - Toggles beyond the limit show as greyed out in the UI. The player picks which ones stay active.
 - **In the game so far:** target priorities and "Save for elites" follow this table: 1 priority below 20 effective Discipline, 2 below 60 and 3 from 60, one more for a Veteran. Behavior flags wait for the toggles that use them. Priorities past the limit show greyed out as "ignored". A merc starts with its job's Discipline (Vanguard 40, Ranger 35, Cleric 45), plus its level, plus its traits: Veteran +10, Loyal and Devout +5, Greedy -5, Cowardly and Bloodthirsty -10. It gains 1 per level. Effect 3, the shout response delay, is in the game. Effect 2 waits for more trait conflicts.
@@ -225,18 +225,18 @@ Belt use:
 
 Rolled when the merc is recruited. They cannot be changed.
 
-| Trait | Effect |
-|---|---|
-| Brave | Never retreats. |
-| Cowardly | Flees below 25% health. |
-| Greedy | Wants to run for loot during combat. Asks for higher wages. |
-| Loyal | Morale bonus. Guards the citizen more often. |
-| Glory-seeker | Prefers elites. |
-| Drunkard | Random buffs and penalties. |
-| Bloodthirsty | Chases kills. Ignores retreat. |
-| Veteran | One extra toggle slot. |
-| Hates a job | Morale penalty when that job is in the party. |
-| Devout | Resists Occult. Refuses to work with a Necromancer. |
+| Trait        | Effect                                                      |
+| ------------ | ----------------------------------------------------------- |
+| Brave        | Never retreats.                                             |
+| Cowardly     | Flees below 25% health.                                     |
+| Greedy       | Wants to run for loot during combat. Asks for higher wages. |
+| Loyal        | Morale bonus. Guards the citizen more often.                |
+| Glory-seeker | Prefers elites.                                             |
+| Drunkard     | Random buffs and penalties.                                 |
+| Bloodthirsty | Chases kills. Ignores retreat.                              |
+| Veteran      | One extra toggle slot.                                      |
+| Hates a job  | Morale penalty when that job is in the party.               |
+| Devout       | Resists Occult. Refuses to work with a Necromancer.         |
 
 ### Movement
 
@@ -273,22 +273,22 @@ Based on rAthena, where a dead character stays on the ground until it is resurre
 
 ## Jobs
 
-| Job | Role | Element | Hook |
-|---|---|---|---|
-| Sellsword | Generalist | Neutral | Cheap wage. Good first pick. |
-| Vanguard | Tank | Earth | Taunts, shield wall, intercepts. |
-| Warden | Bodyguard | Neutral | Stays by the citizen. Counters anyone who hits the citizen. |
-| Duelist | Melee damage | Neutral | Parries. Single-target executes. Daggers and swords. |
-| Ranger | Ranged damage | Storm | Prefers flyers. Sets traps. |
-| Arcanist | Area magic | Fire, Frost | High damage. Its strongest spells have friendly fire. |
-| Cleric | Healer | Radiant | Heals, cleanses, Ward barriers. |
-| Bard | Support | Neutral | Auras. Restores morale. Raises Discipline of others. |
-| Alchemist | Utility | Venom, Fire | Uses belt items at double strength. Crafts potions at camp. |
-| Sapper | Control | Fire, Earth | Bombs. Breaks walls. Opens shortcuts in stages. |
-| Beastmaster | Pet | Earth | The pet takes half a party slot. |
-| Scout | Recon | Neutral | Reveals hidden map nodes. Disarms traps. |
-| Hexblade | Debuff | Occult | Curses. Lifesteal. |
-| Necromancer | Summons | Occult | Raises dead enemies. Morale penalty with Clerics. |
+| Job         | Role          | Element     | Hook                                                        |
+| ----------- | ------------- | ----------- | ----------------------------------------------------------- |
+| Sellsword   | Generalist    | Neutral     | Cheap wage. Good first pick.                                |
+| Vanguard    | Tank          | Earth       | Taunts, shield wall, intercepts.                            |
+| Warden      | Bodyguard     | Neutral     | Stays by the citizen. Counters anyone who hits the citizen. |
+| Duelist     | Melee damage  | Neutral     | Parries. Single-target executes. Daggers and swords.        |
+| Ranger      | Ranged damage | Storm       | Prefers flyers. Sets traps.                                 |
+| Arcanist    | Area magic    | Fire, Frost | High damage. Its strongest spells have friendly fire.       |
+| Cleric      | Healer        | Radiant     | Heals, cleanses, Ward barriers.                             |
+| Bard        | Support       | Neutral     | Auras. Restores morale. Raises Discipline of others.        |
+| Alchemist   | Utility       | Venom, Fire | Uses belt items at double strength. Crafts potions at camp. |
+| Sapper      | Control       | Fire, Earth | Bombs. Breaks walls. Opens shortcuts in stages.             |
+| Beastmaster | Pet           | Earth       | The pet takes half a party slot.                            |
+| Scout       | Recon         | Neutral     | Reveals hidden map nodes. Disarms traps.                    |
+| Hexblade    | Debuff        | Occult      | Curses. Lifesteal.                                          |
+| Necromancer | Summons       | Occult      | Raises dead enemies. Morale penalty with Clerics.           |
 
 - Every job is available from the first run.
 - The 5 recruits at the start of a run come from the simpler jobs: Sellsword, Vanguard, Warden, Duelist, Ranger, Arcanist and Cleric.

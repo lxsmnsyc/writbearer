@@ -15,13 +15,13 @@ From Michael Booth's talk "The AI Systems of Left 4 Dead" (GDC 2009). Valve's di
 
 **What it populates**, as "structured unpredictability": each kind of thing comes on its own randomized schedule, neither purely random nor uniform, and the schedules overlap.
 
-| Layer | How often | How |
-|---|---|---|
-| Wanderers | High | A count per area, rolled at map start from the escape route's length and a density. Spawned as the area enters the active set, removed as it leaves. Zeroed once an area is seen, and during Relax. |
-| Mobs | Medium | 20 to 30 enraged infected, every 90 to 180 seconds on Normal. A mob grows from its least size just after the last one to its most over time, so frequent mobs stay fair. A Boomer's vomit forces one at once and resets the timer. |
-| Special infected | Medium | Each on its own randomized timer, in an area of the active set no survivor can see. Smokers prefer areas above the team. |
-| Bosses | Low | Placed every so many units along the flow, a random amount, at map start. Tank, Witch and Nothing are shuffled and dealt out, with no kind twice in a row. Pacing does not touch them. |
-| Weapon caches and items | Low and medium | The map's designer places many possible spots. The director picks which exist. |
+| Layer                   | How often      | How                                                                                                                                                                                                                                |
+| ----------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wanderers               | High           | A count per area, rolled at map start from the escape route's length and a density. Spawned as the area enters the active set, removed as it leaves. Zeroed once an area is seen, and during Relax.                                |
+| Mobs                    | Medium         | 20 to 30 enraged infected, every 90 to 180 seconds on Normal. A mob grows from its least size just after the last one to its most over time, so frequent mobs stay fair. A Boomer's vomit forces one at once and resets the timer. |
+| Special infected        | Medium         | Each on its own randomized timer, in an area of the active set no survivor can see. Smokers prefer areas above the team.                                                                                                           |
+| Bosses                  | Low            | Placed every so many units along the flow, a random amount, at map start. Tank, Witch and Nothing are shuffled and dealt out, with no kind twice in a row. Pacing does not touch them.                                             |
+| Weapon caches and items | Low and medium | The map's designer places many possible spots. The director picks which exist.                                                                                                                                                     |
 
 **Where a mob spawns:** in the active set, out of sight.
 
@@ -72,26 +72,26 @@ Left 4 Dead's director changes only pacing. Ours does both, at two time scales:
 
 **Standing, for difficulty.** One number for the run, updated at the end of each area.
 
-| Signal | What it says |
-|---|---|
-| Party health | Health and mana of the living at the end of the area, as a share of their maximum. |
-| Losses | Mercs dead in the area and over the run. |
-| Potions | Potions drunk, and potions left on the belts and in the pack. |
-| Pace | How long the area took against its objective's usual time. |
-| Bonus record | How many bonus challenges the party has met so far. |
-| Party strength | Levels and gear against the depth's expected level. |
+| Signal         | What it says                                                                       |
+| -------------- | ---------------------------------------------------------------------------------- |
+| Party health   | Health and mana of the living at the end of the area, as a share of their maximum. |
+| Losses         | Mercs dead in the area and over the run.                                           |
+| Potions        | Potions drunk, and potions left on the belts and in the pack.                      |
+| Pace           | How long the area took against its objective's usual time.                         |
+| Bonus record   | How many bonus challenges the party has met so far.                                |
+| Party strength | Levels and gear against the depth's expected level.                                |
 
 ## What it populates
 
 Our gauntlets map onto Left 4 Dead's layers:
 
-| Layer | Ours | Paced |
-|---|---|---|
-| Wanderers | The packs laid at generation, standing where they are until the party wakes them. | Thinned during Relax, only where no one has seen them. A pack the party has seen is never moved or thinned. |
-| Mobs | Waves: a Horde's, a Ritual's, an Ambush's, and new waves in a Hunt or an Escort. Timer, size and where are the director's. | Yes |
-| Specials | Single harassers on their own timers: archers, captains, Horn-Bearers. | Yes |
-| Bosses | Elites and mini-bosses, placed along the flow at generation, dealt from a shuffled deck with no kind twice in a row. | No |
-| Items | Relief: blossoms, potions and chests, at spots the generator lays out. The director picks which exist. | Yes, after a hard stretch |
+| Layer     | Ours                                                                                                                       | Paced                                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Wanderers | The packs laid at generation, standing where they are until the party wakes them.                                          | Thinned during Relax, only where no one has seen them. A pack the party has seen is never moved or thinned. |
+| Mobs      | Waves: a Horde's, a Ritual's, an Ambush's, and new waves in a Hunt or an Escort. Timer, size and where are the director's. | Yes                                                                                                         |
+| Specials  | Single harassers on their own timers: archers, captains, Horn-Bearers.                                                     | Yes                                                                                                         |
+| Bosses    | Elites and mini-bosses, placed along the flow at generation, dealt from a shuffled deck with no kind twice in a row.       | No                                                                                                          |
+| Items     | Relief: blossoms, potions and chests, at spots the generator lays out. The director picks which exist.                     | Yes, after a hard stretch                                                                                   |
 
 **Where a wave comes from:** out of sight of the whole party, in the area round it.
 
@@ -110,16 +110,16 @@ Each kind of gauntlet has key points: the places in its layout that the director
 - **Boss spots:** places along the flow where an elite or mini-boss may stand.
 - **Relief spots:** places a blossom, potion or chest may appear.
 
-| Gauntlet | Key points |
-|---|---|
-| Hunt | Where the packs stand, where the marked ones wait, and where a marked one runs for help. |
-| Horde | Where waves come from, the ground the party holds, and the routes waves take to it. |
+| Gauntlet  | Key points                                                                                                 |
+| --------- | ---------------------------------------------------------------------------------------------------------- |
+| Hunt      | Where the packs stand, where the marked ones wait, and where a marked one runs for help.                   |
+| Horde     | Where waves come from, the ground the party holds, and the routes waves take to it.                        |
 | Labyrinth | The start, the end, the main path between them, its branches, and where traps stand along it. No monsters. |
-| Escort | The route to the exit, and where packs lie in wait along it. |
-| Vault | The vault, its ring of traps, and the lair. |
-| Ritual | The sigils, and where waves come from round each. |
-| Collapse | The falling edge, the route ahead of it, and where packs stand across it. |
-| Ambush | The fire, and where the groups wait round it. |
+| Escort    | The route to the exit, and where packs lie in wait along it.                                               |
+| Vault     | The vault, its ring of traps, and the lair.                                                                |
+| Ritual    | The sigils, and where waves come from round each.                                                          |
+| Collapse  | The falling edge, the route ahead of it, and where packs stand across it.                                  |
+| Ambush    | The fire, and where the groups wait round it.                                                              |
 
 ## The Labyrinth, reworked
 

@@ -1,4 +1,5 @@
 import type { ComponentProps, JSX } from 'solid-js';
+import type { FlightStyle } from '../../sim/flight';
 import type { Hunt } from '../../sim/ai';
 import type { Upgrade } from '../../sim/builds';
 import type { Passive, Skill } from '../../sim/skill';
@@ -21,6 +22,8 @@ export interface Template {
   hunt?: Hunt;
   // Takes an item from the pack and runs for an exit (src/sim/theft.ts)
   thief?: boolean;
+  // Flies: out of melee reach while aloft (src/sim/flight.ts)
+  flies?: FlightStyle;
   skills?: Skill[];
 }
 

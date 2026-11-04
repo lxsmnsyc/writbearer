@@ -5,6 +5,7 @@ import type { Fogs } from '../fog';
 import type { Frame } from '../renderer';
 import { isKind, look } from '../rig';
 import { drawFigure, seen } from './figures';
+import { drawLifted } from './flight';
 import { drawProp } from './props';
 import { type Scene, onScreen, propsOf } from './scene';
 
@@ -55,7 +56,9 @@ export function drawStanding(s: Scene, f: Frame, fog: Fogs, bearer: Unit | null)
         depth: r.x + r.z,
         draw: () => {
           ctx.globalAlpha = shown;
-          drawFigure(ctx, r, body, f.time, f.views.get(u).hurt < 0.12);
+          drawLifted(ctx, u, r, body, f.time, (at) => {
+            drawFigure(ctx, r, at, f.time, f.views.get(u).hurt < 0.12);
+          });
           ctx.globalAlpha = 1;
         },
       });

@@ -36,12 +36,12 @@ Every enemy in the Hollow has a reason to stop the bearer. "Monsters" is only wh
 
 The Creditor has no servants in the Hollow. Its only agents are on the surface: the Guild, and the contracts the mercs signed. Nothing that spawns helps the party, and nothing that spawns wants the bearer to reach the tomb. The only exception is the final fight, once the Creditor has woken: then it takes corrupted mercs and raises unresurrected ones.
 
-| Enemy | Who they are | Why they attack |
-|---|---|---|
-| Hollow soldiers | The Old King's soldiers, bound by his curse to guard the tomb forever. | Duty. They know what the bearer carries. |
-| Penitents | Members of the Church, the kingdom's religion. See [the Church](#the-church). | They keep the seal, and the bearer is what it holds back. |
-| Blight creatures | The Hollow's own flesh, grown to keep the Creditor's body down. | Like an immune response, they attack what does not belong. |
-| The Hollowed | Penitents driven mad by the Creditor's whispers. See [the Church](#the-church). | Hunger. They want to tear the bearer apart and take what it carries. |
+| Enemy            | Who they are                                                                    | Why they attack                                                      |
+| ---------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Hollow soldiers  | The Old King's soldiers, bound by his curse to guard the tomb forever.          | Duty. They know what the bearer carries.                             |
+| Penitents        | Members of the Church, the kingdom's religion. See [the Church](#the-church).   | They keep the seal, and the bearer is what it holds back.            |
+| Blight creatures | The Hollow's own flesh, grown to keep the Creditor's body down.                 | Like an immune response, they attack what does not belong.           |
+| The Hollowed     | Penitents driven mad by the Creditor's whispers. See [the Church](#the-church). | Hunger. They want to tear the bearer apart and take what it carries. |
 
 ### The Church
 
@@ -60,12 +60,12 @@ The Church did not stay pure. Centuries underground, beside the body, wore it do
 
 The journey goes down. Each phase is a layer of the Hollow.
 
-| Phase | Layer | Biome |
-|---|---|---|
-| 1 | The Marches | The surface near the rim: forest roads, burned villages. |
-| 2 | The Rift Road | Paths cut into the chasm walls. |
-| 3 | The Drowned Undercroft | Flooded caverns and old cellars under the city. |
-| 4 | The Sunken Crown | The ruins of the old capital. |
+| Phase | Layer                  | Biome                                                    |
+| ----- | ---------------------- | -------------------------------------------------------- |
+| 1     | The Marches            | The surface near the rim: forest roads, burned villages. |
+| 2     | The Rift Road          | Paths cut into the chasm walls.                          |
+| 3     | The Drowned Undercroft | Flooded caverns and old cellars under the city.          |
+| 4     | The Sunken Crown       | The ruins of the old capital.                            |
 
 Reasons to go deeper:
 
@@ -106,13 +106,13 @@ Each clue is true from the start. The player only understands them at the end.
 
 The sides come from systems the player managed during the run.
 
-| State at the reveal | Effect |
-|---|---|
-| Living merc | Fights the Creditor. |
-| Dead merc, not resurrected | The contract still holds its soul. The Creditor raises it as a servant. |
-| Corrupted merc | The Creditor takes control of it. It fights for the Creditor. |
-| Cowardly merc with low morale | May flee from the fight. |
-| The Old King's ghost | Joins the mercs if the party carries at least one piece of his regalia. See [the Old King](#the-old-king). |
+| State at the reveal           | Effect                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Living merc                   | Fights the Creditor.                                                                                       |
+| Dead merc, not resurrected    | The contract still holds its soul. The Creditor raises it as a servant.                                    |
+| Corrupted merc                | The Creditor takes control of it. It fights for the Creditor.                                              |
+| Cowardly merc with low morale | May flee from the fight.                                                                                   |
+| The Old King's ghost          | Joins the mercs if the party carries at least one piece of his regalia. See [the Old King](#the-old-king). |
 
 - What the citizen carried still matters. The Creditor uses the consumables in the citizen's pack, such as bombs and potions.
 - Skills and toggles that refer to the citizen stop working. Interpose, Vow and Aegis have nothing to protect. Stances that kept mercs close to the citizen now put them next to the Creditor.
@@ -121,13 +121,13 @@ The sides come from systems the player managed during the run.
 
 The Creditor grows from souls the run fed it. Every source is a choice the player made, so the scaling adds risk to decisions instead of punishing normal play.
 
-| Source | Souls | The choice behind it |
-|---|---|---|
-| A merc dies, even if it is resurrected later | 1 per death | Taking risky fights, leaving mercs exposed. |
-| A merc stays dead at the reveal | Raised as a servant (see the sides above) | Not paying to resurrect it. |
-| A shrine's curse is accepted | 1 per curse | Taking a shrine's power with its curse. |
-| A Pilgrim uses a shrine | 1 per shrine | The Pilgrim never sees a curse, but each shrine still feeds the Creditor. The most devout bearer feeds it the most. |
-| A Cursed item is worn at the reveal | 1 per item | Keeping a strong Cursed item instead of cleansing it. |
+| Source                                       | Souls                                     | The choice behind it                                                                                                |
+| -------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| A merc dies, even if it is resurrected later | 1 per death                               | Taking risky fights, leaving mercs exposed.                                                                         |
+| A merc stays dead at the reveal              | Raised as a servant (see the sides above) | Not paying to resurrect it.                                                                                         |
+| A shrine's curse is accepted                 | 1 per curse                               | Taking a shrine's power with its curse.                                                                             |
+| A Pilgrim uses a shrine                      | 1 per shrine                              | The Pilgrim never sees a curse, but each shrine still feeds the Creditor. The most devout bearer feeds it the most. |
+| A Cursed item is worn at the reveal          | 1 per item                                | Keeping a strong Cursed item instead of cleansing it.                                                               |
 
 - Each soul raises the Creditor's health and damage by a set amount, and some thresholds add skills.
 - The Writ shows the count without explaining it. It grows warmer and heavier as souls are added. The citizen's weight limit drops by a little for each soul.
@@ -139,11 +139,11 @@ The Old King sank the capital to bury the Creditor. His ghost still guards the t
 
 His regalia lies scattered across the Hollow:
 
-| Piece | Where | What it gives in the final fight |
-|---|---|---|
-| The Signet | An event or elite in phase 2 | The ghost appears. At the start of the fight he binds the Creditor for a few seconds. |
-| The Scepter | An event or elite in phase 3 | Every 30 seconds he casts a seal that stuns the Creditor. Mercs deal more damage to it while it is sealed. |
-| The Crown | An elite or hidden node in phase 4 | He frees one merc the Creditor has taken over, returning it to the party's side. |
+| Piece       | Where                              | What it gives in the final fight                                                                           |
+| ----------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| The Signet  | An event or elite in phase 2       | The ghost appears. At the start of the fight he binds the Creditor for a few seconds.                      |
+| The Scepter | An event or elite in phase 3       | Every 30 seconds he casts a seal that stuns the Creditor. Mercs deal more damage to it while it is sealed. |
+| The Crown   | An elite or hidden node in phase 4 | He frees one merc the Creditor has taken over, returning it to the party's side.                           |
 
 - Each piece is a heavy item in the citizen's pack. Carrying it costs weight for the whole journey.
 - Thieves can steal a piece. The vault keeps it safe only between phases.
