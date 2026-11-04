@@ -23,6 +23,7 @@ import { type RunSave, loadMerc, loadPack } from '../save';
 import { START_LEVEL, carryParty, spawnParty } from '../stage';
 import MutatorRun from '../mutators';
 import Director from '../director';
+import { loadOffers } from '../mastery';
 import type GameState from './state';
 import { START_GOLD } from './state';
 import { aheadOf, buildStage, fightsAhead, goTo, rollMap, sidesAhead } from './route';
@@ -145,6 +146,9 @@ export function reset(g: GameState, save: RunSave | null, seed: string | undefin
   g.stationOpen = false;
   g.notice = null;
   g.hooks.onStation?.(false);
+  // An offer open at the save opens again, and its Waystation draws no more.
+  g.offers = loadOffers(save?.offers ?? []);
+  g.offeredAt = g.offers.length > 0 ? g.stageIndex : -1;
   g.hooks.onEvent?.(null);
   g.select(null);
   g.acc = 0;

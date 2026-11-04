@@ -12,6 +12,7 @@ import { AREAS_PER_LAYER } from '../../gen/layers';
 import { plainItem, rollGold, rollItem, rollPotion } from '../../gen/loot';
 import { CARD_OF, GEMS } from '../../content/cards';
 import { MATERIAL_NAME, type Materials, gather } from '../../content/materials';
+import { OFFER_CARDS, masteryOffer } from '../mastery';
 import type GameState from './state';
 import { here } from './route';
 
@@ -30,6 +31,8 @@ const MATERIALS_PAID: readonly [string, number][] = [
 ];
 const ESSENCES = ['venomEssence', 'occultEssence', 'radiantEssence'];
 const BLESSING_FROM_LAYER = 2;
+// Area stream ids for a Mastery offer, apart from the Waystations'
+const MASTERY_STREAM = 3000;
 // How far a chest blocks bodies, as the stage's chests do
 const CHEST_SOLID = 0.35;
 
@@ -40,6 +43,7 @@ export const BONUS_PAYS: Record<Reward, string> = {
   cards: 'A second card.',
   materials: 'Twice the materials.',
   respite: 'The dead rise too.',
+  mastery: 'A fourth card.',
 };
 
 /** What a reward's chest is filled with, as it opens. */
@@ -117,6 +121,20 @@ export const REWARDS: Record<Reward, RewardDef> = {
         }
       }
       g.say('A respite: the party is whole again.');
+    },
+  },
+  // One offer when the fight is won: a card for each of 3 different mercs,
+  // 4 if the bonus challenge was met.
+  mastery: {
+    fill() {},
+    done(g, better) {
+      const rng = g.streams.area(1, Stream.Loot, MASTERY_STREAM + g.stageIndex);
+      const offer = masteryOffer(g.mercs(), rng, OFFER_CARDS + (better ? 1 : 0));
+      if (offer) {
+        g.offers.push(offer);
+        g.say('Mastery: a merc may take an elite upgrade.');
+        g.itemsChanged();
+      }
     },
   },
 };

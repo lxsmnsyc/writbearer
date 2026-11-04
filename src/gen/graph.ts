@@ -40,8 +40,10 @@ export const OBJECTIVE_NAME: Record<Objective, string> = {
  * What a fight's chest holds once its objective is done, as Hades's doors.
  * The signpost and the map show it before the party chooses the road.
  */
-export type Reward = 'gold' | 'arms' | 'cards' | 'materials' | 'respite';
+export type Reward = 'gold' | 'arms' | 'cards' | 'materials' | 'respite' | 'mastery';
 
+// The rewards the first draw picks from. Mastery is laid over them after
+// every other draw (`rollMastery`), so seeds from before it keep their maps.
 export const REWARDS: readonly Reward[] = ['gold', 'arms', 'cards', 'materials', 'respite'];
 
 export const REWARD_NAME: Record<Reward, string> = {
@@ -50,6 +52,7 @@ export const REWARD_NAME: Record<Reward, string> = {
   cards: 'Cards',
   materials: 'Materials',
   respite: 'Respite',
+  mastery: 'Mastery',
 };
 
 /**
@@ -119,6 +122,8 @@ export const MUTATOR_TEXT: Record<Mutator, string> = {
 // last, an Elite rolls two.
 const MUTATE_FROM = 1;
 const MUTATE_CHANCE = 0.3;
+// The chance a fight pays a Mastery offer instead of its reward
+const MASTERY_CHANCE = 0.2;
 const TWO_MUTATORS_FROM = 3;
 
 /** One area on a layer's map. */
@@ -475,7 +480,30 @@ export function generateLayerMap(rng: RNG, opening = 2, town = false, depth = 0)
     }
   }
   rollMutators(rng, columns, depth);
+  rollMastery(rng, columns);
   return { columns, start: PLAN_START };
+}
+
+// Some fights pay a Mastery offer instead of their reward. No two roads from
+// one fork pay it. It draws last, so the rest of the map is as it was before.
+function rollMastery(rng: RNG, columns: MapNode[][]): void {
+  columns.forEach((column, c) => {
+    for (const [j, node] of column.entries()) {
+      if (!node.objective || !rng.chance(MASTERY_CHANCE)) {
+        continue;
+      }
+      // The areas beside it beyond each fork it lies past
+      const forks =
+        c === 0
+          ? [column]
+          : columns[c - 1]
+              .filter((n) => n.next.includes(j))
+              .map((n) => n.next.map((row) => column[row]));
+      if (!forks.flat().some((n) => n.reward === 'mastery')) {
+        node.reward = 'mastery';
+      }
+    }
+  });
 }
 
 // An Elite always has a mutator, two from the last layer down. An ordinary

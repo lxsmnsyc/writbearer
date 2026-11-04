@@ -64,6 +64,7 @@ import GiHuntingHorn from '~icons/game-icons/hunting-horn';
 import GiIncense from '~icons/game-icons/incense';
 import GiKnapsack from '~icons/game-icons/knapsack';
 import GiKnightBanner from '~icons/game-icons/knight-banner';
+import GiLaurelCrown from '~icons/game-icons/laurel-crown';
 import GiLeatherBoot from '~icons/game-icons/leather-boot';
 import GiLeatherVest from '~icons/game-icons/leather-vest';
 import GiLightningBow from '~icons/game-icons/lightning-bow';
@@ -161,6 +162,7 @@ export const ICONS = {
   greaterDraught: GiHeartBottle,
   gold: GiTwoCoins,
   card: GiCardPickup,
+  mastery: GiLaurelCrown,
   gem: GiCutDiamond,
   // Materials
   chitin: GiSpikedShell,
