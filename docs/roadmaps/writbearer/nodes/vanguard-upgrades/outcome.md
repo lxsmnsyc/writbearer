@@ -26,7 +26,7 @@
 ## Gotchas
 
 - An upgrade that patches `release` and wants the base behavior calls the base spell's `release` (INTERCEPT, CHALLENGE, CRUSH). Shield Bash and Rampart replace `wants`, `elite` and `release` and carry their own `describe`.
-- Last Line keys once-per-area on `sim.area`, not on unit identity. Banner removes the Vanguard's older banner before planting.
+- Last Line keys once-per-area on `sim.area`, in a module-level WeakMap. State kept inside a passive's `setup` is lost when a shard is spent on the spell (`raise` reruns `setup`). Banner removes the Vanguard's older banner before planting.
 - The Banner's morale is 1 per second and its dread factor 0.5 (the doc says "morale" and "half"); first guesses.
 - Bastion ignores the Flank flag: cover is the geometry between the attacker and the ally.
 - Tests that fake a monster's max health fail silently: a status change recomputes stats and restores full health. Count damage with a `UnitDamage` listener instead.

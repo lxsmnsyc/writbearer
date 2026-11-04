@@ -5,7 +5,7 @@ import VANGUARD_UPGRADES from '../../src/content/jobs/vanguard/upgrades';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { CHALLENGE, CRUSH, challengeTime } from '../../src/content/vanguard';
 import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
-import { type Upgrade, isBuilt } from '../../src/sim/builds';
+import { type Upgrade, isBuilt, raise } from '../../src/sim/builds';
 import { SimEvents } from '../../src/sim/events';
 import Sim, { ARROW_SPEED } from '../../src/sim/sim';
 import { type Skill, SkillMode } from '../../src/sim/skill';
@@ -199,6 +199,11 @@ describe('the Vanguard upgrades', () => {
     expect(soldier.statuses.get(TAUNTED.id)?.source).toBe(vanguard);
     expect(far.statuses.has(TAUNTED.id)).toBe(false);
     soldier.removeStatus(TAUNTED.id);
+    blow(soldier, bearer, 1);
+    expect(soldier.statuses.has(TAUNTED.id)).toBe(false);
+    // Raising Challenge sets the passive up again, but not the area's use
+    vanguard.shards = 1;
+    expect(raise(vanguard, 'challenge')).toBeNull();
     blow(soldier, bearer, 1);
     expect(soldier.statuses.has(TAUNTED.id)).toBe(false);
     // The next area it fires again

@@ -7,3 +7,4 @@
 - Charge: pushes 1.5 tiles perpendicular to the dash, to the side the enemy stands on, in 0.25-tile steps that stop at an unwalkable tile (the same small push as Sellsword's Knock Aside, written locally).
 - Duel gap: Challenge (`challenged`, release), Last Line, Shield Bash, Charge, Earthshaker and the Fault Line line take enemies through `hostiles(u)` or `canTarget`. The Fault Line projectile already refuses forbidden targets.
 - Tests use quiet toggles (all spells off) and a still Vanguard.
+- Review fix: Last Line's once-per-area state moved from the passive's setup into a module-level WeakMap, because raising Challenge reruns setup. The other passives (Shared Burden, Immovable, Bastion) hold no state.

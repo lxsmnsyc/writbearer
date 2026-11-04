@@ -170,16 +170,18 @@ const charge: Partial<Skill> = {
 const LAST_LINE_AT = 0.3;
 const LAST_LINE_RADIUS = 5;
 
+// The area each Vanguard last fired Last Line in. Kept outside the passive:
+// raising Challenge sets the passive up again. Party units carry over between areas.
+const FIRED = new WeakMap<Unit, number>();
+
 /**
  * Once an area, when the bearer drops below 30% health, taunts every enemy
  * within 5 tiles of the bearer, as Challenge would.
  */
 const LAST_LINE: Passive = {
   id: 'lastLine',
-  setup: (unit, rank): Lifecycle => {
-    // The area it last fired in. Party units carry over between areas.
-    let used = -1;
-    return listen(unit.sim, SimEvents.UnitDamage, DamagePriority.Post, (event) => {
+  setup: (unit, rank): Lifecycle =>
+    listen(unit.sim, SimEvents.UnitDamage, DamagePriority.Post, (event) => {
       const { sim } = unit;
       const bearer = sim.bearer;
       if (
@@ -187,19 +189,18 @@ const LAST_LINE: Passive = {
         !bearer.alive ||
         !unit.alive ||
         unit.disabled ||
-        used === sim.area ||
+        FIRED.get(unit) === sim.area ||
         bearer.hp >= bearer.derived.maxHp * LAST_LINE_AT
       ) {
         return;
       }
-      used = sim.area;
+      FIRED.set(unit, sim.area);
       for (const e of hostiles(unit)) {
         if (e.distanceTo(bearer) <= LAST_LINE_RADIUS) {
           taunt(unit, e, challengeTime(rank));
         }
       }
-    });
-  },
+    }),
 };
 
 const BANNER_RADIUS = 4;
