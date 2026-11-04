@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { BASES } from '../../src/content/items';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { PIECE_BY_ID, SET_BY_ID, applySets, setCount } from '../../src/content/sets';
-import { Pack, equipFromPack, unequipToPack } from '../../src/game/inventory';
+import { Pack, Vault, equipFromPack, storeInVault, unequipToPack } from '../../src/game/inventory';
+import { sell, sellValue } from '../../src/game/town';
 import { loadMerc, saveMerc } from '../../src/game/save';
 import { makeSetPiece, plainItem } from '../../src/gen/loot';
 import { markStripper } from '../../src/sim/ai/stripper';
@@ -116,5 +117,46 @@ describe('strippers', () => {
     strike(stripper, merc);
     applySets(sim);
     expect(setCount(sim, set)).toBe(0);
+  });
+
+  it('leave a merc with a stripped weapon bare-handed, and still attacking', () => {
+    const { sim, merc, other, stripper } = rig();
+    // A control that never held the sword
+    other.unequip(EquipSlot.Weapon);
+    strike(stripper, merc);
+    expect(merc.derived.atkMin).toBe(other.derived.atkMin);
+    expect(merc.derived.atkMax).toBe(other.derived.atkMax);
+    // It still lands a basic attack on a foe
+    const foe = spawnMonster(sim, 'mite', 1, 12.5, 10);
+    let landed = null;
+    for (let i = 0; i < 40 && !landed; i++) {
+      landed = merc.hit(foe, { flags: DamageFlags.BasicAttack });
+    }
+    expect(landed).not.toBeNull();
+    expect(landed?.value).toBeGreaterThan(0);
+  });
+
+  it('sell and vault a stripped item as an unstripped one, with no copy', () => {
+    const { sim, bearer, merc, other, stripper } = rig();
+    const pack = new Pack();
+    const vault = new Vault();
+    const sword = merc.equipment.get(EquipSlot.Weapon)!;
+    const value = sellValue(sword);
+    strike(stripper, merc);
+    // Selling: the stripped sword leaves the merc once and pays its value
+    expect(unequipToPack(sim, bearer, pack, merc, EquipSlot.Weapon)).toBeNull();
+    expect(merc.equipment.has(EquipSlot.Weapon)).toBe(false);
+    pack.gold = 0;
+    expect(sell(pack, sword.uid)).toBeNull();
+    expect(pack.gold).toBe(value);
+    expect(pack.items).toHaveLength(0);
+    // Vaulting: the other merc's sword is stripped later and stored once
+    const spare = other.equipment.get(EquipSlot.Weapon)!;
+    strike(stripper, other);
+    expect(unequipToPack(sim, bearer, pack, other, EquipSlot.Weapon)).toBeNull();
+    expect(storeInVault(pack, vault, spare.uid)).toBeNull();
+    expect(vault.items).toEqual([spare]);
+    expect(pack.items).toHaveLength(0);
+    expect(stripped(other)).toEqual([]);
   });
 });

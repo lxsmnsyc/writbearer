@@ -8,6 +8,7 @@
 - `src/game/game/areas.ts`: `restoreAll(g.sim)` after `g.sim.area++`.
 - `src/content/sets.ts`: `piecesOn` counts working items only, so a stripped piece does not count toward a set.
 - `test/sim/strippers.test.ts`: 6 tests (weapon first, armor untouched; once per merc per area and restore on area change; spells ignored; hand-back; save and load; sets).
+- Test gap: the area-change test calls `sim.area++; restoreAll(sim)` itself. `cross()` in `areas.ts` is private and needs a full GameState, so the one-line hook call is not exercised.
 - Changeset `.changeset/be-strippers.md` (minor).
 
 ## Deviations

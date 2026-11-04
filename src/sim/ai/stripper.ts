@@ -32,8 +32,11 @@ function strike(sim: Sim, source: Unit, target: Unit, flags: number): void {
     return;
   }
   const item = target.equipment.get(slot);
+  if (!item) {
+    return;
+  }
   strip(target, slot);
-  sim.pocket?.say?.(`${source.name} strips ${target.name} of ${item?.name ?? item?.base.name}.`);
+  sim.pocket?.say?.(`${source.name} strips ${target.name} of ${item.name ?? item.base.name}.`);
 }
 
 /** Makes a unit a stripper: each basic attack that lands may strip one item. */
