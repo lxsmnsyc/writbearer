@@ -40,6 +40,7 @@ const REWARD_SIGN: Record<Reward, string> = {
   cards: 'pays a card',
   materials: 'pays materials',
   respite: 'heals the party',
+  mastery: 'offers an elite upgrade',
 };
 
 // Each way out is a plate on the ground the player clicks to leave by:

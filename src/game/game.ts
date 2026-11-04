@@ -9,6 +9,7 @@ import type { Due } from './wages';
 import type { Compendium } from './compendium';
 import type { AreaScore, Phase } from './director';
 import type { RunSave } from './save';
+import type { UpgradeOffer } from './mastery';
 import GameState from './game/state';
 import type { BonusStatus, ComingGroup, GameHooks, GameOptions } from './game/types';
 import * as run from './game/run';
@@ -319,6 +320,21 @@ export default class Game {
   /** The Market buys a pack item. */
   sell(uid: number): string | null {
     return smith.sell(this.s, uid);
+  }
+
+  /** The elite upgrade offer open now, which pauses the game until a card is taken. */
+  get offer(): UpgradeOffer | null {
+    return this.s.offers[0] ?? null;
+  }
+
+  /** The party's mercs, the bearer left out: whom an offer's cards are for. */
+  mercsOf(): Unit[] {
+    return this.s.mercs();
+  }
+
+  /** Takes card `i` of the open offer. Returns why it failed, or null. */
+  pickCard(i: number): string | null {
+    return station.pickCard(this.s, i);
   }
 
   /** Closes the Waystation's post. Walking back to it opens it again. */

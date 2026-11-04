@@ -14,6 +14,7 @@ import type Sim from '../sim/sim';
 import type { BaseStats, Modifier } from '../sim/stats';
 import type Unit from '../sim/unit';
 import type { Pack, Vault } from './inventory';
+import type { UpgradeOffer } from './mastery';
 import { Store, deleteRecord, readRecord, writeRecord } from './store';
 
 // The suspended run, from the tech-stack design: one slot in IndexedDB,
@@ -97,6 +98,8 @@ export interface RunSave {
   standing?: number;
   // The mini-bosses met so far, each only once a run
   miniBosses?: MiniBossId[];
+  // Elite upgrade offers open when the run was saved
+  offers?: UpgradeOffer[];
 }
 
 // Every base an item can be made on, cards and gems included.

@@ -10,6 +10,7 @@ import type Unit from '../sim/unit';
 import Inventory from './inventory';
 import MercPanel from './merc-panel';
 import Station from './station';
+import UpgradeOffer from './upgrade-offer';
 import ShoutBar, { type ShoutEntry } from './shouts';
 import LayerMapPanel from './map';
 import Town from './town';
@@ -396,6 +397,9 @@ export default function App(): JSX.Element {
             }}
           />
         )}
+      </Show>
+      <Show when={game()} keyed>
+        {(g) => <UpgradeOffer game={g} version={items()} />}
       </Show>
       <Show when={title() && game()} keyed>
         {(g) => (

@@ -28,6 +28,7 @@ export function snapshot(g: GameState): RunSave {
     vault: g.vault.items.map((i) => saveItem(i)),
     standing: g.director.standing,
     miniBosses: [...g.metMiniBosses],
+    ...(g.offers.length > 0 ? { offers: structuredClone(g.offers) } : {}),
   };
 }
 

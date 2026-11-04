@@ -48,6 +48,7 @@ const REWARD_ICON: Record<Reward, IconName> = {
   cards: 'card',
   materials: 'iron',
   respite: 'heal',
+  mastery: 'mastery',
 };
 
 // An area's name on the map: a fight by its objective.

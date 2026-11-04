@@ -27,6 +27,7 @@ import type MutatorRun from '../mutators';
 import type Director from '../director';
 import type Flow from '../../sim/flow';
 import { START_LEVEL } from '../stage';
+import type { UpgradeOffer } from '../mastery';
 import type { GameHooks, GameOptions } from './types';
 
 // The most mercs in the party, living or dead.
@@ -128,6 +129,10 @@ export default class GameState {
   readonly vault = new Vault();
   payroll: Payroll | null = null;
   stationOpen = false;
+  // Elite upgrade offers waiting to be picked, the first open; and the layer
+  // whose Waystation has drawn its own (-1 if none yet)
+  offers: UpgradeOffer[] = [];
+  offeredAt = -1;
   stationMet = false;
   townOpen = false;
   townMet = false;
@@ -192,6 +197,7 @@ export default class GameState {
       this.title ||
       this.recruiting !== null ||
       this.stationOpen ||
+      this.offers.length > 0 ||
       this.mapOpen ||
       this.townOpen ||
       this.eventOpen ||
