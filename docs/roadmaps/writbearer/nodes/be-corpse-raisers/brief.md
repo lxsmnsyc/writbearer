@@ -26,7 +26,7 @@ owns:
 shared:
   - src/sim/ai/monster.ts
   - src/sim/mechanics/death.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/content/monster-skills.ts
 reserves: []
 provides: []
@@ -37,6 +37,9 @@ depends_on:
   - on: cc-corpses
     kind: hard
     why: raising and laying to rest share the corpse rules (what counts as a corpse, how it is consumed, what stops it)
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Monster corpses kept, and summoners that raise them
@@ -84,3 +87,7 @@ M: the corpse rules come from `cc-corpses`; this adds a cast, a spawn and a draw
 - Balance tests are seed-sensitive: draw no extra randomness for non-raiser fights, and raise at a fixed rule (nearest first) rather than by rng.
 - The Ossuary Bishop's mass raise (`bb-bishop-usurper`) is a boss move on top of `raise()`. Keep `raise` callable with an explicit kind and level.
 - Do not add the Ossuary Priest here. `be-monsters-deep` does.
+
+## After the splits
+
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

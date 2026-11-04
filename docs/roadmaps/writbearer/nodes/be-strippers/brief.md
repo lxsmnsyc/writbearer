@@ -24,8 +24,8 @@ owns:
   - test/sim/strippers.test.ts
 shared:
   - src/sim/ai/monster.ts
-  - src/sim/unit.ts
-  - src/content/roster.ts
+  - src/sim/unit/gear.ts
+  - src/content/spawn.ts
   - src/game/game/areas.ts
   - src/ui/log.ts
 reserves: []
@@ -34,6 +34,12 @@ depends_on:
   - on: split-ai
     kind: hard
     why: the stripper's behavior is a module under src/sim/ai/ plus one inserted step in monster.ts
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Strippers: disable an item for the stage
@@ -79,3 +85,8 @@ M: medium on blast radius (the stat sum in unit.ts, one area-change hook); a tes
 - Keep the strip as a set on the sim, not a field on `Item`: items are saved and cards and sets read them, and a flag on the item could be saved by accident.
 - Sets (`src/content/sets.ts`) count worn pieces. Decide whether a stripped piece counts toward a set; the simplest correct choice is that it does not, and the test pins it.
 - Do not add the Confessor here. `be-monsters-deep` does.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

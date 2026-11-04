@@ -16,6 +16,7 @@ gate: false
 added: 2026-11-04
 spent:
 owns:
+  - src/sim/events/ie-item-roll.ts
   - test/gen/item-roll.test.ts
 shared:
   - src/sim/item.ts
@@ -32,6 +33,9 @@ depends_on:
   - on: ie-item-bonuses
     kind: hard
     why: a Rare armor's element is a defense element modifier, a form that node adds
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Rare element and CheckItemRoll hook
@@ -73,3 +77,7 @@ Size M: 5 files and about 350 lines. Blast radius is medium (`Item`, `ItemSave`,
 - Loot RNG draws must not shift. Add the element draws last, inside `if (quality === Quality.Rare)`, so Magic, Normal and every other path draw exactly as before. A Rare with an element still uses the same earlier draws.
 - If threading `sim` through `rollDrops` and the game's loot callers is large, add it to `rollItem` only and call it from the game layer's drop and shop paths; say so in `log.md`.
 - Do not add identify or curse fields.
+
+## After the splits
+
+- After split-events: put new event types and their map entries in `src/sim/events/ie-item-roll.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

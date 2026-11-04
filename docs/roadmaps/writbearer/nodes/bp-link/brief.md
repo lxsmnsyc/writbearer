@@ -16,6 +16,7 @@ fulfilled_by:
 gate: false
 added: 2026-10-26
 owns:
+  - src/sim/events/bp-link.ts
   - src/sim/link.ts
   - test/sim/link.test.ts
 shared:
@@ -27,6 +28,9 @@ depends_on:
   - on: be-affixes
     kind: hard
     why: both edit affixes.ts
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Linked units
@@ -55,3 +59,7 @@ One small module and a wrapper. S.
 
 - Redirected hits must not trigger Thorns, Storm or on-hit passives.
 - A redirect that kills gives one death event per unit.
+
+## After the splits
+
+- After split-events: put new event types and their map entries in `src/sim/events/bp-link.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

@@ -16,6 +16,7 @@ fulfilled_by:
 gate: false
 added: 2026-10-26
 owns:
+  - src/sim/events/bp-possess.ts
   - src/sim/control.ts
   - src/sim/copy.ts
   - test/sim/control.test.ts
@@ -39,6 +40,9 @@ depends_on:
   - on: split-ai
     kind: hard
     why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Mind control, skill copy and buff theft
@@ -68,3 +72,7 @@ Three small mechanics, all for one boss. M.
 ## Notes for the worker
 
 - cc-cast-events changes cast events; if it has landed, read its outcome first.
+
+## After the splits
+
+- After split-events: put new event types and their map entries in `src/sim/events/bp-possess.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

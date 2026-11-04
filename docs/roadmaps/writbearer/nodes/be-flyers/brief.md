@@ -25,8 +25,7 @@ owns:
   - test/sim/flyers.test.ts
 shared:
   - src/sim/ai/monster.ts
-  - src/sim/unit.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/content/jobs/ranger/upgrades.ts
   - src/render/draw/figures.ts
 reserves: []
@@ -38,6 +37,12 @@ depends_on:
   - on: targeting-rules
     kind: contract
     via: targeting
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Flyers: out of melee reach until grounded
@@ -84,3 +89,8 @@ M: new pattern but small (one field, one listener, one AI step, two skill texts)
 - A saved run is taken at an area's entrance, so `aloft` need not be saved. Do not add it to `RunSave`.
 - Balance tests are seed-sensitive; adding a field with a default must not change any existing roll order. Do not draw from `sim.rng` in code that runs for non-flyers.
 - Do not add the Carrion Moth or Rift Vulture here. `be-monsters-upper` does.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

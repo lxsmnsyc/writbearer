@@ -19,7 +19,7 @@ owns:
   - src/sim/lantern.ts
   - test/sim/lantern.test.ts
 shared:
-  - src/sim/unit.ts
+  - src/sim/unit/kit.ts
   - src/sim/ai/monster.ts
   - src/render/renderer.ts
   - src/render/draw/light.ts
@@ -28,7 +28,7 @@ shared:
   - src/game/game/render.ts
   - src/game/game/tick.ts
   - src/game/game/input.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/ui/app.tsx
   - src/sim/ground.ts
 reserves: []
@@ -46,6 +46,12 @@ depends_on:
   - on: split-ai
     kind: hard
     why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # One lantern: light level, shading, drawn-to monsters
@@ -78,3 +84,8 @@ Sim state replacing three renderer numbers, plus a toggle key. M.
 - Keep the current ranges (7, 6.5, `notice`) as the defaults; existing tests rely on them.
 - Use a fixed key for shading until gs-controls lands.
 - Blind is added by sellsword-upgrades; do not add another.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

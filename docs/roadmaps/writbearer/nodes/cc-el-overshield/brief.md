@@ -14,6 +14,7 @@ gate: false
 added: 2026-11-04
 spent:
 owns:
+  - src/sim/events/cc-el-overshield.ts
   - src/sim/overshield.ts
   - test/sim/el-overshield.test.ts
 shared:
@@ -21,7 +22,10 @@ shared:
   - src/sim/mechanics/index.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Heal overshield
@@ -58,3 +62,7 @@ One new module and two appended lines. S.
 - Do not set `overshield` on any existing skill; a cleric balance pass picks which.
 - Pool in a WeakMap, not on `Unit`; statuses are not saved, so old saves load.
 - Victim lists go through `hostiles`/`allowed`/`canTarget` (`src/sim/targeting.ts`), never `sim.foes` directly. Once-per-area effects key on `sim.area`. Passive state lives in a module `WeakMap<Unit, ...>`. Old saves must load. The sim stays DOM-free.
+
+## After the splits
+
+- After split-events: put new event types and their map entries in `src/sim/events/cc-el-overshield.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

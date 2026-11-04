@@ -14,17 +14,24 @@ gate: false
 added: 2026-11-04
 spent:
 owns:
+  - src/sim/events/cc-el-skill-amp.ts
   - src/sim/skill-amp.ts
   - test/sim/el-skill-amp.test.ts
 shared:
   - src/sim/stats.ts
   - src/sim/events.ts
-  - src/sim/unit.ts
+  - src/sim/unit/combat.ts
   - src/sim/mechanics/damage.ts
   - src/sim/mechanics/skill.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Amplify bonuses for a specific skill
@@ -62,3 +69,8 @@ Touches `stats.ts`, `events.ts`, `unit.ts`, `damage.ts` and `skill.ts`, all hot 
 - The multiplier list order does not change the product, but do not add an RNG draw. Skill ids are the `Skill.id` strings, as in `rankOf(u, 'fireball')`.
 - Do not add card or item content that uses it; the content nodes do (ie-cards).
 - Victim lists go through `hostiles`/`allowed`/`canTarget` (`src/sim/targeting.ts`), never `sim.foes` directly. Once-per-area effects key on `sim.area`. Passive state lives in a module `WeakMap<Unit, ...>`. Old saves must load. The sim stays DOM-free.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
+- After split-events: put new event types and their map entries in `src/sim/events/cc-el-skill-amp.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

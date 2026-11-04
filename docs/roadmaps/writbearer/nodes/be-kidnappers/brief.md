@@ -24,7 +24,7 @@ owns:
   - test/sim/kidnappers.test.ts
 shared:
   - src/sim/ai/monster.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/game/objective.ts
 reserves: []
 provides: []
@@ -35,6 +35,9 @@ depends_on:
   - on: be-thieves
     kind: hard
     why: reuses leaveMap, the shared exit path for a unit that is not killed
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Kidnappers: grab the citizen and drag them off
@@ -77,3 +80,7 @@ M: one hold mechanic and one AI step; the thief node's exit path is reused. Medi
 - A saved run is taken at area entrances, so a hold is never saved. Clear any hold at area change (`sim.area`) so a carried-over unit cannot keep one.
 - Do not build the Chain Warden here. It targets the bearer and drags toward its pack; `be-monsters-deep` adds it on `grab.ts` and decides how a held bearer is controlled.
 - Keep it simple: the figure's signature shape is a long arm or hook; the monster node draws it.
+
+## After the splits
+
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

@@ -21,11 +21,14 @@ owns:
   - test/sim/resource.test.ts
 shared:
   - src/sim/skill.ts
-  - src/sim/unit.ts
+  - src/sim/unit/casting.ts
   - src/ui/merc-panel.tsx
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
 ---
 
 # A second resource beside mana
@@ -67,3 +70,7 @@ New module plus three small appends (skill field, `canCast`, panel row). M.
 - Saved runs from before must still load (`src/game/save.ts`). Resources are not saved mid-fight; if a save is taken at a Waystation they start fresh on load.
 - Sim stays DOM-free; only `merc-panel.tsx` touches the UI.
 - Check the unit test in `test/sim/skills.test.ts` for how skills are cast in tests.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.

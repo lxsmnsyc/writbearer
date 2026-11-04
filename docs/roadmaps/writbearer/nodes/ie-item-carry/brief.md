@@ -20,7 +20,8 @@ owns:
 shared:
   - src/sim/item.ts
   - src/content/items.ts
-  - src/sim/unit.ts
+  - src/sim/unit/movement.ts
+  - src/sim/unit/gear.ts
   - src/game/inventory.ts
   - src/ui/inventory.tsx
   - src/ui/stat-sheet.tsx
@@ -30,6 +31,9 @@ depends_on:
   - on: ie-item-model
     kind: hard
     why: reads the STR requirement and the tiers it adds to ItemBase, and edits the same equip check in src/game/inventory.ts
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
 ---
 
 # Carry limit, heavy armor slowdown and two-handed weapons
@@ -71,3 +75,7 @@ Size M: about 6 files and 400 lines. `src/sim/unit.ts` is core, so blast radius 
 - Do not read gear bonuses into the STR used for the limit; use `unit.base.str` to avoid a loop with `recalc`.
 - Do not add a run-long count; nothing here needs `Unit.tally`.
 - Do not edit job modules. Mark two-handed in `items.ts`, which item nodes may edit.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.

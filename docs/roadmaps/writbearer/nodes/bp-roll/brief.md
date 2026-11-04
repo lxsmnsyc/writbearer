@@ -30,7 +30,7 @@ shared:
   - src/game/stage.ts
   - src/ui/map.tsx
   - src/game/compendium.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/content/cards.ts
   - src/content/bestiary.ts
   - src/render/view.ts
@@ -47,6 +47,9 @@ depends_on:
   - on: split-stage-gen
     kind: hard
     why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Boss registry, pool roll and map label
@@ -78,3 +81,7 @@ Many files, mostly moves and thin hooks. M.
 - Keep `spawnBoss(sim, layer, ...)` working without an id; `test/sim/bosses.test.ts` is not yours to change.
 - New boss kinds must reach `MONSTER_ORDER` in the compendium.
 - Pick the boss id in `buildStage` in `src/game/game/route.ts`. Its RNG draws go after the existing ones. Add `bossId` as an optional field of `Stage` in `src/gen/stage/types.ts`. The boss field is built in `src/gen/stage/arena.ts`.
+
+## After the splits
+
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

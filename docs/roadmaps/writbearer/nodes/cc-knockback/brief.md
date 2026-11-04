@@ -17,6 +17,7 @@ gate: false
 added: 2026-11-04
 spent:
 owns:
+  - src/sim/events/cc-knockback.ts
   - src/sim/knockback.ts
   - test/sim/knockback.test.ts
 shared:
@@ -25,7 +26,10 @@ shared:
   - test/sim/vanguard-upgrades.test.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Knockback and Immovable's immunity
@@ -71,3 +75,7 @@ One new module, one event, one skill moved. M.
 - Victim lists for area knockbacks go through `hostiles/allowed/canTarget` in `src/sim/targeting.ts`.
 - Edit `vanguard/upgrades.ts` only for the push and the Immovable listener; `vanguard-upgrades` is done.
 - Sim stays DOM-free. A seeded fight with no knockback must record the same as before.
+
+## After the splits
+
+- After split-events: put new event types and their map entries in `src/sim/events/cc-knockback.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

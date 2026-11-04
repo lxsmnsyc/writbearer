@@ -19,10 +19,13 @@ owns:
 shared:
   - src/sim/statuses.ts
   - src/sim/stats.ts
-  - src/sim/unit.ts
+  - src/sim/unit/gear.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
 ---
 
 # Temporary defense element changes
@@ -61,3 +64,7 @@ Core types touched (`Modifier`, `Unit` element recompute), but each edit is smal
 - Do not rewrite the Frozen/Petrified status ids or durations. Do not add content items or cards here; ie-cards owns new cards. Provide the modifier and helper only, plus one fixture in tests.
 - `cc-el-spectral` appends one line to `statuses.ts`; keep your edit to `becomes`.
 - Victim lists go through `hostiles`/`allowed`/`canTarget` (`src/sim/targeting.ts`), never `sim.foes` directly. Once-per-area effects key on `sim.area`. Passive state lives in a module `WeakMap<Unit, ...>`. Old saves must load. The sim stays DOM-free.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.

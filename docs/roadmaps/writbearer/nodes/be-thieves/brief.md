@@ -27,7 +27,7 @@ owns:
 shared:
   - src/sim/ai/monster.ts
   - src/sim/sim.ts
-  - src/content/roster.ts
+  - src/content/spawn.ts
   - src/game/game/listeners.ts
   - src/game/inventory.ts
   - src/ui/log.ts
@@ -37,6 +37,9 @@ depends_on:
   - on: split-ai
     kind: hard
     why: the thief's behavior is a module under src/sim/ai/ plus one inserted step in monster.ts
+  - on: split-roster
+    kind: hard
+    why: adds its monsters or template flag through src/content/monsters/ and the spawnMonster step list
 ---
 
 # Thieves: take an item from the pack and run
@@ -83,3 +86,7 @@ M: pattern new to the repo (a sim port into the pack, a non-death exit), but sma
 - A theft must not remove an item mid-drag in the UI. Check the pack screen handles a uid that disappears.
 - The `sb-regalia` node needs a thief to take a named heavy item: make the choice rule a function it can override (`pickLoot`), do not hard-code the Tithe-Taker's rule.
 - Do not add the Tithe-Taker here. `be-monsters-deep` does.
+
+## After the splits
+
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.

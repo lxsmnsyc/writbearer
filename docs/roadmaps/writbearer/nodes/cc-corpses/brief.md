@@ -17,15 +17,22 @@ gate: false
 added: 2026-11-04
 spent:
 owns:
+  - src/sim/events/cc-corpses.ts
   - src/sim/corpse.ts
   - test/sim/corpse.test.ts
 shared:
-  - src/sim/unit.ts
+  - src/sim/unit/combat.ts
   - src/sim/events.ts
   - src/content/creditor.ts
 reserves: []
 provides: []
-depends_on: []
+depends_on:
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
+  - on: split-events
+    kind: hard
+    why: adds its event types in its own module under src/sim/events/
 ---
 
 # Corpses laid to rest
@@ -68,3 +75,8 @@ New module, one event, two one-line call sites. M.
 - Once-per-area effects (a Rite once an area) key on `sim.area`; this module has none.
 - What laying to rest gives (a buff, morale, gold) is mj-medium's. Here it only changes the state.
 - Do not change when bodies are torn.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
+- After split-events: put new event types and their map entries in `src/sim/events/cc-corpses.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.

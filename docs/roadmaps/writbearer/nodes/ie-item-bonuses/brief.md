@@ -19,7 +19,7 @@ owns:
   - test/sim/item-bonuses.test.ts
 shared:
   - src/sim/stats.ts
-  - src/sim/unit.ts
+  - src/sim/unit/gear.ts
   - src/content/skills.ts
   - src/content/cards.ts
   - src/gen/loot.ts
@@ -29,6 +29,9 @@ depends_on:
   - on: cc-el-defense
     kind: hard
     why: that node adds the `{ defense: Element; level }` Modifier form and the layered defense element; this node only adds its tooltip and an example card
+  - on: split-unit
+    kind: hard
+    why: edits a feature module under src/sim/unit/ instead of the Unit class
 ---
 
 # Defense element and spell rank bonus forms
@@ -74,3 +77,7 @@ Size M: about 5 files and 300 lines. Blast radius is medium to high (`Modifier` 
 - Do not edit job modules. If `rankOf` needs a job-hooks change, write `contracts/<name>.change-request.md`.
 
 - Overlap settled at the wave-2 checkpoint: cc-el-defense owns the defense element Modifier form and how it is applied. If a step above still says otherwise, follow cc-el-defense.
+
+## After the splits
+
+- After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
