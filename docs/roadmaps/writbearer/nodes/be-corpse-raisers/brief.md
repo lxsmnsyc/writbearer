@@ -1,7 +1,7 @@
 ---
 id: be-corpse-raisers
 title: Monster corpses kept, and summoners that raise them
-status: todo
+status: active
 priority: should
 type: feature
 story:
