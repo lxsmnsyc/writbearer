@@ -1,7 +1,7 @@
 ---
 id: split-events
 title: Split src/sim/events.ts by feature
-status: active
+status: done
 priority: should
 type: refactor
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 93019
 owns:
   - src/sim/events.ts
   - src/sim/events/**
@@ -38,16 +38,16 @@ Move the event payload types and their `SimEventMap` entries in `src/sim/events.
 
 ## Steps
 
-- [ ] Group modules, for example `src/sim/events/hits.ts` (CheckHit, CheckTarget, UnitMiss, UnitDamage, Buildup, CheckAttackElements), `skills.ts` (CheckSkillCost, windup, release, CheckSkillRank, CheckProjectile), `statuses.ts` (CheckBuildup, CheckStatusDuration, StatusEvent), `life.ts` (UnitHeal, UnitDies, UnitRevived, UnitRevealed, Tick, CheckChase). Each module exports its payload interfaces and one `interface <Group>EventMap` with its entries.
-- [ ] `SimEventMap` in `events.ts` becomes `interface SimEventMap extends EventMap, HitEventMap, SkillEventMap, ...` with no body.
-- [ ] `SimEvents` stays one `const enum` in `events.ts` (a const enum cannot be split across files). A new event is then one enum line in `events.ts` plus its own module and one name in the `extends` list.
-- [ ] Write the "how to add an event" rule in a nested `src/sim/events/CLAUDE.md`.
+- [x] Group modules, for example `src/sim/events/hits.ts` (CheckHit, CheckTarget, UnitMiss, UnitDamage, Buildup, CheckAttackElements), `skills.ts` (CheckSkillCost, windup, release, CheckSkillRank, CheckProjectile), `statuses.ts` (CheckBuildup, CheckStatusDuration, StatusEvent), `life.ts` (UnitHeal, UnitDies, UnitRevived, UnitRevealed, Tick, CheckChase). Each module exports its payload interfaces and one `interface <Group>EventMap` with its entries.
+- [x] `SimEventMap` in `events.ts` becomes `interface SimEventMap extends EventMap, HitEventMap, SkillEventMap, ...` with no body.
+- [x] `SimEvents` stays one `const enum` in `events.ts` (a const enum cannot be split across files). A new event is then one enum line in `events.ts` plus its own module and one name in the `extends` list.
+- [x] Write the "how to add an event" rule in a nested `src/sim/events/CLAUDE.md`.
 
 ## Acceptance
 
-- [ ] Every existing test passes unchanged (`test/` has no diff).
-- [ ] No importer outside `src/sim/events.ts` and `src/sim/events/` changes.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
+- [x] Every existing test passes unchanged (`test/` has no diff).
+- [x] No importer outside `src/sim/events.ts` and `src/sim/events/` changes.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
 
 ## Sizing
 

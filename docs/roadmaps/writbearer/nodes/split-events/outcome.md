@@ -40,3 +40,5 @@ Add an event:
 ## Size
 
 - Estimated S, actual S.
+
+Landed as direct commit 71564d9 on main (fresh review clean).
