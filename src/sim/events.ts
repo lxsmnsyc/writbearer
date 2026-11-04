@@ -1,17 +1,13 @@
-import type { BaseEvent, EventPriority } from '../core/event-emitter';
 import type { EventMap } from '../core/event-engine';
-import type {
-  DamageKind,
-  DamagePriority,
-  Element,
-  HealPriority,
-  Range,
-  ValuePriority,
-} from './types';
-import type { Projectile } from './projectile';
-import type { Skill } from './skill';
-import type { ActiveStatus, StatusDef } from './status';
-import type Unit from './unit';
+import type { HitEventMap } from './events/hits';
+import type { SkillEventMap } from './events/skills';
+import type { StatusEventMap } from './events/statuses';
+import type { LifeEventMap } from './events/life';
+
+export type * from './events/hits';
+export type * from './events/skills';
+export type * from './events/statuses';
+export type * from './events/life';
 
 export const enum SimEvents {
   CheckHit = 'CheckHit',
@@ -37,179 +33,10 @@ export const enum SimEvents {
   UnitRevealed = 'UnitRevealed',
 }
 
-/**
- * Asks whether a physical hit lands and whether it is a critical.
- * `critRate` and `hitChance` are percents. The rolls happen on `Exact`.
- */
-export interface CheckHitEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  range: Range;
-  flags: number;
-  critRate: number;
-  hitChance: number;
-  critical: boolean;
-  hit: boolean;
-}
-
-/** Asks whether a unit may pick a hostile unit as a target. Listeners set `allowed` to false. */
-export interface CheckTargetEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  allowed: boolean;
-}
-
-export interface UnitMissEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  flags: number;
-}
-
-/**
- * One hit. `value` starts at 0 and each step of the pipeline changes it.
- * On `Exact` it becomes the health actually removed.
- */
-export interface UnitDamageEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  kind: DamageKind;
-  range: Range;
-  element: Element;
-  // Skill percent and flat bonus. A basic attack is 100 and 0.
-  ratio: number;
-  flat: number;
-  // A set amount instead of a roll, such as a damage over time tick.
-  fixed?: number;
-  flags: number;
-  // Buildup the hit adds on top of its element's, such as a Shield Bash's stun
-  buildup: Buildup[];
-  value: number;
-}
-
-export interface Buildup {
-  status: StatusDef;
-  amount: number;
-}
-
-export interface UnitHealEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  flags: number;
-  value: number;
-}
-
-export interface UnitDiesEvent extends BaseEvent {
-  source: Unit;
-  killer: Unit | null;
-}
-
-/** A hidden or disguised unit is revealed. */
-export interface UnitRevealedEvent extends BaseEvent {
-  source: Unit;
-  by: Unit | null;
-}
-
-/** Asks the final mana cost of a skill. `value` starts at the skill's cost. */
-export interface CheckSkillCostEvent extends BaseEvent {
-  source: Unit;
-  skill: Skill;
-  value: number;
-}
-
-/** A skill's windup begins. Disabling it cancels the skill before mana is spent. */
-export interface UnitSkillWindupEvent extends BaseEvent {
-  source: Unit;
-  skill: Skill;
-  target: Unit | null;
-}
-
-/** A skill takes effect. Disabling it makes the skill fizzle. */
-export interface UnitSkillReleaseEvent extends BaseEvent {
-  source: Unit;
-  skill: Skill;
-  target: Unit | null;
-}
-
-/** Asks how much buildup a hit adds. `value` starts at the base amount. */
-export interface CheckBuildupEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  status: StatusDef;
-  value: number;
-}
-
-/** Asks how long a status lasts on this target, in seconds. */
-export interface CheckStatusDurationEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  status: StatusDef;
-  value: number;
-}
-
-export interface StatusEvent extends BaseEvent {
-  status: ActiveStatus;
-}
-
-export interface UnitRevivedEvent extends BaseEvent {
-  source: Unit;
-}
-
-export interface TickEvent extends BaseEvent {
-  dt: number;
-}
-
-/** Asks how far from the bearer a merc may chase, in tiles. `value` starts at its orders' chase. */
-export interface CheckChaseEvent extends BaseEvent {
-  source: Unit;
-  value: number;
-}
-
-/**
- * A projectile is about to strike `target`. Disabling the event stops the
- * projectile there: no hit, and it flies no further.
- */
-export interface CheckProjectileEvent extends BaseEvent {
-  source: Unit;
-  target: Unit;
-  projectile: Projectile;
-}
-
-/** Asks the rank a unit uses a skill at. `value` starts at the learned rank, at least 1. */
-export interface CheckSkillRankEvent extends BaseEvent {
-  source: Unit;
-  skill: string;
-  value: number;
-}
-
-/**
- * Asks which elements a unit's attacks may take, for the "weak to my
- * element" target priority. `elements` starts as the unit's attack element.
- */
-export interface CheckAttackElementsEvent extends BaseEvent {
-  source: Unit;
-  elements: Element[];
-}
-
-/** Which event carries which shape, on which priority scale. */
-export interface SimEventMap extends EventMap {
-  [SimEvents.CheckHit]: [CheckHitEvent, ValuePriority];
-  [SimEvents.CheckTarget]: [CheckTargetEvent, ValuePriority];
-  [SimEvents.UnitMiss]: [UnitMissEvent, EventPriority];
-  [SimEvents.UnitDamage]: [UnitDamageEvent, DamagePriority];
-  [SimEvents.UnitHeal]: [UnitHealEvent, HealPriority];
-  [SimEvents.UnitDies]: [UnitDiesEvent, EventPriority];
-  [SimEvents.CheckSkillCost]: [CheckSkillCostEvent, ValuePriority];
-  [SimEvents.UnitSkillWindup]: [UnitSkillWindupEvent, EventPriority];
-  [SimEvents.UnitSkillRelease]: [UnitSkillReleaseEvent, EventPriority];
-  [SimEvents.CheckBuildup]: [CheckBuildupEvent, ValuePriority];
-  [SimEvents.CheckStatusDuration]: [CheckStatusDurationEvent, ValuePriority];
-  [SimEvents.StatusApplied]: [StatusEvent, EventPriority];
-  [SimEvents.StatusRemoved]: [StatusEvent, EventPriority];
-  [SimEvents.Tick]: [TickEvent, EventPriority];
-  [SimEvents.UnitRevived]: [UnitRevivedEvent, EventPriority];
-  [SimEvents.CheckChase]: [CheckChaseEvent, ValuePriority];
-  [SimEvents.CheckProjectile]: [CheckProjectileEvent, EventPriority];
-  [SimEvents.CheckSkillRank]: [CheckSkillRankEvent, ValuePriority];
-  [SimEvents.CheckAttackElements]: [CheckAttackElementsEvent, ValuePriority];
-  [SimEvents.UnitRevealed]: [UnitRevealedEvent, EventPriority];
-}
+/** Which event carries which shape, on which priority scale. Entries live in the group modules. */
+export interface SimEventMap
+  extends EventMap,
+    HitEventMap,
+    SkillEventMap,
+    StatusEventMap,
+    LifeEventMap {}

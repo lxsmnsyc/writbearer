@@ -1,0 +1,3 @@
+- Split events.ts into src/sim/events/{hits,skills,statuses,life}.ts; enum stays in events.ts.
+- Type-only cycle is fine for lint; lint needs `export type *` (consistent-type-exports).
+- test/sim/concealment.test.ts times out (5 s) on this machine, also on unmodified base.
