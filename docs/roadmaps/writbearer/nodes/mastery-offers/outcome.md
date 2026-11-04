@@ -4,9 +4,9 @@
 
 Mercs get their elite upgrades during a run. An offer is 3 cards and the player picks 1.
 
-- `src/game/mastery.ts`: `UpgradeOffer` (`title`, `cards`), `Card` (`merc` = index in the party's mercs, `upgrade` = upgrade id or `null` for shards), `waystationOffers(mercs, rng)`, `masteryOffer(mercs, rng, n)`, `takeCard`, `cannotTake`, `loadOffers`, `OFFER_CARDS` (3), `SHARD_CARD` (2). It draws with `offerUpgrades`, so unbuilt upgrades and spells that hold one are skipped. A merc with no upgrade left gets a card of +2 shards (a Waystation offer for it is that one card).
-- Waystation: `visitStation` (`src/game/game/station.ts`) calls `openOffers` the first time the bearer meets the post in a layer from the second phase on. Each living merc gets an offer from `g.streams.area(1, Stream.Loot, 2000 + stageIndex)`. The run is saved at that moment (`persist`), so the offers are in the save. `pickCard(g, i)` takes a card of the open offer.
-- Mastery: `Reward` gains `mastery` at the end (`src/gen/graph.ts`), with name "Mastery", a `REWARDS` entry whose `done` opens one offer of 3 cards for 3 different living mercs (4 if the bonus challenge was met, `BONUS_PAYS`: "A fourth card."), a map icon (`mastery`, laurel crown, in `src/ui/icons.ts`) and a signpost text. Its draw is `3000 + stageIndex` on the Loot area stream.
+- `src/game/mastery.ts`: `UpgradeOffer` (`title`, `cards`), `Card` (`merc` = index in the party's mercs, `upgrade` = upgrade id or `null` for shards), `waystationOffers(mercs, rng)`, `masteryOffer(mercs, rng, n)`, `takeCard`, `cannotTake`, `loadOffers(saved, mercs)` (drops cards that fail `cannotTake`, and offers left empty, so a stale save cannot pause the game), `offersAt`, `OFFER_CARDS` (3), `SHARD_CARD` (2), `BONUS_SHARDS` (1). The shard card also covers a merc whose job has upgrades not built yet, not only one with all 4 slots full. It draws with `offerUpgrades`, so unbuilt upgrades and spells that hold one are skipped. A merc with no upgrade left gets a card of +2 shards (a Waystation offer for it is that one card).
+- Waystation: `visitStation` (`src/game/game/station.ts`) calls `openOffers` the first time the bearer meets the post, in the Waystations of phases 2 to 4 only (`offersAt`, layers 1 to 3); endless Waystations after phase 4 offer nothing. Each living merc gets an offer from `g.streams.area(1, Stream.Loot, 2000 + stageIndex)`. The run is saved at that moment (`persist`), so the offers are in the save. `pickCard(g, i)` takes a card of the open offer.
+- Mastery: `Reward` gains `mastery` at the end (`src/gen/graph.ts`), with name "Mastery", a `REWARDS` entry whose `done` opens one offer of always 3 cards for 3 different living mercs (a met bonus challenge adds 1 shard to the merc whose card is picked; `BONUS_PAYS`: "The merc you pick gains a shard."), a map icon (`mastery`, laurel crown, in `src/ui/icons.ts`) and a signpost text. Its draw is `3000 + stageIndex` on the Loot area stream.
 - Road draw: `rollMastery` runs after `rollMutators`, the last RNG draws of `generateLayerMap`. Each fight node draws once with chance 0.2 and, if no sibling at its fork already pays Mastery, takes it in place of its reward. The first draw (`REWARDS` array) is unchanged, so every other part of a seed's map stays the same; only the rewards of nodes that turn to Mastery differ.
 - Save: `RunSave.offers?` (optional, `SAVE_VERSION` unchanged). `snapshot` writes it when an offer is open; `reset` reads it back through `loadOffers` and marks the layer as already offered so the Waystation does not draw again.
 - UI: `src/ui/upgrade-offer.tsx` (a centered panel with the cards, no close button). `GameState.paused` is true while an offer is open, so the game waits for a pick. `Game` exposes `offer`, `mercsOf()` and `pickCard(i)`. The panel rides the existing `onChange` version signal, so no new hook.
@@ -29,6 +29,7 @@ Mercs get their elite upgrades during a run. An offer is 3 cards and the player 
 - A Mastery offer opens when the fight is won, in mid-area. Saves are taken on entering an area, so quitting before picking returns to the area entrance, where the fight is fought again and the same cards come up. Only a Waystation offer is saved open.
 - Cards refer to a merc by index in `g.mercs()`. An offer must be resolved before the party changes, which holds because it pauses the game.
 - The Waystation's offers are drawn from the party at the first visit. Mercs hired later in that area get none.
+- A run saved mid-layer before this change may see fights ahead turn into Mastery roads after the update (the changeset says so).
 - Mastery chances are first guesses (0.2 per fight); roster-balance should check how often a run meets it.
 
 ## Proposed learnings
@@ -40,7 +41,8 @@ Mercs get their elite upgrades during a run. An offer is 3 cards and the player 
 
 - `pnpm vitest run test/game/mastery.test.ts`: 9 passed.
 - `pnpm typecheck` and `pnpm lint`: pass. `pnpm test`: 68 files; one run all green apart from timeouts (a different file each run, `concealment.test.ts` and `spawn.test.ts`), which pass alone. The machine was loaded by the other worktree.
-- `pnpm test:e2e` was not run: the stale-e2e worker holds port 5199. No test builds a `Game`, so `visitStation`, `pickCard` and the panel are covered only by typecheck and e2e; the orchestrator should run e2e after merging.
+- Review round: `pnpm typecheck`, `pnpm lint`, `pnpm test` (68 files, 677 passed) pass. `pnpm test:e2e`: 22 passed, 2 failed (`save.spec.ts`, `compendium.spec.ts`, the stale ones PR #16 fixes). `e2e/waystation.spec.ts` now takes a card for each merc at the phase 2 post and checks the upgrade shows on the merc's Spells tab.
+- No e2e reload test: a saving run reaches a phase 2 post only after 8 areas of play (a run with `party` or `area` options does not save). Instead `test/game/mastery.test.ts` drives `visitStation` and `pickCard` on a stand-in state: same cards for the same run, one draw per post, none after phase 4, and offers kept through a JSON round trip.
 
 ## Size
 
