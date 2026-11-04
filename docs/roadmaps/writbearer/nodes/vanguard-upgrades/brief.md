@@ -1,7 +1,7 @@
 ---
 id: vanguard-upgrades
 title: Vanguard: spell ranks to 10 and its 12 elite upgrades
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
