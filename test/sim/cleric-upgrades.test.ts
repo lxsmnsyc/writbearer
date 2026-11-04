@@ -214,6 +214,21 @@ describe('Heal upgrades', () => {
     expect(ranger.revive(0.5)).toBe(false);
   });
 
+  it('Resurrection is cast through the real cast path and takes its windup', () => {
+    const { sim, cleric } = clericWith('resurrection');
+    const vanguard = spawnMerc(sim, 'vanguard', 10, 2, 1);
+    const crawler = spawnMonster(sim, 'crawler', 4, 20, 0);
+    vanguard.hp = 1;
+    crawler.hit(vanguard, { kind: DamageKind.True, fixed: 5 });
+    expect(vanguard.alive).toBe(false);
+    const raise = spell(cleric, 'heal');
+    expect(cleric.startCast(raise, vanguard)).toBe(true);
+    sim.run(2.5);
+    expect(vanguard.alive).toBe(false);
+    sim.run(1);
+    expect(vanguard.alive).toBe(true);
+  });
+
   it('Resurrection still heals the living', () => {
     const { sim, cleric, bearer } = clericWith('resurrection');
     bearer.hp = 20;
@@ -336,6 +351,19 @@ describe('Smite upgrades', () => {
     expect(light.near).toBeCloseTo(base.main);
     expect(light.far).toBe(0);
   });
+
+  it('Sear holds only on the dead and the Occult, and seared targets take more', () => {
+    const { sim, cleric } = clericWith('holyLight');
+    const living = spawnMonster(sim, 'penitent', 5, 3, 2);
+    living.buildUp(SEAR, cleric, 500);
+    expect(living.statuses.has(SEAR.id)).toBe(false);
+    const dead = spawnMonster(sim, 'hollowSoldier', 5, 3, 0);
+    const before = blow(cleric, dead);
+    dead.hp = dead.derived.maxHp;
+    dead.buildUp(SEAR, cleric, 1000);
+    expect(dead.statuses.has(SEAR.id)).toBe(true);
+    expect(blow(cleric, dead)).toBeGreaterThan(before);
+  });
 });
 
 describe('Duel', () => {
@@ -346,8 +374,8 @@ describe('Duel', () => {
     duelist.skills.length = 0;
     duelist.kit.interval = 0;
     still(duelist);
-    const boss = spawnMonster(sim, 'hollowSoldier', 5, 3, 0, { elite: true });
-    const other = spawnMonster(sim, 'hollowSoldier', 5, 3, 1);
+    const boss = spawnMonster(sim, 'hollowSoldier', 5, 1.5, 0, { elite: true });
+    const other = spawnMonster(sim, 'hollowSoldier', 5, 1.5, 1);
     boss.aware = true;
     boss.target = bearer;
     still(boss, other);
@@ -357,7 +385,13 @@ describe('Duel', () => {
     // The dueled elite is no threat the Cleric may answer
     expect(WARD.aim?.(cleric, sim)).toBeNull();
     // Its ground does not burn the dueled elite
-    spell(cleric, 'sacredGround').release(cleric, bearer, sim);
+    // Both stand on the ground; only the ground does damage
+    const ground = spell(cleric, 'sacredGround');
+    cleric.skills.length = 0;
+    for (const u of sim.units) {
+      u.kit.interval = 0;
+    }
+    ground.release(cleric, bearer, sim);
     sim.run(2.05);
     expect(boss.hp).toBe(boss.derived.maxHp);
     expect(other.hp).toBeLessThan(other.derived.maxHp);

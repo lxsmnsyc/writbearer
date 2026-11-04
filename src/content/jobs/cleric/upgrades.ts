@@ -452,7 +452,13 @@ const HOLY_LIGHT: Passive = {
       },
     );
     const spread = listen(unit.sim, SimEvents.CheckBuildup, ValuePriority.Post, (event) => {
-      if (spreading || event.source !== unit || event.status !== SEAR || event.value <= 0) {
+      if (
+        spreading ||
+        event.disabled ||
+        event.source !== unit ||
+        event.status !== SEAR ||
+        event.value <= 0
+      ) {
         return;
       }
       spreading = true;

@@ -5,3 +5,4 @@
 - `after` takes the Cleric and goes through hostiles(); Ward, Wall of Faith and Twin Ward read it.
 - recruits.test.ts lost its three Cleric cases for the old skills (renew, cleanse, raise); cleric-upgrades.test.ts covers them.
 - Fast check passes: typecheck, lint, 67 files / 624 tests.
+- Review fixes: Duel test now puts both enemies on the ground and silences all other damage (fails without the hostiles filter); Holy Light spread honors event.disabled; Sear rules and a real-cast Resurrection test added.
