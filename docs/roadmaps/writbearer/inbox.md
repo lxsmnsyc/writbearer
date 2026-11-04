@@ -11,3 +11,4 @@ Design items with no node yet, from `COVERAGE.md`. Decide at a checkpoint whethe
 - A Ranger raised to the monster side by the Creditor still chains Charged Arrow among its own side. Guarding it makes `creditor.test` too easy (3 wins of 6, limit 1). Fix together with a Creditor retune.
 - Sellsword `SECOND_WIND` keys on unit identity (module WeakSet), so it fires once per run, not per stage, because party units carry over between areas. Key on `sim.area` as Play Dead does.
 - The Rearguard raise test in `test/sim/ranger-upgrades.test.ts` still passes with the fix reverted; the review proved the bug with a scratch test. Tighten the test.
+- `e2e/recruit.spec.ts:33` picks the first non-Cleric recruit as the fighter, the cause stale-e2e fixed in `save.spec.ts`; it passes on today's seed only. Also `e2e/compendium.spec.ts:12` reads `count()` before the list renders. One small test-only fix.

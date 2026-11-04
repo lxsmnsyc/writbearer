@@ -1,7 +1,7 @@
 ---
 id: stale-e2e
 title: Two end-to-end tests that fail on main
-status: active
+status: done
 priority: must
 type: fix
 outline: false
@@ -15,6 +15,7 @@ exclusive: [e2e-port]
 fulfilled_by:
 gate: false
 added: 2026-10-27
+spent: 126625
 owns:
   - e2e/compendium.spec.ts
   - e2e/save.spec.ts
@@ -39,14 +40,14 @@ depends_on: []
 
 ## Steps
 
-- [ ] Compendium: read the expected total from the game data (the monster list the Compendium counts), not a fixed number.
-- [ ] Save: find out why the plate click does not leave the Guild House. Check the plate's position in `data-exits`, whether the bearer is close enough, and whether leaving needs something the test does not do.
-- [ ] If the cause is in the test, fix the test. If it is a game bug, fix it in the smallest change and say so in the outcome.
+- [x] Compendium: read the expected total from the game data (the monster list the Compendium counts), not a fixed number.
+- [x] Save: find out why the plate click does not leave the Guild House. Check the plate's position in `data-exits`, whether the bearer is close enough, and whether leaving needs something the test does not do.
+- [x] If the cause is in the test, fix the test. If it is a game bug, fix it in the smallest change and say so in the outcome.
 
 ## Acceptance
 
-- [ ] Both tests pass, run alone and in the full `pnpm test:e2e`.
-- [ ] The other 22 end-to-end tests still pass.
+- [x] Both tests pass, run alone and in the full `pnpm test:e2e`.
+- [x] The other 22 end-to-end tests still pass.
 
 ## Sizing
 

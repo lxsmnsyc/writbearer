@@ -1,7 +1,7 @@
 ---
 id: mastery-offers
 title: Elite upgrade offers: Waystations and the Mastery road reward
-status: active
+status: done
 priority: must
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-27
+spent: 228134
 owns:
   - src/game/mastery.ts
   - src/ui/upgrade-offer.tsx
@@ -58,10 +59,10 @@ Give mercs their elite upgrades during a run, as `docs/design/16-builds.md` says
 
 ## Acceptance
 
-- [ ] A run reaching the phase 2 Waystation offers each living merc 3 upgrades of its own spells; picking one sets it on the merc.
-- [ ] A Mastery road reward exists in the graph and offers 3 cards for 3 different mercs.
-- [ ] An open offer survives save and load.
-- [ ] Fast check passes.
+- [x] A run reaching the phase 2 Waystation offers each living merc 3 upgrades of its own spells; picking one sets it on the merc.
+- [x] A Mastery road reward exists in the graph and offers 3 cards for 3 different mercs.
+- [x] An open offer survives save and load.
+- [x] Fast check passes.
 
 ## Sizing
 
