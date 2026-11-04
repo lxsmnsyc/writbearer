@@ -1,7 +1,7 @@
 ---
 id: roster-balance
 title: Recruits by slot, balance, and design notes
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
