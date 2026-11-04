@@ -1,7 +1,7 @@
 ---
 id: stale-e2e
 title: Two end-to-end tests that fail on main
-status: todo
+status: active
 priority: must
 type: fix
 outline: false

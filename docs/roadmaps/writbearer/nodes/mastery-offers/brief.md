@@ -1,7 +1,7 @@
 ---
 id: mastery-offers
 title: Elite upgrade offers: Waystations and the Mastery road reward
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
