@@ -13,6 +13,20 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
   await page.keyboard.up('d');
   await page.keyboard.up('s');
 
+  // Phase 2 offers each merc an upgrade, one offer at a time, and the game
+  // waits for it. Take the first card of each.
+  const offer = page.getByRole('complementary', { name: 'Elite upgrade' });
+  const taken: Record<string, string> = {};
+  for (const merc of ['Vanguard', 'Ranger']) {
+    await expect(offer).toBeVisible();
+    const label = (await offer.getByRole('button').first().getAttribute('aria-label')) ?? '';
+    const [, name, owner] = /^Take (.*) for (.*)$/.exec(label) ?? [];
+    expect(owner).toBe(merc);
+    taken[merc] = name;
+    await offer.getByRole('button').first().click();
+  }
+  await expect(offer).toHaveCount(0);
+
   const wages = panel.getByRole('region', { name: 'Wages' });
   await expect(wages.getByRole('button', { name: /^Pay / })).toHaveCount(2);
   await expect(wages).toContainText('Unpaid mercs lose heart');
@@ -27,6 +41,13 @@ test('at a Waystation, the post asks wages, and the vault keeps an item', async 
   // Walking over the north road's exit does not take it.
   // D walks north-east on the floor, then D and S together walk east.
   await panel.getByRole('button', { name: 'Close' }).click();
+
+  // The picked upgrade is set on the merc.
+  await page.keyboard.press('1');
+  const orders = page.getByRole('complementary', { name: 'Orders for Vanguard' });
+  await orders.getByRole('tab', { name: /Skills/ }).click();
+  await expect(orders.getByRole('region', { name: 'Spells' })).toContainText(taken.Vanguard);
+  await page.keyboard.press('Escape');
   const party = page.getByRole('navigation', { name: 'Party' });
   await expect(party).not.toContainText('Low morale');
   await page.keyboard.down('d');

@@ -7,15 +7,13 @@ import { storeInVault, takeFromVault } from '../inventory';
 import type { Due } from '../wages';
 import { AREAS_PER_LAYER } from '../../gen/layers';
 import { Stream } from '../../core/seed';
-import { takeCard, waystationOffers } from '../mastery';
+import { offersAt, takeCard, waystationOffers } from '../mastery';
 import type GameState from './state';
 import { LEAVE_REACH, MEET_REACH } from './state';
 import { persist } from './saving';
 
 // Area stream ids for a Waystation's offers, apart from the layouts'
 const OFFER_STREAM = 2000;
-// Waystations offer elite upgrades from the second phase on
-const OFFERS_FROM_LAYER = 1;
 
 // How near the fire the bearer must come for the party to rest at a Camp
 const REST_REACH = 2.2;
@@ -39,13 +37,10 @@ export function visitStation(g: GameState): void {
   }
 }
 
-// At the phase's Waystation each living merc gets an offer of its own
+// At the Waystation of phases 2 to 4 each living merc gets an offer of its own
 // spells' upgrades, once. The run is saved with them open.
 function openOffers(g: GameState): void {
-  if (
-    g.offeredAt === g.stageIndex ||
-    Math.floor(g.stageIndex / AREAS_PER_LAYER) < OFFERS_FROM_LAYER
-  ) {
+  if (g.offeredAt === g.stageIndex || !offersAt(Math.floor(g.stageIndex / AREAS_PER_LAYER))) {
     return;
   }
   g.offeredAt = g.stageIndex;
@@ -64,7 +59,7 @@ export function pickCard(g: GameState, i: number): string | null {
   if (!card) {
     return 'No such card.';
   }
-  const why = takeCard(g.mercs(), card);
+  const why = takeCard(g.mercs(), card, offer?.bonus);
   if (why === null) {
     g.offers.shift();
     g.itemsChanged();

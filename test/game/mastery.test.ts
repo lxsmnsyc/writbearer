@@ -2,12 +2,18 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { JOBS } from '../../src/content/jobs';
 import { spawnMerc } from '../../src/content/roster';
 import RNG from '../../src/core/rng';
+import { RunStreams } from '../../src/core/seed';
+import { AREAS_PER_LAYER } from '../../src/gen/layers';
+import type GameState from '../../src/game/game/state';
+import { pickCard, visitStation } from '../../src/game/game/station';
 import { generateLayerMap } from '../../src/gen/graph';
 import {
+  BONUS_SHARDS,
   OFFER_CARDS,
   SHARD_CARD,
   loadOffers,
   masteryOffer,
+  offersAt,
   takeCard,
   waystationOffers,
 } from '../../src/game/mastery';
@@ -111,10 +117,10 @@ describe('elite upgrade offers', () => {
   it('keeps an open offer through a save and load', () => {
     const mercs = party(2);
     const offers = waystationOffers(mercs, new RNG(2));
-    const loaded = loadOffers(structuredClone(offers));
+    const loaded = loadOffers(structuredClone(offers), mercs);
     expect(loaded).toEqual(offers);
     const unknown = [{ title: 'x', cards: [{ merc: 0, upgrade: 'no-such-upgrade' }] }];
-    expect(loadOffers(unknown)).toEqual([]);
+    expect(loadOffers(unknown, mercs)).toEqual([]);
   });
 
   it('offers the Vanguard’s own built upgrades', () => {
@@ -141,5 +147,90 @@ describe('elite upgrade offers', () => {
       }
     }
     expect(seen).toBeGreaterThan(0);
+  });
+
+  it('adds a shard to the picked merc when the bonus was met', () => {
+    const mercs = party(3);
+    const offer = masteryOffer(mercs, new RNG(5), true);
+    expect(offer?.cards).toHaveLength(OFFER_CARDS);
+    const card = offer!.cards[1];
+    const before = mercs[card.merc].shards;
+    expect(takeCard(mercs, card, offer!.bonus)).toBeNull();
+    expect(mercs[card.merc].shards).toBe(before + BONUS_SHARDS);
+    const other = mercs.find((_, i) => i !== card.merc)!;
+    expect(other.shards).toBe(4);
+  });
+
+  it('offers at the Waystations of phases 2 to 4 only', () => {
+    expect([0, 1, 2, 3, 4, 5].map(offersAt)).toEqual([false, true, true, true, false, false]);
+  });
+
+  it('drops saved cards that can no longer be taken, and offers left empty', () => {
+    const mercs = party(2);
+    const offers = waystationOffers(mercs, new RNG(2));
+    const first = offers[0].cards[0];
+    expect(takeCard(mercs, first)).toBeNull();
+    const saved = structuredClone(offers);
+    const loaded = loadOffers(saved, mercs);
+    // The taken spell's other cards are gone from the first offer
+    expect(loaded[0].cards.every((c) => c.upgrade !== first.upgrade)).toBe(true);
+    expect(loaded[0].cards.length).toBeLessThan(OFFER_CARDS);
+    // A merc who died leaves an empty offer, which is dropped
+    mercs[1].alive = false;
+    expect(loadOffers(saved, mercs)).toHaveLength(1);
+  });
+
+  describe('at the Waystation post', () => {
+    // Just what visitStation reads and changes
+    function post(layer: number, mercs: Unit[]): GameState {
+      // A Game needs a canvas, so a stand-in with only these fields
+      return {
+        stage: { station: { x: 0, z: 0 } },
+        stationOpen: false,
+        stationMet: false,
+        bearer: { x: 0, z: 0, alive: true, order: null },
+        keys: new Set<string>(),
+        hooks: {},
+        offers: [],
+        offeredAt: -1,
+        stageIndex: layer * AREAS_PER_LAYER,
+        streams: new RunStreams('MASTERY'),
+        saving: false,
+        mercs: () => mercs,
+        itemsChanged: () => {},
+      } as unknown as GameState; // oxlint-disable-line typescript/no-unsafe-type-assertion
+    }
+
+    it('draws each living merc an offer once, and pauses until all are taken', () => {
+      const mercs = party(2);
+      const g = post(1, mercs);
+      visitStation(g);
+      expect(g.offers).toHaveLength(2);
+      expect(pickCard(g, 0)).toBeNull();
+      expect(pickCard(g, 0)).toBeNull();
+      expect(g.offers).toHaveLength(0);
+      expect(mercs[0].upgrades.size).toBe(1);
+      expect(mercs[1].upgrades.size).toBe(1);
+      // Walking away and back draws no new offer
+      g.bearer.x = 50;
+      visitStation(g);
+      g.bearer.x = 0;
+      visitStation(g);
+      expect(g.offers).toHaveLength(0);
+    });
+
+    it('draws the same cards for the same run', () => {
+      const a = post(1, party(2));
+      const b = post(1, party(2));
+      visitStation(a);
+      visitStation(b);
+      expect(b.offers).toEqual(a.offers);
+    });
+
+    it('offers nothing after phase 4', () => {
+      const g = post(4, party(2));
+      visitStation(g);
+      expect(g.offers).toHaveLength(0);
+    });
   });
 });

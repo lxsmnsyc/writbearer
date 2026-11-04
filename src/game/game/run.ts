@@ -147,7 +147,7 @@ export function reset(g: GameState, save: RunSave | null, seed: string | undefin
   g.notice = null;
   g.hooks.onStation?.(false);
   // An offer open at the save opens again, and its Waystation draws no more.
-  g.offers = loadOffers(save?.offers ?? []);
+  g.offers = loadOffers(save?.offers ?? [], g.mercs());
   g.offeredAt = g.offers.length > 0 ? g.stageIndex : -1;
   g.hooks.onEvent?.(null);
   g.select(null);

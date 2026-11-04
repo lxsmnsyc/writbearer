@@ -1,4 +1,11 @@
-import { type Upgrade, applyUpgrade, buildFor, offerUpgrades, upgradeById } from '../sim/builds';
+import {
+  type Upgrade,
+  applyUpgrade,
+  buildFor,
+  cannotUpgrade,
+  offerUpgrades,
+  upgradeById,
+} from '../sim/builds';
 import type RNG from '../core/rng';
 import type Unit from '../sim/unit';
 
@@ -21,7 +28,19 @@ export interface Card {
 export interface UpgradeOffer {
   title: string;
   cards: Card[];
+  // Whether the pick pays a shard more, for a met bonus challenge
+  bonus?: boolean;
 }
+
+/** The shard a met bonus challenge adds to a Mastery pick. */
+export const BONUS_SHARDS = 1;
+
+/** The layers (phases 2 to 4) whose Waystations offer upgrades. */
+export const OFFER_LAYERS = { from: 1, to: 3 };
+
+/** Whether a Waystation before this layer offers upgrades. */
+export const offersAt = (layer: number): boolean =>
+  layer >= OFFER_LAYERS.from && layer <= OFFER_LAYERS.to;
 
 // The upgrades of the merc's job it could take now, up to n.
 function draw(merc: Unit, rng: RNG, n: number): Upgrade[] {
@@ -33,7 +52,8 @@ const shardCard = (merc: number): Card => ({ merc, upgrade: null });
 
 /**
  * A Waystation's offers: one per living merc, 3 of its own spells' upgrades.
- * A merc with none left gets one card of shards.
+ * A merc with none to take gets one card of shards. That is a merc whose 4
+ * spells all hold one, or whose job has upgrades not built yet.
  */
 export function waystationOffers(mercs: readonly Unit[], rng: RNG): UpgradeOffer[] {
   const offers: UpgradeOffer[] = [];
@@ -52,11 +72,13 @@ export function waystationOffers(mercs: readonly Unit[], rng: RNG): UpgradeOffer
 
 /**
  * A Mastery road's offer: one card each for different living mercs, drawn in
- * random order. Null if no merc lives.
+ * random order. A merc with none to take (all 4 spells hold one, or its job
+ * has upgrades not built yet) gets a shard card. Null if no merc lives.
  */
 export function masteryOffer(
   mercs: readonly Unit[],
   rng: RNG,
+  bonus = false,
   n = OFFER_CARDS,
 ): UpgradeOffer | null {
   const living: number[] = [];
@@ -70,7 +92,7 @@ export function masteryOffer(
     const picks = draw(mercs[i], rng, 1);
     cards.push(picks.length > 0 ? { merc: i, upgrade: picks[0].id } : shardCard(i));
   }
-  return cards.length > 0 ? { title: 'Mastery', cards } : null;
+  return cards.length > 0 ? { title: 'Mastery', cards, bonus } : null;
 }
 
 /** Why a card cannot be taken, or null. */
@@ -83,31 +105,36 @@ export function cannotTake(mercs: readonly Unit[], card: Card): string | null {
     return null;
   }
   const upgrade = upgradeById(card.upgrade);
-  return upgrade ? null : 'Unknown upgrade.';
+  return upgrade ? cannotUpgrade(merc, upgrade) : 'Unknown upgrade.';
 }
 
 /** Gives a merc what a card holds. Returns why it failed, or null. */
-export function takeCard(mercs: readonly Unit[], card: Card): string | null {
+export function takeCard(mercs: readonly Unit[], card: Card, bonus = false): string | null {
   const why = cannotTake(mercs, card);
   if (why) {
     return why;
   }
   const merc = mercs[card.merc];
-  if (card.upgrade === null) {
-    merc.shards += SHARD_CARD;
-    return null;
+  const upgrade = card.upgrade === null ? undefined : upgradeById(card.upgrade);
+  const failed = upgrade ? applyUpgrade(merc, upgrade) : null;
+  if (failed) {
+    return failed;
   }
-  const upgrade = upgradeById(card.upgrade);
-  return upgrade ? applyUpgrade(merc, upgrade) : 'Unknown upgrade.';
+  merc.shards += (upgrade ? 0 : SHARD_CARD) + (bonus ? BONUS_SHARDS : 0);
+  return null;
 }
 
-/** Offers read back from a save, without cards whose upgrade no job has. */
-export function loadOffers(saved: readonly UpgradeOffer[]): UpgradeOffer[] {
+/**
+ * Offers read back from a save, once the mercs are loaded: without cards that
+ * can no longer be taken, and without an offer left with none, so a stale
+ * save cannot pause the game for good.
+ */
+export function loadOffers(saved: readonly UpgradeOffer[], mercs: readonly Unit[]): UpgradeOffer[] {
   const offers: UpgradeOffer[] = [];
   for (const offer of saved) {
-    const cards = offer.cards.filter((c) => c.upgrade === null || upgradeById(c.upgrade));
+    const cards = offer.cards.filter((c) => cannotTake(mercs, c) === null);
     if (cards.length > 0) {
-      offers.push({ title: offer.title, cards: cards.map((c) => ({ ...c })) });
+      offers.push({ ...offer, cards: cards.map((c) => ({ ...c })) });
     }
   }
   return offers;

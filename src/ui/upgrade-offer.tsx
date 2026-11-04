@@ -31,6 +31,9 @@ export default function UpgradeOffer(props: Props): JSX.Element {
           place="center"
           class="w-[640px]"
         >
+          <Show when={open.bonus}>
+            <p class="mb-3 text-xs text-neutral-400">Bonus met: the merc you pick gains a shard.</p>
+          </Show>
           <ul class="grid grid-cols-3 gap-3">
             <For each={open.cards}>
               {(card, i) => {

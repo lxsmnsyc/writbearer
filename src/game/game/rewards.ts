@@ -12,7 +12,7 @@ import { AREAS_PER_LAYER } from '../../gen/layers';
 import { plainItem, rollGold, rollItem, rollPotion } from '../../gen/loot';
 import { CARD_OF, GEMS } from '../../content/cards';
 import { MATERIAL_NAME, type Materials, gather } from '../../content/materials';
-import { OFFER_CARDS, masteryOffer } from '../mastery';
+import { masteryOffer } from '../mastery';
 import type GameState from './state';
 import { here } from './route';
 
@@ -43,7 +43,7 @@ export const BONUS_PAYS: Record<Reward, string> = {
   cards: 'A second card.',
   materials: 'Twice the materials.',
   respite: 'The dead rise too.',
-  mastery: 'A fourth card.',
+  mastery: 'The merc you pick gains a shard.',
 };
 
 /** What a reward's chest is filled with, as it opens. */
@@ -123,13 +123,13 @@ export const REWARDS: Record<Reward, RewardDef> = {
       g.say('A respite: the party is whole again.');
     },
   },
-  // One offer when the fight is won: a card for each of 3 different mercs,
-  // 4 if the bonus challenge was met.
+  // One offer when the fight is won: a card for each of 3 different mercs.
+  // A met bonus challenge adds a shard to the merc picked.
   mastery: {
     fill() {},
     done(g, better) {
       const rng = g.streams.area(1, Stream.Loot, MASTERY_STREAM + g.stageIndex);
-      const offer = masteryOffer(g.mercs(), rng, OFFER_CARDS + (better ? 1 : 0));
+      const offer = masteryOffer(g.mercs(), rng, better);
       if (offer) {
         g.offers.push(offer);
         g.say('Mastery: a merc may take an elite upgrade.');
