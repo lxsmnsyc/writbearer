@@ -26,6 +26,7 @@ import {
   stormArrow,
   trap,
 } from '../../ranger';
+import { flies, ground } from '../../../sim/flight';
 import { isElite, rankOf } from '../../skills';
 
 // The Ranger's 12 elite upgrades, from docs/design/16-builds.md. Numbers
@@ -331,7 +332,10 @@ const pinDown: Partial<Skill> = {
   release(u, target, sim) {
     aimedArrow(u, target, sim, {
       onHit: (hit) => {
-        hit.addStatus(ROOTED, u, pinTime(rankOf(u, 'aimedShot')));
+        const time = pinTime(rankOf(u, 'aimedShot'));
+        hit.addStatus(ROOTED, u, time);
+        // A flyer comes down for as long as it is held
+        ground(hit, time);
       },
     });
   },
@@ -339,9 +343,12 @@ const pinDown: Partial<Skill> = {
 
 const EAGLE_REACH = 3;
 
-/** Aimed Shot reaches 3 tiles further. */
+/** Aimed Shot reaches 3 tiles further, and never misses a flyer. */
 const eagleEye: Partial<Skill> = {
   wants: (u, target) => target !== null && u.distanceTo(target) <= u.kit.reach + EAGLE_REACH,
+  release(u, target, sim) {
+    aimedArrow(u, target, sim, target !== null && flies(target) ? { flags: DamageFlags.Sure } : {});
+  },
 };
 
 const KILLSHOT_MULTIPLIER = 2;
@@ -512,14 +519,14 @@ const RANGER_UPGRADES: Upgrade[] = [
     spell: 'aimedShot',
     name: 'Pin Down',
     describe: (rank) =>
-      `Also roots the target for ${pinTime(rank)} seconds. It grounds a flyer once flyers exist.`,
+      `Also roots the target for ${pinTime(rank)} seconds. It grounds a flyer for as long.`,
     patch: pinDown,
   },
   {
     id: 'eagleEye',
     spell: 'aimedShot',
     name: 'Eagle Eye',
-    describe: () => `+${EAGLE_REACH} tiles of reach. It never misses a flyer, once flyers exist.`,
+    describe: () => `+${EAGLE_REACH} tiles of reach. It never misses a flyer.`,
     patch: eagleEye,
   },
   {
