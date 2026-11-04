@@ -86,7 +86,7 @@ export default class Unit {
   // The bearer's last shout as this merc heard it
   heard: Heard | null = null;
   // Effects of what it wears, uniques' and socketed cards', by item and socket
-  // Used by src/sim/unit/gear.ts
+  // internal: written only by src/sim/unit/*
   readonly cardEffects = new Map<string, Lifecycle>();
 
   // Position on the floor, in tiles, and facing in radians. 0 faces +x.
@@ -140,7 +140,7 @@ export default class Unit {
   // Where the bearer was told to walk.
   order: { x: number; z: number } | null = null;
   // The path being followed around obstacles, and the goal it was found for
-  // Used by src/sim/unit/movement.ts
+  // internal: written only by src/sim/unit/*
   route: { x: number; z: number; at: number; points: Spot[] } | null = null;
 
   readonly skills: Skill[];
@@ -167,7 +167,7 @@ export default class Unit {
   readonly statuses = new Map<string, ActiveStatus>();
   // Buildup toward each status, by status id, and when it last rose
   readonly buildup = new Map<string, number>();
-  // Used by src/sim/unit/statuses.ts
+  // internal: written only by src/sim/unit/*
   readonly buildupAt = new Map<string, number>();
   // Seconds left before each status can be gained again, by status id
   readonly immunity = new Map<string, number>();
