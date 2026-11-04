@@ -33,7 +33,8 @@
   - `src/content/jobs/warden/index.ts` and the new `spells.ts`: a split that keeps behavior. oxlint's `import/no-cycle` rejects `upgrades.ts` importing from `./index`, because `index.ts` imports `upgrades.ts`. Duelist and Sellsword already use this layout.
   - `src/game/objective.ts` and `src/game/game/route.ts`: Never Surprised needs the game layer, because the sim does not know what an Ambush is. Each file has a small change: one import and one or two calls. Sellsword's `listeners.ts` hooks follow the same pattern.
 - `src/ui/map.tsx` and `src/sim/trap.ts` (shared) are unchanged. The map already draws an `ambush` objective once `layerMap` passes it through. Trap Field is a zone, not a new kind of trap.
-- Living Shield is read as "the Warden takes 40% instead of 70%, the bearer is still spared 70%". The other reading is that the bearer takes 60%. That reading weakens the soak build doc 16 describes. Ask the user if this is wrong.
+- Living Shield: the Warden takes 40% of a shared hit instead of 70%, the bearer's 30% does not change, and what the Warden takes becomes Ward, capped at 50% of its max health. The designer confirmed this reading in review (PR #11), so it is not an open question.
+- Retaliate's free attack reaches only a foe within reach + 0.5. Doc 16 says "anyone who damages the bearer". The designer kept the limit in review (PR #11). The free attack is a melee blow, Cover deals with shooters in front, and Interpose still marks every attacker for Pursue.
 - Never Surprised reveals Ambushes only on the layer map, not on signposts (`aheadOf`, `fightsAhead`). Doc 16 says "on the map".
 
 ## Stubs left

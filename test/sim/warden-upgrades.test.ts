@@ -7,7 +7,6 @@ import { generateStage } from '../../src/gen/stage';
 import { updateWarnings } from '../../src/sim/warning';
 import { COVERING, MARKED, isMarked } from '../../src/content/jobs/warden';
 import WARDEN_UPGRADES, {
-  TETHERED,
   ambushersArrive,
   seesAmbushes,
   springAmbush,
@@ -162,13 +161,17 @@ describe('Cover upgrades', () => {
     archer.kit.moveSpeed = 0;
     archer.aware = true;
     archer.target = bearer;
+    warden.kit.moveSpeed = 2.7;
+    const speed = warden.speed;
     const cover = spell(warden, 'cover');
     expect(cover.wants(warden, null, sim)).toBe(true);
     cover.release(warden, null, sim);
-    // The Warden dashed in and the bearer stands behind it.
-    expect(Math.abs(warden.x - bearer.x)).toBeLessThan(1.5);
+    // The Warden dashed from 4 tiles out to the bearer's side. Base Cover
+    // alone would leave it at 4 and pull the bearer to 3.1.
+    expect(warden.x).toBeLessThan(1.5);
+    expect(Math.abs(bearer.x)).toBeLessThan(0.5);
     expect(warden.statuses.has(COVERING.id)).toBe(true);
-    expect(warden.statuses.has(TETHERED.id)).toBe(true);
+    expect(warden.speed).toBeCloseTo(speed * 1.3, 5);
     const check = { id: 'CheckChase', disabled: false, source: warden, value: 10 };
     sim.emit(SimEvents.CheckChase, check);
     expect(check.value).toBe(3);

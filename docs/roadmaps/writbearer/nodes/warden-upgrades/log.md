@@ -9,3 +9,4 @@
 - Read the Room's area reveal keys on `sim.area` (party carries over in one Sim). Its first tick after setup also reveals.
 - Blood Debt reads the target's max health before the blow: death clears statuses and recomputes stats.
 - Retaliate: a free basic attack via `strike`, only on a foe within reach + 0.5, never for DoT ticks.
+- Review (PR #11): the Tether test now checks the dash (the Warden leaves x 4; the test fails with `landBy` removed) and the 1.3x speed. The designer confirmed the Living Shield reading and kept Retaliate's reach limit; both are recorded in the outcome's Deviations.
