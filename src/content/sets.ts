@@ -6,6 +6,7 @@ import type Sim from '../sim/sim';
 import { Category } from '../sim/stats';
 import { DamageKind, Element, Range, Side } from '../sim/types';
 import type Unit from '../sim/unit';
+import { workingItems } from '../sim/strip';
 import listen from './passives';
 
 // Squad sets, from the items design: named pieces with fixed stats that
@@ -261,7 +262,7 @@ const mercsOf = (sim: Sim): Unit[] => sim.living(Side.Party).filter((u) => u !==
 
 /** The set pieces a unit wears, by piece id. */
 function piecesOn(unit: Unit): string[] {
-  return [...unit.equipment.values()].flatMap((i) => (i.piece === undefined ? [] : [i.piece]));
+  return workingItems(unit).flatMap((i) => (i.piece === undefined ? [] : [i.piece]));
 }
 
 /**

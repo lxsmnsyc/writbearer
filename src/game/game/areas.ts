@@ -28,6 +28,7 @@ import { START_LEVEL, carryParty, dropStage, enterStage, joinStage } from '../st
 import type GameState from './state';
 import { aheadOf, biome, buildStage, fightsAhead, goTo, here, rollMap, sidesAhead } from './route';
 import { beginEvent } from './encounter';
+import { restoreAll } from '../../sim/strip';
 import { persist } from './saving';
 
 // Each Waystation lays out from its own stream, apart from the areas'.
@@ -225,6 +226,7 @@ function cross(g: GameState): void {
   g.boss = ahead.boss;
   g.ahead = null;
   g.sim.area++;
+  restoreAll(g.sim);
   g.rested = false;
   g.hoverExit = null;
   enter(g, true);

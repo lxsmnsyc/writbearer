@@ -1,6 +1,7 @@
 import type { Lifecycle } from '../../core/lifecycle';
 import { EquipSlot, type Item, itemModifiers, weaponOf } from '../item';
 import { MENDING, REFRESHING } from '../statuses';
+import { isStripped, restore, workingItems } from '../strip';
 import { type BaseStats, type Modifier, deriveStats } from '../stats';
 import type Unit from '../unit';
 
@@ -31,7 +32,8 @@ export const RECALC_SOURCES: RecalcSource[] = [
 
 function equipmentModifiers(unit: Unit): Modifier[] {
   const out: Modifier[] = [];
-  for (const item of unit.equipment.values()) {
+  // A stripped item gives nothing
+  for (const item of workingItems(unit)) {
     out.push(...itemModifiers(item));
   }
   return out;
@@ -110,6 +112,8 @@ export function setBonus(unit: Unit, id: string, modifiers: Modifier[] | null): 
 export function equip(unit: Unit, slot: EquipSlot, item: Item): Item | null {
   const before = unit.equipment.get(slot) ?? null;
   unit.equipment.set(slot, item);
+  // A new item in the slot works, as does the same one handed back
+  restore(unit, slot);
   unit.recalc();
   unit.refreshCards();
   return before;
@@ -119,6 +123,7 @@ export function equip(unit: Unit, slot: EquipSlot, item: Item): Item | null {
 export function unequip(unit: Unit, slot: EquipSlot): Item | null {
   const item = unit.equipment.get(slot) ?? null;
   unit.equipment.delete(slot);
+  restore(unit, slot);
   unit.recalc();
   unit.refreshCards();
   return item;
@@ -131,7 +136,7 @@ export function unequip(unit: Unit, slot: EquipSlot): Item | null {
  */
 export function refreshCards(unit: Unit): void {
   const worn = new Map<string, (unit: Unit) => Lifecycle>();
-  for (const item of unit.equipment.values()) {
+  for (const item of workingItems(unit)) {
     if (item.effect) {
       worn.set(`${item.uid}:unique`, item.effect);
     }
@@ -161,7 +166,8 @@ export function refreshCards(unit: Unit): void {
  * changes: level, raised stats, gear or a bonus starting or ending.
  */
 export function recalc(unit: Unit): void {
-  const held = unit.equipment.get(EquipSlot.Weapon);
+  // A stripped weapon leaves the unit bare-handed
+  const held = isStripped(unit, EquipSlot.Weapon) ? undefined : unit.equipment.get(EquipSlot.Weapon);
   const modifiers: Modifier[] = [];
   for (const source of RECALC_SOURCES) {
     modifiers.push(...source.modifiers(unit));
