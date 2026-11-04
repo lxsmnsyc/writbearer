@@ -7,3 +7,4 @@
 - Salt the Wound test: other Amplify listeners and later steps vary, so it compares the blind/seeing ratio at Amplify.
 - Full `pnpm test`: two unrelated files timed out once under load from other worktrees; they pass on rerun.
 - Review fix (blocking): Bribe left the unit `alive`, so an Ambush or Horde with a bribed wave unit never finished. BRIBED now sets `alive = false`, clears cast, swing and target, then removes it, still without UnitDies. Added an Ambush test (fails without the fix) and save tests: tally round trip, and a save without tally.
+- Merged origin/main (9bd099a, duelist-upgrades) into the branch. One conflict: test/content/jobs.test.ts, both nodes' "all built" loops; kept both (Duelist, then Sellsword).
