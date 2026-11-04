@@ -26,7 +26,7 @@
 - The melee rule uses the attacker's job range, because `CheckTarget` carries no skill. A melee-job merc's spell is also refused an aloft target.
 - Area damage is not filtered by `CheckTarget`, so area skills (melee-tagged too) still hit an aloft flyer. Decision: left so, as the contract says area damage is not filtered.
 - Content skills that pick their own victims (known gap in the contract) can pick an aloft flyer unless moved onto `hostiles()`.
-- A flyer that is stunned or unaware does not run its step, but landing is time based so a hit-and-run is not possible by stalling.
+- Landing starts its clock when the flyer's own step first runs, not at spawn. A flyer that is unaware or stunned does not run its step, so it stays aloft past ALOFT_MAX until the step runs again; it lands ALOFT_MAX seconds after that.
 - The lifted figure carries its own shadow, so a flyer shows two shadows.
 
 ## Proposed learnings
