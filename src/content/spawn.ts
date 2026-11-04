@@ -9,7 +9,7 @@ import { slotFor } from '../sim/item';
 import { BASE_BY_ID } from './items';
 import { JOBS, type JobKind, type Template } from './jobs';
 import { job, stats } from './jobs/stats';
-import { MONSTER_STEPS } from './monsters/steps';
+import { SPAWN_STEPS } from './monsters/spawn-steps';
 import { MONSTERS, type MonsterKind } from './monsters/table';
 import { applyTraits } from './traits';
 
@@ -188,7 +188,7 @@ export function spawnMonster(
       )
     : spawn(sim, kind, t, Side.Monster, level, x, z);
   // Template-flag steps, in their order.
-  for (const step of MONSTER_STEPS) {
+  for (const step of SPAWN_STEPS) {
     step(unit, t, sim);
   }
   return unit;
