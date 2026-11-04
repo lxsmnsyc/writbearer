@@ -9,7 +9,8 @@ test('a run is saved as it enters the first area, and can be continued after a r
     0,
   );
   await enterGuild(page);
-  const fighter = (await recruits(page)).find((r) => r.kind !== 'cleric')!;
+  // Only a Vanguard or a Ranger lets the Guild send the party out.
+  const fighter = (await recruits(page)).find((r) => r.kind === 'vanguard' || r.kind === 'ranger')!;
   const name = fighter.name;
   await hire(page, fighter);
 
@@ -25,16 +26,13 @@ test('a run is saved as it enters the first area, and can be continued after a r
   await page.keyboard.up('d');
   await page.keyboard.up('s');
   const box = (await canvas.boundingBox())!;
+  // One click sends the bearer to the plate. A second would send it back to
+  // the plate after it set out on the area beyond.
+  const exits = ((await canvas.getAttribute('data-exits')) ?? '').split(';');
+  const [sx, sy] = exits[0].split(',').map(Number);
+  await page.mouse.click(box.x + sx * box.width, box.y + sy * box.height);
   await expect
-    .poll(
-      async () => {
-        const exits = ((await canvas.getAttribute('data-exits')) ?? '').split(';');
-        const [sx, sy] = exits[0].split(',').map(Number);
-        await page.mouse.click(box.x + sx * box.width, box.y + sy * box.height);
-        return (await canvas.getAttribute('data-recruits')) ?? '';
-      },
-      { timeout: 30000 },
-    )
+    .poll(async () => (await canvas.getAttribute('data-recruits')) ?? '', { timeout: 30000 })
     .toBe('');
 
   // The save is written in the background; wait until the slot holds it.

@@ -7,7 +7,12 @@ test('the compendium records a merc taken, and keeps it after a reload', async (
   await picker.getByRole('button', { name: 'The Compendium (K)' }).click();
   const book = page.getByRole('complementary', { name: 'Compendium' });
   await expect(book).toBeVisible();
-  await expect(book.getByRole('tab', { name: /Monsters/ })).toContainText('0 of 12');
+  // The total is the number of monsters the book lists, none of them seen yet.
+  const monsters = book.getByRole('tab', { name: /Monsters/ });
+  await monsters.click();
+  const total = await book.getByRole('list', { name: 'Monsters' }).getByRole('listitem').count();
+  expect(total).toBeGreaterThan(0);
+  await expect(monsters).toContainText(`0 of ${total}`);
   await book.getByRole('tab', { name: /Mercs/ }).click();
   await expect(book.getByRole('list', { name: 'Mercs' })).toContainText('Nothing yet');
   await page.keyboard.press('k');
