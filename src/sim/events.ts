@@ -35,8 +35,4 @@ export const enum SimEvents {
 
 /** Which event carries which shape, on which priority scale. Entries live in the group modules. */
 export interface SimEventMap
-  extends EventMap,
-    HitEventMap,
-    SkillEventMap,
-    StatusEventMap,
-    LifeEventMap {}
+  extends EventMap, HitEventMap, SkillEventMap, StatusEventMap, LifeEventMap {}
