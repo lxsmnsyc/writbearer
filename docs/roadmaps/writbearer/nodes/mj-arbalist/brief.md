@@ -11,9 +11,15 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-knockback
     kind: hard
-    why: needs knockback, turrets and the standing-still timer
+    why: needs knockback
+  - on: cc-ground-zones
+    kind: hard
+    why: needs turrets
+  - on: cc-sight-still
+    kind: hard
+    why: needs the standing-still timer
 ---
 
 # Arbalist

@@ -11,9 +11,15 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-buffs
     kind: hard
-    why: needs weapon element buffs, dispel and warning cancel
+    why: needs Endow (weapon element buffs)
+  - on: cc-afflictions
+    kind: hard
+    why: needs dispel
+  - on: cc-ground-zones
+    kind: hard
+    why: needs warning cancel and Land Protector
 ---
 
 # Sage

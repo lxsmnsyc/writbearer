@@ -22,7 +22,7 @@ owns:
 shared:
   - src/sim/status.ts
   - src/sim/statuses.ts
-  - src/sim/ai.ts
+  - src/sim/ai/think.ts
   - src/sim/sim.ts
   - src/sim/events.ts
   - src/content/creditor.ts
@@ -36,6 +36,9 @@ depends_on:
   - on: roster-balance
     kind: hard
     why: edits statuses.ts, ai.ts and sim.ts after the starting-jobs nodes settle them
+  - on: split-ai
+    kind: hard
+    why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
 ---
 
 # Mind control, skill copy and buff theft
@@ -46,7 +49,7 @@ A timed mind control that turns a merc to the monster side and then restores its
 
 ## Context
 
-- Base: the Creditor turns dead mercs for good (`src/content/creditor.ts:78`); AI dispatch is by side (`src/sim/ai.ts:580`); skills run on any unit (`Unit.startCast`); `UnitSkillRelease` carries source and skill.
+- Base: the Creditor turns dead mercs for good (`src/content/creditor.ts:78`); AI dispatch is by side (`think` in `src/sim/ai/think.ts` after split-ai); skills run on any unit (`Unit.startCast`); `UnitSkillRelease` carries source and skill.
 - If sellsword-upgrades already added a buff flag for Cutpurse, reuse it.
 - Source: `docs/design/13-bestiary.md#the-sunken-crown` (Usurper).
 

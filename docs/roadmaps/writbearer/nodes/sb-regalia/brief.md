@@ -8,9 +8,9 @@ outline: true
 milestone: story-bearer
 size: L
 depends_on:
-  - on: be-monster-types
+  - on: be-thieves
     kind: hard
-    why: thieves that take a regalia piece come from that node
+    why: thieves that take a regalia piece (`pickLoot` is overridable)
 ---
 
 # The Old King's regalia

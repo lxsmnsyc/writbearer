@@ -17,7 +17,7 @@ depends_on:
   - on: gs-terrain-lantern
     kind: hard
     why: puts out the sim light
-  - on: be-monster-types
+  - on: be-flyers
     kind: hard
     why: the moth is a flyer
 ---

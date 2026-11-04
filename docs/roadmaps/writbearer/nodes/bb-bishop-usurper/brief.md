@@ -14,9 +14,9 @@ depends_on:
   - on: bp-possess
     kind: hard
     why: the Usurper is built on control, copy and theft
-  - on: be-monster-types
+  - on: be-corpse-raisers
     kind: hard
-    why: the Bishop raises corpses
+    why: the Bishop raises corpses (`raise()` with a kind and level)
 ---
 
 # The Ossuary Bishop and the Usurper

@@ -16,4 +16,4 @@ Rules for agents working on a node:
 - Add a changeset (`pnpm cs:add`) when your node changes the game: `patch` for changed behavior, `minor` for something new. Never `major`.
 - A job node attaches to the engine through the job-hooks contract and does not edit core simulation files.
 
-Script: `python3 ~/.claude/plugins/cache/lxsmnsyc-agent-skills/agent-skills/0.7.0/skills/parallel-roadmap/scripts/plan.py docs/roadmaps/writbearer context <id>` lists the files to load for a node.
+Script: `python3 ~/.claude/plugins/cache/lxsmnsyc-agent-skills/agent-skills/0.14.0/skills/parallel-roadmap/scripts/plan.py docs/roadmaps/writbearer context <id>` lists the files to load for a node.

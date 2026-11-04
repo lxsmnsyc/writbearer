@@ -11,9 +11,12 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-buffs
     kind: hard
-    why: needs party buffs and fear
+    why: needs party buffs
+  - on: cc-afflictions
+    kind: hard
+    why: needs fear
 ---
 
 # Berserker

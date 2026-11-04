@@ -11,7 +11,7 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-sight-still
     kind: hard
     why: needs light radius as a stat
   - on: gs-terrain-lantern

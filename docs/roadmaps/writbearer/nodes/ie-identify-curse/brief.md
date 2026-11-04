@@ -8,9 +8,9 @@ outline: true
 milestone: items-economy
 size: L
 depends_on:
-  - on: ie-item-model
+  - on: ie-item-roll
     kind: hard
-    why: adds fields to the item copy that node reshapes
+    why: adds fields to Item and ItemSave after the last item-model node changes them
 ---
 
 # Identification and cursed items

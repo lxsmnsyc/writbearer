@@ -8,9 +8,9 @@ outline: true
 milestone: items-economy
 size: M
 depends_on:
-  - on: ie-item-model
+  - on: ie-item-bonuses
     kind: hard
-    why: uses the new bonus forms
+    why: uses the defense element and spell-rank bonus forms that node adds
 ---
 
 # Card families and the Card collector

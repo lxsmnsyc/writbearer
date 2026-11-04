@@ -26,3 +26,4 @@ Night, rain, plague, war zone and faction control as modifiers on a whole phase,
 
 - Source: `docs/design/01-overview.md#phases, #endless-mode`
 - Items: `../../COVERAGE.md`, entries with target `gs-phase-modifiers`.
+- Weather: `cc-el-weather` (could) adds `setWeather`; when refining, decide whether phase modifiers call it (a dependency would promote it to should).

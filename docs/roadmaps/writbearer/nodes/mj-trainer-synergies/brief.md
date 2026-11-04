@@ -11,9 +11,9 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-corpses
     kind: hard
-    why: Consecrate needs corpses laid to rest
+    why: Consecrate needs `addRestGuard`
 ---
 
 # Shard trainer and Consecrate's rest

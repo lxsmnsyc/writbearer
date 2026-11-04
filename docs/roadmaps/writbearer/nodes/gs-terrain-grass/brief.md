@@ -21,7 +21,7 @@ owns:
   - src/render/draw/cover.ts
 shared:
   - src/gen/stage/ground.ts
-  - src/sim/ai.ts
+  - src/sim/ai/monster.ts
   - src/render/floor.ts
   - src/render/renderer.ts
   - src/sim/ground.ts
@@ -40,6 +40,9 @@ depends_on:
   - on: split-stage-gen
     kind: hard
     why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
+  - on: split-ai
+    kind: hard
+    why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
 ---
 
 # Tall grass and fungus cover
@@ -50,7 +53,7 @@ Open fields hold patches of tall grass (surface layers) and fungus (the two lowe
 
 ## Context
 
-- Notice check: `thinkMonster` in `src/sim/ai.ts` (~423) uses `kit.notice` and `sim.sees`.
+- Notice check: `thinkMonster` in `src/sim/ai/monster.ts` (after split-ai) uses `kit.notice` and `sim.sees`.
 - Dead-grass tufts in `src/render/floor.ts:241` are decoration only today.
 - Source: `docs/design/11-stages.md#terrain`.
 - A node that changes generation on purpose re-records `test/gen/stage-snapshot.test.ts` with `pnpm vitest run test/gen/stage-snapshot.test.ts -u` and says so in the outcome.

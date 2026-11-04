@@ -11,12 +11,12 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-resource
     kind: hard
     why: needs the second resource
-  - on: cc-elements
+  - on: cc-el-spectral
     kind: hard
-    why: needs Spectral attacks
+    why: needs the Spectral status and Spectral attacks
 ---
 
 # Monk

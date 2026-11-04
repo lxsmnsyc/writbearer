@@ -20,7 +20,7 @@ owns:
   - test/sim/patrol.test.ts
 shared:
   - src/gen/stage/packs.ts
-  - src/sim/ai.ts
+  - src/sim/ai/monster.ts
   - src/sim/unit.ts
   - src/game/stage.ts
 reserves: []
@@ -32,6 +32,9 @@ depends_on:
   - on: split-stage-gen
     kind: hard
     why: moves gen/stage.ts features into modules under src/gen/stage/; this node edits the moved code
+  - on: split-ai
+    kind: hard
+    why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
 ---
 
 # Patrolling packs

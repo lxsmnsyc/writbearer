@@ -8,9 +8,21 @@ outline: true
 milestone: bestiary
 size: XL
 depends_on:
-  - on: be-monster-types
+  - on: be-flyers
     kind: hard
-    why: needs raisers, thieves, strippers and flyers
+    why: the Crown-Moth is a flyer
+  - on: be-thieves
+    kind: hard
+    why: the Tithe-Taker is a thief
+  - on: be-strippers
+    kind: hard
+    why: the Confessor strips an item
+  - on: be-kidnappers
+    kind: hard
+    why: the Chain Warden is built on grab.ts
+  - on: be-corpse-raisers
+    kind: hard
+    why: the Ossuary Priest raises corpses
   - on: hidden-units
     kind: behavior
     via: concealment

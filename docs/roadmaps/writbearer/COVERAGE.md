@@ -22,15 +22,15 @@ Each entry says what differs and which node should settle it.
 - Doc 11 and doc 14 hazard lists differ from HazardKind in code (spike grate, fire vent, arrow slit, swinging blade, falling floor). Owner: gs-labyrinth.
 - Doc 06 says the player picks 1 of 3 rewards after each fight. Code shows one reward kind per road on the map (doc 14 design). Owner: ie-loot-fixes.
 - Doc 06 uniques: Widow's Lantern reveal and Rimecaller effects are missing from code. Owner: ie-loot-fixes.
-- Doc 09 Immovable (no knockback, stun, fear): code blocks stun, Petrify and Dread only because knockback and fear skills do not exist. Owner: cc-job-systems.
-- Doc 09 Pin Down and Eagle Eye mention flyers, and no flyer monster exists. Owner: be-monster-types.
+- Doc 09 Immovable (no knockback, stun, fear): code blocks stun, Petrify and Dread only because knockback and fear skills do not exist. Owner: cc-knockback.
+- Doc 09 Pin Down and Eagle Eye mention flyers, and no flyer monster exists. Owner: be-flyers.
 - Doc 13 Herald affix: design says run to an alarm bell, code wakes the nearest pack for 10 s. Owner: be-affixes.
 - Doc 13 Horn of the Road: design uses Teleport, code uses Swift. Owner: be-affixes.
 - Doc 14 mutators: 5 of 10 built. The "reward up one step" rule is only one extra elite item. Owner: gs-mutators.
 - Doc 10 Writ warmth: built at the Penitent blessing event only, not near Occult altars in general. Owner: sb-clues.
 - Doc 10 Hollowed element: survey assumed Occult in roster.ts without checking. Owner: roster-balance.
 - Doc 02 folder layout is aspirational: code has a single ai.ts, not sim/ai/. No doc change needed, listed as not code.
-- Doc 08 "Spectral in v1": only the defense affinity exists, no status and no attack. Owner: cc-elements.
+- Doc 08 "Spectral in v1": only the defense affinity exists, no status and no attack. Owner: cc-el-spectral.
 - Doc 05 says a pet takes half a party slot; no pet exists. Owner: mj-outline-jobs.
 
 ## Counts per milestone
@@ -177,7 +177,7 @@ Each entry says what differs and which node should settle it.
 #### Physical/magical
 - Phys uses STR/DEX, accuracy vs evasion (stats.ts, mechanics/hit.ts), crit, block, hard/soft def (damage.ts), Ward vs magic (damage.ts Barrier) (03#Physical/magical) -> built: present in code
 - Magical hits always hit and have no crit, INT adds buildup (buildup.ts:22) (03#Physical/magical) -> built: present in code
-- Hit-count walls (Safety Wall) and ranged-physical fields (Pneuma) (03#Physical/magical) -> cc-elements
+- Hit-count walls (Safety Wall) and ranged-physical fields (Pneuma) (03#Physical/magical) -> built (Zone.guards and charges, src/sim/zone.ts)
 - Interrupt rules (melee hits interrupt casts, big hits interrupt magic) (03#Physical/magical) -> cc-cast-events
 
 #### Mana
@@ -194,11 +194,11 @@ Each entry says what differs and which node should settle it.
 
 #### Damage pipeline
 - All 13 DamagePriority steps, Initial, Ratio/Flat, Amplify/Reduce category multiplication, Defense (4000/1000 scales, 90% cap via formula), Affinity, Crit x1.4, Block (03#Damage pipeline) -> built: src/sim/mechanics/damage.ts, types.ts:80
-- Amplify categories: Race, TargetElement, AttackElement, AttackRange, Rank built; "specific skill" category NOT BUILT (03#Damage pipeline) -> cc-elements (remainder: Amplify categories: Race, TargetElement, AttackElement, AttackRange, Rank built; "specific skill" category NOT BUILT)
+- Amplify categories: Race, TargetElement, AttackElement, AttackRange, Rank built; "specific skill" category NOT BUILT (03#Damage pipeline) -> cc-el-skill-amp (remainder: Amplify categories: Race, TargetElement, AttackElement, AttackRange, Rank built; "specific skill" category NOT BUILT)
 - Pre step: caps and "Interpose redirect" (03#Damage pipeline) -> warden (remainder: no Interpose/Warden (Warden job not built); no 30% cap rule)
 - Post: reflect (Thornhide unique, Reflected flag), drain (minibosses only), buildup built; threat, stagger/interrupt, morale on kill (built in morale.ts) (03#Damage pipeline) -> cc-threat; also cc-cast-events (remainder: threat and stagger NOT BUILT)
 - Healing pipeline (src/sim/mechanics/heal.ts); Post overheal shield NOT BUILT; Venom halves healing built (statuses POISON) (03#Damage pipeline) -> built: src/sim/mechanics/heal.ts
-- Pierce/armor-break general effect set (Pierce flag + SUNDERED built) (03#Damage pipeline) -> cc-job-systems
+- Pierce/armor-break general effect set (Pierce flag + SUNDERED built) (03#Damage pipeline) -> built (DamageFlags.Pierce, SUNDERED)
 
 #### Skill definition
 - Skill interface (src/sim/skill.ts): no `tags`, `targeting` rule enum, `maxRank` may be in tree; `friendlyFire` field missing (03#Skill definition) -> targeting-rules (remainder: Skill interface (src/sim/skill.ts): no `tags`, `targeting` rule enum, `maxRank` may be in tree)
@@ -207,7 +207,7 @@ Each entry says what differs and which node should settle it.
 
 #### Status effects
 - Taunted, Stun, Burn, Chill, Freeze, Shock, Petrify, Poison, + Dread, Sear, Sundered, Rooted, Slowed, Bleed, shield wall, Mending etc. (src/sim/statuses.ts (03#Status effects) -> built: src/sim/statuses.ts, test/sim/statuses.test.ts
-- Statuses silence, blind, fear, curse (03#Status effects) -> cc-cast-events; also sellsword-tricks, cc-job-systems
+- Statuses silence, blind, fear, curse (03#Status effects) -> cc-cast-events; also sellsword-tricks, cc-afflictions
 - Shield Bash (src/content/skills.ts, 5d8d334) (03#Status effects) -> built: src/content/skills.ts, 5d8d334
 
 #### Threat and targeting
@@ -220,14 +220,14 @@ Each entry says what differs and which node should settle it.
 - Element levels 1-3 using attr_fix (elements.ts) (04#General) -> built: present in code
 - Buildup rules (buildup.ts; statuses.ts) (04#General) -> built: present in code
 - Fire->Burn, Frost->Chill->Freeze, Storm->Shock, Earth->Petrify, Venom->Poison, Radiant->Sear, Occult->Dread (statuses.ts) (04#General) -> built: present in code
-- Spectral status/effect (statuses.ts: "Spectral has none yet") (04#General) -> cc-elements
-- Storm chain to nearby targets (04#General) -> cc-elements
+- Spectral status/effect (statuses.ts: "Spectral has none yet") (04#General) -> cc-el-spectral
+- Storm chain to nearby targets (04#General) -> cc-el-chain
 - Status changes defense element: Freeze=Frost1, Petrify=Earth1 (statuses.ts:32 becomes()) (04#General) -> built: present in code
-- Skills/items changing defense element for a while (Benedictio); items with defenseElement bonus (cards "Bog Hag") (04#General) -> cc-elements
-- Element fields (Volcano/Deluge/Violent Gale), weather fields, biome tile fields (04#General) -> cc-elements
+- Skills/items changing defense element for a while (Benedictio); items with defenseElement bonus (cards "Bog Hag") (04#General) -> cc-el-defense
+- Element fields (Volcano/Deluge/Violent Gale), weather fields, biome tile fields (04#General) -> cc-el-field, cc-el-weather
 - Shatter: frozen monsters leave no corpse (04#General) -> arcanist-cryomancy
-- Corpses: dead merc stays until resurrected (built); monster corpses persisting until stage end and summoners raising them: NOT BUILT (Necromancer not built (04#General) -> be-monster-types (remainder: Corpses: dead merc stays until resurrected (built); monster corpses persisting until stage end and summoners raising)
-- Each job max two native elements; Rare-only element items (04#General) -> ie-item-model (remainder: loot.ts: unclear; Rare "can carry an element" NOT verified)
+- Corpses: dead merc stays until resurrected (built); monster corpses persisting until stage end and summoners raising them: NOT BUILT (Necromancer not built (04#General) -> be-corpse-raisers (remainder: Corpses: dead merc stays until resurrected (built); monster corpses persisting until stage end and summoners raising)
+- Each job max two native elements; Rare-only element items (04#General) -> ie-item-roll (remainder: loot.ts: unclear; Rare "can carry an element" NOT verified)
 - "Weak to my element" target priority toggle (04, 05) (04#General) -> cc-autonomy
 - Friendly fire default off (damage default); Stage traps hurt anyone (src/sim/trap.ts, 7e71533) (04#General) -> built: src/sim/trap.ts, 7e71533
 - Risks section (elements bloat loot; weak points ≥150%) (04#General) -> not code
@@ -253,7 +253,7 @@ Each entry says what differs and which node should settle it.
 - Event table: wage +/-, rest, elite +4, boss +15, merc dies -10, Dread -8 (05#Morale) -> cc-tuning (remainder: most built; verify elite/boss in morale.ts)
 
 #### Stats
-- STR/AGI/VIT/INT/DEX/WIL with level-up points (79e2bad, stats.ts): effects built for most; STR carry limit/ heavy armor slow NOT BUILT; AGI small move speed unverified (05#Stats) -> ie-item-model (remainder: STR/AGI/VIT/INT/DEX/WIL with level-up points (79e2bad, stats.ts): effects built for most)
+- STR/AGI/VIT/INT/DEX/WIL with level-up points (79e2bad, stats.ts): effects built for most; STR carry limit/ heavy armor slow NOT BUILT; AGI small move speed unverified (05#Stats) -> ie-item-carry (remainder: STR/AGI/VIT/INT/DEX/WIL with level-up points (79e2bad, stats.ts): effects built for most)
 - WIL instead of LUK (05#Stats) -> built: present in code
 
 #### Discipline
@@ -266,7 +266,7 @@ Each entry says what differs and which node should settle it.
 
 #### Derived / Requirements
 - Derived stats computed in full (stats.ts) (05#Derived / Requirements) -> built: present in code
-- Item STR/DEX requirements; heavy armor slowdown; merc carry limit from STR; equipment weight over limit (05#Derived / Requirements) -> ie-item-model
+- Item STR/DEX requirements; heavy armor slowdown; merc carry limit from STR; equipment weight over limit (05#Derived / Requirements) -> ie-item-carry
 
 #### Skill trees
 - 3 branches x 5 for Vanguard, Ranger, Cleric (7d942a6, src/content/trees.ts, test/sim/tree-skills.test.ts); other 11 jobs' trees NOT BUILT (09/12 detail) (05#Skill trees) -> built: 7d942a6, src/content/trees.ts, test/sim/tree-skills.test.ts
@@ -301,7 +301,7 @@ Each entry says what differs and which node should settle it.
 - Citizen pack, slots+weight, >50% slow (src/game/inventory.ts, test: cards/potions tests) (06#Inventory layers) -> built: src/game/inventory.ts, test: cards/potions tests
 - >90% no sprint/hide, >100% no pickup: no-pickup past limit built; sprint/hide NOT BUILT; capacity growth by background/upgrades/trinkets NOT BUILT (06#Inventory layers) -> sb-bearer-kit; also sb-backgrounds (remainder: >90% no sprint/hide, >100% no pickup: no-pickup past limit built; sprint/hide NOT BUILT)
 - Merc loadout 8 slots + belt of 3 (src/sim/item.ts, unit.ts) (06#Inventory layers) -> built: src/sim/item.ts, unit.ts
-- Belt "3 or 4" slots built 3; Two-handed weapons filling Offhand: unverified; citizen restocks belt in-fight adjacent (built, same fight rule) (06#Inventory layers) -> ie-item-model (remainder: Belt "3 or 4" slots built 3; Two-handed weapons filling Offhand: unverified)
+- Belt "3 or 4" slots built 3; Two-handed weapons filling Offhand: unverified; citizen restocks belt in-fight adjacent (built, same fight rule) (06#Inventory layers) -> ie-item-carry (remainder: Belt "3 or 4" slots built 3; Two-handed weapons filling Offhand: unverified)
 - Caravan (mule/wagon unit, storage, can be attacked) (06#Inventory layers) -> ie-caravan
 - Vault at Waystation (45eef22? / e18050b; test/sim/waystation.test.ts); 40 stacks. "Items in pack can be stolen or lost" NOT BUILT (no thief) (06#Inventory layers) -> built: 45eef22? / e18050b; test/sim/waystation.test.ts
 
@@ -312,7 +312,7 @@ Each entry says what differs and which node should settle it.
 
 #### Quality
 - Inferior, Normal, Superior, Magic, Rare built (src/gen/loot.ts, sim/item.ts); Unique built (a80d03a); Squad set built (b2b102c); Cursed NOT BUILT (06#Quality) -> ie-identify-curse (remainder: Inferior, Normal, Superior, Magic, Rare built (src/gen/loot.ts, sim/item.ts); Unique built (a80d03a))
-- Rare "can carry element" (06#Quality) -> ie-item-model (remainder: not verified; socket limits per quality and per slot built (in loot.ts))
+- Rare "can carry element" (06#Quality) -> ie-item-roll (remainder: not verified; socket limits per quality and per slot built (in loot.ts))
 - Cursed items + Temple curse removal (06#Quality) -> ie-identify-curse
 
 #### Squad sets
@@ -322,8 +322,8 @@ Each entry says what differs and which node should settle it.
 
 #### Affixes
 - 15 prefix/suffix affixes in tiered groups gated by item level (src/content/affixes.ts, test/sim/affixes.test.ts) (06#Affixes) -> built: src/content/affixes.ts, test/sim/affixes.test.ts
-- CheckItemRoll hook; backgrounds changing rolls (06#Affixes) -> ie-item-model
-- Bonus union: stat, addDamage, reduceDamage, attackElement, onHit buildup built via bonus keys (sim/stats.ts) (06#Affixes) -> ie-item-model (remainder: Bonus union: stat, addDamage, reduceDamage, attackElement, onHit buildup built via bonus keys (sim/stats.ts))
+- CheckItemRoll hook; backgrounds changing rolls (06#Affixes) -> ie-item-roll
+- Bonus union: stat, addDamage, reduceDamage, attackElement, onHit buildup built via bonus keys (sim/stats.ts) (06#Affixes) -> ie-item-bonuses (remainder: Bonus union: stat, addDamage, reduceDamage, attackElement, onHit buildup built via bonus keys (sim/stats.ts))
 
 #### Sockets and cards
 - Sockets 0-4, Smith adds socket (75%, break on fail) (town.ts, test/sim/town.test.ts) (06#Sockets and cards) -> built: town.ts, test/sim/town.test.ts
@@ -364,7 +364,7 @@ Each entry says what differs and which node should settle it.
 
 #### Durability
 - No durability (decided) (06#Durability) -> not code
-- Strip/Break enemies that disable items for a stage (07 Stripper) (06#Durability) -> be-monster-types
+- Strip/Break enemies that disable items for a stage (07 Stripper) (06#Durability) -> be-strippers
 
 #### Potions (in-game section)
 - Healing/Mana/Greater potions, pulses, belt, auto drink, bearer Q (5b70469, test/sim/potions.test.ts) (06#Potions (in-game section)) -> built: 5b70469, test/sim/potions.test.ts
@@ -398,8 +398,8 @@ Each entry says what differs and which node should settle it.
 
 #### Enemies
 - Assassin (Hollowed), Healer (Cantor), Summoner (Abbess, Brood Mother, captains), Shielder (Hollow Shieldbearer 162891b), Bomber (Bloat 162891b) (07#Enemies) -> built: Bloat 162891b
-- Kidnapper, Thief, Stripper, Flyer type (Flyer counter text exists in skills but no flyer monsters), Spectral monsters as a type (07#Enemies) -> be-monster-types
-- Summoner "raises corpses" NOT BUILT (spawns new); Frost shatters N/A (07#Enemies) -> be-monster-types (remainder: Summoner "raises corpses" NOT BUILT (spawns new); Frost shatters N/A)
+- Kidnapper, Thief, Stripper, Flyer type (Flyer counter text exists in skills but no flyer monsters), Spectral monsters as a type (07#Enemies) -> be-flyers, be-thieves, be-kidnappers, be-strippers (Spectral is an element, set per monster)
+- Summoner "raises corpses" NOT BUILT (spawns new); Frost shatters N/A (07#Enemies) -> be-corpse-raisers (remainder: Summoner "raises corpses" NOT BUILT (spawns new); Frost shatters N/A)
 
 #### In-game monster table
 - Hollow soldier, Penitent, Cantor, Hollowed, Crawler, Husk, Mite, Gatekeeper, Abbess, Hollowed Saint, Brood Mother (src/content/roster.ts, bestiary.ts, bosses.ts (07#In-game monster table) -> built: src/content/roster.ts, bestiary.ts, bosses.ts, test/sim/boss*.test.ts
@@ -441,15 +441,15 @@ Each entry says what differs and which node should settle it.
 - Bulwark: Challenge, Shield Wall, Bastion, Rampart, Immovable (trees.ts; test "Vanguard" block in tree-skills.test.ts) (09#Vanguard) -> built: trees.ts; test "Vanguard" block in tree-skills.test.ts
 - Breaker: Sunder, Crush, Shield Bash, Fault Line, Earthshaker (same) (09#Vanguard) -> built: present in code
 - Oathkeeper: Vow, Intercept, Shared Burden, Banner, Last Line (same) (09#Vanguard) -> built: present in code
-- Immovable: spec says no knockback/stun/fear; built blocks stun/Petrify/Dread only (no knockback system exists) (09#Vanguard) -> cc-job-systems (remainder: Immovable: spec says no knockback/stun/fear; built blocks stun/Petrify/Dread only (no knockback system exists))
+- Immovable: spec says no knockback/stun/fear; built blocks stun/Petrify/Dread only (no knockback system exists) (09#Vanguard) -> cc-knockback (remainder: Immovable: spec says no knockback/stun/fear; built blocks stun/Petrify/Dread only (no knockback system exists))
 - Consecrate "corpses inside cannot be raised" and Purge "removes corruption each phase start" (Cleric) (09#Vanguard) -> mj-trainer-synergies; also sb-corruption (remainder: see Cleric)
 
 #### Ranger
 - Hawkeye: Aimed Shot, Pin Down, Eagle Eye, Piercing Arrow, Killshot (trees.ts; test "Killshot") (09#Ranger) -> built: trees.ts; test "Killshot"
 - Trapper: Snare, Rearguard, Bait, Spike Field, Killing Ground (09#Ranger) -> built: present in code
 - Stormcaller: Charged Arrow, Static, Arc Volley, Lightning Rod, Thunderhead (09#Ranger) -> built: present in code
-- Pin Down grounds flyers (09 text) (09#Ranger) -> be-monster-types (remainder: roots any enemy; flyers do not exist)
-- Eagle Eye "+accuracy against flyers" (09#Ranger) -> be-monster-types (remainder: plain +3 accuracy)
+- Pin Down grounds flyers (09 text) (09#Ranger) -> be-flyers (remainder: roots any enemy; flyers do not exist)
+- Eagle Eye "+accuracy against flyers" (09#Ranger) -> be-flyers (remainder: plain +3 accuracy)
 
 #### Cleric
 - Mercy: Heal, Renew, Cleanse, Resurrection, Martyr (trees.ts; test "Martyr") (09#Cleric) -> built: trees.ts; test "Martyr"
@@ -625,20 +625,20 @@ Each entry says what differs and which node should settle it.
 - Deserter event / endless wandering mercs draw from every job (deserter event built, draws from 3 jobs; widens when jobs exist) (12#New jobs (all NOT BUILT; no code for any)) -> roster-balance
 
 #### What the engine needs (each row)
-- Party buffs with a duration (12#What the engine needs (each row)) -> cc-job-systems (remainder: Banner (zone) and shouts/Rally exist; statuses have duration/modifiers (status.ts))
+- Party buffs with a duration (12#What the engine needs (each row)) -> cc-buffs (remainder: Banner (zone) and shouts/Rally exist; statuses have duration/modifiers (status.ts))
 - Blind status (not in statuses.ts) (12#What the engine needs (each row)) -> sellsword-tricks
-- Fear on monsters (12#What the engine needs (each row)) -> cc-job-systems (remainder: `flees` flag and Dread status (status.ts:25, statuses.ts:174) work on any unit; no "frighten non-boss monsters" skill)
-- Light radius as a stat (12#What the engine needs (each row)) -> cc-job-systems (remainder: Unit.sight exists (unit.ts:44,58, bearer 7, mercs 4.5); not a modifier stat skills can change)
+- Fear on monsters (12#What the engine needs (each row)) -> cc-afflictions (remainder: `flees` flag and Dread status (status.ts:25, statuses.ts:174) work on any unit; no "frighten non-boss monsters" skill)
+- Light radius as a stat (12#What the engine needs (each row)) -> cc-sight-still (remainder: Unit.sight exists (unit.ts:44,58, bearer 7, mercs 4.5); not a modifier stat skills can change)
 - Hidden monsters (invisible/disguised/stealth) (12#What the engine needs (each row)) -> hidden-units
-- A second resource beside mana (Monk spheres) (12#What the engine needs (each row)) -> cc-job-systems
-- Spectral attacks (12#What the engine needs (each row)) -> cc-elements; also mj-monk (remainder: Element.Spectral exists (types.ts:10, elements.ts) but no attack uses it)
-- Weapon element buffs (Endow) (12#What the engine needs (each row)) -> cc-job-systems
-- Removing enemy buffs and cancelling warnings (Dispel; warning.ts has no cancel) (12#What the engine needs (each row)) -> cc-job-systems
-- Corpses laid to rest (Last Rites; also Consecrate); creditor.reveal raises !torn only (12#What the engine needs (each row)) -> cc-job-systems
-- Monsters switching sides for a while (Possess; reveal flips side permanently for dead mercs only, creditor.ts) (12#What the engine needs (each row)) -> cc-job-systems
-- Knockback (12#What the engine needs (each row)) -> cc-job-systems
-- Turrets as zones that shoot (zones exist: sim/zone.ts, mechanics/zones.ts, Lightning Rod strikes each second, close but no projectile turret) (12#What the engine needs (each row)) -> cc-job-systems
-- Standing-still timer (12#What the engine needs (each row)) -> cc-job-systems
+- A second resource beside mana (Monk spheres) (12#What the engine needs (each row)) -> cc-resource
+- Spectral attacks (12#What the engine needs (each row)) -> cc-el-spectral; also mj-monk (remainder: Element.Spectral exists (types.ts:10, elements.ts) but no attack uses it)
+- Weapon element buffs (Endow) (12#What the engine needs (each row)) -> cc-buffs
+- Removing enemy buffs and cancelling warnings (Dispel; warning.ts has no cancel) (12#What the engine needs (each row)) -> cc-afflictions, cc-ground-zones
+- Corpses laid to rest (Last Rites; also Consecrate); creditor.reveal raises !torn only (12#What the engine needs (each row)) -> cc-corpses
+- Monsters switching sides for a while (Possess; reveal flips side permanently for dead mercs only, creditor.ts) (12#What the engine needs (each row)) -> cc-side-switch
+- Knockback (12#What the engine needs (each row)) -> cc-knockback
+- Turrets as zones that shoot (zones exist: sim/zone.ts, mechanics/zones.ts, Lightning Rod strikes each second, close but no projectile turret) (12#What the engine needs (each row)) -> cc-ground-zones
+- Standing-still timer (12#What the engine needs (each row)) -> cc-sight-still
 
 #### Order to build in (each step)
 - 1. Warden (Shadow, Watchman, Executioner trees; needs hidden monsters, mark, redirect) (12#Order to build in (each step)) -> warden
@@ -652,7 +652,7 @@ Each entry says what differs and which node should settle it.
 
 #### Goals
 - Each layer fields >=6 kinds of monster from >=2 factions (13#Goals) -> be-monsters-upper; also be-monsters-deep (remainder: roster.ts has ~13 non-boss kinds across 4 layers; most new-layer monsters (Undercroft, Crown) missing)
-- Every enemy type in the enemies table has a monster (13#Goals) -> be-monster-types (remainder: now archer, shielder, herald, bomber exist; flyer, kidnapper, summoner, thief, stripper, berserker, fear caster)
+- Every enemy type in the enemies table has a monster (13#Goals) -> be-flyers, be-thieves, be-kidnappers, be-strippers, be-corpse-raisers (remainder: now archer, shielder, herald, bomber exist; flyer, kidnapper, summoner, thief, stripper, berserker, fear caster)
 - Each monster asks the player to change something; names are titles (13#Goals) -> not code
 - Boss rolled from a pool of three per layer, 81 boss orders (13#Goals) -> bp-roll
 - Mini-bosses lead gauntlets (13#Goals) -> be-minibosses (remainder: 7 of 16 in, placed (see Mini-bosses))
@@ -696,13 +696,13 @@ Each entry says what differs and which node should settle it.
 - Crown-Moth (flyer, snuffs light) (13#New monsters: Sunken Crown) -> be-monsters-deep
 
 #### What the engine needs (monsters)
-- Flyers: unaerial-untargetable by melee until landing; Pin Down grounds (no flight state in sim/unit.ts) (13#What the engine needs (monsters)) -> be-monster-types
+- Flyers: unaerial-untargetable by melee until landing; Pin Down grounds (no flight state in sim/unit.ts) (13#What the engine needs (monsters)) -> be-flyers
 - Ranged monsters: monster basic attack fires projectiles (13#What the engine needs (monsters)) -> built: src/sim/projectile.ts, ai.ts; test/sim/ranged.test.ts
 - Bombers: dies on purpose through a warning (13#What the engine needs (monsters)) -> built: bloat; shields-and-bloats.test.ts
-- Thieves: take item from pack and exit (13#What the engine needs (monsters)) -> be-monster-types
+- Thieves: take item from pack and exit (13#What the engine needs (monsters)) -> be-thieves
 - Hidden units: unseen until close; revealed by Lamplighter/Warden/Scout (13#What the engine needs (monsters)) -> hidden-units
 - Horn posts / alarms (13#What the engine needs (monsters)) -> built: src/game/alarms.ts
-- Raising corpses (monster raises dead; Consecrate/Pyre stop it) (13#What the engine needs (monsters)) -> be-monster-types
+- Raising corpses (monster raises dead; Consecrate/Pyre stop it) (13#What the engine needs (monsters)) -> be-corpse-raisers
 
 #### Mini-bosses
 - Mini-boss framework: elite +250% hp, +40% atk, +20 armor, escort, fixed affixes, label, log (13#Mini-bosses) -> built: src/content/minibosses.ts; test/game/minibosses.test.ts; c7c5e4c
@@ -748,7 +748,7 @@ Each entry says what differs and which node should settle it.
 - 3 Shieldbearer, Bloat, Horn-Bearer (13#Order to build in (bestiary)) -> built: 162891b, 8879534
 - 4 Mini-bosses for Elite gauntlets, one per layer first (13#Order to build in (bestiary)) -> be-minibosses (remainder: 7/16 in)
 - 5 Second boss per layer (Reeve, Siege Crew, Bishop, Usurper) (13#Order to build in (bestiary)) -> bb-reeve-siege; also bb-bishop-usurper
-- 6 Flyers, thieves, hidden units, third boss per layer (13#Order to build in (bestiary)) -> be-monster-types; also hidden-units, bb-bridge-lantern, bb-choir-regent
+- 6 Flyers, thieves, hidden units, third boss per layer (13#Order to build in (bestiary)) -> be-flyers, be-thieves; also hidden-units, bb-bridge-lantern, bb-choir-regent
 
 #### Art
 - Figures built on existing rigs with added shape (src/render/rig.ts, sprites.ts) (13#Art) -> be-monsters-upper (remainder: archer, slinger, shieldbearer, horn-bearer, bloat have art (70b5fe6))
@@ -882,4 +882,4 @@ Each entry says what differs and which node should settle it.
 - The Vanguard as 4 spells, Sunder innate and 12 upgrades (16#The Vanguard under option B) -> vanguard-upgrades; also job-registry
 - The other six starting jobs drawn as spells and upgrades (16#What it replaces in doc 09) -> builds-design
 - Doc 09 trees become source lists for spells and upgrades (16#What it replaces in doc 09) -> builds-design
-- Charge pushes enemies aside, needs knockback (16#The Vanguard under option B) -> cc-job-systems; also vanguard-upgrades
+- Charge pushes enemies aside, needs knockback (16#The Vanguard under option B) -> cc-knockback; also vanguard-upgrades

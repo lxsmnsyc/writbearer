@@ -25,6 +25,9 @@ depends_on:
   - on: builds-design
     kind: hard
     why: new jobs follow the job shape and style that node settles
+  - on: doc16-sync
+    kind: hard
+    why: new jobs take doc 16's numbers as their scale; doc16-sync makes them match the game
 ---
 
 # Design more jobs in the spells-and-upgrades shape

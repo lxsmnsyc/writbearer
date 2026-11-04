@@ -20,7 +20,7 @@ owns:
   - test/sim/lantern.test.ts
 shared:
   - src/sim/unit.ts
-  - src/sim/ai.ts
+  - src/sim/ai/monster.ts
   - src/render/renderer.ts
   - src/render/draw/light.ts
   - src/render/light.ts
@@ -43,6 +43,9 @@ depends_on:
   - on: split-renderer
     kind: hard
     why: moves renderer.ts features into modules under src/render/draw/; this node edits the moved code
+  - on: split-ai
+    kind: hard
+    why: split-ai moves src/sim/ai.ts into modules under src/sim/ai/; this node edits the moved code
 ---
 
 # One lantern: light level, shading, drawn-to monsters

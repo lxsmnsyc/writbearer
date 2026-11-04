@@ -15,6 +15,7 @@ exclusive: [e2e-port]
 fulfilled_by:
 gate: true
 added:
+spent:
 owns:
   - src/content/recruits.ts
   - src/ui/offer.tsx

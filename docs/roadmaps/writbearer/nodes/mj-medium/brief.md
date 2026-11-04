@@ -11,12 +11,21 @@ depends_on:
   - on: job-registry
     kind: contract
     via: job-def
-  - on: cc-job-systems
+  - on: cc-corpses
     kind: hard
-    why: needs laid to rest and side switching
-  - on: cc-elements
+    why: needs laying to rest
+  - on: cc-side-switch
     kind: hard
-    why: needs Spectral attacks
+    why: needs side switching (Possess)
+  - on: cc-buffs
+    kind: hard
+    why: needs per-job buffs
+  - on: cc-afflictions
+    kind: hard
+    why: needs fear
+  - on: cc-el-spectral
+    kind: hard
+    why: needs the Spectral status and Spectral attacks
 ---
 
 # Medium

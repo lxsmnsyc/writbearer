@@ -8,7 +8,7 @@ outline: true
 milestone: bestiary
 size: L
 depends_on:
-  - on: be-monster-types
+  - on: be-flyers
     kind: hard
     why: moths and vultures are flyers
 ---

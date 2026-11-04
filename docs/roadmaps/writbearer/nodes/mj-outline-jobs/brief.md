@@ -11,9 +11,27 @@ depends_on:
   - on: mj-outline-trees
     kind: hard
     why: needs their spells and upgrades
-  - on: cc-job-systems
+  - on: cc-buffs
     kind: hard
-    why: needs the shared engine systems
+    why: Bard and Alchemist buffs
+  - on: cc-knockback
+    kind: hard
+    why: Sapper knockback
+  - on: cc-ground-zones
+    kind: hard
+    why: Sapper turrets
+  - on: cc-corpses
+    kind: hard
+    why: Necromancer corpses
+  - on: cc-side-switch
+    kind: hard
+    why: Necromancer side switching
+  - on: cc-sight-still
+    kind: hard
+    why: Scout sight
+  - on: cc-afflictions
+    kind: hard
+    why: Hexblade curses
 ---
 
 # Build the seven outlined jobs

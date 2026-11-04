@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-27
+spent:
 owns:
   - src/content/jobs/sellsword/upgrades.ts
   - test/sim/sellsword-upgrades.test.ts
