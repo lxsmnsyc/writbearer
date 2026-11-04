@@ -13,6 +13,7 @@
 
 - Charged Arrow cooldown is 3.5 s, not the doc's 2.5 s (was 4). 2.5 s and 3 s fail `bosses.test` (layer 1: 1 of 6 wins, needs 5) and `boss.test` (Brood Mother: 0 of 12 two-merc wins, needs 4). 3.5 s passes. Left for cc-tuning.
 - A Ranger raised against the party (Creditor fight) still chains Charged Arrow among `Side.Monster` units, as before, so it hits its own side. Guarding it with `canTarget` gave 3 wins of 6 in `creditor.test` (needs at most 1). Party Rangers use the guarded list.
+- Thunderhead is a Charged Arrow patch: when the arrow hits a Shocked target (status, not buildup), a 60% Storm bolt goes to every other Shocked enemy within 6 tiles. Review decision.
 - Killshot's "no windup" is a passive (`killshotQuick`) that moves the cast to its release when the target has not noticed the party; the double damage and critical are in the spell patch.
 - Eagle Eye, Pin Down and Killshot leave out the flyer clauses; flyers do not exist yet.
 - `PIERCING_ARROW` and `EAGLE_EYE` stay exported from `ranger.ts` because `test/sim/skills.test.ts` and `test/sim/progress.test.ts` (outside this node) still use them. No job uses them.
@@ -28,9 +29,12 @@
 - Overcharge bursts only when a rod's field ran out (`zone.life <= 0`), not when zones are cleared with the stage.
 - Killing Ground plants through `plantRod`, so the rod follows the Lightning Rod's rank. It replaces the Ranger's earlier rod and ring.
 
+- A rank raise stops and sets up a passive again (`startEffect`), so state held in a local of `setup` resets mid-fight. Rearguard (trail, timer), Killing Ground (last shout) and Overcharge (rods) keep theirs in module `WeakMap`s keyed by the Ranger.
+
 ## Proposed learnings
 
 - Condition and victim lists in spells go through `allowed(u, ...)` or `canTarget`, never `sim.living(Side.Monster)` | keeps a Duel closed to the other mercs | src/content | no
+- Passive state that must survive a rank raise lives in a module `WeakMap<Unit, ...>`, not in `setup` | `raise` reruns `setup` | src/content/jobs | no
 
 ## Verification
 

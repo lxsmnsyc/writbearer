@@ -15,14 +15,14 @@ import {
 } from '../../src/content/ranger';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { DEFAULT_TOGGLES, type Toggles } from '../../src/sim/ai';
-import { type Upgrade, isBuilt } from '../../src/sim/builds';
+import { type Upgrade, isBuilt, raise } from '../../src/sim/builds';
 import { SimEvents } from '../../src/sim/events';
 import { Shout, cry } from '../../src/sim/shout';
 import Sim from '../../src/sim/sim';
 import { type Skill, SkillMode } from '../../src/sim/skill';
 import { BLEED, ROOTED, SHOCK, SLOWED, STUN } from '../../src/sim/statuses';
 import { canTarget } from '../../src/sim/targeting';
-import { DamageFlags, DamagePriority, ValuePriority } from '../../src/sim/types';
+import { DamageFlags, DamagePriority, Rank, ValuePriority } from '../../src/sim/types';
 import type Unit from '../../src/sim/unit';
 import { setRank, withUpgrade } from '../support/build';
 
@@ -189,6 +189,8 @@ describe('Snare upgrades', () => {
     }
     const boss = spawnMonster(sim, 'hollowSoldier', 3, 3, -1);
     boss.aware = true;
+    boss.rank = Rank.Boss;
+    boss.kit.moveSpeed = 2.7;
     boss.target = bearer;
     expect(spell(ranger, 'snare').wants(ranger, null, sim)).toBe(true);
     cast(sim, ranger, 'snare', null);
@@ -198,6 +200,7 @@ describe('Snare upgrades', () => {
     expect(sim.traps).toHaveLength(0);
     sim.run(2);
     expect(a.distanceTo(decoy!)).toBeLessThan(1);
+    expect(boss.distanceTo(decoy!)).toBeGreaterThan(2);
     expect(bearer.hp).toBe(bearer.derived.maxHp);
   });
 
@@ -214,6 +217,44 @@ describe('Snare upgrades', () => {
     expect(a.statuses.get(BLEED.id)?.power).toBe(1);
     sim.run(2);
     expect(a.hp).toBeLessThan(a.derived.maxHp);
+  });
+});
+
+describe('a rank raise during a fight', () => {
+  it('does not plant a second Killing Ground rod and ring', () => {
+    const { sim, ranger, bearer } = rangerWith('killingGround');
+    bearer.x = 10;
+    bearer.z = 10;
+    foe(sim, 30, 30);
+    expect(cry(sim, Shout.Hold)).toBeNull();
+    sim.run(2);
+    expect(sim.traps.filter((t) => t.skill === 'killingGround')).toHaveLength(6);
+    ranger.shards = 1;
+    expect(raise(ranger, 'lightningRod')).toBeNull();
+    sim.run(1);
+    expect(sim.traps.filter((t) => t.skill === 'killingGround')).toHaveLength(6);
+    expect(sim.zones.filter((z) => z.kind === 'lightningRod')).toHaveLength(1);
+    expect(sim.zones[0].t).toBeGreaterThan(2);
+  });
+
+  it('does not reset Rearguard timer or trail', () => {
+    const { sim, ranger, bearer } = rangerWith('rearguard');
+    const e = foe(sim, 6, 0);
+    e.target = bearer;
+    bearer.x = -8;
+    sim.run(0.1);
+    bearer.x = 0;
+    sim.run(5.5);
+    const laid = sim.traps.filter((t) => t.skill === 'rearguard').length;
+    expect(laid).toBeGreaterThan(0);
+    // Free the spot, then raise Snare: no new snare before the 7 s are up
+    sim.traps.length = 0;
+    bearer.x = 6;
+    e.x = 10;
+    ranger.shards = 1;
+    expect(raise(ranger, 'snare')).toBeNull();
+    sim.run(0.6);
+    expect(sim.traps.filter((t) => t.skill === 'rearguard')).toHaveLength(0);
   });
 });
 
@@ -323,16 +364,26 @@ describe('Charged Arrow upgrades', () => {
     }
   });
 
-  it('Thunderhead leaps from one Shocked enemy to every other charged one', () => {
-    const { sim, ranger } = rangerWith('thunderhead');
-    const first = foe(sim, 5, 0);
-    const charged = foe(sim, 7, 0);
-    const plain = foe(sim, 6, 2);
-    charged.buildup.set(SHOCK.id, 10);
-    first.addStatus(SHOCK, ranger);
-    sim.run(0.5);
-    expect(charged.hp).toBeLessThan(charged.derived.maxHp);
-    expect(plain.hp).toBe(plain.derived.maxHp);
+  it('Thunderhead: a Charged Arrow on a Shocked target bolts every other Shocked enemy', () => {
+    const run = (id: string | null): { shocked: Unit; plain: Unit } => {
+      const { sim, ranger } = rangerWith(id);
+      const first = foe(sim, 5, 0);
+      const shocked = foe(sim, 10, 0);
+      const plain = foe(sim, 5, 5.5);
+      const s = spell(ranger, 'chargedArrow');
+      expect(ranger.startCast(s, first)).toBe(true);
+      sim.run(s.windup + 0.01);
+      // The arrow is in flight: both are Shocked when it lands
+      first.addStatus(SHOCK, ranger, 3);
+      shocked.addStatus(SHOCK, ranger, 3);
+      sim.run(0.6);
+      return { shocked, plain };
+    };
+    const withIt = run('thunderhead');
+    expect(withIt.shocked.hp).toBeLessThan(withIt.shocked.derived.maxHp);
+    expect(withIt.plain.hp).toBe(withIt.plain.derived.maxHp);
+    const without = run(null);
+    expect(without.shocked.hp).toBe(without.shocked.derived.maxHp);
   });
 
   it('Piercing Arrow hits every enemy in a line and does not chain', () => {
@@ -361,7 +412,7 @@ describe('Charged Arrow upgrades', () => {
     expect(dueled.hp).toBe(dueled.derived.maxHp);
   });
 
-  it('Arc Volley and Rearguard leave a dueled elite alone', () => {
+  it('Arc Volley leaves a dueled elite alone', () => {
     const { sim, ranger } = rangerWith('arcVolley');
     const duelist = spawnMerc(sim, 'duelist', 10, 4, 3);
     const first = foe(sim, 6, 0);

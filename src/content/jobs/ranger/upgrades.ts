@@ -15,6 +15,7 @@ import {
   SNARE,
   aimedArrow,
   around,
+  chargedRatio,
   comingForBearer,
   inLineOf,
   pierceArrow,
@@ -45,8 +46,11 @@ interface Step {
   at: number;
 }
 
-// Each Ranger's note of where the bearer has walked
+// Each Ranger's note of where the bearer has walked, and when it may lay its
+// next snare. Kept here, not in setup, so a rank raise (which sets the passive
+// up again) does not reset them.
 const trails = new WeakMap<Unit, Step[]>();
+const laidAt = new WeakMap<Unit, number>();
 
 // Where the bearer stood TRAIL seconds ago, if it has moved on from there
 function trailSpot(u: Unit): Step | null {
@@ -66,9 +70,8 @@ function trailSpot(u: Unit): Step | null {
 const REARGUARD: Passive = {
   id: 'rearguard',
   setup: (unit) => {
-    const trail: Step[] = [];
+    const trail = trails.get(unit) ?? [];
     trails.set(unit, trail);
-    let next = 0;
     return listen(unit.sim, SimEvents.Tick, EventPriority.Post, () => {
       const { sim } = unit;
       const bearer = sim.bearer;
@@ -83,13 +86,18 @@ const REARGUARD: Passive = {
       }
       const fight = sim.living(Side.Monster).some((e) => e.aware && e.distanceTo(bearer) <= 10);
       const mine = sim.traps.filter((t) => t.owner === unit && t.skill === 'rearguard');
-      if (!fight || sim.time < next || mine.length >= REARGUARD_TRAPS || unit.disabled) {
+      if (
+        !fight ||
+        sim.time < (laidAt.get(unit) ?? 0) ||
+        mine.length >= REARGUARD_TRAPS ||
+        unit.disabled
+      ) {
         return;
       }
       const spot = trailSpot(unit);
       if (spot) {
         trap(unit, spot, 'rearguard', snareTime(rankOf(unit, 'snare')));
-        next = sim.time + REARGUARD_EVERY;
+        laidAt.set(unit, sim.time + REARGUARD_EVERY);
       }
     });
   },
@@ -205,18 +213,26 @@ const RING_TRAPS = 6;
 const RING_RADIUS = 2.5;
 
 /** When the bearer shouts Hold, plants the rod on the spot at once and rings it with snares. */
+// The shout each Ranger last answered, so a rank raise mid-Hold does not answer it again
+const answered = new WeakMap<Unit, number>();
+
 const KILLING_GROUND: Passive = {
   id: 'killingGround',
-  setup: (unit) => {
-    let last = -1;
-    return listen(unit.sim, SimEvents.Tick, EventPriority.Post, () => {
+  setup: (unit) =>
+    listen(unit.sim, SimEvents.Tick, EventPriority.Post, () => {
       const { sim } = unit;
       const heard = acting(sim, unit);
       const bearer = sim.bearer;
-      if (!heard || heard.shout !== Shout.Hold || heard.from === last || !bearer || !unit.alive) {
+      if (
+        !heard ||
+        heard.shout !== Shout.Hold ||
+        heard.from === answered.get(unit) ||
+        !bearer ||
+        !unit.alive
+      ) {
         return;
       }
-      last = heard.from;
+      answered.set(unit, heard.from);
       // The ring and the rod replace the last ones.
       for (let i = sim.traps.length - 1; i >= 0; i--) {
         if (sim.traps[i].owner === unit && sim.traps[i].skill === 'killingGround') {
@@ -240,8 +256,7 @@ const KILLING_GROUND: Passive = {
           trap(unit, at, 'killingGround', root);
         }
       }
-    });
-  },
+    }),
 };
 
 const CELL_BUILDUP = 20;
@@ -267,22 +282,30 @@ const BURST_RATIO = 150;
 const BURST_BUILDUP = 40;
 
 /** When a rod's field ends it bursts on every enemy inside. */
+// The rods each Ranger has planted, kept across a rank raise
+const rodsOf = new WeakMap<Unit, Set<Zone>>();
+
 const OVERCHARGE: Passive = {
   id: 'overcharge',
   setup: (unit) => {
-    const rods = new Set<Zone>();
+    let rods = rodsOf.get(unit);
+    if (!rods) {
+      rods = new Set<Zone>();
+      rodsOf.set(unit, rods);
+    }
+    const mine = rods;
     return listen(unit.sim, SimEvents.Tick, EventPriority.Post, () => {
       const { sim } = unit;
       for (const zone of sim.zones) {
         if (ownZone(unit, zone, 'lightningRod')) {
-          rods.add(zone);
+          mine.add(zone);
         }
       }
-      for (const zone of rods) {
+      for (const zone of mine) {
         if (sim.zones.includes(zone)) {
           continue;
         }
-        rods.delete(zone);
+        mine.delete(zone);
         // Only a field that ran out bursts, not one cleared with the stage
         if (zone.life > 0 || !unit.alive) {
           continue;
@@ -385,41 +408,42 @@ const arcVolley: Partial<Skill> = {
 const THUNDER_REACH = 6;
 const THUNDER_RATIO = 60;
 
-/** When the Ranger Shocks an enemy, lightning leaps to every other enemy within 6 tiles that carries Shock. */
-const THUNDERHEAD: Passive = {
-  id: 'thunderhead',
-  setup: (unit) => {
-    // When each enemy was last leapt to, so the storm cannot feed itself
-    const leapt = new WeakMap<Unit, number>();
-    return listen(unit.sim, SimEvents.StatusApplied, EventPriority.Post, (event) => {
-      const { sim } = unit;
-      const from = event.status.unit;
-      if (
-        event.status.def !== SHOCK ||
-        from.side === unit.side ||
-        event.status.source !== unit ||
-        !unit.alive
-      ) {
-        return;
-      }
-      for (const e of around(sim, from, THUNDER_REACH, unit)) {
-        const charged = e.statuses.has(SHOCK.id) || (e.buildup.get(SHOCK.id) ?? 0) > 0;
-        if (e === from || !charged || sim.time - (leapt.get(e) ?? -Infinity) < 1) {
-          continue;
+/** When a Charged Arrow hits a Shocked target, a bolt leaps to every other Shocked enemy within 6 tiles. */
+const thunderhead: Partial<Skill> = {
+  release(u, target) {
+    if (!target?.alive) {
+      return;
+    }
+    stormArrow(
+      u,
+      target,
+      'chargedArrow',
+      {
+        range: Range.Ranged,
+        element: Element.Storm,
+        ratio: chargedRatio(rankOf(u, 'chargedArrow')),
+        flags: DamageFlags.Skill | DamageFlags.Projectile,
+      },
+      (first) => {
+        if (!first.statuses.has(SHOCK.id)) {
+          return;
         }
-        leapt.set(e, sim.time);
-        sim.chain(unit, from, e, {
-          speed: ARROW_SPEED * 2.5,
-          skill: 'thunderhead',
-          options: {
-            range: Range.Ranged,
-            element: Element.Storm,
-            ratio: THUNDER_RATIO,
-            flags: DamageFlags.Skill | DamageFlags.Projectile,
-          },
-        });
-      }
-    });
+        for (const e of around(u.sim, first, THUNDER_REACH, u)) {
+          if (e !== first && e.statuses.has(SHOCK.id)) {
+            u.sim.chain(u, first, e, {
+              speed: ARROW_SPEED * 2.5,
+              skill: 'thunderhead',
+              options: {
+                range: Range.Ranged,
+                element: Element.Storm,
+                ratio: THUNDER_RATIO,
+                flags: DamageFlags.Skill | DamageFlags.Projectile,
+              },
+            });
+          }
+        }
+      },
+    );
   },
 };
 
@@ -521,7 +545,7 @@ const RANGER_UPGRADES: Upgrade[] = [
     name: 'Thunderhead',
     describe: () =>
       `A Shocked target sends a bolt to every Shocked enemy within ${THUNDER_REACH} tiles for ${THUNDER_RATIO}% Storm damage.`,
-    effect: THUNDERHEAD,
+    patch: thunderhead,
   },
   {
     id: 'piercingArrow',

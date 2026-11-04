@@ -142,7 +142,13 @@ export const chargedRatio = (rank: number): number => 90 + rank * 8;
 const CHAIN_REACH = 3;
 
 /** Fires a Storm arrow that leaps on to one more enemy near the first. */
-export function stormArrow(u: Unit, target: Unit, skill: string, options: HitOptions): void {
+export function stormArrow(
+  u: Unit,
+  target: Unit,
+  skill: string,
+  options: HitOptions,
+  after?: (first: Unit) => void,
+): void {
   const { sim } = u;
   sim.fire(u, target, {
     speed: ARROW_SPEED,
@@ -150,6 +156,7 @@ export function stormArrow(u: Unit, target: Unit, skill: string, options: HitOpt
     skill,
     options,
     onHit: (first) => {
+      after?.(first);
       // A Ranger raised against the party keeps looking among the monsters, as it
       // always has: setting it right moves the Creditor fight (see the outcome).
       const near =
