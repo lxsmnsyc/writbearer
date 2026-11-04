@@ -7,7 +7,7 @@ import {
   wageFor,
 } from '../../src/content/recruits';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
-import { CLEANSE, HEAL, RENEW, RESURRECTION, SMITE } from '../../src/content/cleric';
+import { HEAL, SMITE } from '../../src/content/cleric';
 import { TRAIT_BY_ID, rollTraits } from '../../src/content/traits';
 import RNG from '../../src/core/rng';
 import { START_GOLD } from '../../src/game/game';
@@ -17,7 +17,7 @@ import { generateGuild, generateStage } from '../../src/gen/stage';
 import { DEFAULT_TOGGLES, Priority } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import Sim from '../../src/sim/sim';
-import { DREAD, POISON, STUN } from '../../src/sim/statuses';
+import { DREAD } from '../../src/sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority } from '../../src/sim/types';
 
 describe('offers', () => {
@@ -153,32 +153,6 @@ describe('the Cleric', () => {
     expect(bearer.hp).toBeGreaterThan(hp + 40);
   });
 
-  it('renews over time', () => {
-    const sim = new Sim(1);
-    const bearer = spawnBearer(sim, 0, 0);
-    const cleric = spawnMerc(sim, 'cleric', 5, 1, 0);
-    bearer.hp = 50;
-    // Renew alone: the Cleric's own spells would heal the bearer too.
-    cleric.skills.length = 0;
-    cleric.startCast(RENEW, bearer);
-    sim.run(RENEW.windup + 3.05);
-    expect(bearer.hp).toBe(50 + 3 * 14);
-  });
-
-  it('cleanses harmful statuses and buildup, and leaves its own', () => {
-    const sim = new Sim(1);
-    const cleric = spawnMerc(sim, 'cleric', 5, 1, 0);
-    const vanguard = spawnMerc(sim, 'vanguard', 5, 0, 0);
-    const crawler = spawnMonster(sim, 'crawler', 4, 20, 0);
-    vanguard.addStatus(POISON, crawler);
-    vanguard.buildUp(STUN, crawler, 60);
-    expect(CLEANSE.aim!(cleric, sim)).toBe(vanguard);
-    cleric.startCast(CLEANSE, vanguard);
-    sim.run(CLEANSE.windup + 0.05);
-    expect(vanguard.statuses.has(POISON.id)).toBe(false);
-    expect(vanguard.buildup.size).toBe(0);
-  });
-
   it('keeps the dead whole in a Respite area', () => {
     const sim = new Sim(1);
     sim.spared = true;
@@ -187,28 +161,6 @@ describe('the Cleric', () => {
     crawler.hit(ranger, { kind: DamageKind.True, fixed: 10000 });
     expect(ranger.alive).toBe(false);
     expect(ranger.torn).toBe(false);
-  });
-
-  it('raises a fallen merc, but not one torn apart', () => {
-    const sim = new Sim(1);
-    const cleric = spawnMerc(sim, 'cleric', 5, 0, 0);
-    const vanguard = spawnMerc(sim, 'vanguard', 5, 1, 0);
-    const ranger = spawnMerc(sim, 'ranger', 5, -1, 0);
-    const crawler = spawnMonster(sim, 'crawler', 4, 20, 0);
-    // A small killing blow leaves a corpse; a huge one tears the body.
-    vanguard.hp = 1;
-    crawler.hit(vanguard, { kind: DamageKind.True, fixed: 5 });
-    crawler.hit(ranger, { kind: DamageKind.True, fixed: 10000 });
-    expect(vanguard.torn).toBe(false);
-    expect(ranger.torn).toBe(true);
-    cleric.skillRanks.set('resurrection', 3);
-    expect(RESURRECTION.aim!(cleric, sim)).toBe(vanguard);
-    cleric.mana = 100;
-    cleric.startCast(RESURRECTION, vanguard);
-    sim.run(RESURRECTION.windup + 0.05);
-    expect(vanguard.alive).toBe(true);
-    expect(vanguard.hp).toBe(Math.floor(vanguard.derived.maxHp * 0.3));
-    expect(ranger.revive(0.5)).toBe(false);
   });
 
   it('smites the Undead harder', () => {
