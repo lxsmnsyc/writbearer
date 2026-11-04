@@ -2,13 +2,13 @@
 
 ## Stack
 
-| Part            | Choice                                        | Why                                                                                                                                                                                                                                                                    |
-| --------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Language        | TypeScript                                    | Decided.                                                                                                                                                                                                                                                               |
-| Simulation      | Plain TypeScript, no DOM                      | Runs headless in tests. Can move to a Web Worker later.                                                                                                                                                                                                                |
-| Rendering       | Canvas 2D                                     | Figures are drawn from projected skeletons, so no sprite sheets are needed. The whole frame is drawn small and scaled up. See [art](#art) and `src/render`. It only draws, so it does not compete with the simulation. PixiJS stays an option if performance needs it. |
-| UI              | SolidJS over the canvas                       | Inventory, toggles and sheets are dense menus, which the DOM handles better than a canvas.                                                                                                                                                                             |
-| Build and tests | Vite, pnpm, Vitest, Playwright, oxlint, oxfmt | Same as the other repositories.                                                                                                                                                                                                                                        |
+| Part | Choice | Why |
+|---|---|---|
+| Language | TypeScript | Decided. |
+| Simulation | Plain TypeScript, no DOM | Runs headless in tests. Can move to a Web Worker later. |
+| Rendering | Canvas 2D | Figures are drawn from projected skeletons, so no sprite sheets are needed. The whole frame is drawn small and scaled up. See [art](#art) and `src/render`. It only draws, so it does not compete with the simulation. PixiJS stays an option if performance needs it. |
+| UI | SolidJS over the canvas | Inventory, toggles and sheets are dense menus, which the DOM handles better than a canvas. |
+| Build and tests | Vite, pnpm, Vitest, Playwright, oxlint, oxfmt | Same as the other repositories. |
 
 Three.js with voxel models and 2D sprite sheets were both tried and dropped. Phaser was not used, since it brings its own scene and physics model, which would compete with a separate simulation.
 

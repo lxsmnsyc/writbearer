@@ -29,8 +29,8 @@ Every hit carries three independent properties.
 ```ts
 const enum DamageKind {
   Physical, // weapons and physical skills
-  Magical, // spells
-  True, // bleeding, falls, curses: skips defense
+  Magical,  // spells
+  True,     // bleeding, falls, curses: skips defense
 }
 
 const enum Range {
@@ -39,16 +39,7 @@ const enum Range {
 }
 
 // See 04-elements.md
-const enum Element {
-  Neutral,
-  Fire,
-  Frost,
-  Storm,
-  Earth,
-  Venom,
-  Radiant,
-  Occult,
-}
+const enum Element { Neutral, Fire, Frost, Storm, Earth, Venom, Radiant, Occult }
 ```
 
 Flags add detail: `BasicAttack`, `Skill`, `Projectile`, `AoE`, `DoT`, `Critical`, `Pierce`, `NonLethal`, `FriendlyFire`, `Redirected`, `Reflected`.
@@ -68,15 +59,15 @@ Units have no size. rAthena scales damage by weapon type against target size, an
 
 ## Physical and magical rules
 
-|           | Physical                                   | Magical                                              |
-| --------- | ------------------------------------------ | ---------------------------------------------------- |
-| Scaling   | STR for melee, DEX for ranged              | INT                                                  |
-| Hit check | Accuracy against Evasion                   | Always hits. Projectiles can still be walked out of. |
-| Critical  | Yes. Crits skip the hit check.             | No crits. INT adds element buildup instead.          |
-| Block     | Shields block from the front               | No                                                   |
-| Defense   | Armor (hard, percent) and VIT (soft, flat) | Resistance (hard, percent) and WIL (soft, flat)      |
-| Barrier   | Hit-count walls, ranged fields             | Ward pool                                            |
-| Interrupt | Melee hits can interrupt casts             | Large hits can interrupt casts                       |
+| | Physical | Magical |
+|---|---|---|
+| Scaling | STR for melee, DEX for ranged | INT |
+| Hit check | Accuracy against Evasion | Always hits. Projectiles can still be walked out of. |
+| Critical | Yes. Crits skip the hit check. | No crits. INT adds element buildup instead. |
+| Block | Shields block from the front | No |
+| Defense | Armor (hard, percent) and VIT (soft, flat) | Resistance (hard, percent) and WIL (soft, flat) |
+| Barrier | Hit-count walls, ranged fields | Ward pool |
+| Interrupt | Melee hits can interrupt casts | Large hits can interrupt casts |
 
 ## Mana
 
@@ -87,12 +78,12 @@ Units have no size. rAthena scales damage by weapon type against target size, an
 
 Regeneration and gain follow rAthena and Diablo 2. Neither gives physical classes mana on hit by default. Both rely on regeneration, items and potions.
 
-| Source               | rAthena                                                                  | Diablo 2                                        | This game                                                                   |
-| -------------------- | ------------------------------------------------------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------- |
+| Source | rAthena | Diablo 2 | This game |
+|---|---|---|---|
 | Natural regeneration | SP regenerates on a timer, scaled by max SP and INT. Sitting doubles it. | Mana regenerates over time, scaled by max mana. | Regenerates every tick, scaled by max mana and WIL. Doubled outside combat. |
-| On hit               | Items and cards only (`bSPDrainValue`, `bSPDrainRate`).                  | Items only (mana stolen per hit).               | Items and cards only.                                                       |
-| On kill              | Items and cards only (`bSPGainValue`, `bMagicSPGainValue`).              | Items only (mana after each kill).              | Items and cards only.                                                       |
-| Potions              | Yes.                                                                     | Yes.                                            | Yes, through the belt.                                                      |
+| On hit | Items and cards only (`bSPDrainValue`, `bSPDrainRate`). | Items only (mana stolen per hit). | Items and cards only. |
+| On kill | Items and cards only (`bSPGainValue`, `bMagicSPGainValue`). | Items only (mana after each kill). | Items and cards only. |
+| Potions | Yes. | Yes. | Yes, through the belt. |
 
 A few job passives may add mana gain, such as the Duelist's Flourish. They are the exception.
 
@@ -131,10 +122,10 @@ A skill that hits several times sends one `UnitSkillHit` per hit. Each hit goes 
 
 These two are in the game, at rank 1, before skill trees exist:
 
-| Skill          | Job      | Cost | Cooldown | Windup | Effect                                                                                | Auto rule                                                                |
-| -------------- | -------- | ---- | -------- | ------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Challenge      | Vanguard | 12   | 9 s      | 0.35 s | Taunts every enemy within 3 tiles for 4 s. A taunted enemy only attacks the Vanguard. | Something near goes for the bearer, or two near go for others.           |
-| Piercing Arrow | Ranger   | 14   | 6 s      | 0.9 s  | A straight arrow through every enemy in its line, at 180%.                            | Two or more enemies in line, an elite, or an enemy going for the bearer. |
+| Skill | Job | Cost | Cooldown | Windup | Effect | Auto rule |
+|---|---|---|---|---|---|---|
+| Challenge | Vanguard | 12 | 9 s | 0.35 s | Taunts every enemy within 3 tiles for 4 s. A taunted enemy only attacks the Vanguard. | Something near goes for the bearer, or two near go for others. |
+| Piercing Arrow | Ranger | 14 | 6 s | 0.9 s | A straight arrow through every enemy in its line, at 180%. | Two or more enemies in line, an elite, or an enemy going for the bearer. |
 
 Each skill has a toggle in the merc's orders: Auto, Elites (only when the use would reach an elite or boss) or Off.
 
@@ -154,19 +145,19 @@ Magical hits skip this check.
 
 ```ts
 export const enum DamagePriority {
-  Initial, // base damage
-  SkillRatio, // skill percent
-  SkillFlat, // skill flat bonus
-  Amplify, // attacker's bonus categories
-  Defense, // hard and soft defense
-  Affinity, // element against target element
-  Critical, // crit multiplier
-  Reduce, // target's reduction categories
-  Block, // shield block, physical only
-  Barrier, // walls, fields, Ward
-  Pre, // redirect, cancel, cap
-  Exact, // health removed
-  Post, // reflect, drain, buildup, threat, on kill
+  Initial,        // base damage
+  SkillRatio,     // skill percent
+  SkillFlat,      // skill flat bonus
+  Amplify,        // attacker's bonus categories
+  Defense,        // hard and soft defense
+  Affinity,       // element against target element
+  Critical,       // crit multiplier
+  Reduce,         // target's reduction categories
+  Block,          // shield block, physical only
+  Barrier,        // walls, fields, Ward
+  Pre,            // redirect, cancel, cap
+  Exact,          // health removed
+  Post,           // reflect, drain, buildup, threat, on kill
 }
 ```
 
@@ -270,12 +261,12 @@ Based on `battle_calc_damage` in rAthena, where status effects absorb hits.
 
 ```ts
 export const enum HealPriority {
-  Initial, // base heal
-  Amplify, // caster bonuses
-  Reduce, // target penalties, such as Venom
+  Initial,  // base heal
+  Amplify,  // caster bonuses
+  Reduce,   // target penalties, such as Venom
   Pre,
-  Exact, // health restored, capped at max
-  Post, // overheal becomes a short shield on some skills
+  Exact,    // health restored, capped at max
+  Post,     // overheal becomes a short shield on some skills
 }
 ```
 
@@ -290,12 +281,12 @@ export interface Skill {
   kind: DamageKind;
   range: Range;
   element: Element;
-  tags: SkillTag[]; // Melee, Projectile, AoE, Heal, Guard, Mobility, Buff, Debuff
-  cost: number; // mana
-  cooldown: number; // ms
-  windup: number; // ms
-  recovery: number; // ms
-  reach: number; // tiles
+  tags: SkillTag[];      // Melee, Projectile, AoE, Heal, Guard, Mobility, Buff, Debuff
+  cost: number;          // mana
+  cooldown: number;      // ms
+  windup: number;        // ms
+  recovery: number;      // ms
+  reach: number;         // tiles
   targeting: TargetRule; // Enemy, Ally, Citizen, Self, Ground
   friendlyFire?: boolean; // hurts allies and the citizen. Off by default.
   maxRank: number;
@@ -372,16 +363,16 @@ setup({ sim, unit }) {
 - A status that stops the unit acting also breaks the blow or skill it was winding up.
 - Damage over time skips defense, is credited to whoever caused it, and adds no buildup.
 
-| Status  | From        | Effect                                                           | Resist |
-| ------- | ----------- | ---------------------------------------------------------------- | ------ |
-| Taunted | Challenge   | Must fight the taunter. Ends if the taunter dies.                | None   |
-| Stun    | Shield Bash | Cannot act for 1.5 s.                                            | VIT    |
-| Burn    | Fire hits   | 3% of max health per second for 4 s.                             | VIT    |
-| Chill   | Frost hits  | Move speed ×0.6 for 4 s. Chilled again, it becomes Freeze.       | VIT    |
-| Freeze  | Chill       | Cannot act for 2 s, and counts as Frost 1.                       |        |
-| Shock   | Storm hits  | Cannot act for 0.6 s.                                            | DEX    |
-| Petrify | Earth hits  | Cannot act for 2.5 s, and counts as Earth 1.                     | WIL    |
-| Poison  | Venom hits  | 2% of max health per second for 6 s. Healing received is halved. | VIT    |
+| Status | From | Effect | Resist |
+|---|---|---|---|
+| Taunted | Challenge | Must fight the taunter. Ends if the taunter dies. | None |
+| Stun | Shield Bash | Cannot act for 1.5 s. | VIT |
+| Burn | Fire hits | 3% of max health per second for 4 s. | VIT |
+| Chill | Frost hits | Move speed ×0.6 for 4 s. Chilled again, it becomes Freeze. | VIT |
+| Freeze | Chill | Cannot act for 2 s, and counts as Frost 1. | |
+| Shock | Storm hits | Cannot act for 0.6 s. | DEX |
+| Petrify | Earth hits | Cannot act for 2.5 s, and counts as Earth 1. | WIL |
+| Poison | Venom hits | 2% of max health per second for 6 s. Healing received is halved. | VIT |
 
 Crawler bites are Venom, so they poison. Radiant, Occult and Spectral have no status yet.
 

@@ -13,13 +13,13 @@ Based on Diablo 2 and rAthena.
 - Skills have up to 5 ranks. Capstones have 1 rank.
 - Each tier unlocks at a merc level, as in Diablo 2.
 
-| Tier     | Merc level |
-| -------- | ---------- |
-| 1        | 1          |
-| 2        | 4          |
-| 3        | 8          |
-| 4        | 12         |
-| Capstone | 16         |
+| Tier | Merc level |
+|---|---|
+| 1 | 1 |
+| 2 | 4 |
+| 3 | 8 |
+| 4 | 12 |
+| Capstone | 16 |
 
 - A skill needs at least 1 rank in the skill before it in the same branch, as rAthena's prerequisites.
 - Some skills have synergies, as in Diablo 2. Each rank in the named skill raises the other skill's effect.
@@ -40,15 +40,15 @@ The game no longer uses these trees. Mercs follow build model B of [builds](16-b
 
 All seven starting jobs are in the game and offered at the Guild House, every spell and upgrade built. Spells in cast order, the last one the filler, with mana cost and cooldown:
 
-| Job       | Slot    | Spells                                                                       | Innate          |
-| --------- | ------- | ---------------------------------------------------------------------------- | --------------- |
-| Vanguard  | Guard   | Intercept 8/8 s, Challenge 12/9 s, Shield Wall 12/12 s, Crush 10/6 s         | Sunder          |
-| Warden    | Guard   | Cover 12/12 s, Execute 12/8 s, Tripwire 10/12 s, Pursue 6/4 s                | Interpose       |
-| Ranger    | Striker | Snare 8/7 s, Lightning Rod 18/15 s, Aimed Shot 10/5 s, Charged Arrow 9/3.5 s | Static          |
-| Sellsword | Striker | Rush 8/8 s, Pocket Sand 8/10 s, Hamstring 8/6 s, Cleave 6/2 s                | Second Wind     |
-| Duelist   | Striker | Duel 14/16 s, Shadowstep 10/10 s, Lunge 8/6 s, Flurry 8/3 s                  | Riposte         |
-| Arcanist  | Striker | Frost Nova 14/7 s, Fireball 16/6 s, Frost Shard 7/2.5 s, Firebolt 7/2.5 s    | Elemental Sense |
-| Cleric    | Support | Ward 10/4 s, Heal 10/2.5 s, Sacred Ground 18/14 s, Smite 8/3 s               | Aegis           |
+| Job | Slot | Spells | Innate |
+|---|---|---|---|
+| Vanguard | Guard | Intercept 8/8 s, Challenge 12/9 s, Shield Wall 12/12 s, Crush 10/6 s | Sunder |
+| Warden | Guard | Cover 12/12 s, Execute 12/8 s, Tripwire 10/12 s, Pursue 6/4 s | Interpose |
+| Ranger | Striker | Snare 8/7 s, Lightning Rod 18/15 s, Aimed Shot 10/5 s, Charged Arrow 9/3.5 s | Static |
+| Sellsword | Striker | Rush 8/8 s, Pocket Sand 8/10 s, Hamstring 8/6 s, Cleave 6/2 s | Second Wind |
+| Duelist | Striker | Duel 14/16 s, Shadowstep 10/10 s, Lunge 8/6 s, Flurry 8/3 s | Riposte |
+| Arcanist | Striker | Frost Nova 14/7 s, Fireball 16/6 s, Frost Shard 7/2.5 s, Firebolt 7/2.5 s | Elemental Sense |
+| Cleric | Support | Ward 10/4 s, Heal 10/2.5 s, Sacred Ground 18/14 s, Smite 8/3 s | Aegis |
 
 Where the game differs from doc 16, because doc 16's numbers fail the layer-1 boss test (`test/sim/bosses.test.ts`):
 
@@ -268,15 +268,15 @@ Radiant. Healing and protection.
 
 These jobs do not appear in the first pick of a run. They are outlines. Full trees come later.
 
-| Job         | Branches                                                                             | One capstone                                                                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bard        | Ballads (auras), Drill (Discipline), Gossip (prices and events)                      | Chain of Command: every merc uses the Bard's Discipline if it is higher than its own.                                                         |
-| Alchemist   | Brews (belt items), Volatiles (Venom and Fire flasks), Transmutation (camp crafting) | Philosopher's Stone: at a Camp, turns 3 cards into 1 random card of the next tier.                                                            |
-| Sapper      | Demolition (bombs, breaking walls), Fortify (barricades), Mines                      | Controlled Collapse: brings down a ceiling on an area, blocking it for the rest of the stage.                                                 |
-| Beastmaster | Pack (the pet), Wild (Earth), Bond                                                   | Unbroken Bond: the pet comes back on its own 10 seconds after dying.                                                                          |
-| Scout       | Pathfinder (map), Skirmish (hit and run), Survival (camping and resting)             | Trailblazer: makes a Shortcut node appear on the next map layer.                                                                              |
-| Hexblade    | Curses, Lifesteal, Pact (spends health)                                              | Soulbound: health it drains also gives the citizen a Ward. Raises its own corruption.                                                         |
-| Necromancer | Raise (monster corpses), Bone (armor from corpses), Undying                          | Undying Servant: raises a dead merc as an undead servant. The servant draws no wage, can never be resurrected, and lowers the party's morale. |
+| Job | Branches | One capstone |
+|---|---|---|
+| Bard | Ballads (auras), Drill (Discipline), Gossip (prices and events) | Chain of Command: every merc uses the Bard's Discipline if it is higher than its own. |
+| Alchemist | Brews (belt items), Volatiles (Venom and Fire flasks), Transmutation (camp crafting) | Philosopher's Stone: at a Camp, turns 3 cards into 1 random card of the next tier. |
+| Sapper | Demolition (bombs, breaking walls), Fortify (barricades), Mines | Controlled Collapse: brings down a ceiling on an area, blocking it for the rest of the stage. |
+| Beastmaster | Pack (the pet), Wild (Earth), Bond | Unbroken Bond: the pet comes back on its own 10 seconds after dying. |
+| Scout | Pathfinder (map), Skirmish (hit and run), Survival (camping and resting) | Trailblazer: makes a Shortcut node appear on the next map layer. |
+| Hexblade | Curses, Lifesteal, Pact (spends health) | Soulbound: health it drains also gives the citizen a Ward. Raises its own corruption. |
+| Necromancer | Raise (monster corpses), Bone (armor from corpses), Undying | Undying Servant: raises a dead merc as an undead servant. The servant draws no wage, can never be resurrected, and lowers the party's morale. |
 
 ## Design notes
 

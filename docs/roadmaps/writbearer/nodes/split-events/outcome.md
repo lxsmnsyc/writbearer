@@ -10,7 +10,6 @@
 - `src/sim/events/CLAUDE.md`: the rule below.
 
 Add an event:
-
 1. Add one line to `SimEvents` in `src/sim/events.ts`.
 2. Add the payload interface and a `[SimEvents.Name]: [PayloadEvent, Priority]` entry in a module under `src/sim/events/` (its `<Group>EventMap`). Make a new module for a new feature.
 3. For a new module, add `export type * from './events/<module>'` and the map import to `events.ts`, and append the map name to the `extends` list.

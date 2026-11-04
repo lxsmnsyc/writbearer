@@ -4,27 +4,27 @@
 
 `src/gen/stage.ts` went from 2,251 lines to 73. It keeps `generateStage` and `buildArea` (which picks the generator for a plan) and re-exports every name it exported before, so no importer changed. The rest lives in `src/gen/stage/`. No module imports `../stage`. They import each other directly.
 
-| Module          | Lines | What lives there                                                                                                                                                                                                                                                                                           |
-| --------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `types.ts`      | 130   | `Stage`, `AreaPlan` (types only). New `Stage` fields go here, optional.                                                                                                                                                                                                                                    |
-| `props.ts`      | 92    | `PropKind` union, `Prop`, `Add`, table `SOLID` (blocking radius per prop kind), `tallFor`, and `adder(stage, rng)`, the one `add` every generator uses.                                                                                                                                                    |
-| `exits.ts`      | 112   | `Ahead`, `ExitSide`, `Exit`, `OUT`, `placeExits` (it also adds the exit torches, signposts, stair and braziers), `beyond`, `onRoads`, `Fight`, `withFightsAhead`.                                                                                                                                          |
-| `field.ts`      | 230   | `generateField`: the open fight field, step by step (it was the body of `buildArea`). `FIELD_SIZE`, `KEEP_ENTRANCE`, `KEEP_EXIT`, `KEEP_PLACE`, `RECRUIT_CHANCE`.                                                                                                                                          |
-| `ground.ts`     | 68    | `Patch` (kinds `'water' \| 'embers'`), table `GROUND` (counts per layer), `WATER_R`, `EMBERS_R`, `EMBERS_OFF_ROAD`, `layGround` (patches and blossoms).                                                                                                                                                    |
-| `hazards.ts`    | 37    | `Hazard`, `HazardKind` union, tables `TRAP_PERIOD` (beat per kind), `TRAPS_SHALLOW`, `TRAPS_DEEP`.                                                                                                                                                                                                         |
-| `packs.ts`      | 299   | `Pack`, `THREAT` (threat per monster kind), `FACTIONS` with `Faction` and the sizes `SWARM`, `MIXED`, `STRONG`, `packOf`, `approachPack`, `factionPool`, `areaBudget`, `monsterLevel`, `siteKeepers`, `lairPack`, `PACK_DISTANCE`, `ELITE_FROM`, `placePacks`, `rollAffixes`, `shoots`, `appointCaptains`. |
-| `waves.ts`      | 125   | `Wave`, `Mob`, `buildWaves`, `buildMobs`.                                                                                                                                                                                                                                                                  |
-| `bosses.ts`     | 133   | `BossCard`, `bossHand`, `dealBosses`, `leadLastWave`, `clearAround`, `standMiniBoss`.                                                                                                                                                                                                                      |
-| `spots.ts`      | 118   | `KeyPoint`, `laySpots` and its constants.                                                                                                                                                                                                                                                                  |
-| `objectives.ts` | 101   | `RITE_TIME`, `RITE_REACH`, `Rite`, horn posts (`layPosts`, `placeHorns`), `refugeesAt`, `markHunt`.                                                                                                                                                                                                        |
-| `vault.ts`      | 69    | `Vault`, `layVault` (the strongroom, its door, cleared ground), `vaultTraps`.                                                                                                                                                                                                                              |
-| `collapse.ts`   | 55    | `Collapse`, `floorOf`, `collapseFor`, `COLLAPSE_*`.                                                                                                                                                                                                                                                        |
-| `reach.ts`      | 63    | `rectOf`, `navFor`, `holesOf` (chasm cells, `CHASM_R`), `solidsOf`, `ensureReachable`, `reaches`, `distanceToSegment`.                                                                                                                                                                                     |
-| `arena.ts`      | 89    | default `generateArena`: the boss field (`BOSS_WIDTH`, `BOSS_DEPTH`, `BOSS_CLEAR`).                                                                                                                                                                                                                        |
-| `maze.ts`       | 361   | `Gate`, `openGate`, `GATES_DEEP_FROM`, `generateMaze` (the Labyrinth).                                                                                                                                                                                                                                     |
-| `havens.ts`     | 181   | `smallField`, `edgeTrees`, `generateWaystation`, `GUILD_RECRUITS`, `generateGuild`, `generateTown`, `generateCamp`, `generateEvent`.                                                                                                                                                                       |
-| `ambush.ts`     | 55    | default `generateAmbush`.                                                                                                                                                                                                                                                                                  |
-| `tomb.ts`       | 57    | default `generateTomb`.                                                                                                                                                                                                                                                                                    |
+| Module | Lines | What lives there |
+| --- | --- | --- |
+| `types.ts` | 130 | `Stage`, `AreaPlan` (types only). New `Stage` fields go here, optional. |
+| `props.ts` | 92 | `PropKind` union, `Prop`, `Add`, table `SOLID` (blocking radius per prop kind), `tallFor`, and `adder(stage, rng)`, the one `add` every generator uses. |
+| `exits.ts` | 112 | `Ahead`, `ExitSide`, `Exit`, `OUT`, `placeExits` (it also adds the exit torches, signposts, stair and braziers), `beyond`, `onRoads`, `Fight`, `withFightsAhead`. |
+| `field.ts` | 230 | `generateField`: the open fight field, step by step (it was the body of `buildArea`). `FIELD_SIZE`, `KEEP_ENTRANCE`, `KEEP_EXIT`, `KEEP_PLACE`, `RECRUIT_CHANCE`. |
+| `ground.ts` | 68 | `Patch` (kinds `'water' \| 'embers'`), table `GROUND` (counts per layer), `WATER_R`, `EMBERS_R`, `EMBERS_OFF_ROAD`, `layGround` (patches and blossoms). |
+| `hazards.ts` | 37 | `Hazard`, `HazardKind` union, tables `TRAP_PERIOD` (beat per kind), `TRAPS_SHALLOW`, `TRAPS_DEEP`. |
+| `packs.ts` | 299 | `Pack`, `THREAT` (threat per monster kind), `FACTIONS` with `Faction` and the sizes `SWARM`, `MIXED`, `STRONG`, `packOf`, `approachPack`, `factionPool`, `areaBudget`, `monsterLevel`, `siteKeepers`, `lairPack`, `PACK_DISTANCE`, `ELITE_FROM`, `placePacks`, `rollAffixes`, `shoots`, `appointCaptains`. |
+| `waves.ts` | 125 | `Wave`, `Mob`, `buildWaves`, `buildMobs`. |
+| `bosses.ts` | 133 | `BossCard`, `bossHand`, `dealBosses`, `leadLastWave`, `clearAround`, `standMiniBoss`. |
+| `spots.ts` | 118 | `KeyPoint`, `laySpots` and its constants. |
+| `objectives.ts` | 101 | `RITE_TIME`, `RITE_REACH`, `Rite`, horn posts (`layPosts`, `placeHorns`), `refugeesAt`, `markHunt`. |
+| `vault.ts` | 69 | `Vault`, `layVault` (the strongroom, its door, cleared ground), `vaultTraps`. |
+| `collapse.ts` | 55 | `Collapse`, `floorOf`, `collapseFor`, `COLLAPSE_*`. |
+| `reach.ts` | 63 | `rectOf`, `navFor`, `holesOf` (chasm cells, `CHASM_R`), `solidsOf`, `ensureReachable`, `reaches`, `distanceToSegment`. |
+| `arena.ts` | 89 | default `generateArena`: the boss field (`BOSS_WIDTH`, `BOSS_DEPTH`, `BOSS_CLEAR`). |
+| `maze.ts` | 361 | `Gate`, `openGate`, `GATES_DEEP_FROM`, `generateMaze` (the Labyrinth). |
+| `havens.ts` | 181 | `smallField`, `edgeTrees`, `generateWaystation`, `GUILD_RECRUITS`, `generateGuild`, `generateTown`, `generateCamp`, `generateEvent`. |
+| `ambush.ts` | 55 | default `generateAmbush`. |
+| `tomb.ts` | 57 | default `generateTomb`. |
 
 Tables a later node adds an entry to:
 

@@ -4,22 +4,22 @@ Draft. Six jobs to add to the fourteen in [mercenaries](05-mercenaries.md#jobs).
 
 ## Where the roster stands
 
-| State            | Jobs                                                                                                                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| In the game      | Vanguard, Warden, Ranger, Sellsword, Duelist, Arcanist, Cleric. Each has 4 spells, an innate and 12 elite upgrades ([builds](16-builds.md), [in the game so far](09-skill-trees.md#in-the-game-so-far)). |
-| Outlines only    | Bard, Alchemist, Sapper, Beastmaster, Scout, Hexblade, Necromancer. See [other jobs](09-skill-trees.md#other-jobs).                                                                                      |
-| New in this file | Lamplighter, Berserker, Monk, Sage, Medium, Arbalist                                                                                                                                                     |
+| State | Jobs |
+|---|---|
+| In the game | Vanguard, Warden, Ranger, Sellsword, Duelist, Arcanist, Cleric. Each has 4 spells, an innate and 12 elite upgrades ([builds](16-builds.md), [in the game so far](09-skill-trees.md#in-the-game-so-far)). |
+| Outlines only | Bard, Alchemist, Sapper, Beastmaster, Scout, Hexblade, Necromancer. See [other jobs](09-skill-trees.md#other-jobs). |
+| New in this file | Lamplighter, Berserker, Monk, Sage, Medium, Arbalist |
 
 ## What each new job adds
 
-| Job         | Role                  | Elements                  | Signature shape                               | Inspired by                                         | What no other job does                                                                                     |
-| ----------- | --------------------- | ------------------------- | --------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Lamplighter | Light and vision      | Fire, Radiant             | A tall pole with a lantern hanging from it    | Darkest Dungeon's torch, rAthena's Ruwach and Sight | Changes how far the party sees, and blinds monsters.                                                       |
-| Berserker   | Melee area damage     | Neutral, Fire             | A two-handed axe as long as its body          | Diablo 2's Barbarian, rAthena's Lord Knight         | Warcries that weaken monsters and buff the party. Loses Discipline as it rages.                            |
-| Monk        | Melee burst           | Neutral, Spectral         | Huge wrapped fists and a ring of prayer beads | rAthena's Monk and Champion, Diablo 3's Monk        | Spirit spheres as a second resource. Snaps to the bearer in an instant.                                    |
-| Sage        | Element support       | Fire, Frost, Storm, Earth | A giant open book                             | rAthena's Sage and Professor                        | Gives allies' weapons an element. Cancels enemy spells and ground warnings.                                |
-| Medium      | Souls and spirits     | Spectral                  | A funeral bell as big as its head             | rAthena's Soul Linker, Darkest Dungeon's Occultist  | Spectral damage. Buffs each job in its own way. Lays dead mercs to rest so the Creditor cannot raise them. |
-| Arbalist    | Planted ranged damage | Neutral, Earth            | A crossbow on a stand, behind a tall shield   | rAthena's Gunslinger, Diablo 3's Demon Hunter       | Gets stronger the longer it holds still. Shoots whatever comes near the bearer.                            |
+| Job | Role | Elements | Signature shape | Inspired by | What no other job does |
+|---|---|---|---|---|---|
+| Lamplighter | Light and vision | Fire, Radiant | A tall pole with a lantern hanging from it | Darkest Dungeon's torch, rAthena's Ruwach and Sight | Changes how far the party sees, and blinds monsters. |
+| Berserker | Melee area damage | Neutral, Fire | A two-handed axe as long as its body | Diablo 2's Barbarian, rAthena's Lord Knight | Warcries that weaken monsters and buff the party. Loses Discipline as it rages. |
+| Monk | Melee burst | Neutral, Spectral | Huge wrapped fists and a ring of prayer beads | rAthena's Monk and Champion, Diablo 3's Monk | Spirit spheres as a second resource. Snaps to the bearer in an instant. |
+| Sage | Element support | Fire, Frost, Storm, Earth | A giant open book | rAthena's Sage and Professor | Gives allies' weapons an element. Cancels enemy spells and ground warnings. |
+| Medium | Souls and spirits | Spectral | A funeral bell as big as its head | rAthena's Soul Linker, Darkest Dungeon's Occultist | Spectral damage. Buffs each job in its own way. Lays dead mercs to rest so the Creditor cannot raise them. |
+| Arbalist | Planted ranged damage | Neutral, Earth | A crossbow on a stand, behind a tall shield | rAthena's Gunslinger, Diablo 3's Demon Hunter | Gets stronger the longer it holds still. Shoots whatever comes near the bearer. |
 
 - Each signature shape is large and simple, so the job reads from its silhouette at 384×216.
 - No two jobs share a shape. The Arbalist's crossbow sits on a stand; the Ranger's bow is held.
@@ -228,22 +228,22 @@ The Hold stance and the Hold shout exist, but only a few skills reward them. The
 
 The new jobs share a few new systems. Building these first makes each job smaller.
 
-| System                               | Used by                       |
-| ------------------------------------ | ----------------------------- |
-| Party buffs with a duration          | Berserker, Sage, Medium, Bard |
-| Blind status                         | Lamplighter                   |
-| Fear on monsters                     | Berserker, Medium             |
-| Light radius as a stat               | Lamplighter, Scout            |
-| Hidden monsters                      | Lamplighter, Warden, Scout    |
-| A second resource                    | Monk                          |
-| Spectral attacks                     | Monk, Medium                  |
-| Weapon element buffs                 | Sage, Alchemist               |
-| Removing enemy buffs and warnings    | Sage                          |
-| Corpses laid to rest                 | Medium, Necromancer           |
-| Monsters switching sides for a while | Medium, Necromancer           |
-| Knockback                            | Arbalist, Sapper              |
-| Turrets as zones that shoot          | Arbalist, Sapper              |
-| Standing-still timer                 | Arbalist                      |
+| System | Used by |
+|---|---|
+| Party buffs with a duration | Berserker, Sage, Medium, Bard |
+| Blind status | Lamplighter |
+| Fear on monsters | Berserker, Medium |
+| Light radius as a stat | Lamplighter, Scout |
+| Hidden monsters | Lamplighter, Warden, Scout |
+| A second resource | Monk |
+| Spectral attacks | Monk, Medium |
+| Weapon element buffs | Sage, Alchemist |
+| Removing enemy buffs and warnings | Sage |
+| Corpses laid to rest | Medium, Necromancer |
+| Monsters switching sides for a while | Medium, Necromancer |
+| Knockback | Arbalist, Sapper |
+| Turrets as zones that shoot | Arbalist, Sapper |
+| Standing-still timer | Arbalist |
 
 Zones on the ground already exist. See `src/sim/zone.ts`.
 
@@ -260,12 +260,12 @@ Zones on the ground already exist. See `src/sim/zone.ts`.
 
 In the story, the Guild House is the only place to hire. So its five recruits must cover a party and still vary from run to run. The player hires up to four of them.
 
-| Recruit   | Drawn from                                                | In the game so far                   |
-| --------- | --------------------------------------------------------- | ------------------------------------ |
-| A guard   | Vanguard, Warden, Monk                                    | Vanguard, Warden                     |
+| Recruit | Drawn from | In the game so far |
+|---|---|---|
+| A guard | Vanguard, Warden, Monk | Vanguard, Warden |
 | A striker | Ranger, Duelist, Arcanist, Berserker, Arbalist, Sellsword | Ranger, Sellsword, Duelist, Arcanist |
-| A support | Cleric, Sage, Medium, Bard, Lamplighter                   | Cleric                               |
-| Two more  | Any job, the outlines included once they are built        | Any of the seven                     |
+| A support | Cleric, Sage, Medium, Bard, Lamplighter | Cleric |
+| Two more | Any job, the outlines included once they are built | Any of the seven |
 
 - No two recruits share a job.
 - The road out still needs a recruit that can kill what attacks the bearer. A guard or a striker counts.

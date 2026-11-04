@@ -8,25 +8,25 @@ Public interface unchanged: `renderer.ts` still exports `default Renderer`, `Fra
 
 Where each feature lives now:
 
-| Feature                                                                                                       | File                 | Exports                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Shared draw context, frame size, tile size, helpers                                                           | `draw/scene.ts`      | `Scene` (`ctx`, `out`, `scratch`, `iso`, `body`, `sub`), `W`, `H`, `SCALE`, `tw()`, `th()`, `propsOf`, `focusOf`, `onScreen` |
-| Props: shapes, light, flames                                                                                  | `draw/props/`        | see the table below                                                                                                          |
-| Everything that stands, sorted back to front (props, units, waiting figures, flying pieces), and prop dimming | `draw/standing.ts`   | `drawStanding`, `Standing`                                                                                                   |
-| Unit figures, horn posts, emissive glows, `seen()`, bar height                                                | `draw/figures.ts`    | `drawFigure`, `glowsOf`, `seen`, `barHeight`                                                                                 |
-| Lantern light map and fog viewers (sight 7 and 4.5, lantern light 6.5, `DARK_SHARE`, lit safe places)         | `draw/light.ts`      | `drawLight`, `viewersOf`, `Viewer`                                                                                           |
-| Glows after the dark: key, captain's pennant, Hunt mark, statuses, emissives, prop flames                     | `draw/glow.ts`       | default `drawGlow`                                                                                                           |
-| Status marks over heads, status colors, buildup statuses                                                      | `draw/statuses.ts`   | `drawStatuses`, `STATUS_COLOR`, `BUILDUP_STATUS`                                                                             |
-| Health bars and buildup bar                                                                                   | `draw/bars.ts`       | default `drawHealth`                                                                                                         |
-| Ground marks: skill zones, player traps, warnings, focus and selection rings, director spots                  | `draw/marks.ts`      | `drawZones`, `drawTraps`, `drawWarnings`, `drawRings`, `drawSpots`                                                           |
-| Labyrinth and Vault hazards                                                                                   | `draw/hazards.ts`    | `HAZARD_LOOKS`, `HazardLook`, `drawHazards`                                                                                  |
-| Objectives: sealing sigils, Ritual rites, Collapse edge                                                       | `draw/objectives.ts` | `drawSigil`, `drawRites`, `drawCollapse`                                                                                     |
-| Exit plates and signpost text (objective, reward, ahead, mutators)                                            | `draw/exits.ts`      | `EXIT_PLATE`, `drawExits`, `drawSigns`                                                                                       |
-| Items on the floor and their labels                                                                           | `draw/items.ts`      | `drawItems`, `drawItemLabels`, `ItemLabel`, `LABEL_COLOR`, `LABEL_HEIGHT`                                                    |
-| Callout, waiting-figure labels, elite affix labels                                                            | `draw/labels.ts`     | `drawCallout`, `drawFigureLabels`, `drawEliteLabels`                                                                         |
-| Embers on burning patches                                                                                     | `draw/embers.ts`     | default `drawEmbers`                                                                                                         |
-| Off-screen arrows to marked monsters and the next rite                                                        | `draw/quarry.ts`     | default `drawQuarry`                                                                                                         |
-| Notice, boss bar, end-of-run screen                                                                           | `draw/hud.ts`        | default `drawHud`                                                                                                            |
+| Feature | File | Exports |
+| --- | --- | --- |
+| Shared draw context, frame size, tile size, helpers | `draw/scene.ts` | `Scene` (`ctx`, `out`, `scratch`, `iso`, `body`, `sub`), `W`, `H`, `SCALE`, `tw()`, `th()`, `propsOf`, `focusOf`, `onScreen` |
+| Props: shapes, light, flames | `draw/props/` | see the table below |
+| Everything that stands, sorted back to front (props, units, waiting figures, flying pieces), and prop dimming | `draw/standing.ts` | `drawStanding`, `Standing` |
+| Unit figures, horn posts, emissive glows, `seen()`, bar height | `draw/figures.ts` | `drawFigure`, `glowsOf`, `seen`, `barHeight` |
+| Lantern light map and fog viewers (sight 7 and 4.5, lantern light 6.5, `DARK_SHARE`, lit safe places) | `draw/light.ts` | `drawLight`, `viewersOf`, `Viewer` |
+| Glows after the dark: key, captain's pennant, Hunt mark, statuses, emissives, prop flames | `draw/glow.ts` | default `drawGlow` |
+| Status marks over heads, status colors, buildup statuses | `draw/statuses.ts` | `drawStatuses`, `STATUS_COLOR`, `BUILDUP_STATUS` |
+| Health bars and buildup bar | `draw/bars.ts` | default `drawHealth` |
+| Ground marks: skill zones, player traps, warnings, focus and selection rings, director spots | `draw/marks.ts` | `drawZones`, `drawTraps`, `drawWarnings`, `drawRings`, `drawSpots` |
+| Labyrinth and Vault hazards | `draw/hazards.ts` | `HAZARD_LOOKS`, `HazardLook`, `drawHazards` |
+| Objectives: sealing sigils, Ritual rites, Collapse edge | `draw/objectives.ts` | `drawSigil`, `drawRites`, `drawCollapse` |
+| Exit plates and signpost text (objective, reward, ahead, mutators) | `draw/exits.ts` | `EXIT_PLATE`, `drawExits`, `drawSigns` |
+| Items on the floor and their labels | `draw/items.ts` | `drawItems`, `drawItemLabels`, `ItemLabel`, `LABEL_COLOR`, `LABEL_HEIGHT` |
+| Callout, waiting-figure labels, elite affix labels | `draw/labels.ts` | `drawCallout`, `drawFigureLabels`, `drawEliteLabels` |
+| Embers on burning patches | `draw/embers.ts` | default `drawEmbers` |
+| Off-screen arrows to marked monsters and the next rite | `draw/quarry.ts` | default `drawQuarry` |
+| Notice, boss bar, end-of-run screen | `draw/hud.ts` | default `drawHud` |
 
 Tables:
 

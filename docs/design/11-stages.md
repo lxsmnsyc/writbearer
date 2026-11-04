@@ -14,15 +14,15 @@ Stages are open fields, not rooms. See [layout](#layout).
 
 ## Which nodes are stages
 
-| Node                                  | Played as    | Objective                                                                                     |
-| ------------------------------------- | ------------ | --------------------------------------------------------------------------------------------- |
-| Combat                                | Stage        | Reach the exit.                                                                               |
-| Elite                                 | Stage        | An elite pack guards the exit or the key to it.                                               |
-| Ambush                                | Stage        | Looks like a Combat stage. Monsters surround the citizen once a trigger is crossed.           |
-| Refugee                               | Stage        | Reach the exit with the refugees alive. They follow the citizen.                              |
-| Treasure                              | Stage        | A locked vault on the field. The key or lever is elsewhere in the stage. Traps guard it.      |
-| Boss                                  | Closed arena | A walled arena. The gate closes behind the party. The boss has phases.                        |
-| Camp, Town, Event, Shrine, Waystation | Place        | A small, safe area the party walks into. Talking to an NPC or using a station opens its menu. |
+| Node | Played as | Objective |
+|---|---|---|
+| Combat | Stage | Reach the exit. |
+| Elite | Stage | An elite pack guards the exit or the key to it. |
+| Ambush | Stage | Looks like a Combat stage. Monsters surround the citizen once a trigger is crossed. |
+| Refugee | Stage | Reach the exit with the refugees alive. They follow the citizen. |
+| Treasure | Stage | A locked vault on the field. The key or lever is elsewhere in the stage. Traps guard it. |
+| Boss | Closed arena | A walled arena. The gate closes behind the party. The boss has phases. |
+| Camp, Town, Event, Shrine, Waystation | Place | A small, safe area the party walks into. Talking to an NPC or using a station opens its menu. |
 
 ## Layout
 
@@ -30,12 +30,12 @@ Stages are open fields, as in Diablo 2's outdoor areas. There are no rooms or co
 
 Each layer of the Hollow is open in its own way:
 
-| Layer                  | Open field                                                                   |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| The Marches            | Fields, burned villages and forest edges on the surface.                     |
-| The Rift Road          | Wide terraces and ledges along the chasm walls, joined by ramps and bridges. |
-| The Drowned Undercroft | Huge flooded caverns with islands of dry ground.                             |
-| The Sunken Crown       | Ruined plazas and broad streets. Broken buildings are obstacles, not rooms.  |
+| Layer | Open field |
+|---|---|
+| The Marches | Fields, burned villages and forest edges on the surface. |
+| The Rift Road | Wide terraces and ledges along the chasm walls, joined by ramps and bridges. |
+| The Drowned Undercroft | Huge flooded caverns with islands of dry ground. |
+| The Sunken Crown | Ruined plazas and broad streets. Broken buildings are obstacles, not rooms. |
 
 ### Size
 
@@ -47,15 +47,15 @@ Each layer of the Hollow is open in its own way:
 
 The terrain gives the player positioning choices.
 
-| Feature               | What it does for positioning                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------ |
-| Open ground           | Room to move around a fight. Monsters can surround the party.                                          |
-| Choke points          | Narrow passes, bridges and gaps between ruins. A Vanguard can hold one while the citizen waits behind. |
-| Ledges                | Raised ground reached by ramps. Melee monsters must go around.                                         |
-| Obstacles             | Rocks, rubble, ruined walls, pillars. They block movement, sight and projectiles.                      |
-| Water                 | Shallow water slows units. Deep water blocks them until Frost freezes it. Shallow water is in.         |
-| Tall grass and fungus | The citizen can hide in it.                                                                            |
-| Chasm edges           | The border of the stage. Some edges are drops into darkness.                                           |
+| Feature | What it does for positioning |
+|---|---|
+| Open ground | Room to move around a fight. Monsters can surround the party. |
+| Choke points | Narrow passes, bridges and gaps between ruins. A Vanguard can hold one while the citizen waits behind. |
+| Ledges | Raised ground reached by ramps. Melee monsters must go around. |
+| Obstacles | Rocks, rubble, ruined walls, pillars. They block movement, sight and projectiles. |
+| Water | Shallow water slows units. Deep water blocks them until Frost freezes it. Shallow water is in. |
+| Tall grass and fungus | The citizen can hide in it. |
+| Chasm edges | The border of the stage. Some edges are drops into darkness. |
 
 ### Points of interest
 
@@ -122,24 +122,24 @@ Hand-made pieces placed on the field, as Diablo 2's presets.
 - **Size:** square, 46 to 54 tiles a side, after Aghanim's Labyrinth's rooms. The entrance is near a corner of the west edge and the exits are on the far side, so the way crosses the field.
 - **Ground plans:** each open field takes one, by its layer (`src/gen/fields.ts`). Obstacles stand as islands, or as walls with openings, so there is always a second way across.
 
-  | Plan    | Layer                                   | Layout                                                                                                                                                                                                               |
-  | ------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | Grove   | The Marches                             | Clumps of trees on a loose grid with paths looping between them, and lone trees between.                                                                                                                             |
-  | Cavern  | The Rift Road, sometimes the Undercroft | Three by three chambers walled by ragged rock, one or two wide openings in each wall, a few loose rocks.                                                                                                             |
-  | Bridges | The Rift Road, 40%                      | Islands over the chasm, one under the entrance and each exit and three or four between, joined by bridges 3 tiles wide: each island to its nearest, then one more for a loop. The chasm blocks bodies but not sight. |
-  | Halls   | The Undercroft, the Sunken Crown        | Three by three rooms with straight walls, a doorway between each two, and four pillars in each.                                                                                                                      |
+  | Plan | Layer | Layout |
+  |---|---|---|
+  | Grove | The Marches | Clumps of trees on a loose grid with paths looping between them, and lone trees between. |
+  | Cavern | The Rift Road, sometimes the Undercroft | Three by three chambers walled by ragged rock, one or two wide openings in each wall, a few loose rocks. |
+  | Bridges | The Rift Road, 40% | Islands over the chasm, one under the entrance and each exit and three or four between, joined by bridges 3 tiles wide: each island to its nearest, then one more for a loop. The chasm blocks bodies but not sight. |
+  | Halls | The Undercroft, the Sunken Crown | Three by three rooms with straight walls, a doorway between each two, and four pillars in each. |
 
 - **Ground features:** open fields also hold patches that work on anyone standing in them, party and monsters alike (`src/game/footing.ts`). None lies on the entrance, the exits or the places.
   - **Water:** shallow pools, 2.5 to 4 tiles across their middle. Wading slows a unit to 60% speed. Pools may lie across a road. The Marches have 1 or 2, the Undercroft 2 or 3, the Sunken Crown 1 or 2.
   - **Embers:** charred ground, 1.5 to 2.5 tiles across their middle, with sparks that glow in the dark. They burn 4% of maximum health each second stood in them. They never touch a road, so the way on never has to cross them. The Rift Road has 2 or 3, the Sunken Crown 1 or 2.
   - **Blossoms:** pale flowers with a teal heart that shows in the dark, 1 or 2 on every field. The first of the party to walk into one bursts it, and every party member within 4 tiles is mended by 30% of maximum health. Each bursts once.
 
-  | Layer            | Water  | Embers | Blossoms |
-  | ---------------- | ------ | ------ | -------- |
-  | The Marches      | 1 to 2 | none   | 2        |
-  | The Rift Road    | none   | 2 to 3 | 1        |
-  | The Undercroft   | 2 to 3 | none   | 1 to 2   |
-  | The Sunken Crown | 1 to 2 | 1 to 2 | 1        |
+  | Layer | Water | Embers | Blossoms |
+  |---|---|---|---|
+  | The Marches | 1 to 2 | none | 2 |
+  | The Rift Road | none | 2 to 3 | 1 |
+  | The Undercroft | 2 to 3 | none | 1 to 2 |
+  | The Sunken Crown | 1 to 2 | 1 to 2 | 1 |
 
 - **Road:** outside the city, a road follows the way a body walks from the entrance to each exit. A pack watches it from a little past halfway along, on open ground.
 - **Places:**

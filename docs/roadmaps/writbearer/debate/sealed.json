@@ -245,7 +245,10 @@
       "kind": "cost",
       "axis": "time",
       "severity": "high",
-      "answers": ["P2", "P3"],
+      "answers": [
+        "P2",
+        "P3"
+      ],
       "text": "P2 re-opens a gate the user already closed. Doc 16 was approved on 2026-10-27 as seven jobs with 15 nodes used and 20 new upgrades; P2 adds 16 new design items (4 spells, 2 innates, ~10 upgrades) with no numbers, mana or cooldowns, and GOAL says the user approves the jobs' spells and upgrades before work starts. So the split needs a new approval round before pyromancer/cryomancer can start, delaying wave 1.",
       "estimate": {
         "value": 16,
@@ -264,7 +267,9 @@
       "kind": "rebuttal",
       "axis": "tokens",
       "severity": "medium",
-      "answers": ["P3"],
+      "answers": [
+        "P3"
+      ],
       "text": "P3's token estimate is internally inconsistent and uses the wrong bound. 1.3M vs 0.8M is 1.6x, but P3 also says 'Arcanist about 300k plus 500k upgrades'; job-hooks (302k) is an engine-contract node, not a job. The only registry-sized job-pattern node, job-registry, spent 821k alone. A job (M) plus upgrades (L) is uncalibrated and could be 1M+ each, so the split's delta (+0.5M to +1M or more) is unknown, not 0.5M.",
       "estimate": {
         "value": 1.0,
@@ -283,7 +288,10 @@
       "kind": "cost",
       "axis": "time",
       "severity": "medium",
-      "answers": ["P2", "P4"],
+      "answers": [
+        "P2",
+        "P4"
+      ],
       "text": "Dropping Elemental Sense wastes the frozen engine work and removes the mechanic that answers resistances. Priority.WeakToElement and CheckAttackElements (25 tests, contract job-hooks v2 frozen 2026-11-03) were built for the Arcanist's Fire+Frost list. P4 says the Sage may reuse WeakToElement, but the Sage is mj-new-jobs-design/more-jobs work (should, not must), so within starting-jobs the built hook has no user. Also a single-element striker meets Fire-resistant or Frost-resistant enemies with no answer except party composition, so the 'weak to my element' toggle now decides the hire, not the cast.",
       "evidence": {
         "type": "source",
@@ -298,7 +306,9 @@
       "kind": "cost",
       "axis": "time",
       "severity": "medium",
-      "answers": ["P1"],
+      "answers": [
+        "P1"
+      ],
       "text": "The split widens the roster crisis it claims to fix on the striker slot. Eight jobs give five strikers (Ranger, Sellsword, Duelist, Pyromancer, Cryomancer) out of eight, two guards and one support. Recruits are one guard, one striker, one support and two more, and the support slot draws from the Cleric alone, so the two free picks skew to strikers. Doc 16 also states the four strikers differ by shape (reach, wear, one target, area); P1 makes Cryomancer a 'control striker' with slows and walls, which overlaps the Warden/Vanguard control role and dilutes striker identity.",
       "evidence": {
         "type": "source",
@@ -313,7 +323,9 @@
       "kind": "cost",
       "axis": "time",
       "severity": "medium",
-      "answers": ["P4"],
+      "answers": [
+        "P4"
+      ],
       "text": "The change touches the roadmap contract, not only two nodes. GOAL outcome, verification, scope and the line 'all seven starting jobs' say seven; roster-balance (balance test over 7 jobs, owns arcanist/index.ts), COVERAGE.md, inbox, job-registry text, gs-terrain-deep and test/content/jobs.test.ts reference the Arcanist. In src and test, 9 files name it (icons, looks, items, jobs index, tests). A rename of arcanist to pyromancer plus the new nodes means rewriting briefs, owned paths and reserves for waves already planned.",
       "estimate": {
         "value": 25,
@@ -332,7 +344,10 @@
       "kind": "risk",
       "axis": "time",
       "severity": "medium",
-      "answers": ["P1", "P2"],
+      "answers": [
+        "P1",
+        "P2"
+      ],
       "text": "Cryomancer is the weaker half of the split. Doc 16 gives Fire the strongest spell (Inferno) and Fireball with friendly fire; Frost has Nova (area, 7 s cooldown), a filler bolt and utility upgrades (Rimefield, Chill, Glacial Wall). A Frost-only striker with 4 spells and no Fire burst is likely to fail the roster-balance impact test ('every job's spells shorten the fight or lower damage taken') and to need extra balance passes. Likelihood moderate; the cost lands in roster-balance (L).",
       "evidence": {
         "type": "source",
@@ -347,7 +362,10 @@
       "kind": "rebuttal",
       "axis": "time",
       "severity": "low",
-      "answers": ["P1", "A1"],
+      "answers": [
+        "P1",
+        "A1"
+      ],
       "text": "The readability axis argument is weak in this repo's own terms. The rule is one signature shape per unit at 384x216, and doc 16 already reads the Arcanist as 'area'. One mage with a single staff and a bolt color that swaps per target is one silhouette; P1's two signature shapes (tall fire-crowned staff, hanging ice crystal) are the extra figure and look files (src/render/looks/arcanist.ts equivalent) to draw and keep legible at that scale. Dota is a different game: one hero per element, with no 12-upgrade, shard-rank job model.",
       "evidence": {
         "type": "inferred",
@@ -361,7 +379,11 @@
       "by": "opponent",
       "kind": "alternative",
       "axis": "tokens",
-      "answers": ["A1", "A2", "P1"],
+      "answers": [
+        "A1",
+        "A2",
+        "P1"
+      ],
       "text": "Keep the Arcanist (A1) and make the split a measured trigger rather than a plan: arcanist (M) builds Elemental Sense first; if its test fails to fit the damage calculation the worker stops and reports, which the brief already requires. Cryomancer is outlined in mj-new-jobs-design (should) as a later job reusing the Frost spells; A2's +0.5M later rewrite is overpriced, since the doc 16 table already assigns each spell and upgrade to an element (Pyre and Winter builds), so a later split moves content rather than redesigning it. Cost now: 0.8M, 0 new nodes, 7 jobs, no new approval.",
       "estimate": {
         "value": 0.8,
@@ -379,7 +401,10 @@
       "by": "proponent",
       "kind": "concession",
       "text": "Conceding P1 and P2: the user chose one Arcanist, and O1, O3 and O4 show the split reopens a closed gate, wastes CheckAttackElements and puts 5 strikers among 8 jobs.",
-      "answers": ["P1", "P2"],
+      "answers": [
+        "P1",
+        "P2"
+      ],
       "why": "Q1 answer: keep one Arcanist as drawn in doc 16; O1, O3, O4 upheld."
     },
     "P7": {

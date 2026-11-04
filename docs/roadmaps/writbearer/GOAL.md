@@ -1,6 +1,5 @@
 ---
-milestones:
-  [starting-jobs, combat-core, more-jobs, bestiary, gauntlets-stages, items-economy, story-bearer]
+milestones: [starting-jobs, combat-core, more-jobs, bestiary, gauntlets-stages, items-economy, story-bearer]
 merge:
   mode: auto
   method: merge

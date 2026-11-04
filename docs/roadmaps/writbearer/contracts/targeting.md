@@ -17,7 +17,7 @@ Built in `src/sim/events.ts` and `src/sim/targeting.ts`.
 
 ```ts
 // src/sim/events.ts
-SimEvents.CheckTarget = 'CheckTarget';
+SimEvents.CheckTarget = 'CheckTarget'
 
 export interface CheckTargetEvent extends BaseEvent {
   source: Unit; // the unit choosing

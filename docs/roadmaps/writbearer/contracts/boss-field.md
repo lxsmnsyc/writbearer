@@ -23,11 +23,7 @@ export class BossField {
   update(sim: Sim, dt: number, stage: Stage): void; // game.ts calls once per tick
 }
 export function risingWater(opts: { warn: number; every: number; islands: Spot[] }): BossFieldRun;
-export function fallingSections(opts: {
-  sections: Rect[];
-  warn: number;
-  every: number;
-}): BossFieldRun;
+export function fallingSections(opts: { sections: Rect[]; warn: number; every: number }): BossFieldRun;
 ```
 
 ## Behavior
