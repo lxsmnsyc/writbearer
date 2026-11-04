@@ -1,0 +1,3 @@
+- Split MONSTERS into four faction modules, table.ts, spawn.ts, steps.ts; roster.ts is a barrel.
+- Added test/content/monster-table.test.ts (key order).
+- test/sim/concealment.test.ts timed out (5 s) once under machine load; passes alone and on rerun of the full suite.
