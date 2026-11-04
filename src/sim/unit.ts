@@ -150,6 +150,11 @@ export default class Unit {
   // The blow that killed it, and whether it tore the body apart
   lastBlow: { value: number; flags: number } | null = null;
   torn = false;
+  // How much more gold it drops when killed, such as 1.5 after a Pocket Change kill
+  bounty = 1;
+  // Counts that last the run and are saved with a merc, by key, such as the
+  // phases a Sellsword survived (src/content/jobs/sellsword/upgrades.ts)
+  readonly tally = new Map<string, number>();
   // Personality traits, rolled when recruited. They never change.
   traits: string[] = [];
   // How a merc feels about the job, and how well it follows orders, 0 to 100

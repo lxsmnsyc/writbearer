@@ -66,6 +66,9 @@ describe('the job registry', () => {
     for (const upgrade of JOBS.duelist.upgrades) {
       expect(isBuilt(upgrade), upgrade.id).toBe(true);
     }
+    for (const upgrade of JOBS.sellsword.upgrades) {
+      expect(isBuilt(upgrade), upgrade.id).toBe(true);
+    }
   });
 
   it('gives every job a look, and starter gear that resolves to bases it may wear', () => {

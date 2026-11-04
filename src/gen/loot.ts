@@ -223,8 +223,8 @@ export function rollItem(
   return item;
 }
 
-/** A pile of gold, more deeper in. */
-export function rollGold(rng: RNG, itemLevel: number): Item {
+/** A pile of gold, more deeper in. `bounty` multiplies it, as Pocket Change does. */
+export function rollGold(rng: RNG, itemLevel: number, bounty = 1): Item {
   return {
     uid: nextUid++,
     base: GOLD,
@@ -236,7 +236,7 @@ export function rollGold(rng: RNG, itemLevel: number): Item {
     sockets: 0,
     cards: [],
     refine: 0,
-    quantity: rng.int(4, 12) * itemLevel,
+    quantity: Math.round(rng.int(4, 12) * itemLevel * bounty),
   };
 }
 
@@ -256,7 +256,7 @@ export function potionStack(base: ItemBase, quantity: number): Item {
 }
 
 /** What a monster of this rank and level drops, if anything. */
-export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
+export function rollDrops(rng: RNG, itemLevel: number, rank: Rank, bounty = 1): Item[] {
   const out: Item[] = [];
   if (rng.chance(DROP_CHANCE[rank])) {
     for (let i = 0; i < DROP_COUNT[rank]; i++) {
@@ -264,7 +264,7 @@ export function rollDrops(rng: RNG, itemLevel: number, rank: Rank): Item[] {
     }
   }
   if (rng.chance(GOLD_CHANCE)) {
-    out.push(rollGold(rng, itemLevel));
+    out.push(rollGold(rng, itemLevel, bounty));
   }
   if (rng.chance(POTION_CHANCE)) {
     out.push(rollPotion(rng, itemLevel));

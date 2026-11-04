@@ -64,6 +64,8 @@ export interface MercSave {
   shards?: number;
   // Each spell's elite upgrade: spell id, upgrade id
   upgrades?: [string, string][];
+  // Run-long counts kept by upgrades, such as the phases a Sellsword survived
+  tally?: [string, number][];
   equipment: [EquipSlot, ItemSave][];
   belt: (ItemSave | null)[];
 }
@@ -171,6 +173,7 @@ export function saveMerc(unit: Unit): MercSave {
     toggles: unit.toggles ? copyToggles(unit.toggles) : null,
     ranks: [...unit.skillRanks],
     ...(unit.spells.length > 0 ? { shards: unit.shards, upgrades: [...unit.upgrades] } : {}),
+    ...(unit.tally.size > 0 ? { tally: [...unit.tally] } : {}),
     equipment: [...unit.equipment].map(([slot, item]) => [slot, saveItem(item)]),
     belt: unit.belt.map((stack) => stack && saveItem(stack)),
   };
@@ -202,6 +205,9 @@ export function loadMerc(sim: Sim, s: MercSave, x: number, z: number): Unit {
   unit.morale = s.morale;
   unit.discipline = s.discipline;
   loadSpells(unit, s);
+  for (const [key, value] of s.tally ?? []) {
+    unit.tally.set(key, value);
+  }
   unit.recalc();
   unit.hp = s.hp;
   unit.mana = s.mana;
