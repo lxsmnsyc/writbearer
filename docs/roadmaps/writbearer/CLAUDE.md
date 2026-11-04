@@ -9,6 +9,7 @@ Rules for agents working on a node:
 - Do not edit other briefs, `status` fields, contracts or `GOAL.md`. The orchestrator owns them.
 - If a contract is wrong, write `contracts/<name>.change-request.md` and adapt locally. Do not edit the contract.
 - A job node never edits `src/content/items.ts`, `roster.ts`, `trees.ts`, `recruits.ts`, `src/ui/icons.ts` or `src/render/rig.ts` directly. Everything a job needs goes in its own module through the job-def contract.
+- Run the formatter only on the files you changed, by path. Never format the whole repo: it rewrites docs, changesets and other nodes' files.
 - Follow the code style of `src/content/vanguard.ts`: one exported const per skill, a short comment on what it does, numbers as first guesses.
 - Keep notes in your `log.md`. Finish by writing `outcome.md` from the template.
 - Read the outcomes of your direct dependencies. Do not read other nodes' logs.

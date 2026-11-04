@@ -10,3 +10,4 @@ Design items with no node yet, from `COVERAGE.md`. Decide at a checkpoint whethe
 - A Ranger raised to the monster side by the Creditor still chains Charged Arrow among its own side. Guarding it makes `creditor.test` too easy (3 wins of 6, limit 1). Fix together with a Creditor retune.
 - Cleric parties with the Sellsword or the Duelist win the layer-1 boss only 5 and 7 of 24 seeds (roster-balance); `bosses.test` sums the layers, so it does not catch this. Tune in a later balance pass.
 - `e2e/orders.spec.ts` and the first `e2e/recruit.spec.ts` test failed once in a 4.4-minute full e2e run and passed alone and on rerun (roster-balance). Watch for flakes.
+- A `GameState` test harness (stubbed canvas) that calls `moveOn`, so hooks on area change (`restoreAll` from be-strippers) can be tested through the real path.
