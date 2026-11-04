@@ -1,7 +1,7 @@
 ---
 id: concealment-timeout
 title: Concealment test that times out under load
-status: active
+status: done
 priority: should
 type: fix
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 80787
 owns:
   - test/sim/concealment.test.ts
 shared: []
@@ -32,8 +32,8 @@ depends_on: []
 
 ## Acceptance
 
-- [ ] The test passes in a full `pnpm test` while another `pnpm test` runs at the same time.
-- [ ] It still checks the same Escort rate with the same tolerance.
+- [x] The test passes in a full `pnpm test` while another `pnpm test` runs at the same time.
+- [x] It still checks the same Escort rate with the same tolerance.
 
 ## Notes for the worker
 

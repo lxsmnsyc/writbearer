@@ -28,3 +28,5 @@
 ## Size
 
 - Estimated S, actual S.
+
+Landed as direct commit c7591ef on main (fresh review: one debug log removed; proof: base times out under two concurrent full runs, branch passes).
