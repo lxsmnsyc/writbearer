@@ -1,7 +1,7 @@
 ---
 id: be-flyers
 title: Flyers: out of melee reach until grounded
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 157000
 owns:
   - src/sim/flight.ts
   - src/sim/ai/flyer.ts
@@ -69,13 +69,15 @@ A monster can fly. While aloft, melee attacks and melee skills cannot target it;
 
 ## Acceptance
 
-- [ ] A test flyer (a test-only template in `test/sim/flyers.test.ts`, not in the roster) aloft is never picked by a melee merc, even with nothing else to attack; the merc picks it once it lands.
-- [ ] A ranged merc and a projectile do hit the aloft flyer.
-- [ ] A Pin Down shot grounds it for the root's time, then it takes off again; the same shot on a non-flyer only roots.
-- [ ] Eagle Eye's bonus applies against the flyer and not against a walker.
-- [ ] A flyer that lands to strike can be hit by melee only while grounded; a party of two melee mercs and no ranged one still wins by waiting for it to land, so no stalemate: the test runs 200 s of sim time and the fight ends.
-- [ ] The fight tests that existed before still pass unchanged.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
+- [x] A test flyer (a test-only template in `test/sim/flyers.test.ts`, not in the roster) aloft is never picked by a melee merc, even with nothing else to attack; the merc picks it once it lands.
+- [x] A ranged merc and a projectile do hit the aloft flyer.
+- [x] A Pin Down shot grounds it for the root's time, then it takes off again; the same shot on a non-flyer only roots.
+- [x] Eagle Eye's bonus applies against the flyer and not against a walker.
+- [x] A flyer that lands to strike can be hit by melee only while grounded; a party of two melee mercs and no ranged one still wins by waiting for it to land, so no stalemate: the test runs 200 s of sim time and the fight ends.
+- [x] The fight tests that existed before still pass unchanged.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
+
+Landed in PR #24.
 
 ## Sizing
 

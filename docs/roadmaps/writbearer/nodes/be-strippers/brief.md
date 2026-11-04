@@ -1,7 +1,7 @@
 ---
 id: be-strippers
 title: Strippers: disable an item for the stage
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 143000
 owns:
   - src/sim/strip.ts
   - src/sim/ai/stripper.ts
@@ -66,14 +66,16 @@ A stripper monster strikes a merc (or the bearer) and disables one equipped item
 
 ## Acceptance
 
-- [ ] A test stripper (test-only template) hits a merc wearing a sword and armor: the sword's attack bonus is gone, `derived` stats drop by that item's modifiers, and the armor is untouched.
-- [ ] The merc's weapon being stripped means its basic attack uses the unarmed weapon, and it still attacks.
-- [ ] A second hit strips nothing more from the same merc during the same area; a different merc may be stripped.
-- [ ] Handing the item back (the same code path as a normal hand-over) restores the bonus.
-- [ ] Changing area restores every stripped item.
-- [ ] A save taken at the next area entrance has the item working; a test saves and loads a merc after a strip (`src/game/save.ts` keeps the item, never a flag), proving no item is lost or doubled.
-- [ ] An equipped item cannot be unequipped and sold for its value as if intact while stripped without the strip clearing; test the vault and sell paths do not duplicate it.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
+- [x] A test stripper (test-only template) hits a merc wearing a sword and armor: the sword's attack bonus is gone, `derived` stats drop by that item's modifiers, and the armor is untouched.
+- [x] The merc's weapon being stripped means its basic attack uses the unarmed weapon, and it still attacks.
+- [x] A second hit strips nothing more from the same merc during the same area; a different merc may be stripped.
+- [x] Handing the item back (the same code path as a normal hand-over) restores the bonus.
+- [x] Changing area restores every stripped item.
+- [x] A save taken at the next area entrance has the item working; a test saves and loads a merc after a strip (`src/game/save.ts` keeps the item, never a flag), proving no item is lost or doubled.
+- [x] An equipped item cannot be unequipped and sold for its value as if intact while stripped without the strip clearing; test the vault and sell paths do not duplicate it.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`
+
+Landed in PR #23.
 
 ## Sizing
 
