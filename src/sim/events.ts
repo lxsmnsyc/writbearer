@@ -3,11 +3,13 @@ import type { HitEventMap } from './events/hits';
 import type { SkillEventMap } from './events/skills';
 import type { StatusEventMap } from './events/statuses';
 import type { LifeEventMap } from './events/life';
+import type { CorpseEventMap } from './events/cc-corpses';
 
 export type * from './events/hits';
 export type * from './events/skills';
 export type * from './events/statuses';
 export type * from './events/life';
+export type * from './events/cc-corpses';
 
 export const enum SimEvents {
   CheckHit = 'CheckHit',
@@ -31,6 +33,7 @@ export const enum SimEvents {
   CheckSkillRank = 'CheckSkillRank',
   CheckAttackElements = 'CheckAttackElements',
   UnitRevealed = 'UnitRevealed',
+  UnitLaidToRest = 'UnitLaidToRest',
 }
 
 /** Which event carries which shape, on which priority scale. Entries live in the group modules. */
@@ -39,4 +42,5 @@ export interface SimEventMap
     HitEventMap,
     SkillEventMap,
     StatusEventMap,
-    LifeEventMap {}
+    LifeEventMap,
+    CorpseEventMap {}

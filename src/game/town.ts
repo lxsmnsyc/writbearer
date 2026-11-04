@@ -5,6 +5,7 @@ import type RNG from '../core/rng';
 import { potionStack, socketLimit } from '../gen/loot';
 import { type Item, ItemType, MAX_REFINE, refinable } from '../sim/item';
 import type Unit from '../sim/unit';
+import { isRested } from '../sim/corpse';
 import type { Pack } from './inventory';
 
 // A Town's services: the Blacksmith, the Synthesis bench, the Temple and
@@ -131,6 +132,9 @@ export function raise(pack: Pack, merc: Unit): string | null {
   }
   if (merc.torn) {
     return `${merc.name} was torn apart. Nothing is left to raise.`;
+  }
+  if (isRested(merc)) {
+    return `${merc.name} was laid to rest. Nothing is left to raise.`;
   }
   const cost = raiseCost(merc);
   if (pack.gold < cost) {

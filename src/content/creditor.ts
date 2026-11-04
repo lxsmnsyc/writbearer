@@ -1,6 +1,7 @@
 import { type Skill, Targeting } from '../sim/skill';
 import { Morale, moraleOf } from '../sim/morale';
 import { Hunt } from '../sim/ai';
+import { canRaise } from '../sim/corpse';
 import type Sim from '../sim/sim';
 import { strike } from '../sim/sim';
 import { DREAD } from '../sim/statuses';
@@ -96,7 +97,7 @@ export function reveal(sim: Sim, bearer: Unit, level: number, souls: number): Re
   for (const m of fled) {
     sim.units.delete(m);
   }
-  const raised = mercs.filter((m) => !m.alive && !m.torn);
+  const raised = mercs.filter((m) => canRaise(m));
   for (const m of raised) {
     m.revive(RAISED_HEALTH);
     m.side = Side.Monster;

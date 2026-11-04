@@ -1,3 +1,4 @@
+import { canRaise } from '../corpse';
 import {
   type Buildup,
   type CheckHitEvent,
@@ -94,7 +95,7 @@ export function heal(unit: Unit, target: Unit, value: number, flags = 0): UnitHe
  * A torn body cannot come back. Returns whether it did.
  */
 export function revive(unit: Unit, share: number): boolean {
-  if (unit.alive || unit.torn) {
+  if (!canRaise(unit)) {
     return false;
   }
   unit.alive = true;
