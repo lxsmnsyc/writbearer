@@ -1,7 +1,7 @@
 ---
 id: warden-upgrades
 title: Warden: its 12 elite upgrades
-status: active
+status: done
 priority: must
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-27
+spent: 257675
 owns:
   - src/content/jobs/warden/upgrades.ts
   - test/sim/warden-upgrades.test.ts
@@ -53,9 +54,9 @@ Build the Warden's 12 elite upgrades (3 per spell) as `builds-design` drew them 
 
 ## Acceptance
 
-- [ ] All 12 upgrades have a patch or effect, and each has a test in `test/sim/warden-upgrades.test.ts`.
-- [ ] Every upgrade names one of the job's 4 spells, 3 per spell (the job-def contract test checks it).
-- [ ] Fast check passes.
+- [x] All 12 upgrades have a patch or effect, and each has a test in `test/sim/warden-upgrades.test.ts`.
+- [x] Every upgrade names one of the job's 4 spells, 3 per spell (the job-def contract test checks it).
+- [x] Fast check passes.
 
 ## Sizing
 
