@@ -63,6 +63,7 @@ Build the Warden's 12 elite upgrades (3 per spell) as `builds-design` drew them 
 
 ## Notes for the worker
 
+- `test/content/jobs.test.ts` asserts that each job's built upgrades are all built, one line per job (arcanist-upgrades added the Arcanist's). Add this job's line there; do not rewrite the others.
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
 - Interpose redirects hits aimed at the bearer with a UnitDamage listener at `DamagePriority.Pre`, as in `docs/design/03-combat-engine.md#example-interpose`. Mark the hit with the existing `Redirected` flag so it is not redirected twice.
 - Tether caps chase distance from the bearer at 3 tiles, through a CheckChase listener (job-hooks).

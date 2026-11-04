@@ -56,6 +56,7 @@ Mostly reshaping code that exists. M.
 
 ## Notes for the worker
 
+- `test/content/jobs.test.ts` asserts that each job's built upgrades are all built, one line per job (arcanist-upgrades added the Arcanist's). Add this job's line there; do not rewrite the others.
 - Old saves refund this job's tree ranks as shards (build-rules does it); do not add a second path.
 - Charge needs knockback, which is not built (cc-job-systems). Build it without the push and note it in the outcome.
 - Do not add job code back to `skills.ts` or `passives.ts`.

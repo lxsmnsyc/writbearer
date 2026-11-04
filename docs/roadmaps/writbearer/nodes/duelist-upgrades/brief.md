@@ -1,7 +1,7 @@
 ---
 id: duelist-upgrades
 title: Duelist: its 12 elite upgrades
-status: todo
+status: active
 priority: must
 type: feature
 outline: false
@@ -60,6 +60,7 @@ Build the Duelist's 12 elite upgrades (3 per spell) as `builds-design` drew them
 
 ## Notes for the worker
 
+- `test/content/jobs.test.ts` asserts that each job's built upgrades are all built, one line per job (arcanist-upgrades added the Arcanist's). Add this job's line there; do not rewrite the others.
 - Engine notes by source skill. Use the notes for the skills doc 16 makes upgrades.
 - Riposte parries melee hits: cancel the hit in CheckHit or the damage Pre step and answer with a free counter that cannot be parried back.
 - Flurry is four hits, each through the full damage pipeline.

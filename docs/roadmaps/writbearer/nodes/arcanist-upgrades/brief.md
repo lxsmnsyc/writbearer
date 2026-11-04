@@ -1,13 +1,14 @@
 ---
 id: arcanist-upgrades
 title: Arcanist: its 12 elite upgrades
-status: active
+status: done
 priority: must
 type: feature
 outline: false
 milestone: starting-jobs
 target:
 from:
+spent: 216720
 size: L
 spike: false
 verify: pnpm vitest run test/sim/arcanist-upgrades.test.ts
@@ -50,9 +51,9 @@ Build the Arcanist's 12 elite upgrades (3 per spell) as `builds-design` drew the
 
 ## Acceptance
 
-- [ ] All 12 upgrades have a patch or effect, and each has a test in `test/sim/arcanist-upgrades.test.ts`.
-- [ ] Every upgrade names one of the job's 4 spells, 3 per spell (the job-def contract test checks it).
-- [ ] Fast check passes.
+- [x] All 12 upgrades have a patch or effect, and each has a test in `test/sim/arcanist-upgrades.test.ts`.
+- [x] Every upgrade names one of the job's 4 spells, 3 per spell (the job-def contract test checks it).
+- [x] Fast check passes.
 
 ## Sizing
 

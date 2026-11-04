@@ -1,13 +1,14 @@
 ---
 id: hidden-units
 title: Hidden and disguised units
-status: active
+status: done
 priority: must
 type: feature
 outline: false
 milestone: starting-jobs
 target:
 from:
+spent: 173970
 size: M
 spike: false
 verify: pnpm vitest run test/sim/concealment.test.ts
@@ -57,9 +58,9 @@ Add hidden and disguised units as in the concealment contract, and use them in o
 
 ## Acceptance
 
-- [ ] Mercs ignore a hidden monster until it attacks or is revealed.
-- [ ] A disguised assassin in an Escort is drawn and listed as a refugee until it strikes.
-- [ ] Fast check passes.
+- [x] Mercs ignore a hidden monster until it attacks or is revealed.
+- [x] A disguised assassin in an Escort is drawn and listed as a refugee until it strikes.
+- [x] Fast check passes.
 
 ## Sizing
 
