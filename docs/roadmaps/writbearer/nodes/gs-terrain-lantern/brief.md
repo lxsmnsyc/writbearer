@@ -28,7 +28,7 @@ shared:
   - src/game/game/render.ts
   - src/game/game/tick.ts
   - src/game/game/input.ts
-  - src/content/spawn.ts
+  - src/content/monsters/spawn-steps.ts
   - src/ui/app.tsx
   - src/sim/ground.ts
 reserves: []
@@ -88,4 +88,4 @@ Sim state replacing three renderer numbers, plus a toggle key. M.
 ## After the splits
 
 - After split-unit: the Unit logic lives in `src/sim/unit/` (movement, casting, statuses, gear, combat, kit). Edit the module listed under `shared:`, keep new per-unit state in a WeakMap in your own module, and leave `src/sim/unit.ts` alone.
-- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in `SPAWN_STEPS` (`src/content/monsters/spawn-steps.ts`, a step is `(unit, template, sim) => void`); `src/content/roster.ts` is a barrel and stays unchanged.

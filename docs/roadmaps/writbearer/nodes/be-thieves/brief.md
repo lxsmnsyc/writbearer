@@ -27,7 +27,7 @@ owns:
 shared:
   - src/sim/ai/monster.ts
   - src/sim/sim.ts
-  - src/content/spawn.ts
+  - src/content/monsters/spawn-steps.ts
   - src/game/game/listeners.ts
   - src/game/inventory.ts
   - src/ui/log.ts
@@ -89,4 +89,4 @@ M: pattern new to the repo (a sim port into the pack, a non-death exit), but sma
 
 ## After the splits
 
-- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in `SPAWN_STEPS` (`src/content/monsters/spawn-steps.ts`, a step is `(unit, template, sim) => void`); `src/content/roster.ts` is a barrel and stays unchanged.

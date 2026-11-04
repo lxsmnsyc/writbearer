@@ -26,7 +26,7 @@ owns:
 shared:
   - src/sim/ai/monster.ts
   - src/sim/mechanics/death.ts
-  - src/content/spawn.ts
+  - src/content/monsters/spawn-steps.ts
   - src/content/monster-skills.ts
 reserves: []
 provides: []
@@ -90,4 +90,4 @@ M: the corpse rules come from `cc-corpses`; this adds a cast, a spawn and a draw
 
 ## After the splits
 
-- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in the `spawnMonster` step list in `src/content/spawn.ts`; `src/content/roster.ts` is a barrel and stays unchanged.
+- After split-roster: new monsters go in their faction module under `src/content/monsters/`, a template flag is one module plus one entry in `SPAWN_STEPS` (`src/content/monsters/spawn-steps.ts`, a step is `(unit, template, sim) => void`); `src/content/roster.ts` is a barrel and stays unchanged.

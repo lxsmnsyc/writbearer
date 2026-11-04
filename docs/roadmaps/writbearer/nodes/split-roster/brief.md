@@ -1,7 +1,7 @@
 ---
 id: split-roster
 title: Split src/content/roster.ts by feature
-status: active
+status: done
 priority: should
 type: refactor
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 112251
 owns:
   - src/content/roster.ts
   - src/content/monsters/**
@@ -39,17 +39,17 @@ Move the monster table and the spawn functions in `src/content/roster.ts` (420 l
 
 ## Steps
 
-- [ ] `src/content/monsters/<faction>.ts`: the `MONSTERS` entries grouped by the faction their comments name (the Old King's guard and dead, the Church's Penitents, the Blight, and the rest). `src/content/monsters/table.ts` builds `MONSTERS` from them with the keys in today's order, so `MonsterKind` and any iteration order stay the same.
-- [ ] `src/content/spawn.ts`: `spawn`, `spawnBearer`, `spawnMerc`, `spawnMonster`, `spawnRefugee`, `spawnDisguisedAssassin`, `ELITE`, `BEARER`, `REFUGEE`, `ASSASSIN_FUSE`.
-- [ ] Registration point in `spawnMonster`: an ordered list of template-flag steps, each `(unit, template, sim) => void`, run after the unit is made. Empty today, or holding any flag handling that already exists, in today's order. A node that adds a flag (thief, kidnapper, flyer, corpse raiser) adds one module and one list entry.
-- [ ] `roster.ts` re-exports `Template`, `MONSTERS`, `MercKind`, `MonsterKind` and the spawn functions.
+- [x] `src/content/monsters/<faction>.ts`: the `MONSTERS` entries grouped by the faction their comments name (the Old King's guard and dead, the Church's Penitents, the Blight, and the rest). `src/content/monsters/table.ts` builds `MONSTERS` from them with the keys in today's order, so `MonsterKind` and any iteration order stay the same.
+- [x] `src/content/spawn.ts`: `spawn`, `spawnBearer`, `spawnMerc`, `spawnMonster`, `spawnRefugee`, `spawnDisguisedAssassin`, `ELITE`, `BEARER`, `REFUGEE`, `ASSASSIN_FUSE`.
+- [x] Registration point in `spawnMonster`: an ordered list of template-flag steps, each `(unit, template, sim) => void`, run after the unit is made. Empty today, or holding any flag handling that already exists, in today's order. A node that adds a flag (thief, kidnapper, flyer, corpse raiser) adds one module and one list entry.
+- [x] `roster.ts` re-exports `Template`, `MONSTERS`, `MercKind`, `MonsterKind` and the spawn functions.
 
 ## Acceptance
 
-- [ ] Every existing test passes unchanged (`test/` has no diff), including `test/gen/stage-snapshot.test.ts`.
-- [ ] `Object.keys(MONSTERS)` returns the same keys in the same order as before (add a test if none checks it).
-- [ ] No importer outside the owned paths changes.
-- [ ] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
+- [x] Every existing test passes unchanged (`test/` has no diff), including `test/gen/stage-snapshot.test.ts`.
+- [x] `Object.keys(MONSTERS)` returns the same keys in the same order as before (add a test if none checks it).
+- [x] No importer outside the owned paths changes.
+- [x] Fast check passes: `pnpm typecheck && pnpm lint && pnpm test`.
 
 ## Sizing
 
@@ -59,3 +59,5 @@ M: a table and five functions moved, plus one step list; the snapshot tests prov
 
 - Nothing else goes into this change, so the review only checks that code moved.
 - Keep the job rule in `docs/roadmaps/writbearer/CLAUDE.md`: job nodes never edit `roster.ts`; that now covers `src/content/spawn.ts` and `src/content/monsters/` too.
+
+Merged in PR #20.
