@@ -31,3 +31,4 @@ One line per closed node: date, roadmap/node, estimated against actual size, tok
 2026-11-04 writbearer/ranger-upgrades est M actual M, 279753 tokens: Charged Arrow kept off doc 16; passive state moved to WeakMaps
 2026-11-04 writbearer/mastery-offers est M actual M, 228134 tokens: five small edits outside owned paths (Record<Reward> types, state)
 2026-11-04 writbearer/stale-e2e est S actual S, 126625 tokens: both causes were in the tests
+2026-11-04 writbearer/roster-balance est L actual L, 375204 tokens: Ranger impact held on 4 seeds only; fix round raised seeds to 32 and added CHAIN_SHARE
