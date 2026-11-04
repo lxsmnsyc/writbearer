@@ -1,7 +1,10 @@
 ---
 milestones: [starting-jobs, combat-core, more-jobs, bestiary, gauntlets-stages, items-economy, story-bearer]
 merge:
-  mode: maintainer
+  mode: auto
+  method: merge
+  max_size: M
+  exclude: [release, hotfix, contract, gate, story]
 branches:
 ---
 
