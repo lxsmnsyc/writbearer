@@ -9,6 +9,7 @@ import { freshUid } from '../gen/loot';
 import type { Stage } from '../gen/stage';
 import { type Toggles, copyToggles } from '../sim/ai';
 import { applyUpgrade, upgradeById } from '../sim/builds';
+import { isRested, markRested } from '../sim/corpse';
 import type { AffixRoll, EquipSlot, Item, ItemBase, Quality } from '../sim/item';
 import type Sim from '../sim/sim';
 import type { BaseStats, Modifier } from '../sim/stats';
@@ -57,6 +58,8 @@ export interface MercSave {
   mana: number;
   alive: boolean;
   torn: boolean;
+  /** Laid to rest. Saves from before have none. */
+  rested?: boolean;
   toggles: Toggles | null;
   // Skill-tree ranks, in the order they were first learned, or spell ranks
   ranks: [string, number][];
@@ -173,6 +176,7 @@ export function saveMerc(unit: Unit): MercSave {
     mana: unit.mana,
     alive: unit.alive,
     torn: unit.torn,
+    ...(isRested(unit) ? { rested: true } : {}),
     toggles: unit.toggles ? copyToggles(unit.toggles) : null,
     ranks: [...unit.skillRanks],
     ...(unit.spells.length > 0 ? { shards: unit.shards, upgrades: [...unit.upgrades] } : {}),
@@ -216,6 +220,9 @@ export function loadMerc(sim: Sim, s: MercSave, x: number, z: number): Unit {
   unit.mana = s.mana;
   unit.alive = s.alive;
   unit.torn = s.torn;
+  if (s.rested) {
+    markRested(unit);
+  }
   return unit;
 }
 
