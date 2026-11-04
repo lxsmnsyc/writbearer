@@ -5,6 +5,7 @@ import { allowed, forbids } from '../targeting';
 import type Unit from '../unit';
 import type { Zone } from '../zone';
 import { engage, nearest } from './common';
+import thiefStep from './thief';
 
 /** What a monster goes for. */
 export const enum Hunt {
@@ -242,6 +243,7 @@ export const MONSTER_STEPS: MonsterStep[] = [
   runStep,
   heraldStep,
   lureStep,
+  thiefStep,
   skillStep,
   supportStep,
   pursueStep,

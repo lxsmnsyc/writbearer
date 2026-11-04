@@ -6,6 +6,7 @@ import setupMechanics from './mechanics';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
 import { allowed, canTarget, forbids } from './targeting';
+import type { Pocket } from './theft';
 import type { Trap } from './trap';
 import { type Warning, updateWarnings } from './warning';
 import { type Zone, updateZones, zonesAt } from './zone';
@@ -275,6 +276,8 @@ export default class Sim extends EventEngine<SimEventMap> {
   // The party's gold, for spells that spend it, such as Bribe. The run sets
   // it; without one, nothing can be paid for.
   purse: { gold: number } | null = null;
+  // The pack, for thieves (src/sim/theft.ts). The run sets it.
+  pocket: Pocket | null = null;
   // When each of the bearer's shouts can be given again, by shout
   readonly shoutReady: Partial<Record<number, number>> = {};
 

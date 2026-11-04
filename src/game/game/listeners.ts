@@ -12,6 +12,7 @@ import { AREAS_PER_LAYER } from '../../gen/layers';
 import { applySets } from '../../content/sets';
 import type GameState from './state';
 import { endRun } from './saving';
+import watchTheft from './theft';
 
 // Impact: hits at least this heavy freeze the world briefly and shake it.
 const HEAVY_HIT = 14;
@@ -29,6 +30,7 @@ export default function watchSim(g: GameState): void {
       g.pack.gold = value;
     },
   };
+  watchTheft(g);
   // Run-long counts: the phases each Sellsword survives, and how long it
   // fights with each kind of weapon.
   let phase: number | null = null;

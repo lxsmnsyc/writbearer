@@ -19,6 +19,8 @@ export interface Template {
   elementLevel?: number;
   attackElement?: Element;
   hunt?: Hunt;
+  // Takes an item from the pack and runs for an exit (src/sim/theft.ts)
+  thief?: boolean;
   skills?: Skill[];
 }
 
