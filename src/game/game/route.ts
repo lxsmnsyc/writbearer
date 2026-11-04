@@ -13,6 +13,7 @@ import { type Cell, type LayerMap, type MapNode, generateLayerMap, seenAs } from
 import { AREAS_PER_LAYER, LAYERS } from '../../gen/layers';
 import { type MiniBossId, miniBossesOf } from '../../content/minibosses';
 import { EVENT_BY_ID, pickEvent } from '../../content/events';
+import { seesAmbushes } from '../../content/jobs/warden/upgrades';
 import type GameState from './state';
 
 const AREA_ROW_STREAM = 100;
@@ -183,13 +184,15 @@ export function layerMap(g: GameState): {
   layer: number;
   title: string;
 } {
+  const foresight = seesAmbushes(g.sim);
   return {
-    // An Ambush shows as a Camp until the party has been there.
+    // An Ambush shows as a Camp until the party has been there, unless a
+    // Warden with Never Surprised is in it.
     map: {
       ...g.map,
       columns: g.map.columns.map((column, c) =>
         column.map((n, row) =>
-          g.path.some((p) => p.column === c && p.row === row) ? n : seenAs(n),
+          foresight || g.path.some((p) => p.column === c && p.row === row) ? n : seenAs(n),
         ),
       ),
     },
