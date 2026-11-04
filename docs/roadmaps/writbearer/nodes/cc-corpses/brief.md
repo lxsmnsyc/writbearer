@@ -1,7 +1,7 @@
 ---
 id: cc-corpses
 title: Corpses laid to rest
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

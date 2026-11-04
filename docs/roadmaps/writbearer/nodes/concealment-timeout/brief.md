@@ -1,7 +1,7 @@
 ---
 id: concealment-timeout
 title: Concealment test that times out under load
-status: todo
+status: active
 priority: should
 type: fix
 outline: false

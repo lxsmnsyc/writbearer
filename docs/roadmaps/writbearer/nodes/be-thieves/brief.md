@@ -1,7 +1,7 @@
 ---
 id: be-thieves
 title: Thieves: take an item from the pack and run
-status: todo
+status: active
 priority: should
 type: feature
 story:
