@@ -1,5 +1,6 @@
 import { type CheckSkillCostEvent, SimEvents } from '../events';
 import type { Skill } from '../skill';
+import { MAX_RANK } from '../stats';
 import type Unit from '../unit';
 
 /** Starts a basic attack. The blow lands later, on the hit frame. */
@@ -56,4 +57,22 @@ export function startCast(unit: Unit, skill: Skill, target: Unit | null): boolea
 /** The rank learned in a skill, or 0. Monster skills count as rank 1. */
 export function skillRank(unit: Unit, id: string): number {
   return unit.skillRanks.get(id) ?? (unit.skills.some((s) => s.id === id) ? 1 : 0);
+}
+
+/** The rank gear adds to a spell the unit has, so that the sum stays within MAX_RANK. */
+export function bonusRank(unit: Unit, id: string): number {
+  const learned = skillRank(unit, id);
+  if (learned <= 0) {
+    return 0;
+  }
+  return effectiveRank(unit, id) - learned;
+}
+
+/** The learned rank plus gear, within 1 to MAX_RANK. 0 for a spell the unit lacks. */
+export function effectiveRank(unit: Unit, id: string): number {
+  const learned = skillRank(unit, id);
+  if (learned <= 0) {
+    return 0;
+  }
+  return Math.min(MAX_RANK, Math.max(1, learned + (unit.stats.spellRanks.get(id) ?? 0)));
 }

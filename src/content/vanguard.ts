@@ -184,7 +184,7 @@ export const INTERCEPT: Skill = {
       threat !== null &&
       bearer !== null &&
       u.distanceTo(bearer) > 1.5 &&
-      u.distanceTo(bearer) <= interceptReach(u.skillRank('intercept') || 1)
+      u.distanceTo(bearer) <= interceptReach(rankOf(u, 'intercept'))
     );
   },
   elite(u) {

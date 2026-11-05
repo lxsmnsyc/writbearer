@@ -3,6 +3,7 @@ import { Dynamic } from 'solid-js/web';
 import { JOBS, type SpellIcon, isJobKind } from '../content/jobs';
 import { MAX_RANK, cannotRaise, raise, rankCap, spellOf, upgradeOf } from '../sim/builds';
 import { SkillMode } from '../sim/skill';
+import { bonusRank, effectiveRank } from '../sim/unit/casting';
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Icon, Notice, Segmented, Tip } from './kit';
@@ -54,7 +55,7 @@ export default function SpellPanel(props: Props): JSX.Element {
   const v = (): boolean => props.version >= 0;
   const shards = (): number => (v() ? props.unit.shards : 0);
   const cap = (): number => (v() ? rankCap(props.unit.level) : 0);
-  const rank = (id: string): number => (v() ? props.unit.skillRank(id) : 0);
+  const rank = (id: string): number => (v() ? effectiveRank(props.unit, id) : 0);
 
   return (
     <section aria-label="Spells">
@@ -98,7 +99,11 @@ export default function SpellPanel(props: Props): JSX.Element {
                   <div class="mb-1 flex items-baseline justify-between gap-2">
                     <span class="truncate text-sm text-neutral-100">{base.name}</span>
                     <span class="text-[11px] text-neutral-500">
-                      Rank {rank(base.id)}/{cap()} · {spell().cost} mana
+                      Rank {rank(base.id)}
+                      {bonusRank(props.unit, base.id) > 0
+                        ? ` (+${bonusRank(props.unit, base.id)})`
+                        : ''}
+                      /{cap()} · {spell().cost} mana
                     </span>
                   </div>
                   <Show

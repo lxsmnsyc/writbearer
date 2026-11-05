@@ -1,4 +1,5 @@
 import { type CheckSkillRankEvent, SimEvents } from '../sim/events';
+import { effectiveRank } from '../sim/unit/casting';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 
@@ -14,7 +15,7 @@ export function rankOf(u: Unit, id: string): number {
     disabled: false,
     source: u,
     skill: id,
-    value: Math.max(1, u.skillRank(id)),
+    value: Math.max(1, effectiveRank(u, id)),
   };
   u.sim.emit(SimEvents.CheckSkillRank, check);
   return check.value;

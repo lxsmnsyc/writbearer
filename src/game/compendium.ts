@@ -1,5 +1,5 @@
 import { BESTIARY, ELEMENT_NAME, RACE_NAME } from '../content/bestiary';
-import { CARDS, CARD_OF } from '../content/cards';
+import { BONUS_CARDS, CARDS, CARD_OF } from '../content/cards';
 import { BASES, BASE_BY_ID } from '../content/items';
 import { MONSTERS, type MonsterKind } from '../content/roster';
 import { TRAIT_BY_ID } from '../content/traits';
@@ -14,6 +14,9 @@ import { Store, readRecord, writeRecord } from './store';
 // every run. It unlocks no power; it carries knowledge from run to run.
 // Only the interface hides what has not been found: the mercs' AI always
 // reads the real data.
+
+// Cards that can drop. The bonus example cards do not, so they are not counted.
+const DROPPED_CARDS = CARDS.filter((c) => !BONUS_CARDS.includes(c));
 
 export type Ending = 'fallen' | 'sealed' | 'risen';
 
@@ -421,8 +424,8 @@ export function compendiumView(d: CompendiumData): Section[] {
     },
     {
       title: 'Cards',
-      found: count(d.cards.length, CARDS.length),
-      entries: CARDS.map((c) => ({
+      found: count(d.cards.length, DROPPED_CARDS.length),
+      entries: DROPPED_CARDS.map((c) => ({
         ...cardEntry(d, c.id),
         icon: c.id.endsWith('Card') ? 'card' : 'gem',
       })),
