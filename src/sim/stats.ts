@@ -1,4 +1,4 @@
-import { Range } from './types';
+import { type Element, Range } from './types';
 
 export interface BaseStats {
   str: number;
@@ -82,7 +82,9 @@ export type Modifier =
   | { base: BaseStat; add: number }
   | { stat: DerivedStat; add?: number; percent?: number }
   | { amplify: Category; key: number; percent: number }
-  | { reduce: Category; key: number; percent: number };
+  | { reduce: Category; key: number; percent: number }
+  // Worn gear: the wearer counts as this defense element (see defense-element.ts)
+  | { defense: Element; level: number };
 
 export interface Job {
   name: string;
@@ -140,6 +142,9 @@ export function deriveStats(input: StatInput): StatResult {
     } else if ('amplify' in m) {
       const key = bonusKey(m.amplify, m.key);
       amplify.set(key, (amplify.get(key) ?? 0) + m.percent);
+    } else if ('defense' in m) {
+      // Handled by syncItemDefense in recalc
+      continue;
     } else {
       const key = bonusKey(m.reduce, m.key);
       reduce.set(key, (reduce.get(key) ?? 0) + m.percent);

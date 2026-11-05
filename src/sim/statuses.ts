@@ -1,4 +1,4 @@
-import type { Lifecycle } from '../core/lifecycle';
+import { statusElement } from './defense-element';
 import { type CheckHitEvent, SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
 import type { BaseStat } from './stats';
 import type { ActiveStatus, StatusDef } from './status';
@@ -34,24 +34,6 @@ function damageOverTime(share: number): (s: ActiveStatus, dt: number) => void {
         flags: DamageFlags.DoT,
       });
     }
-  };
-}
-
-// Sets the unit's defense element while the status lasts, as rAthena's
-// status_calc_element does for Freeze and Stone.
-function becomes(element: Element): (s: ActiveStatus) => Lifecycle {
-  return (s) => {
-    const before = { element: s.unit.element, level: s.unit.elementLevel };
-    return {
-      start: () => {
-        s.unit.element = element;
-        s.unit.elementLevel = 1;
-      },
-      stop: () => {
-        s.unit.element = before.element;
-        s.unit.elementLevel = before.level;
-      },
-    };
   };
 }
 
@@ -110,7 +92,7 @@ export const FREEZE: StatusDef = {
   duration: 2,
   immunity: 4,
   disables: true,
-  setup: becomes(Element.Frost),
+  setup: statusElement(Element.Frost),
 };
 
 /** Frost. Slows the target. Built up again while it lasts, it becomes Freeze. */
@@ -142,7 +124,7 @@ export const PETRIFY: StatusDef = {
   immunity: 5,
   threshold: threshold('wil'),
   disables: true,
-  setup: becomes(Element.Earth),
+  setup: statusElement(Element.Earth),
 };
 
 // Healing a poisoned unit receives is cut by this share.
