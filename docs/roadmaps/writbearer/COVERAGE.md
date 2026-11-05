@@ -651,7 +651,7 @@ Each entry says what differs and which node should settle it.
 ### 13-bestiary
 
 #### Goals
-- Each layer fields >=6 kinds of monster from >=2 factions (13#Goals) -> be-monsters-upper; also be-monsters-deep (remainder: roster.ts has ~13 non-boss kinds across 4 layers; most new-layer monsters (Undercroft, Crown) missing)
+- Each layer fields >=6 kinds of monster from >=2 factions (13#Goals) -> be-monsters-upper; also be-deep-church, be-deep-dread, be-deep-guard, be-deep-moth (remainder: roster.ts has ~13 non-boss kinds across 4 layers; most new-layer monsters (Undercroft, Crown) missing)
 - Every enemy type in the enemies table has a monster (13#Goals) -> be-flyers, be-thieves, be-kidnappers, be-strippers, be-corpse-raisers (remainder: now archer, shielder, herald, bomber exist; flyer, kidnapper, summoner, thief, stripper, berserker, fear caster)
 - Each monster asks the player to change something; names are titles (13#Goals) -> not code
 - Boss rolled from a pool of three per layer, 81 boss orders (13#Goals) -> bp-roll
@@ -682,18 +682,18 @@ Each entry says what differs and which node should settle it.
 - Rift Vulture (flyer, dives at weakest) (13#New monsters: Rift Road) -> be-monsters-upper
 
 #### New monsters: Undercroft
-- Ossuary Priest (summoner, raises party's kills) (13#New monsters: Undercroft) -> be-monsters-deep
-- Tithe-Taker (thief) (13#New monsters: Undercroft) -> be-monsters-deep
-- Confessor (weapon stripper) (13#New monsters: Undercroft) -> be-monsters-deep
-- Flagellant (berserker, bleeds) (13#New monsters: Undercroft) -> be-monsters-deep
-- Drowned Bell (stationary fear caster) (13#New monsters: Undercroft) -> be-monsters-deep
+- Ossuary Priest (summoner, raises party's kills) (13#New monsters: Undercroft) -> be-deep-church
+- Tithe-Taker (thief) (13#New monsters: Undercroft) -> be-deep-church
+- Confessor (weapon stripper) (13#New monsters: Undercroft) -> be-deep-church
+- Flagellant (berserker, bleeds) (13#New monsters: Undercroft) -> be-deep-church
+- Drowned Bell (stationary fear caster) (13#New monsters: Undercroft) -> be-deep-dread
 
 #### New monsters: Sunken Crown
-- Whisperer (fear caster, Dread within 4 tiles) (13#New monsters: Sunken Crown) -> be-monsters-deep
-- Skulker (hidden assassin) (13#New monsters: Sunken Crown) -> be-monsters-deep
-- Revenant Knight (spectral) (13#New monsters: Sunken Crown) -> be-monsters-deep
-- Gilded Effigy (construct, immune stun/fear) (13#New monsters: Sunken Crown) -> be-monsters-deep
-- Crown-Moth (flyer, snuffs light) (13#New monsters: Sunken Crown) -> be-monsters-deep
+- Whisperer (fear caster, Dread within 4 tiles) (13#New monsters: Sunken Crown) -> be-deep-dread
+- Skulker (hidden assassin) (13#New monsters: Sunken Crown) -> be-deep-dread
+- Revenant Knight (spectral) (13#New monsters: Sunken Crown) -> be-deep-guard
+- Gilded Effigy (construct, immune stun/fear) (13#New monsters: Sunken Crown) -> be-deep-guard
+- Crown-Moth (flyer, snuffs light) (13#New monsters: Sunken Crown) -> be-deep-moth
 
 #### What the engine needs (monsters)
 - Flyers: unaerial-untargetable by melee until landing; Pin Down grounds (no flight state in sim/unit.ts) (13#What the engine needs (monsters)) -> be-flyers

@@ -17,9 +17,15 @@ depends_on:
   - on: be-monsters-upper
     kind: hard
     why: built on those monsters
-  - on: be-monsters-deep
+  - on: be-deep-church
     kind: hard
-    why: built on those monsters
+    why: the Tithe-Collector, Flayed Penitent and Ossuary Warden are built on the Tithe-Taker, Flagellant and Ossuary Priest
+  - on: be-deep-dread
+    kind: hard
+    why: the Whispering Choir and Skulker Prince are built on the Whisperer (dreadAura) and the Skulker
+  - on: be-deep-guard
+    kind: hard
+    why: the Gilded Champion is a Gilded Effigy, and the Last Herald calls Revenant Knights
   - on: be-affixes
     kind: hard
     why: needs Teleport and Mana Burn
