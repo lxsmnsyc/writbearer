@@ -1,7 +1,7 @@
 ---
 id: be-deep-church
 title: The Undercroft's Church keepers: Ossuary Priest, Tithe-Taker, Confessor, Flagellant
-status: todo
+status: active
 priority: should
 type: feature
 story:

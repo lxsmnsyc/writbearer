@@ -1,7 +1,7 @@
 ---
 id: cc-el-defense
 title: Temporary defense element changes
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
