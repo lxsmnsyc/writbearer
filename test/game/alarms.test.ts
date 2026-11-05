@@ -153,7 +153,9 @@ describe('a Horn-Bearer', () => {
     for (let t = 0; t < 15.1; t += DT) {
       alarms.update(sim, DT, 5, ['husk'], null);
     }
-    expect(boss.alarm).toEqual({ x: b.x, z: b.z });
+    // It blinks to the next post, shown first, rather than running there.
+    expect(boss.alarm).toBeNull();
+    expect(sim.warnings.some((w) => w.x === b.x && w.z === b.z)).toBe(true);
     expect(a.alive).toBe(true);
   });
 
