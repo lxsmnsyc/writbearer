@@ -81,3 +81,7 @@ Size M: 5 files and about 350 lines. Blast radius is medium (`Item`, `ItemSave`,
 ## After the splits
 
 - After split-events: put new event types and their map entries in `src/sim/events/ie-item-roll.ts` and add one `SimEvents` line plus one name in the `SimEventMap` extends list in `src/sim/events.ts`.
+
+## Note from ie-item-bonuses (2026-11-05)
+
+- Gear that changes a spell's bonus rank restarts that spell's passive upgrades (`RANK_LISTENERS` in `src/sim/unit/gear.ts`), and gear can change mid-fight (`cannotHand` in `src/game/inventory.ts`). A restart resets state kept in the upgrade's `setup` closure (a grep found Cleric `spreading`; Arcanist `touching`, `echoing`, `frozen`, `burning`, `hits`; Duelist `held`, `answering`; Sellsword `marked`, `last`). Before item rolls give the `{ spell, rank }` form, audit each `setup` and move state that must survive a swap into a `WeakMap`, or block mid-fight swaps of rank gear. See `nodes/ie-item-bonuses/outcome.md`.

@@ -1,7 +1,7 @@
 ---
 id: ie-item-bonuses
 title: Defense element and spell rank bonus forms
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -14,7 +14,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 260000
 owns:
   - test/sim/item-bonuses.test.ts
 shared:
