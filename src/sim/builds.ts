@@ -109,11 +109,11 @@ function startEffect(unit: Unit, upgrade: Upgrade): void {
   life.start();
 }
 
-// Gear that changes a spell's rank restarts the passive upgrades on it.
-RANK_LISTENERS.push((unit) => {
-  for (const id of unit.upgrades.values()) {
+// Gear that changes a spell's rank restarts the passive upgrade on that spell only.
+RANK_LISTENERS.push((unit, spells) => {
+  for (const [spell, id] of unit.upgrades) {
     const upgrade = upgradeById(id);
-    if (upgrade) {
+    if (upgrade && spells.includes(spell)) {
       startEffect(unit, upgrade);
     }
   }

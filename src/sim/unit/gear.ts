@@ -188,24 +188,33 @@ export function recalc(unit: Unit): void {
   notifyRankChange(unit);
 }
 
-// Called when the bonus ranks gear gives a unit change. builds.ts registers
-// here to set its passive upgrades up again at the new rank.
-export const RANK_LISTENERS: ((unit: Unit) => void)[] = [];
+// Called with the spell ids whose gear bonus changed. builds.ts registers
+// here to set the passive upgrades on those spells up again at the new rank.
+export const RANK_LISTENERS: ((unit: Unit, spells: string[]) => void)[] = [];
 
-// The bonus ranks last seen, as text, so only a change notifies
-const seenRanks = new WeakMap<Unit, string>();
+// The bonus ranks last seen
+const seenRanks = new WeakMap<Unit, Map<string, number>>();
 
 function notifyRankChange(unit: Unit): void {
-  const parts: string[] = [];
-  for (const [id, rank] of unit.stats.spellRanks) {
-    parts.push(`${id}:${rank}`);
+  const before = seenRanks.get(unit) ?? new Map<string, number>();
+  const after = new Map(unit.stats.spellRanks);
+  seenRanks.set(unit, after);
+  // Spells whose bonus differs between the two, in either direction
+  const changed: string[] = [];
+  for (const [id, rank] of after) {
+    if ((before.get(id) ?? 0) !== rank) {
+      changed.push(id);
+    }
   }
-  const sig = parts.toSorted().join(';');
-  if ((seenRanks.get(unit) ?? '') === sig) {
+  for (const [id, rank] of before) {
+    if (rank !== 0 && !after.has(id)) {
+      changed.push(id);
+    }
+  }
+  if (changed.length === 0) {
     return;
   }
-  seenRanks.set(unit, sig);
   for (const listener of RANK_LISTENERS) {
-    listener(unit);
+    listener(unit, changed);
   }
 }

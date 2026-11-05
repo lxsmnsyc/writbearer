@@ -43,3 +43,8 @@
 - `src/game/compendium.ts` counts and lists only droppable cards; `BONUS_CARDS` never drop.
 - Extra files outside owned paths (deviations): `src/sim/builds.ts`, `src/sim/unit/gear.ts`, `src/sim/unit/casting.ts`, `src/ui/spell-panel.tsx`, `src/ui/merc-panel.tsx`, `src/ui/upgrade-offer.tsx`, `src/content/vanguard.ts`, `src/game/compendium.ts`.
 - Tests added: a passive upgrade gets the bonus and updates on removal; Intercept reach reads the bonus. Fast check: 81 files, 777 tests pass.
+
+## Rank restart scope
+
+- `notifyRankChange` (`src/sim/unit/gear.ts`) passes the spell ids whose gear bonus changed; the builds.ts listener restarts only the upgrade effect on those spells. Gear for spell A never restarts the upgrade on spell B (test added).
+- Gear can change mid-fight: `cannotHand` (`src/game/inventory.ts`) allows it when the bearer stands within hand reach. So a swap of gear for a spell restarts that spell's upgrade effect and resets state kept in the closure of its `setup`: Cleric `spreading` (Holy Light), Arcanist `touching`/`last` (Rimefield), `echoing`, `frozen` (Cold Snap), `burning` (Ignite), `hits` (Overchannel or Mana Flow); Duelist `held`, `answering`, `last`/`row`; Sellsword `marked`/`at`, `last`. Effects that keep state in a WeakMap (Ranger trails, rods, Vanguard FIRED, Sellsword PLAYED) keep it. Only an item that carries a `{ spell, rank }` bonus for that spell triggers this, and only the two example cards do so far. Line numbers are approximate; check each `setup` before an item roll uses the form widely.

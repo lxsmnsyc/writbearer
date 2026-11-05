@@ -165,6 +165,42 @@ describe('rank bonus reaches upgrades and spells', () => {
     expect(unit.kit.reach).toBeCloseTo(reach + 0.5 * base);
   });
 
+  it('gear for one spell does not restart the upgrade on another', () => {
+    const unit = cleric();
+    let starts = 0;
+    const COUNTED: Upgrade = {
+      id: 'testCounted',
+      spell: 'smite',
+      name: 'Test Counted',
+      describe: () => '',
+      effect: {
+        id: 'testCounted',
+        setup: () => ({
+          start: () => {
+            starts++;
+          },
+          stop: () => {},
+        }),
+      },
+    };
+    const list = JOBS.cleric.upgrades;
+    list.push(COUNTED);
+    onTestFinished(() => {
+      list.splice(list.indexOf(COUNTED), 1);
+    });
+    expect(applyUpgrade(unit, COUNTED)).toBeNull();
+    expect(starts).toBe(1);
+    // Heal gear leaves the Smite upgrade alone
+    wear(unit, [{ spell: 'heal', rank: 1 }]);
+    unit.unequip(EquipSlot.Accessory1);
+    expect(starts).toBe(1);
+    // Smite gear restarts it, on and off
+    wear(unit, [{ spell: 'smite', rank: 1 }]);
+    expect(starts).toBe(2);
+    unit.unequip(EquipSlot.Accessory1);
+    expect(starts).toBe(3);
+  });
+
   it('Intercept reads the bonus rank', () => {
     const sim = new Sim(3);
     const bearer = spawnBearer(sim, 0, 0);
