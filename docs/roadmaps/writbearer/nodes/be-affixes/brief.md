@@ -1,7 +1,7 @@
 ---
 id: be-affixes
 title: Storm Enchanted, Mana Burn, Teleport and heralds that run for a horn
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added:
+spent: 218000
 owns:
   - src/content/affixes.ts
   - test/sim/affixes.test.ts

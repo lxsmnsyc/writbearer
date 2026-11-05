@@ -1,7 +1,7 @@
 ---
 id: bp-possess
 title: Mind control, skill copy and buff theft
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-26
+spent: 376000
 owns:
   - src/sim/events/bp-possess.ts
   - src/sim/control.ts

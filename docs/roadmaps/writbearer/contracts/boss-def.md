@@ -1,7 +1,7 @@
 ---
 name: boss-def
-version: 1
-status: draft
+version: 2
+status: frozen
 defined_by: bp-roll
 ---
 
@@ -19,12 +19,12 @@ export interface BossDef {
   id: string; // 'drownedReeve'; also the monster kind
   name: string; // 'The Drowned Reeve'
   layer: 0 | 1 | 2 | 3; // the pool it belongs to
-  template: MonsterTemplate; // moved out of roster.ts
+  template: Template; // MONSTERS[id]; the template stays in its monster module
   spawn(sim: Sim, level: number, x: number, z: number): Unit;
-  arena?: (stage: Stage, rng: RNG) => void; // field variant: bridge, islands
-  field?: (sim: Sim, stage: Stage) => BossFieldRun | null; // see contract boss-field
-  card: CardDef;
-  bestiary: { who: string; how: string };
+  arena?: (stage: Stage, rng: RNG) => void; // field variant: bridge, islands; not called yet, bp-ground wires it in src/gen/stage/arena.ts
+  // field?: (sim: Sim, stage: Stage) => BossFieldRun | null; // added by bp-ground with the boss-field contract
+  card: ItemBase;
+  bestiary: BestiaryEntry;
   view: { kind: Kind; size: number };
   icon: IconName;
 }
@@ -32,7 +32,9 @@ export interface BossDef {
 // src/content/bosses/index.ts
 export const BOSSES: ReadonlyMap<string, BossDef>;
 export const POOLS: readonly (readonly string[])[]; // the designed three per layer, fixed
-export function rollBoss(rng: RNG, depth: number, endless: boolean): string;
+export const BOSS_ROLL: number;
+export function resolveBoss(id: string, built?: ReadonlySet<string>): string; // unbuilt id -> first built id of its pool
+export function rollBoss(rng: RNG, depth: number, endless: boolean, built?: ReadonlySet<string>): string; // built: for tests
 export function spawnBoss(sim: Sim, layer: number, level: number, x: number, z: number, id?: string): Unit; // no id: the layer's current boss
 ```
 
@@ -54,3 +56,4 @@ The four current bosses registered as defs, unchanged.
 ## Changes
 
 - v1: initial.
+- v2 (frozen by bp-roll, PR #34): `template` is `Template` (`MONSTERS[id]`), not a moved `MonsterTemplate`; `card` is `ItemBase`; `bestiary` is `BestiaryEntry`; `field` is left for bp-ground to add; `resolveBoss` and `BOSS_ROLL` exported, `rollBoss` takes an optional `built` set. `src/content/bosses.ts` stays as a barrel. `e2e/map.spec.ts` names the layer-1 boss ("Area 8: The Brood Mother"); a boss node that changes the layer-1 pool's first built boss updates it. Affects bp-ground, bb-*.

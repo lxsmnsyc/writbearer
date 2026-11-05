@@ -1,7 +1,7 @@
 ---
 id: bp-roll
 title: Boss registry, pool roll and map label
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,6 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-10-26
+spent: 296000
 owns:
   - src/content/bosses/**
   - src/content/bosses.ts

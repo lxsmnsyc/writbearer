@@ -74,3 +74,8 @@ One driver and two blocks drawn from existing code. M.
 - Do not call `sim.setWorld` every tick.
 - The collapse step deletes monsters off the floor; never the boss.
 - Mind stage against world coordinates after `placeStage` (see the collapse test 'turns with its area').
+
+## After bp-roll (2026-11-05)
+
+- boss-def is frozen at v2. `BossDef.field` is not in the interface yet: add `field?: (sim: Sim, stage: Stage) => BossFieldRun | null` to `src/content/bosses/types.ts` with the boss-field contract, and append the change to `contracts/boss-def.change-request.md`.
+- `BossDef.arena` exists but nothing calls it. Call it from the boss field build in `src/gen/stage/arena.ts` for the stage's `bossId`.
