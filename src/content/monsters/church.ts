@@ -78,6 +78,50 @@ const CHURCH = {
     attackElement: Element.Occult,
     hunt: Hunt.Assassin,
   },
+  // The Undercroft's priest of bones. It keeps behind the others and raises
+  // the fallen as husks. Radiant, as the Church's keepers are.
+  ossuaryPriest: {
+    job: job('Ossuary Priest', 130, 14, 90, Range.Melee),
+    base: stats(4, 6, 7, 14, 8, 14),
+    weapon: { min: 6, max: 10, matk: 20 },
+    kit: { reach: 1.0, interval: 1.4, hitAt: 0.6, moveSpeed: 2.1, notice: 5 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Support,
+  },
+  // A Penitent who collects the Church's due. Fast, with a sack on its back:
+  // it takes an item from the pack and runs for the way out.
+  titheTaker: {
+    job: job('Tithe-Taker', 85, 9, 0, Range.Melee),
+    base: stats(6, 14, 4, 1, 10, 4),
+    weapon: { min: 8, max: 12, matk: 0 },
+    kit: { reach: 1.0, interval: 1.0, hitAt: 0.55, moveSpeed: 2.9, notice: 7 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Bearer,
+  },
+  // A Penitent who hears confessions with a chain. Its blows take what a
+  // merc holds, the weapon first.
+  confessor: {
+    job: job('Confessor', 110, 11, 0, Range.Melee),
+    base: stats(7, 10, 6, 1, 10, 4),
+    weapon: { min: 9, max: 13, matk: 0 },
+    kit: { reach: 1.0, interval: 1.1, hitAt: 0.55, moveSpeed: 2.2, notice: 6 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Bearer,
+  },
+  // A Penitent who scourges itself. The more it is hurt, the harder it hits,
+  // and its lash opens wounds.
+  flagellant: {
+    job: job('Flagellant', 140, 12, 0, Range.Melee),
+    base: stats(9, 10, 8, 1, 9, 1),
+    weapon: { min: 9, max: 13, matk: 0 },
+    kit: { reach: 1.2, interval: 1.0, hitAt: 0.5, moveSpeed: 2.4, notice: 6 },
+    race: Race.Human,
+    element: Element.Radiant,
+    hunt: Hunt.Bearer,
+  },
 } satisfies Record<string, Template>;
 
 export default CHURCH;

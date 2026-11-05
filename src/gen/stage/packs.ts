@@ -52,6 +52,10 @@ export const THREAT: Record<MonsterKind, number> = {
   abbess: 20,
   hollowedSaint: 20,
   creditor: 20,
+  ossuaryPriest: 4,
+  titheTaker: 3,
+  confessor: 3,
+  flagellant: 3,
 };
 const ELITE_THREAT = 6;
 
@@ -121,6 +125,10 @@ export const FACTIONS: Faction[] = [
   },
   { layer: 2, from: 3, kinds: ['penitent'], size: MIXED },
   { layer: 2, from: 4, kinds: ['hollowed', 'penitent'], size: STRONG },
+  { layer: 2, from: 1, kinds: ['ossuaryPriest', 'penitent', 'penitent', 'husk'], size: MIXED },
+  { layer: 2, from: 2, kinds: ['titheTaker', 'penitent', 'penitent'], size: MIXED },
+  { layer: 2, from: 2, kinds: ['confessor', 'penitent', 'penitentSlinger'], size: MIXED },
+  { layer: 2, from: 3, kinds: ['flagellant', 'penitent', 'penitent'], size: MIXED },
   // The Sunken Crown: the mad, and the last of the guard
   { layer: 3, from: 0, kinds: ['hollowed'], size: STRONG },
   { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },

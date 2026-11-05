@@ -237,6 +237,10 @@ export const ICONS = {
   abbess: GiPopeCrown,
   hollowedSaint: GiSpikedHalo,
   creditor: GiCrownedSkull,
+  ossuaryPriest: GiSkullCrack,
+  titheTaker: GiShoppingBag,
+  confessor: GiChainMail,
+  flagellant: GiBrokenBone,
   // Places on the map
   combat: GiCrossedSwords,
   elite: GiSkullCrossedBones,

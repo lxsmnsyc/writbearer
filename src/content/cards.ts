@@ -137,6 +137,29 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
     modifiers: [],
     setup: steadyNerve,
   }),
+  ossuaryPriest: card('ossuaryPriest', 'Ossuary Priest', 1, {
+    fits: ACCESSORY,
+    describe: '+6% max health.',
+    modifiers: [{ stat: 'maxHp', percent: 6 }],
+  }),
+  titheTaker: card('titheTaker', 'Tithe-Taker', 1, {
+    fits: ACCESSORY,
+    describe: '+10 evasion.',
+    modifiers: [{ stat: 'evasion', add: 10 }],
+  }),
+  confessor: card('confessor', 'Confessor', 1, {
+    fits: HEAD,
+    describe: '+10 resistance.',
+    modifiers: [{ stat: 'resistance', add: 10 }],
+  }),
+  flagellant: card('flagellant', 'Flagellant', 1, {
+    fits: WEAPON,
+    describe: '+6% attack.',
+    modifiers: [
+      { stat: 'atkMin', percent: 6 },
+      { stat: 'atkMax', percent: 6 },
+    ],
+  }),
   // Boss cards trade something away.
   broodMother: card('broodMother', 'Brood Mother', 1, {
     fits: BODY,

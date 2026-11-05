@@ -22,6 +22,10 @@ describe('monster table', () => {
       'abbess',
       'hollowedSaint',
       'creditor',
+      'ossuaryPriest',
+      'titheTaker',
+      'confessor',
+      'flagellant',
     ]);
   });
 });

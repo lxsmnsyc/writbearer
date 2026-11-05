@@ -24,6 +24,10 @@ export const MONSTERS = {
   abbess: CHURCH.abbess,
   hollowedSaint: CHURCH.hollowedSaint,
   creditor: CREDITOR.creditor,
+  ossuaryPriest: CHURCH.ossuaryPriest,
+  titheTaker: CHURCH.titheTaker,
+  confessor: CHURCH.confessor,
+  flagellant: CHURCH.flagellant,
 } satisfies Record<string, Template>;
 
 export type MonsterKind = keyof typeof MONSTERS;
