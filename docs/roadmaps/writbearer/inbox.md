@@ -13,3 +13,5 @@ Design items with no node yet, from `COVERAGE.md`. Decide at a checkpoint whethe
 - A `GameState` test harness (stubbed canvas) that calls `moveOn`, so hooks on area change (`restoreAll` from be-strippers) can be tested through the real path.
 - No game monster raises corpses yet: be-corpse-raisers left no `Template` flag or `SPAWN_STEPS` entry. The first raiser monster (the Summoner of doc 07, or the Ossuary Priest in be-monsters-deep) calls `markRaiser` from its own spawn step.
 - `pnpm test` failed once in 734 during the PR #26 review and passed on reruns; the failing test was not captured. Suspect `test/sim/concealment.test.ts` (5 s timeout, load-sensitive).
+- Revenant Knight bestiary text (`src/content/bestiary.ts`, `revenantKnight.how`) says Neutral blows "lose a third"; against Spectral 2 they lose 30%. Reword with the next bestiary pass.
+- Item requirements in red show only in the inventory: shop and vault tooltips do not pass `unit` to `ItemCard`. `ItemCard` also finds the requirement line by its text (`startsWith('Requires ')`); return it as a field from `itemLines` when ie-item-bonuses or ie-cards touch the tooltip.

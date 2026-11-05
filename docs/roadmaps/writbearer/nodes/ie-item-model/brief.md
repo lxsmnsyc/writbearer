@@ -1,7 +1,7 @@
 ---
 id: ie-item-model
 title: Base tiers and STR/DEX requirements
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -14,7 +14,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 168000
 owns:
   - test/sim/item-tiers.test.ts
 shared:
