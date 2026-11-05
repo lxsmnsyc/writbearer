@@ -82,6 +82,14 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'A Penitent who scourges itself in the Church’s name.',
     how: 'The more it is hurt, the harder it hits. Its lash leaves a Bleed. Kill it fast.',
   },
+  revenantKnight: {
+    who: 'A knight of the Old King’s guard, who would not lie down when the capital sank.',
+    how: 'Slow and heavily armored. Spectral: plain blows lose a third of their force, so use elements.',
+  },
+  gildedEffigy: {
+    who: 'A statue of the guard, cast in the gold the Old King taxed from his people.',
+    how: 'Stands still until the bearer passes close. Stun and fear do not take hold of it. Break its armor.',
+  },
   broodMother: {
     who: 'The Blight’s queen. The Marches’ crawlers are her children, sent up to keep the road shut.',
     how: 'Lays mites every few seconds. At half health she frenzies, lays more, and they hunt the bearer. Her brood dies with her.',

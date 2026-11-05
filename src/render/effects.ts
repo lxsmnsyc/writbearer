@@ -93,6 +93,12 @@ export function bodyColor(u: Unit): string {
   ) {
     return C.penitent;
   }
+  if (u.kind === 'gildedEffigy') {
+    return C.gold;
+  }
+  if (u.kind === 'revenantKnight') {
+    return C.bone;
+  }
   return C.monster;
 }
 

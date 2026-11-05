@@ -160,6 +160,16 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
       { stat: 'atkMax', percent: 6 },
     ],
   }),
+  revenantKnight: card('revenantKnight', 'Revenant Knight', 1, {
+    fits: BODY,
+    describe: '+8 armor.',
+    modifiers: [{ stat: 'armor', add: 8 }],
+  }),
+  gildedEffigy: card('gildedEffigy', 'Gilded Effigy', 1, {
+    fits: HEAD,
+    describe: '+6% max health.',
+    modifiers: [{ stat: 'maxHp', percent: 6 }],
+  }),
   // Boss cards trade something away.
   broodMother: card('broodMother', 'Brood Mother', 1, {
     fits: BODY,

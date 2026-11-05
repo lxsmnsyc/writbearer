@@ -1,0 +1,1 @@
+- Templates, steadfast, guard-steps, rig (pale Revenant at alpha 0.5, gold Effigy with a big crown), cards, bestiary, compendium, icons, packs written.

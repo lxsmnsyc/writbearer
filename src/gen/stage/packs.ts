@@ -56,6 +56,8 @@ export const THREAT: Record<MonsterKind, number> = {
   titheTaker: 3,
   confessor: 3,
   flagellant: 3,
+  revenantKnight: 6,
+  gildedEffigy: 6,
 };
 const ELITE_THREAT = 6;
 
@@ -141,6 +143,8 @@ export const FACTIONS: Faction[] = [
     size: MIXED,
   },
   { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'husk', 'husk'], size: MIXED },
+  { layer: 3, from: 2, kinds: ['revenantKnight', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
+  { layer: 3, from: 3, kinds: ['gildedEffigy', 'hollowArcher', 'hollowArcher'], size: MIXED },
 ];
 
 /** A pack of a faction: its kinds over and over, as many as its size rolls, at most `cap`. */

@@ -91,6 +91,8 @@ export const MONSTER_ORDER: readonly MonsterKind[] = [
   'titheTaker',
   'confessor',
   'flagellant',
+  'revenantKnight',
+  'gildedEffigy',
 ];
 
 const MONSTER_KINDS: ReadonlySet<string> = new Set(MONSTER_ORDER);

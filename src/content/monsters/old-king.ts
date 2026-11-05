@@ -1,5 +1,5 @@
 import { Hunt } from '../../sim/ai';
-import { Race, Range, Rank } from '../../sim/types';
+import { Element, Race, Range, Rank } from '../../sim/types';
 import type { Template } from '../jobs';
 import { job, stats } from '../jobs/stats';
 
@@ -86,6 +86,31 @@ const OLD_KING = {
     modifiers: [{ stat: 'armor', add: 70 }],
     race: Race.Undead,
     rank: Rank.Boss,
+    hunt: Hunt.Nearest,
+  },
+  // The last of the Old King's guard: a heavy, slow knight, pale and half
+  // there. Spectral, so a plain blow loses a third of its force.
+  revenantKnight: {
+    job: job('Revenant Knight', 240, 20, 0, Range.Melee),
+    base: stats(12, 4, 14, 1, 8, 2),
+    weapon: { min: 22, max: 30, matk: 0 },
+    kit: { reach: 1.3, interval: 1.8, hitAt: 0.6, moveSpeed: 1.4, notice: 5 },
+    modifiers: [{ stat: 'armor', add: 45 }],
+    race: Race.Undead,
+    element: Element.Spectral,
+    elementLevel: 2,
+    hunt: Hunt.Nearest,
+  },
+  // A golden statue of a guard. It stands still until the bearer passes
+  // close, and neither stun nor fear takes hold of it (set up in guard-steps).
+  gildedEffigy: {
+    job: job('Gilded Effigy', 280, 22, 0, Range.Melee),
+    base: stats(14, 3, 16, 1, 6, 1),
+    weapon: { min: 20, max: 26, matk: 0 },
+    kit: { reach: 1.2, interval: 1.9, hitAt: 0.6, moveSpeed: 1.2, notice: 2.5 },
+    modifiers: [{ stat: 'armor', add: 60 }],
+    race: Race.Construct,
+    element: Element.Earth,
     hunt: Hunt.Nearest,
   },
 } satisfies Record<string, Template>;
