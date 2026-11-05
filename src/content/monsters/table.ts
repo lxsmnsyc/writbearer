@@ -3,6 +3,8 @@ import OLD_KING from './old-king';
 import CHURCH from './church';
 import BLIGHT from './blight';
 import CREDITOR from './creditor';
+import DROWNED from './drowned';
+import HOLLOWED from './hollowed';
 
 // Every monster, in one order. Add a monster to its faction module and list it here.
 export const MONSTERS = {
@@ -30,6 +32,9 @@ export const MONSTERS = {
   flagellant: CHURCH.flagellant,
   revenantKnight: OLD_KING.revenantKnight,
   gildedEffigy: OLD_KING.gildedEffigy,
+  drownedBell: DROWNED.drownedBell,
+  whisperer: HOLLOWED.whisperer,
+  skulker: HOLLOWED.skulker,
 } satisfies Record<string, Template>;
 
 export type MonsterKind = keyof typeof MONSTERS;

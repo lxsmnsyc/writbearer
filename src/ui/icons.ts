@@ -57,7 +57,10 @@ import GiHeartPlus from '~icons/game-icons/heart-plus';
 import GiHeartWings from '~icons/game-icons/heart-wings';
 import GiHelp from '~icons/game-icons/help';
 import GiHolySymbol from '~icons/game-icons/holy-symbol';
+import GiCowled from '~icons/game-icons/cowled';
+import GiRingingBell from '~icons/game-icons/ringing-bell';
 import GiHood from '~icons/game-icons/hood';
+import GiHoodedAssassin from '~icons/game-icons/hooded-assassin';
 import GiHoodedFigure from '~icons/game-icons/hooded-figure';
 import GiHouse from '~icons/game-icons/house';
 import GiHuntingHorn from '~icons/game-icons/hunting-horn';
@@ -244,6 +247,9 @@ export const ICONS = {
   flagellant: GiBrokenBone,
   revenantKnight: GiVisoredHelm,
   gildedEffigy: GiStoneBust,
+  drownedBell: GiRingingBell,
+  whisperer: GiCowled,
+  skulker: GiHoodedAssassin,
   // Places on the map
   combat: GiCrossedSwords,
   elite: GiSkullCrossedBones,

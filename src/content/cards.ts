@@ -170,6 +170,21 @@ export const CARD_BY_MONSTER: Record<Exclude<MonsterKind, 'creditor'>, ItemBase>
     describe: '+6% max health.',
     modifiers: [{ stat: 'maxHp', percent: 6 }],
   }),
+  drownedBell: card('drownedBell', 'Drowned Bell', 1, {
+    fits: ACCESSORY,
+    describe: '+10 resistance.',
+    modifiers: [{ stat: 'resistance', add: 10 }],
+  }),
+  whisperer: card('whisperer', 'Whisperer', 1, {
+    fits: HEAD,
+    describe: '+4 WIL.',
+    modifiers: [{ base: 'wil', add: 4 }],
+  }),
+  skulker: card('skulker', 'Skulker', 1, {
+    fits: ACCESSORY,
+    describe: '+8 evasion.',
+    modifiers: [{ stat: 'evasion', add: 8 }],
+  }),
   // Boss cards trade something away.
   broodMother: card('broodMother', 'Brood Mother', 1, {
     fits: BODY,

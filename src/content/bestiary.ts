@@ -90,6 +90,18 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'A statue of the guard, cast in the gold the Old King taxed from his people.',
     how: 'Stands still until the bearer passes close. Stun and fear do not take hold of it. Break its armor.',
   },
+  drownedBell: {
+    who: 'A bell of the flooded chapel, cracked, that still rings for the dead.',
+    how: 'Never moves. While monsters stand near it, its toll builds Dread over a wide area. Break it first, or bring Brave and Devout mercs.',
+  },
+  whisperer: {
+    who: 'A Hollowed that follows the others, murmuring what the Writ would rather not say.',
+    how: 'Frail, and keeps behind its pack. Builds Dread in mercs within 4 tiles. Kill it first or keep your distance.',
+  },
+  skulker: {
+    who: 'A Hollowed in a hood, with claws as long as its arms. You do not see it come.',
+    how: 'Unseen until 2 tiles from the bearer, then it strikes and vanishes again. Area damage and light find it; so does a guard stance.',
+  },
   broodMother: {
     who: 'The Blight’s queen. The Marches’ crawlers are her children, sent up to keep the road shut.',
     how: 'Lays mites every few seconds. At half health she frenzies, lays more, and they hunt the bearer. Her brood dies with her.',

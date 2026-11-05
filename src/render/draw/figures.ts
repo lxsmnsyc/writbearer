@@ -18,6 +18,10 @@ export function drawFigure(
     drawHornPost(ctx, iso(r.x, r.z), r.fall, flash);
     return;
   }
+  if (r.kind === 'drownedBell') {
+    drawBell(ctx, iso(r.x, r.z), r.fall, flash);
+    return;
+  }
   if (isSprited(r.kind)) {
     drawShadow(ctx, r, iso);
     drawSprite(ctx, r, iso(r.x, r.z), C, time, flash);
@@ -105,4 +109,37 @@ function drawHornPost(ctx: CanvasRenderingContext2D, base: Pt, fall: number, fla
   ctx.fillRect(x + 3 * z, y - 30 * z, 2 * z, 8 * z);
   ctx.fillRect(x + 5 * z, y - 24 * z, 6 * z, 2 * z);
   ctx.fillRect(x + 9 * z, y - 28 * z, 4 * z, 6 * z);
+}
+
+// A drowned bell: a cracked bronze bell hung from a low beam, far larger than
+// a man. Broken, it lies on its side.
+function drawBell(ctx: CanvasRenderingContext2D, base: Pt, fall: number, flash: boolean): void {
+  const z = look.zoom;
+  const x = Math.round(base.x);
+  const y = Math.round(base.y);
+  const bronze = flash ? C.bone : C.gold;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(x - 10 * z, y - z, 20 * z, 2 * z);
+  if (fall >= 0) {
+    ctx.fillStyle = bronze;
+    ctx.fillRect(x - 8 * z, y - 8 * z, 16 * z, 8 * z);
+    ctx.fillRect(x - 5 * z, y - 11 * z, 10 * z, 3 * z);
+    return;
+  }
+  // The frame
+  ctx.fillStyle = flash ? C.bone : C.wood;
+  ctx.fillRect(x - 9 * z, y - 46 * z, 3 * z, 46 * z);
+  ctx.fillRect(x + 6 * z, y - 46 * z, 3 * z, 46 * z);
+  ctx.fillRect(x - 9 * z, y - 48 * z, 18 * z, 3 * z);
+  // The bell, widening to the lip
+  ctx.fillStyle = bronze;
+  ctx.fillRect(x - 3 * z, y - 44 * z, 6 * z, 6 * z);
+  ctx.fillRect(x - 5 * z, y - 38 * z, 10 * z, 8 * z);
+  ctx.fillRect(x - 7 * z, y - 30 * z, 14 * z, 8 * z);
+  ctx.fillRect(x - 9 * z, y - 22 * z, 18 * z, 7 * z);
+  // The crack
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(x + z, y - 36 * z, z, 8 * z);
+  ctx.fillRect(x - z, y - 28 * z, z, 7 * z);
+  ctx.fillRect(x + z, y - 22 * z, z, 7 * z);
 }

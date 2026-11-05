@@ -8,6 +8,7 @@ import { engage, nearest } from './common';
 import flyerStep from './flyer';
 import kidnapperStep from './kidnapper';
 import raiserStep from './raiser';
+import skulkerStep from './skulker';
 import thiefStep from './thief';
 
 /** What a monster goes for. */
@@ -250,6 +251,7 @@ export const MONSTER_STEPS: MonsterStep[] = [
   thiefStep,
   flyerStep,
   raiserStep,
+  skulkerStep,
   skillStep,
   supportStep,
   pursueStep,
