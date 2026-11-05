@@ -1,7 +1,7 @@
 ---
 id: be-deep-guard
 title: The Crown's last guard: Revenant Knight and Gilded Effigy
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 150000
 owns:
   - src/content/monsters/guard-steps.ts
   - src/sim/steadfast.ts
