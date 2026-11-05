@@ -67,6 +67,19 @@ export const enum Quality {
 /** What a weapon is, which decides who can wield it and how it is drawn. */
 export type WeaponKind = 'sword' | 'mace' | 'bow' | 'dagger' | 'staff';
 
+/** From Diablo 2: the stronger versions of a base that drop at higher item levels. */
+export const enum Tier {
+  Normal = 0,
+  Exceptional = 1,
+  Elite = 2,
+}
+
+/** The least base STR and DEX a merc needs to wield or wear an item. */
+export interface Requirements {
+  str?: number;
+  dex?: number;
+}
+
 /** A range a base value is rolled in. */
 export interface Span {
   min: number;
@@ -83,6 +96,10 @@ export interface ItemBase {
   level: number;
   weight: number;
   maxSockets: number;
+  // Absent means Normal
+  tier?: Tier;
+  // Absent means none
+  requirements?: Requirements;
   // Jobs that can use it, by job name. Absent means anyone.
   jobs?: readonly string[];
   // Rolled per copy: weapon damage, armor, block
@@ -176,6 +193,34 @@ export function slotFor(item: Item, second = false): EquipSlot | null {
 export function usableBy(item: Item, job: string): boolean {
   return item.base.type !== ItemType.Gold && (!item.base.jobs || item.base.jobs.includes(job));
 }
+
+/** Whether a unit's base STR and DEX, before gear, reach what an item asks. */
+export function meetsRequirements(item: Item, unit: Unit): boolean {
+  const need = item.base.requirements;
+  if (!need) {
+    return true;
+  }
+  return unit.base.str >= (need.str ?? 0) && unit.base.dex >= (need.dex ?? 0);
+}
+
+/** "Requires STR 12, DEX 8", or an empty string when the item asks nothing. */
+export function requirementText(item: Item): string {
+  const need = item.base.requirements;
+  const parts: string[] = [];
+  if (need?.str) {
+    parts.push(`STR ${need.str}`);
+  }
+  if (need?.dex) {
+    parts.push(`DEX ${need.dex}`);
+  }
+  return parts.length > 0 ? `Requires ${parts.join(', ')}` : '';
+}
+
+/** Whether equipping the item checks requirements: weapons, shields and accessories. */
+export const checksRequirements = (item: Item): boolean =>
+  item.base.type === ItemType.Weapon ||
+  item.base.type === ItemType.Shield ||
+  item.base.type === ItemType.Accessory;
 
 /** Whether an item is a potion, for the belt. */
 export const isPotion = (item: Item): boolean => item.base.type === ItemType.Potion;

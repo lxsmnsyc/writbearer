@@ -9,6 +9,7 @@ import {
   POTIONS,
   RARE_FIRST,
   RARE_SECOND,
+  TIERS,
 } from '../content/items';
 import type RNG from '../core/rng';
 import {
@@ -20,6 +21,7 @@ import {
   REFINE_ARMOR,
   REFINE_ATTACK,
   type Span,
+  requirementText,
 } from '../sim/item';
 import type { Modifier } from '../sim/stats';
 import { Category } from '../sim/stats';
@@ -167,6 +169,19 @@ function pickAffixes(
   }
 }
 
+// Item levels from which the stronger tier of a picked base drops.
+export const EXCEPTIONAL_FROM = 12;
+export const ELITE_FROM = 24;
+
+/** The base an item level gives for a picked Normal base. No RNG draw. */
+export function tierBase(base: ItemBase, itemLevel: number): ItemBase {
+  const siblings = TIERS.get(base.id);
+  if (!siblings || itemLevel < EXCEPTIONAL_FROM) {
+    return base;
+  }
+  return itemLevel >= ELITE_FROM ? siblings.elite : siblings.exceptional;
+}
+
 /**
  * Rolls one piece of equipment for an item level. The base must have
  * dropped by that level; quality comes from the dropper's rank.
@@ -182,7 +197,7 @@ export function rollItem(
   );
   // Made for one job, if any base of the level is; otherwise any base.
   const made = bases.filter((b) => only.job !== undefined && b.jobs?.includes(only.job));
-  const base = rng.pick(made.length > 0 ? made : bases);
+  const base = tierBase(rng.pick(made.length > 0 ? made : bases), itemLevel);
   const quality = Math.max(weighted(rng, QUALITY_WEIGHTS[rank]), only.atLeast ?? 0) as Quality;
   const scale = BASE_SCALE[quality];
   const item: Item = {
@@ -479,6 +494,10 @@ export function itemLines(item: Item): string[] {
     lines.push(
       `Blocks ${item.base.block.chance}% of blows from the front, for ${item.base.block.amount}%`,
     );
+  }
+  const requires = requirementText(item);
+  if (requires) {
+    lines.push(requires);
   }
   const unique = item.unique === undefined ? undefined : UNIQUE_BY_ID.get(item.unique);
   const set = item.piece === undefined ? undefined : PIECE_BY_ID.get(item.piece);

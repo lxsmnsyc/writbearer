@@ -3,7 +3,16 @@ import { MATERIAL_NAME } from '../content/materials';
 import type Game from '../game/game';
 import { socketFor } from '../game/inventory';
 import { itemName } from '../gen/loot';
-import { EquipSlot, type Item, isCard, isPotion, slotFor, usableBy } from '../sim/item';
+import {
+  EquipSlot,
+  type Item,
+  checksRequirements,
+  isCard,
+  isPotion,
+  meetsRequirements,
+  slotFor,
+  usableBy,
+} from '../sim/item';
 import type Unit from '../sim/unit';
 import { type IconName, isIconName } from './icons';
 import { EmptySlot, ItemSlot } from './items';
@@ -86,7 +95,9 @@ export default function Inventory(props: Props): JSX.Element {
     if (!m) {
       return false;
     }
-    return isCard(item) ? socketFor(m, item) !== null : usableBy(item, m.job.name);
+    return isCard(item)
+      ? socketFor(m, item) !== null
+      : usableBy(item, m.job.name) && (!checksRequirements(item) || meetsRequirements(item, m));
   };
   const nobody = (item: Item): boolean =>
     !isCard(item) && !mercs().some((m) => usableBy(item, m.job.name));
@@ -303,6 +314,7 @@ export default function Inventory(props: Props): JSX.Element {
                 <ItemSlot
                   version={props.version}
                   item={item}
+                  unit={merc()}
                   dim={!fits(item)}
                   draggable="true"
                   onDragStart={() => {

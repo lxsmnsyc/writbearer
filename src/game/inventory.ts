@@ -5,7 +5,10 @@ import {
   type Item,
   ItemType,
   canSocket,
+  checksRequirements,
   isPotion,
+  meetsRequirements,
+  requirementText,
   slotFor,
   stacks,
   usableBy,
@@ -234,6 +237,9 @@ export function equipFromPack(
   }
   if (!usableBy(item, merc.job.name)) {
     return `${merc.name} cannot use that.`;
+  }
+  if (checksRequirements(item) && !meetsRequirements(item, merc)) {
+    return `${merc.name} needs more strength or dexterity for that. ${requirementText(item)}.`;
   }
   const blocked = cannotHand(sim, bearer, merc);
   if (blocked) {
