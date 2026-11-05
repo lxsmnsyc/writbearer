@@ -72,6 +72,8 @@ export function raise(raiser: Unit, corpse: Unit, options: RaiseOptions): Unit |
   const unit = options.make(sim, level, corpse.x, corpse.z);
   unit.side = raiser.side;
   unit.aware = true;
+  // A Hunt waits for what its quarry raises
+  unit.marked = raiser.marked;
   unit.hp = Math.max(1, unit.derived.maxHp * (options.share ?? RAISE_SHARE));
   RAISED.set(unit, raiser);
   let brood = BROOD.get(raiser);

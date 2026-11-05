@@ -12,7 +12,8 @@
 
 - No Template flag, no `SPAWN_STEPS` entry, no change in `roster.ts` or `monster-skills.ts`: `Template` is in `src/content/jobs/types.ts`, which no brief owns here. The skill sits in `raiser.ts` beside its logic. The monster that raises (be-monsters-deep, the Summoner) calls `markRaiser` from its own spawn step.
 - No `src/render/draw/corpses.ts` and no `death.ts` change: nothing needed them (see Built).
-- A raised unit is not in a Horde's `came` list nor `marked` for a Hunt, so those objectives do not wait for it. Raised units pay xp and drops on their own death, like any monster.
+- Touched `src/game/objective.ts` (outside owned paths, review fix): a private `crowd()` returns `came` plus `raisedBy` of each, and the five `this.came` checks (Horde and Ambush done, Horde beaten, the "left" counts) use it. `raise()` copies `marked` from the raiser so a Hunt waits for what its quarry raises. Raised units pay xp and drops on their own death, like any monster.
+- `raiserStep` clears `u.target` while a body is in reach, so the raiser stops attacking then. Intended: it stands and casts.
 
 ## Stubs left
 
@@ -30,8 +31,8 @@
 
 ## Verification
 
-- `pnpm vitest run test/sim/raisers.test.ts`: 12 pass.
-- `pnpm typecheck && pnpm lint && pnpm test`: pass (731 passed, 3 skipped).
+- `pnpm vitest run test/sim/raisers.test.ts`: 13 pass (one added: Horde count and Hunt mark).
+- `pnpm typecheck && pnpm lint && pnpm test`: pass (732 passed, 3 skipped), full suite run 3 times, all green. The one reviewer failure was not reproduced; the known load-sensitive test is `test/sim/concealment.test.ts` (5 s timeout).
 
 ## Size
 

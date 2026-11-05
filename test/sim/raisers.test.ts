@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { EventPriority } from '../../src/core/event-emitter';
+import RNG from '../../src/core/rng';
+import ObjectiveRun, { type Pace } from '../../src/game/objective';
+import { enterStage, spawnParty } from '../../src/game/stage';
+import { generateStage } from '../../src/gen/stage';
+import type { Spot } from '../../src/sim/nav';
+import { updateWarnings } from '../../src/sim/warning';
 import { Hunt } from '../../src/sim/ai';
 import { SimEvents } from '../../src/sim/events';
 import { RAISE_DEAD, isRaiser, markRaiser } from '../../src/sim/ai/raiser';
@@ -184,6 +190,42 @@ describe('a raiser', () => {
     fall(spawnMonster(sim, 'hollowSoldier', 3, 27, 22));
     run(sim, 60);
     expect(raiser.alive).toBe(false);
+  });
+});
+
+describe('a raised unit and a Horde', () => {
+  it('is counted among those left, and carries its raiser’s Hunt mark', () => {
+    const stage = generateStage(new RNG(2), 10, {
+      kind: 'combat',
+      ahead: ['combat'],
+      objective: 'horde',
+    });
+    const sim = new Sim(1);
+    enterStage(sim, stage);
+    const bearer = spawnParty(sim, stage, []);
+    bearer.x = stage.entrance.x + 8;
+    const objective = new ObjectiveRun('horde', stage);
+    const left = (): number => Number(/(\d+) left/.exec(objective.status(sim))?.[1]);
+    const at: Spot = { x: stage.width - 6, z: 4 };
+    const pace: Pace = { calm: () => false, share: () => 1, spawnAt: () => at };
+    for (let t = 0; t < 4; t += DT) {
+      objective.update(sim, DT, 12, pace);
+      updateWarnings(sim, DT);
+    }
+    const wave = sim.living(Side.Monster);
+    expect(wave.length).toBeGreaterThan(2);
+    const [raiser, victim] = wave;
+    raiser.marked = true;
+    markRaiser(raiser, { make });
+    const before = left();
+    fall(victim);
+    expect(left()).toBe(before - 1);
+    const up = must(raise(raiser, victim, { make }));
+    expect(left()).toBe(before);
+    expect(up.marked).toBe(true);
+    // Once it dies it is counted gone
+    fall(up);
+    expect(left()).toBe(before - 1);
   });
 });
 
