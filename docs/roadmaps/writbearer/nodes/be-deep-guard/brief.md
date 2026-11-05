@@ -1,7 +1,7 @@
 ---
 id: be-deep-guard
 title: The Crown's last guard: Revenant Knight and Gilded Effigy
-status: todo
+status: active
 priority: should
 type: feature
 story:

@@ -1,7 +1,7 @@
 ---
 id: ie-item-model
 title: Base tiers and STR/DEX requirements
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
