@@ -2,7 +2,8 @@ import type { Placement } from 'solid-floating-ui';
 import { For, type JSX, Show, splitProps } from 'solid-js';
 import { itemLines, itemName } from '../gen/loot';
 import { LABEL_COLOR } from '../render/renderer';
-import { type Item, type ItemBase, ItemType, Quality } from '../sim/item';
+import { type Item, type ItemBase, ItemType, Quality, meetsRequirements } from '../sim/item';
+import type Unit from '../sim/unit';
 import { type IconName, isIconName } from './icons';
 import { Icon, Tooltip } from './kit';
 
@@ -61,7 +62,12 @@ export const qualityColor = (item: Item): string =>
   item.base.type === ItemType.Gold ? '#e8b04a' : LABEL_COLOR[item.quality];
 
 /** An item's full card: name, kind, what it does. */
-export function ItemCard(props: { item: Item; extra?: JSX.Element }): JSX.Element {
+export function ItemCard(props: {
+  item: Item;
+  // The merc looking at it, for the requirements it misses
+  unit?: Unit;
+  extra?: JSX.Element;
+}): JSX.Element {
   const kind = (): string => {
     const q = QUALITY_NAME[props.item.quality];
     const type = props.item.base.weapon
@@ -88,6 +94,10 @@ export function ItemCard(props: { item: Item; extra?: JSX.Element }): JSX.Elemen
               classList={{
                 'pl-3 text-neutral-400': line.startsWith('  '),
                 'text-neutral-500 italic': line.startsWith('“'),
+                'text-red-400':
+                  line.startsWith('Requires ') &&
+                  props.unit !== undefined &&
+                  !meetsRequirements(props.item, props.unit),
               }}
             >
               {line.trim()}
@@ -145,6 +155,8 @@ type SlotProps = Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> &
   dim?: boolean;
   // Below the card, such as what a click does
   extra?: JSX.Element;
+  // The merc looking at it, so unmet requirements show red
+  unit?: Unit;
   placement?: Placement;
   size?: 'md' | 'lg';
   // Bumped when items change in place, such as a stack drunk from
@@ -157,6 +169,7 @@ export function ItemSlot(props: SlotProps): JSX.Element {
     'item',
     'dim',
     'extra',
+    'unit',
     'placement',
     'size',
     'class',
@@ -166,7 +179,7 @@ export function ItemSlot(props: SlotProps): JSX.Element {
   return (
     <Tooltip
       placement={own.placement ?? 'right-start'}
-      content={() => <ItemCard item={own.item} extra={own.extra} />}
+      content={() => <ItemCard item={own.item} unit={own.unit} extra={own.extra} />}
     >
       {(anchor) => (
         <button

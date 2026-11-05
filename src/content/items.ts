@@ -1,4 +1,11 @@
-import { type Affix, type ItemBase, ItemType } from '../sim/item';
+import {
+  type Affix,
+  type ItemBase,
+  ItemType,
+  type Requirements,
+  type Span,
+  Tier,
+} from '../sim/item';
 import { Category } from '../sim/stats';
 import { Race, Range } from '../sim/types';
 
@@ -24,6 +31,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 50,
     maxSockets: 3,
+    requirements: { str: 8 },
     jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     damage: { min: { min: 25, max: 31 }, max: { min: 33, max: 39 } },
   },
@@ -35,6 +43,7 @@ export const BASES: readonly ItemBase[] = [
     level: 4,
     weight: 70,
     maxSockets: 3,
+    requirements: { str: 10 },
     jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     damage: { min: { min: 30, max: 36 }, max: { min: 38, max: 46 } },
   },
@@ -46,6 +55,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 30,
     maxSockets: 3,
+    requirements: { dex: 8 },
     jobs: RANGER,
     damage: { min: { min: 21, max: 27 }, max: { min: 29, max: 35 } },
   },
@@ -57,6 +67,7 @@ export const BASES: readonly ItemBase[] = [
     level: 5,
     weight: 40,
     maxSockets: 4,
+    requirements: { dex: 12 },
     jobs: RANGER,
     damage: { min: { min: 25, max: 31 }, max: { min: 36, max: 44 } },
   },
@@ -68,6 +79,7 @@ export const BASES: readonly ItemBase[] = [
     level: 2,
     weight: 15,
     maxSockets: 2,
+    requirements: { dex: 8 },
     jobs: DUELIST,
     damage: { min: { min: 16, max: 20 }, max: { min: 22, max: 28 } },
   },
@@ -114,6 +126,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 90,
     maxSockets: 2,
+    requirements: { str: 12 },
     jobs: [...VANGUARD, ...WARDEN],
     armor: { min: 16, max: 24 },
     block: { chance: 35, amount: 60 },
@@ -125,6 +138,7 @@ export const BASES: readonly ItemBase[] = [
     level: 2,
     weight: 30,
     maxSockets: 2,
+    requirements: { str: 6 },
     jobs: [...VANGUARD, ...DUELIST, ...SELLSWORD, ...WARDEN],
     armor: { min: 6, max: 10 },
     block: { chance: 20, amount: 45 },
@@ -146,6 +160,7 @@ export const BASES: readonly ItemBase[] = [
     level: 3,
     weight: 30,
     maxSockets: 2,
+    requirements: { str: 8 },
     jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     armor: { min: 10, max: 15 },
   },
@@ -156,6 +171,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 40,
     maxSockets: 3,
+    requirements: { str: 4 },
     armor: { min: 16, max: 24 },
   },
   {
@@ -165,6 +181,7 @@ export const BASES: readonly ItemBase[] = [
     level: 1,
     weight: 120,
     maxSockets: 3,
+    requirements: { str: 12 },
     jobs: [...VANGUARD, ...SELLSWORD, ...WARDEN],
     armor: { min: 44, max: 56 },
   },
@@ -250,7 +267,68 @@ export const GOLD: ItemBase = {
   maxSockets: 0,
 };
 
-export const BASE_BY_ID = new Map([...BASES, ...POTIONS].map((b) => [b.id, b]));
+// How far each tier lifts a base: damage and armor, weight, and the stat it asks.
+const TIER_STEPS = [
+  { tier: Tier.Exceptional, name: 'Tempered', level: 12, scale: 2.2, weight: 1.2, need: 8 },
+  { tier: Tier.Elite, name: 'Masterwork', level: 24, scale: 3, weight: 1.4, need: 16 },
+] as const;
+
+const scaleSpan = (s: Span, k: number): Span => ({
+  min: Math.round(s.min * k),
+  max: Math.round(s.max * k),
+});
+
+// One stronger sibling of a Normal base.
+function makeSibling(base: ItemBase, step: (typeof TIER_STEPS)[number]): ItemBase {
+  const own = base.requirements;
+  // Weapons without a requirement ask for DEX at higher tiers, armor for STR.
+  const stats: ('str' | 'dex')[] = [];
+  for (const key of ['str', 'dex'] as const) {
+    if (own?.[key]) {
+      stats.push(key);
+    }
+  }
+  if (stats.length === 0) {
+    stats.push(base.type === ItemType.Weapon ? 'dex' : 'str');
+  }
+  const requirements: Requirements = {};
+  for (const key of stats) {
+    requirements[key] = (own?.[key] ?? 0) + step.need;
+  }
+  return {
+    ...base,
+    id: `${base.id}${step.tier === Tier.Elite ? 'Elite' : 'Exceptional'}`,
+    name: `${step.name} ${base.name}`,
+    tier: step.tier,
+    level: step.level,
+    weight: Math.round(base.weight * step.weight),
+    requirements,
+    damage: base.damage && {
+      min: scaleSpan(base.damage.min, step.scale),
+      max: scaleSpan(base.damage.max, step.scale),
+    },
+    armor: base.armor && scaleSpan(base.armor, step.scale),
+    matk: base.matk && scaleSpan(base.matk, step.scale),
+  };
+}
+
+// The kinds of base that have stronger siblings.
+const TIERED = [ItemType.Weapon, ItemType.Shield, ItemType.Head, ItemType.Body];
+
+/** Stronger siblings of the weapon, shield, helm and body armor bases, by Normal base id. */
+export const TIERS = new Map<string, { exceptional: ItemBase; elite: ItemBase }>();
+/** The bases the loot never picks from itself: only an item level swaps one in. */
+export const TIER_BASES: ItemBase[] = [];
+for (const base of BASES) {
+  if (TIERED.includes(base.type)) {
+    const exceptional = makeSibling(base, TIER_STEPS[0]);
+    const elite = makeSibling(base, TIER_STEPS[1]);
+    TIERS.set(base.id, { exceptional, elite });
+    TIER_BASES.push(exceptional, elite);
+  }
+}
+
+export const BASE_BY_ID = new Map([...BASES, ...TIER_BASES, ...POTIONS].map((b) => [b.id, b]));
 
 const ARMOR_TYPES = [ItemType.Shield, ItemType.Head, ItemType.Body, ItemType.Cloak, ItemType.Boots];
 const ANY = [ItemType.Weapon, ...ARMOR_TYPES, ItemType.Accessory];
