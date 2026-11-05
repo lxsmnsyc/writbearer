@@ -1,7 +1,7 @@
 ---
 id: be-deep-dread
 title: Dread and the unseen: Drowned Bell, Whisperer, Skulker
-status: todo
+status: active
 priority: should
 type: feature
 story:

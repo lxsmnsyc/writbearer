@@ -1,7 +1,7 @@
 ---
 id: ie-item-bonuses
 title: Defense element and spell rank bonus forms
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
