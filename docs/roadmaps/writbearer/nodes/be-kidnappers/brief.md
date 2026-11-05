@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 132000
 owns:
   - src/sim/grab.ts
   - src/sim/ai/kidnapper.ts

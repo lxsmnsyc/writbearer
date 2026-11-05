@@ -4,6 +4,7 @@ import { ambushersArrive, springAmbush } from '../content/jobs/warden/upgrades';
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Objective } from '../gen/graph';
 import { RITE_REACH, RITE_TIME, type Stage, type Wave, floorOf, rectOf } from '../gen/stage';
+import { raisedBy } from '../sim/raise';
 import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
 import { type Rect, type Spot, inRect } from '../sim/nav';
@@ -108,6 +109,11 @@ export default class ObjectiveRun {
   private warned = false;
   private readonly came: Unit[] = [];
 
+  // Who came, and the undead they raised since
+  private crowd(): Unit[] {
+    return this.came.flatMap((u) => [u, ...raisedBy(u)]);
+  }
+
   constructor(
     readonly kind: Objective,
     private readonly stage: Stage,
@@ -160,7 +166,7 @@ export default class ObjectiveRun {
     }
     if (this.kind === 'ambush') {
       const waves = this.stage.waves ?? [];
-      return this.started && this.arrived >= waves.length && this.came.every((u) => !u.alive);
+      return this.started && this.arrived >= waves.length && this.crowd().every((u) => !u.alive);
     }
     if (this.kind === 'collapse') {
       const bearer = sim.bearer;
@@ -207,7 +213,7 @@ export default class ObjectiveRun {
     }
     if (this.kind === 'horde') {
       const waves = this.stage.waves ?? [];
-      return this.next >= waves.length && this.came.every((u) => !u.alive);
+      return this.next >= waves.length && this.crowd().every((u) => !u.alive);
     }
     // A Labyrinth is done once the bearer reaches the hall at its far end.
     const bearer = sim.bearer;
@@ -369,7 +375,7 @@ export default class ObjectiveRun {
     if (!wave || this.warned) {
       return;
     }
-    const beaten = this.next > 0 && this.came.every((u) => !u.alive);
+    const beaten = this.next > 0 && this.crowd().every((u) => !u.alive);
     const due = this.clock >= wave.delay - WAVE_WARNING;
     if (!due && !(beaten && this.clock >= WAVE_MIN_GAP)) {
       return;
@@ -502,7 +508,7 @@ export default class ObjectiveRun {
       return `Break the horn posts before the Horn-Bearers reach them: ${all - this.postsLeft(sim)} of ${all}`;
     }
     if (this.kind === 'ambush') {
-      const left = this.came.filter((u) => u.alive).length;
+      const left = this.crowd().filter((u) => u.alive).length;
       return `It was no camp. Kill every one of them: ${left} left.`;
     }
     if (this.kind === 'collapse') {
@@ -542,7 +548,7 @@ export default class ObjectiveRun {
       if (!this.started) {
         return `Hold out against ${waves.length} waves. They come once the bearer moves on.`;
       }
-      const left = this.came.filter((u) => u.alive).length;
+      const left = this.crowd().filter((u) => u.alive).length;
       const wave = waves.at(this.next);
       if (!wave) {
         return `Last wave: ${left} left`;
