@@ -82,7 +82,7 @@ export const MINI_BOSSES: Record<MiniBossId, MiniBoss> = {
     layer: 1,
     kind: 'hornBearer',
     escort: ['hollowSoldier', 'hollowSoldier', 'hollowSoldier'],
-    affixes: ['herald', 'swift'],
+    affixes: ['herald', 'teleport'],
     text: 'A Horn-Bearer that runs from post to post. Each horn blown sends a pack.',
   },
   drownedCantor: {

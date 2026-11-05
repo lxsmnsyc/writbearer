@@ -9,16 +9,19 @@ import { warn } from '../sim/warning';
 // Elite affixes, from the bestiary, after Diablo 2's champions: each makes
 // an elite, and so its pack, a small puzzle with an answer.
 //
-// So far: Swift, Stoneskin, Fire, Frost and Venom Enchanted, Vampiric,
-// Thorns, the Might and Mending auras, Warded, Bound, Herald and Multishot.
-// Not yet: Storm Enchanted, Mana Burn and Teleport.
+// All of them: Swift, Stoneskin, Fire, Frost, Storm and Venom Enchanted,
+// Mana Burn, Vampiric, Thorns, the Might and Mending auras, Warded, Bound,
+// Herald, Multishot and Teleport. A Herald runs for a horn post where one
+// stands (src/game/alarms.ts) and wakes the next pack where none does.
 
 export type Affix =
   | 'swift'
   | 'stoneskin'
   | 'fireEnchanted'
   | 'frostEnchanted'
+  | 'stormEnchanted'
   | 'venomous'
+  | 'manaBurn'
   | 'vampiric'
   | 'thorns'
   | 'might'
@@ -26,7 +29,8 @@ export type Affix =
   | 'warded'
   | 'bound'
   | 'herald'
-  | 'multishot';
+  | 'multishot'
+  | 'teleport';
 
 /** Every affix an elite may roll. */
 export const AFFIXES: readonly Affix[] = [
@@ -34,7 +38,9 @@ export const AFFIXES: readonly Affix[] = [
   'stoneskin',
   'fireEnchanted',
   'frostEnchanted',
+  'stormEnchanted',
   'venomous',
+  'manaBurn',
   'vampiric',
   'thorns',
   'might',
@@ -43,6 +49,7 @@ export const AFFIXES: readonly Affix[] = [
   'bound',
   'herald',
   'multishot',
+  'teleport',
 ];
 
 export const AFFIX_NAME: Record<Affix, string> = {
@@ -50,7 +57,9 @@ export const AFFIX_NAME: Record<Affix, string> = {
   stoneskin: 'Stoneskin',
   fireEnchanted: 'Fire Enchanted',
   frostEnchanted: 'Frost Enchanted',
+  stormEnchanted: 'Storm Enchanted',
   venomous: 'Venomous',
+  manaBurn: 'Mana Burn',
   vampiric: 'Vampiric',
   thorns: 'Thorns',
   might: 'Aura: Might',
@@ -59,6 +68,7 @@ export const AFFIX_NAME: Record<Affix, string> = {
   bound: 'Bound',
   herald: 'Herald',
   multishot: 'Multishot',
+  teleport: 'Teleport',
 };
 
 /**
@@ -70,7 +80,9 @@ export const SHARED: ReadonlySet<Affix> = new Set([
   'stoneskin',
   'fireEnchanted',
   'frostEnchanted',
+  'stormEnchanted',
   'venomous',
+  'manaBurn',
   'vampiric',
   'thorns',
   'multishot',
@@ -97,6 +109,15 @@ const MULTISHOT = 2;
 // Herald: how often it wakes the next pack in the area
 const HERALD_EVERY = 10;
 const PACK_REACH = 3;
+// Storm Enchanted: a spark of Storm damage at the nearest merc when it is
+// hit, as a share of its attack; how far it reaches and the least time
+// between sparks
+const SPARK = { share: 0.6, reach: 4, every: 0.5 };
+// Mana Burn: the share of the damage it deals that it drains as mana
+const MANA_BURN = 0.5;
+// Teleport: how often it blinks while aware, how long the landing shows,
+// how far from the bearer it lands, and how near it must be to stay put
+const TELEPORT = { every: 6, windup: 0.8, land: 1.5, near: 3 };
 // A Fire or Frost Enchanted death: how wide, how long it shows, and what
 // fire takes from the party
 const BURST = { r: 2, windup: 1, share: 0.12 };
@@ -111,6 +132,10 @@ interface Held {
   heralded: number;
   // Bound: those it shares its health with
   bound: Unit[] | null;
+  // Storm Enchanted: when it last threw a spark
+  sparkAt: number;
+  // Teleport: time since it last blinked
+  blinked: number;
   // Might: the bonus its aura gives, by its own key
   aura: string;
 }
@@ -137,6 +162,10 @@ export default class Affixes {
       if (vampiric > 0 && e.source.alive) {
         e.source.heal(e.source, e.value * VAMPIRIC * vampiric);
       }
+      const burn = by?.affixes.get('manaBurn') ?? 0;
+      if (burn > 0 && (e.flags & DamageFlags.Redirected) === 0) {
+        e.target.mana = Math.max(0, e.target.mana - e.value * MANA_BURN * burn);
+      }
       const on = this.held.get(e.target);
       const thorns = on?.affixes.get('thorns') ?? 0;
       const melee = e.range === Range.Melee && (e.flags & DamageFlags.Redirected) === 0;
@@ -149,6 +178,10 @@ export default class Affixes {
       }
       if (on) {
         on.unhit = 0;
+      }
+      const storm = on?.affixes.get('stormEnchanted') ?? 0;
+      if (storm > 0 && (e.flags & DamageFlags.Redirected) === 0) {
+        this.spark(e.target, on, storm);
       }
     });
     sim.on(SimEvents.UnitDies, EventPriority.Post, (e) => {
@@ -185,6 +218,8 @@ export default class Affixes {
         wardMost: 0,
         unhit: 0,
         heralded: 0,
+        sparkAt: -Infinity,
+        blinked: 0,
         bound: null,
         aura: `aura:might:${this.auras++}`,
       };
@@ -268,6 +303,61 @@ export default class Affixes {
     }
   }
 
+  // A Storm Enchanted elite that is hit throws a spark at the nearest merc
+  // in reach, and no more than one every half second.
+  private spark(from: Unit, h: Held | undefined, strength: number): void {
+    if (!h || !from.alive || this.sim.time - h.sparkAt < SPARK.every) {
+      return;
+    }
+    let near: Unit | null = null;
+    for (const m of this.sim.living(Side.Party)) {
+      const d = m.distanceTo(from);
+      if (d <= SPARK.reach && (!near || d < near.distanceTo(from))) {
+        near = m;
+      }
+    }
+    if (!near) {
+      return;
+    }
+    h.sparkAt = this.sim.time;
+    from.hit(near, {
+      kind: DamageKind.Magical,
+      element: Element.Storm,
+      fixed: Math.max(1, Math.round(from.derived.atkMax * SPARK.share * strength)),
+      flags: DamageFlags.Redirected,
+    });
+  }
+
+  // A Teleport elite shows where it will land beside the bearer, on its own
+  // side, then blinks there.
+  private blink(u: Unit): void {
+    const bearer = this.sim.bearer;
+    if (!bearer?.alive) {
+      return;
+    }
+    const a = Math.atan2(u.z - bearer.z, u.x - bearer.x);
+    const want = {
+      x: bearer.x + Math.cos(a) * TELEPORT.land,
+      z: bearer.z + Math.sin(a) * TELEPORT.land,
+    };
+    const at = this.sim.nav?.free(want.x, want.z, 2) ?? want;
+    warn(this.sim, {
+      x: at.x,
+      z: at.z,
+      shape: { kind: 'circle', r: 0.8 },
+      windup: TELEPORT.windup,
+      spare: Side.Party,
+      strike: () => undefined,
+      source: u,
+      done: () => {
+        if (u.alive) {
+          u.x = at.x;
+          u.z = at.z;
+        }
+      },
+    });
+  }
+
   // A Fire or Frost Enchanted elite bursts as it dies, shown first: fire
   // burns the party, frost chills it.
   private burst(dead: Unit, fire: boolean): void {
@@ -321,7 +411,16 @@ export default class Affixes {
           h.ward = h.wardMost;
         }
       }
-      if (h.affixes.has('herald') && u.aware) {
+      if (h.affixes.has('teleport') && u.aware && u.alarm === null) {
+        h.blinked += dt;
+        const bearer = this.sim.bearer;
+        if (h.blinked >= TELEPORT.every && bearer && u.distanceTo(bearer) > TELEPORT.near) {
+          h.blinked = 0;
+          this.blink(u);
+        }
+      }
+      // A herald running for a horn post leaves the waking to the horn.
+      if (h.affixes.has('herald') && u.aware && u.alarm === null) {
         h.heralded += dt;
         if (h.heralded >= HERALD_EVERY) {
           h.heralded = 0;

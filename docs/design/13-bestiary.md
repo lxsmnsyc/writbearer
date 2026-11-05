@@ -50,9 +50,10 @@ In the game so far (`src/content/affixes.ts`):
 - Aura: Might gives the monsters within 6 tiles 25% more attack. Aura: Mending heals them 2% of health a second. Both end with it.
 - Warded: a ward of 30% of its health that takes magic damage first, and refills after 4 seconds unhit.
 - Bound: the elite and its pack share every hit evenly.
-- Herald: there are no bells yet. Instead, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
+- Herald: once its pack wakes, it runs for the nearest horn post still standing and blows it, calling a fresh pack, as a Horn-Bearer does. Killing it or breaking the post first stops it. Where no post stands, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
 - Multishot: a ranged elite looses three shots at once, at its target and the two nearest it in reach. It is rolled only for an elite that shoots.
-- Not yet: Storm Enchanted, Mana Burn and Teleport.
+- Storm Enchanted: a hit on it throws a spark of Storm damage, 60% of its attack, at the nearest merc within 4 tiles, at most one every 0.5 seconds. Mana Burn: its hits drain mana equal to half the damage dealt. Both are shared with the pack at half strength.
+- Teleport: every 6 seconds while aware, and more than 3 tiles from the bearer, it shows a circle beside the bearer for 0.8 seconds, then blinks there. It stays the elite's. The Horn of the Road has Herald and Teleport.
 - Ranged monsters shoot from 6 tiles, step back 2.5 tiles from anyone nearer than 3 unless taunted, and do not stop for whoever stands in the way of their target. Barriers stop their shots as they stop any enemy's.
 
 ## New monsters
@@ -133,7 +134,7 @@ In the game so far (`src/content/minibosses.ts`):
 
 - Seven are in, each built on a monster already in the game: the Bell-Ringer and the First Keeper in the Marches, the Shield-Oath, the Bone Quartermaster and the Horn of the Road on the Rift Road, the Drowned Cantor in the Undercroft and the Last Herald in the Sunken Crown. The other nine wait for their monsters.
 - A mini-boss is an elite with 250% more health, 40% more attack and 20 more armor on top, a level above the area's monsters, and drawn larger. It comes with its escort and its fixed affixes. Its name and affixes show over it, and the log names it and its gimmick as it joins the fight.
-- Gimmicks: the Bell-Ringer's Herald wakes the next pack every ten seconds. The First Keeper's Ward refills only while its Cantors live. The Shield-Oath is a Shieldbearer with two Shieldbearers and two soldiers, all Bound. The Drowned Cantor raises a pool of water every 6 seconds near it, up to four, which drain when it dies. The Last Herald calls two Hollowed at a time, as a captain does. The Horn of the Road blows a horn post, then runs to another and blows it 15 seconds later; two posts stand in any fight it is in. It is Swift instead of Teleport. The Bone Quartermaster is a Hollow Archer with Multishot and Stoneskin, with two archers and two soldiers; its volleys are not yet shown on the ground first.
+- Gimmicks: the Bell-Ringer's Herald wakes the next pack every ten seconds. The First Keeper's Ward refills only while its Cantors live. The Shield-Oath is a Shieldbearer with two Shieldbearers and two soldiers, all Bound. The Drowned Cantor raises a pool of water every 6 seconds near it, up to four, which drain when it dies. The Last Herald calls two Hollowed at a time, as a captain does. The Horn of the Road blows a horn post, then blinks to another, shown on the ground for 0.8 seconds first, and blows it 15 seconds later; two posts stand in any fight it is in. Its Teleport brings it beside the bearer when no post is left. The Bone Quartermaster is a Hollow Archer with Multishot and Stoneskin, with two archers and two soldiers; its volleys are not yet shown on the ground first.
 - Where: every Elite fight holds one, but a Labyrinth, an Ambush or a Ritual. From the Rift Road down, an ordinary Hunt, Escort, Vault or Collapse holds one a quarter of the time, from the `director` stream. An Elite fight's stands at its farthest boss spot, so the fight ends on it; an ordinary one's at one of its boss spots. An Elite Hunt's first quarry is it, an Elite Horde's last wave is led by it, and a Vault's key is on it.
 - Not yet: their compendium entries and cards.
 
