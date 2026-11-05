@@ -28,6 +28,9 @@ describe('monster table', () => {
       'flagellant',
       'revenantKnight',
       'gildedEffigy',
+      'drownedBell',
+      'whisperer',
+      'skulker',
     ]);
   });
 });

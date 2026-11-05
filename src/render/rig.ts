@@ -31,7 +31,10 @@ export type Kind =
   | 'confessor'
   | 'flagellant'
   | 'revenantKnight'
-  | 'gildedEffigy';
+  | 'gildedEffigy'
+  | 'drownedBell'
+  | 'whisperer'
+  | 'skulker';
 
 const KINDS = new Set<string>([
   'bearer',
@@ -57,11 +60,17 @@ const KINDS = new Set<string>([
   'flagellant',
   'revenantKnight',
   'gildedEffigy',
+  'drownedBell',
+  'whisperer',
+  'skulker',
 ]);
 
 export function isKind(kind: string): kind is Kind {
   return KINDS.has(kind);
 }
+
+// The Hollowed and the Skulker, drawn alike: long arms and claws
+const hollowedLike = (kind: Kind): boolean => kind === 'hollowed' || kind === 'skulker';
 
 // The Old King's guard, drawn as Hollow soldiers with their crowns
 const hollowGuard = (kind: Kind): boolean =>
@@ -103,6 +112,9 @@ const OTHER_HIT: Record<OtherKind, number> = {
   flagellant: 0.55,
   revenantKnight: 0.65,
   gildedEffigy: 0.65,
+  drownedBell: 0.5,
+  whisperer: 0.7,
+  skulker: 0.45,
 };
 
 /**
@@ -215,6 +227,9 @@ const OTHER_SIZE: Record<OtherKind, number> = {
   flagellant: 1,
   revenantKnight: 1.15,
   gildedEffigy: 1.1,
+  drownedBell: 1,
+  whisperer: 0.95,
+  skulker: 1,
 };
 
 // How big a figure is drawn: its own size if it has one, else its kind's.
@@ -353,7 +368,7 @@ export function skeleton(u: RigUnit, time: number): Skeleton {
     flinch +
     roar +
     (hollowGuard(u.kind) ? 4 : 0) +
-    (u.kind === 'hollowed' ? 30 : 0) +
+    (hollowedLike(u.kind) ? 30 : 0) +
     (u.kind === 'husk' ? 12 : 0) +
     strike * (u.kind === 'hollowSoldier' || u.kind === 'revenantKnight' ? 14 : 8);
 
@@ -443,6 +458,8 @@ export function paperColor(kind: Kind, C: Palette): string {
     kind === 'penitent' ||
     kind === 'penitentSlinger' ||
     kind === 'cantor' ||
+    kind === 'whisperer' ||
+    kind === 'skulker' ||
     kind === 'hollowed' ||
     kind === 'ossuaryPriest' ||
     kind === 'titheTaker' ||
@@ -701,7 +718,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
       reach(sk, side, hand, v(-1, k, 0));
     }
   }
-  if (u.kind === 'hollowed') {
+  if (hollowedLike(u.kind)) {
     // Long arms hang forward, claws out. The rake comes down from above.
     for (const side of ['L', 'R'] as const) {
       const k = side === 'L' ? -1 : 1;
@@ -785,7 +802,7 @@ export function drawUnit(
     add(sk.hipR, v(0, -1, 0)),
     add(sk.hipL, v(0, 1, 0)),
   ].map(proj);
-  if (u.kind === 'hollowed') {
+  if (hollowedLike(u.kind)) {
     // A robe torn off at the knee, over bare legs.
     const hem = [v(12, 0, 22), v(-10, 0, 26), v(0, 15, 20), v(0, -15, 24), v(8, 11, 16)].map(proj);
     const rags = hull([...torso, ...hem]);
@@ -795,7 +812,12 @@ export function drawUnit(
         fill(c, rags, color, ink);
       },
     });
-  } else if (u.kind === 'penitent' || u.kind === 'penitentSlinger' || u.kind === 'cantor') {
+  } else if (
+    u.kind === 'penitent' ||
+    u.kind === 'penitentSlinger' ||
+    u.kind === 'cantor' ||
+    u.kind === 'whisperer'
+  ) {
     // A robe to the ground instead of legs.
     const hem = [
       v(14, 0, 0),
@@ -851,7 +873,8 @@ export function drawUnit(
     u.kind === 'penitent' ||
     u.kind === 'penitentSlinger' ||
     u.kind === 'cantor' ||
-    u.kind === 'hollowed'
+    u.kind === 'whisperer' ||
+    hollowedLike(u.kind)
   ) {
     const hood = [
       add(sk.head, v(-6, -5, -2)),
@@ -863,6 +886,21 @@ export function drawUnit(
       depth: H.depth + 0.0005,
       draw: (c) => {
         fill(c, hull(hood), color, ink);
+      },
+    });
+  }
+  if (u.kind === 'whisperer') {
+    // The signature: a long pale veil from the brow to the knee.
+    const veil = [
+      add(sk.head, v(3, -5, 4)),
+      add(sk.head, v(3, 5, 4)),
+      add(sk.head, v(5, 7, -44)),
+      add(sk.head, v(5, -7, -44)),
+    ].map(proj);
+    parts.push({
+      depth: H.depth + 0.0007,
+      draw: (c) => {
+        fill(c, hull(veil), C.bone, ink);
       },
     });
   }
@@ -1051,7 +1089,12 @@ export function drawUnit(
     // Three long fingers, fanned.
     const a = proj(claw.hand);
     const tips = [-1, 0, 1].map((k) =>
-      proj(add(claw.hand, add(scale(claw.dir, 16), v(0, k * 5, k === 0 ? 0 : -3)))),
+      proj(
+        add(
+          claw.hand,
+          add(scale(claw.dir, u.kind === 'skulker' ? 30 : 16), v(0, k * 5, k === 0 ? 0 : -3)),
+        ),
+      ),
     );
     parts.push({
       depth: a.depth + 0.0005,
@@ -1226,13 +1269,14 @@ export function emissives(
     'penitentSlinger',
     'cantor',
     'hollowed',
+    'skulker',
     'husk',
   ];
   if (eyed.includes(u.kind) && toCamera) {
     const sk = skeleton(u, time);
     // The Old King's dead and the mad see by the Hollow's light. The Church's eyes are red.
     const color =
-      hollowGuard(u.kind) || u.kind === 'hollowed' || u.kind === 'husk' ? 'teal' : 'blood';
+      hollowGuard(u.kind) || hollowedLike(u.kind) || u.kind === 'husk' ? 'teal' : 'blood';
     out.push({ p: proj(add(sk.head, v(3, -1.5, 1))), color });
     out.push({ p: proj(add(sk.head, v(3, 1.5, 1))), color });
   }

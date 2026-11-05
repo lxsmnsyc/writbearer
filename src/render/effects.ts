@@ -89,7 +89,9 @@ export function bodyColor(u: Unit): string {
     u.kind === 'ossuaryPriest' ||
     u.kind === 'titheTaker' ||
     u.kind === 'confessor' ||
-    u.kind === 'flagellant'
+    u.kind === 'flagellant' ||
+    u.kind === 'whisperer' ||
+    u.kind === 'skulker'
   ) {
     return C.penitent;
   }

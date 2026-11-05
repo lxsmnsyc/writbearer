@@ -58,6 +58,9 @@ export const THREAT: Record<MonsterKind, number> = {
   flagellant: 3,
   revenantKnight: 6,
   gildedEffigy: 6,
+  drownedBell: 4,
+  whisperer: 4,
+  skulker: 5,
 };
 const ELITE_THREAT = 6;
 
@@ -131,6 +134,13 @@ export const FACTIONS: Faction[] = [
   { layer: 2, from: 2, kinds: ['titheTaker', 'penitent', 'penitent'], size: MIXED },
   { layer: 2, from: 2, kinds: ['confessor', 'penitent', 'penitentSlinger'], size: MIXED },
   { layer: 2, from: 3, kinds: ['flagellant', 'penitent', 'penitent'], size: MIXED },
+  // One bell to a pack: its kinds list is as long as the largest size
+  {
+    layer: 2,
+    from: 2,
+    kinds: ['drownedBell', 'husk', 'penitent', 'husk', 'penitent', 'husk', 'husk', 'penitent'],
+    size: [4, 8],
+  },
   // The Sunken Crown: the mad, and the last of the guard
   { layer: 3, from: 0, kinds: ['hollowed'], size: STRONG },
   { layer: 3, from: 0, kinds: ['hollowed', 'penitent', 'penitent'], size: MIXED },
@@ -145,6 +155,8 @@ export const FACTIONS: Faction[] = [
   { layer: 3, from: 3, kinds: ['hollowed', 'hollowed', 'husk', 'husk'], size: MIXED },
   { layer: 3, from: 2, kinds: ['revenantKnight', 'hollowSoldier', 'hollowSoldier'], size: MIXED },
   { layer: 3, from: 3, kinds: ['gildedEffigy', 'hollowArcher', 'hollowArcher'], size: MIXED },
+  { layer: 3, from: 2, kinds: ['hollowed', 'whisperer', 'hollowed', 'hollowed'], size: MIXED },
+  { layer: 3, from: 3, kinds: ['skulker', 'hollowed', 'hollowed'], size: MIXED },
 ];
 
 /** A pack of a faction: its kinds over and over, as many as its size rolls, at most `cap`. */

@@ -5,6 +5,7 @@ import { markThief } from '../../sim/theft';
 import type Unit from '../../sim/unit';
 import type { Template } from '../jobs';
 import churchSteps from './church-steps';
+import dreadSteps from './dread-steps';
 import guardSteps from './guard-steps';
 
 /** A template-flag step: reads a flag on the template and sets the unit up. */
@@ -41,4 +42,5 @@ export const SPAWN_STEPS: readonly SpawnStep[] = [
   kidnapperFlag,
   churchSteps,
   guardSteps,
+  dreadSteps,
 ];
