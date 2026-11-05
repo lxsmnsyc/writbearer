@@ -1,3 +1,4 @@
+import { affixesOf } from '../content/affixes';
 import { type MonsterKind, spawnMonster } from '../content/roster';
 import type { Spot } from '../sim/nav';
 import { ALARM_REACH } from '../sim/ai';
@@ -8,7 +9,7 @@ import { warn } from '../sim/warning';
 import type { Pace } from './objective';
 
 // Alarms, from the stages design: horn posts on the field, and the
-// Horn-Bearers who run for them. Once its pack wakes, a Horn-Bearer runs
+// Horn-Bearers and Herald elites who run for them. Once its pack wakes, a Horn-Bearer runs
 // for the nearest post still standing. If it gets there, it blows the horn,
 // and a fresh pack marches in, shown on the ground first. Killing it on the
 // way, or breaking the post first, stops it. A Horn-Bearer blows once; the
@@ -39,9 +40,14 @@ export default class Alarms {
     pace: Pace | null,
   ): number {
     const posts = sim.living(Side.Monster).filter((u) => u.kind === 'hornPost');
+    const runs = affixesOf(sim);
     let blew = 0;
     for (const u of sim.living(Side.Monster)) {
-      if (u.kind !== 'hornBearer' || !u.aware || this.blown.has(u)) {
+      if (
+        !(u.kind === 'hornBearer' || runs.of(u).includes('herald')) ||
+        !u.aware ||
+        this.blown.has(u)
+      ) {
         u.alarm = null;
         continue;
       }

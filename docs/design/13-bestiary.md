@@ -50,9 +50,10 @@ In the game so far (`src/content/affixes.ts`):
 - Aura: Might gives the monsters within 6 tiles 25% more attack. Aura: Mending heals them 2% of health a second. Both end with it.
 - Warded: a ward of 30% of its health that takes magic damage first, and refills after 4 seconds unhit.
 - Bound: the elite and its pack share every hit evenly.
-- Herald: there are no bells yet. Instead, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
+- Herald: once its pack wakes, it runs for the nearest horn post still standing and blows it, calling a fresh pack, as a Horn-Bearer does. Killing it or breaking the post first stops it. Where no post stands, every 10 seconds in a fight it wakes the nearest pack still unaware and sends it to the fight.
 - Multishot: a ranged elite looses three shots at once, at its target and the two nearest it in reach. It is rolled only for an elite that shoots.
-- Not yet: Storm Enchanted, Mana Burn and Teleport.
+- Storm Enchanted: a hit on it throws a spark of Storm damage, 60% of its attack, at the nearest merc within 4 tiles, at most one every 0.5 seconds. Mana Burn: its hits drain mana equal to half the damage dealt. Both are shared with the pack at half strength.
+- Teleport: every 6 seconds while aware, and more than 3 tiles from the bearer, it shows a circle beside the bearer for 0.8 seconds, then blinks there. It stays the elite's. The Horn of the Road has Herald and Teleport.
 - Ranged monsters shoot from 6 tiles, step back 2.5 tiles from anyone nearer than 3 unless taunted, and do not stop for whoever stands in the way of their target. Barriers stop their shots as they stop any enemy's.
 
 ## New monsters
