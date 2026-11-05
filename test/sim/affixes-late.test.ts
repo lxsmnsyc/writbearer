@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { affixesOf, giveAffixes } from '../../src/content/affixes';
-import { MINI_BOSSES } from '../../src/content/minibosses';
+import { MINI_BOSSES, spawnMiniBoss } from '../../src/content/minibosses';
 import { spawnMerc, spawnMonster } from '../../src/content/roster';
 import Alarms from '../../src/game/alarms';
 import { think } from '../../src/sim/ai';
@@ -156,6 +156,28 @@ describe('Herald', () => {
 });
 
 describe('the Horn of the Road', () => {
+  it('blinks to the next post, shown first, instead of running there', () => {
+    const sim = arena();
+    spawnMonster(sim, 'hornPost', 5, 12, 10).still = true;
+    const far = spawnMonster(sim, 'hornPost', 5, 35, 35);
+    far.still = true;
+    const { boss } = spawnMiniBoss(sim, MINI_BOSSES.hornOfTheRoad, 8, 11, 10);
+    boss.aware = true;
+    const alarms = new Alarms();
+    expect(alarms.update(sim, DT, 5, ['husk'], null)).toBe(1);
+    for (let t = 0; t < 15.1; t += DT) {
+      alarms.update(sim, DT, 5, ['husk'], null);
+    }
+    expect(boss.alarm).toBeNull();
+    expect(sim.warnings.some((w) => w.x === far.x && w.z === far.z)).toBe(true);
+    expect(boss.distanceTo(far)).toBeGreaterThan(20);
+    for (let t = 0; t < 1; t += DT) {
+      updateWarnings(sim, DT);
+    }
+    expect(boss.distanceTo(far)).toBeLessThan(3);
+    expect(alarms.update(sim, DT, 5, ['husk'], null)).toBe(1);
+  });
+
   it('has Herald and Teleport, not Swift', () => {
     expect(MINI_BOSSES.hornOfTheRoad.affixes).toEqual(['herald', 'teleport']);
   });

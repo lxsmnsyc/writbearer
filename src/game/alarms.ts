@@ -9,16 +9,19 @@ import { warn } from '../sim/warning';
 import type { Pace } from './objective';
 
 // Alarms, from the stages design: horn posts on the field, and the
-// Horn-Bearers and Herald elites who run for them. Once its pack wakes, a Horn-Bearer runs
-// for the nearest post still standing. If it gets there, it blows the horn,
-// and a fresh pack marches in, shown on the ground first. Killing it on the
-// way, or breaking the post first, stops it. A Horn-Bearer blows once; the
-// Horn of the Road, a mini-boss, runs on to the next post and blows again.
+// Horn-Bearers and Herald elites who run for them. Once its pack wakes, a
+// Horn-Bearer runs for the nearest post still standing. If it gets there, it
+// blows the horn, and a fresh pack marches in, shown on the ground first.
+// Killing it on the way, or breaking the post first, stops it. A Horn-Bearer
+// blows once; the Horn of the Road, a mini-boss, blinks on to the next post
+// and blows again.
 
 // How long the ground shows where a called pack comes, and how often the
 // Horn of the Road may blow
 const CALL_WARNING = 3;
 const BLOW_AGAIN = 15;
+// How long the ground shows where the Horn of the Road lands
+const BLINK_WARNING = 0.8;
 // The pack a horn calls where the area has none of its own
 const FALLBACK_PACK: MonsterKind[] = ['hollowSoldier', 'husk', 'husk', 'husk'];
 
@@ -26,7 +29,7 @@ export default class Alarms {
   // Heralds that have blown, and when a named one may blow again, and at
   // which post it last blew
   private readonly blown = new WeakSet<Unit>();
-  private readonly again = new WeakMap<Unit, { wait: number; post: Unit }>();
+  private readonly again = new WeakMap<Unit, { wait: number; post: Unit; blinking: boolean }>();
 
   /**
    * Sends each awake Horn-Bearer for its post, and blows the horn of each
@@ -52,6 +55,10 @@ export default class Alarms {
         continue;
       }
       const again = this.again.get(u);
+      if (again?.blinking) {
+        u.alarm = null;
+        continue;
+      }
       if (again && again.wait > 0) {
         again.wait -= dt;
         u.alarm = null;
@@ -65,6 +72,34 @@ export default class Alarms {
         u.alarm = null;
         continue;
       }
+      // The Horn of the Road blinks to its next post, shown first.
+      if (
+        again &&
+        post !== again.post &&
+        u.distanceTo(post) > ALARM_REACH + 0.3 &&
+        runs.of(u).includes('teleport')
+      ) {
+        again.blinking = true;
+        u.alarm = null;
+        warn(sim, {
+          x: post.x,
+          z: post.z,
+          shape: { kind: 'circle', r: 1 },
+          windup: BLINK_WARNING,
+          spare: Side.Party,
+          strike: () => undefined,
+          source: u,
+          done: () => {
+            again.blinking = false;
+            if (u.alive && post.alive) {
+              const at = sim.nav?.free(post.x + 1, post.z, 2) ?? { x: post.x + 1, z: post.z };
+              u.x = at.x;
+              u.z = at.z;
+            }
+          },
+        });
+        continue;
+      }
       u.alarm = { x: post.x, z: post.z };
       if (u.distanceTo(post) > ALARM_REACH + 0.3) {
         continue;
@@ -72,7 +107,7 @@ export default class Alarms {
       u.alarm = null;
       blew++;
       if (u.named) {
-        this.again.set(u, { wait: BLOW_AGAIN, post });
+        this.again.set(u, { wait: BLOW_AGAIN, post, blinking: false });
       } else {
         this.blown.add(u);
       }
