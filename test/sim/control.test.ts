@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import { beginDuel } from '../../src/content/jobs/duelist/spells';
 import { WARD } from '../../src/content/cleric';
 import CLERIC_UPGRADES from '../../src/content/jobs/cleric/upgrades';
 import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { rankOf } from '../../src/content/skills';
 import { Hunt } from '../../src/sim/ai';
-import { CONTROLLED, CONTROL_TIME, control, isControlled } from '../../src/sim/control';
+import {
+  CONTROLLED,
+  CONTROL_TIME,
+  control,
+  freeControlled,
+  isControlled,
+} from '../../src/sim/control';
 import { copySkill, lastReleased } from '../../src/sim/copy';
 import { SimEvents } from '../../src/sim/events';
+import RNG from '../../src/core/rng';
+import { generateStage } from '../../src/gen/stage';
+import { carryParty } from '../../src/game/stage';
+import { Pack, Vault } from '../../src/game/inventory';
+import { snapshot } from '../../src/game/game/saving';
+import type GameState from '../../src/game/game/state';
+import { canTarget } from '../../src/sim/targeting';
 import Sim from '../../src/sim/sim';
 import { type Skill, Targeting } from '../../src/sim/skill';
 import { type StatusDef, stealBuff } from '../../src/sim/status';
@@ -158,5 +172,68 @@ describe('buff theft', () => {
 
   it('is not given to the controlled status', () => {
     expect(CONTROLLED.buff).toBeUndefined();
+  });
+});
+
+describe('control and the rest of the game', () => {
+  it('survives a stage change', () => {
+    const { sim, merc, boss } = scene();
+    control(boss, merc);
+    const stage = generateStage(new RNG(3), 0);
+    carryParty(sim, stage);
+    expect(sim.units.has(merc)).toBe(true);
+    expect(merc.side).toBe(Side.Party);
+    expect(isControlled(merc)).toBe(false);
+  });
+
+  it('is in the save', () => {
+    const { sim, merc, boss, bearer } = scene();
+    control(boss, merc);
+    const party = (): Unit[] => [...sim.units].filter((u) => u.side === Side.Party && u !== bearer);
+    const g = {
+      sim,
+      bearer,
+      mercs: party,
+      streams: { seed: 'A', save: () => ({}) },
+      eventsSeen: new Set(),
+      metMiniBosses: new Set(),
+      path: [],
+      offers: [],
+      pack: new Pack(),
+      vault: new Vault(),
+      director: { standing: 0 },
+      encounter: null,
+      node: null,
+      stage: {},
+    } as unknown as GameState; // oxlint-disable-line typescript/no-unsafe-type-assertion
+    expect(snapshot(g).mercs).toHaveLength(1);
+  });
+
+  it('frees every controlled unit', () => {
+    const { sim, merc, boss } = scene();
+    control(boss, merc);
+    freeControlled(sim);
+    expect(merc.side).toBe(Side.Party);
+  });
+
+  it('leaves a controlled Duelist bound and unable to pick party members', () => {
+    const { sim, bearer, boss } = scene();
+    const duelist = spawnMerc(sim, 'duelist', 10, 12, 10);
+    control(boss, duelist);
+    expect(beginDuel(duelist, boss, 5)).toBe(true);
+    expect(canTarget(duelist, bearer)).toBe(false);
+    expect(canTarget(duelist, boss)).toBe(false);
+  });
+
+  it('keeps a hidden merc from the boss while it is controlled', () => {
+    const { sim, boss } = scene();
+    const hidden = spawnMerc(sim, 'sellsword', 10, 12, 10);
+    hidden.hidden = true;
+    expect(canTarget(boss, hidden)).toBe(false);
+    const ally = spawnMerc(sim, 'ranger', 10, 13, 10);
+    control(boss, ally);
+    ally.hidden = true;
+    expect(canTarget(boss, ally)).toBe(false);
+    expect(canTarget(ally, boss)).toBe(false);
   });
 });

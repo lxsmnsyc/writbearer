@@ -14,6 +14,8 @@
 
 - `src/content/jobs/cleric/upgrades.ts` (not owned): one condition in `cleanse` (`|| s.def.hostile`).
 - `src/sim/sim.ts`: two calls, `setupControl` and `setupCopy`, in the constructor. `src/sim/ai/think.ts` is not edited: a controlled merc is on the monster side, so `thinkMonster` runs.
+- `src/game/stage.ts` (not owned): `carryParty` calls `freeControlled(sim)` first, so a stage change keeps a controlled merc.
+- `src/game/game/saving.ts` (not owned): `snapshot` calls `freeControlled(g.sim)` first, so a save keeps it.
 - The brief's `beneficial` flag is the existing `buff`.
 - No Usurper in the game yet; nothing casts these. Its node calls `control`, `copySkill` and `stealBuff`.
 
@@ -23,7 +25,7 @@
 
 ## Gotchas
 
-- `carryParty` keeps only `Side.Party` units: a stage change during control drops the merc. Objective counts of living monsters also include it for the 6 s.
+- `freeControlled(sim)` (control.ts) ends control on every unit; call it before anything that sorts units by side. Objective counts of living monsters include a controlled merc for the 6 s.
 - `copySkill` ranks work through `CheckSkillRank` by skill id; a skill that reads ranks another way is not overridden.
 
 ## Proposed learnings

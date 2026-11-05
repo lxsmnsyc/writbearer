@@ -21,7 +21,7 @@ interface Taken {
 
 const taken = new WeakMap<Unit, Taken>();
 // Mercs that died under control: their side comes back after the death is told
-const dying = new Set<Unit>();
+const dying = new WeakSet<Unit>();
 
 // Puts the merc back on its side with its hunt, order and target.
 function release(unit: Unit): void {
@@ -103,6 +103,16 @@ export const CONTROLLED: StatusDef = {
  */
 export function control(by: Unit, merc: Unit, seconds = CONTROL_TIME): ActiveStatus | null {
   return merc.addStatus(CONTROLLED, by, seconds);
+}
+
+/**
+ * Ends control on every unit, restoring side, orders and target. Call it
+ * before anything that sorts units by side, such as a stage change or a save.
+ */
+export function freeControlled(sim: Sim): void {
+  for (const u of sim.units) {
+    u.removeStatus(CONTROLLED.id);
+  }
 }
 
 /** Whether the unit is under control now. */
