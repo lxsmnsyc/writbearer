@@ -3,6 +3,8 @@ import RNG from '../core/rng';
 import { think } from './ai';
 import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
+import setupControl from './control';
+import setupCopy from './copy';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
 import { allowed, canTarget, forbids } from './targeting';
@@ -317,6 +319,8 @@ export default class Sim extends EventEngine<SimEventMap> {
     super();
     this.rng = typeof rng === 'number' ? new RNG(rng) : rng;
     setupMechanics(this);
+    setupControl(this);
+    setupCopy(this);
   }
 
   /**

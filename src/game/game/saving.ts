@@ -2,10 +2,12 @@
 import { AREAS_PER_LAYER } from '../../gen/layers';
 import type { Ending } from '../compendium';
 import { type RunSave, SAVE_VERSION, deleteSave, saveItem, saveMerc, writeSave } from '../save';
+import { freeControlled } from '../../sim/control';
 import type GameState from './state';
 
 /** The run as it stands, for the save. Taken on entering an area. */
 export function snapshot(g: GameState): RunSave {
+  freeControlled(g.sim);
   const e = g.encounter;
   return {
     version: SAVE_VERSION,

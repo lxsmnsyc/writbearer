@@ -95,7 +95,7 @@ const cleanse: Partial<Skill> = {
       return;
     }
     for (const [id, s] of target.statuses) {
-      if (s.source.side !== target.side) {
+      if (s.source.side !== target.side || s.def.hostile) {
         target.removeStatus(id);
       }
     }

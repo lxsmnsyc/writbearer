@@ -21,6 +21,7 @@ import {
   solidsOf,
 } from '../gen/stage';
 import { type Rect, inRect } from '../sim/nav';
+import { freeControlled } from '../sim/control';
 import type Sim from '../sim/sim';
 import { Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -245,6 +246,7 @@ export function spawnParty(
  * alike, since dead mercs come along. Monsters of the old stage stay behind.
  */
 export function carryParty(sim: Sim, stage: Stage): void {
+  freeControlled(sim);
   const party = [...sim.units].filter((u) => u.side === Side.Party);
   for (const u of sim.units) {
     if (!party.includes(u)) {
