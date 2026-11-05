@@ -1,7 +1,7 @@
 ---
 id: be-deep-church
 title: The Undercroft's Church keepers: Ossuary Priest, Tithe-Taker, Confessor, Flagellant
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 180000
 owns:
   - src/content/monsters/church.ts
   - src/content/monsters/church-steps.ts
