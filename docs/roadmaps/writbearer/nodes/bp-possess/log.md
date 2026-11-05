@@ -1,0 +1,2 @@
+- Buff flag (`StatusDef.buff`) and `stealBuff` already existed (sellsword-upgrades); reused. Added control (side flip via status), copy (WeakMap record + rank override), 3 events.
+- Death under control: side is restored at UnitDies Post, after morale and before game listeners.

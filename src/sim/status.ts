@@ -26,6 +26,8 @@ export interface StatusDef {
   flees?: boolean;
   // A timed gain that can be stolen, such as a Ward or a shield
   buff?: boolean;
+  // Harmful even when its source stands on the unit's side, as mind control is
+  hostile?: boolean;
   // Ends early when its source dies, as a taunt does
   endsWithSource?: boolean;
   // Stacks build with each new application, up to this many. Absent means one.
