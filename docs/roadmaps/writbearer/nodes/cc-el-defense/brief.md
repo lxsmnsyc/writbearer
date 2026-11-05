@@ -1,7 +1,7 @@
 ---
 id: cc-el-defense
 title: Temporary defense element changes
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -12,7 +12,7 @@ verify: pnpm vitest run test/sim/el-defense.test.ts && pnpm vitest run test/sim/
 exclusive: []
 gate: false
 added: 2026-11-04
-spent:
+spent: 111000
 owns:
   - src/sim/defense-element.ts
   - test/sim/el-defense.test.ts
