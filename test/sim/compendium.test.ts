@@ -3,7 +3,13 @@ import { CARD_BY_MONSTER } from '../../src/content/cards';
 import { BASE_BY_ID } from '../../src/content/items';
 import { UNIQUE_BY_ID } from '../../src/content/uniques';
 import RNG from '../../src/core/rng';
-import { Compendium, type Entry, type Section, compendiumView } from '../../src/game/compendium';
+import {
+  Compendium,
+  type Entry,
+  MONSTER_ORDER,
+  type Section,
+  compendiumView,
+} from '../../src/game/compendium';
 import { makeUnique, plainItem } from '../../src/gen/loot';
 
 const book = (): Compendium => new Compendium(false);
@@ -24,12 +30,12 @@ describe('the compendium', () => {
     const known = monster(c, 0);
     expect(known.known).toBe(true);
     expect(known.lines[0]).toBe('Insect · Venom · beaten 2×');
-    expect(section(c, 'Monsters').found).toBe('1 of 17');
+    expect(section(c, 'Monsters').found).toBe(`1 of ${MONSTER_ORDER.length}`);
   });
 
   it('keeps the Creditor nameless until it is beaten or has risen', () => {
     const c = book();
-    const creditor = (): Entry => section(c, 'Monsters').entries.at(-1)!;
+    const creditor = (): Entry => section(c, 'Monsters').entries[MONSTER_ORDER.indexOf('creditor')];
     expect(creditor().name).toBe('?');
     expect(creditor().lines[0]).toMatch(/bottom of the Hollow/);
     c.end('risen');

@@ -66,6 +66,22 @@ export const BESTIARY: Record<MonsterKind, BestiaryEntry> = {
     who: 'A Penitent who listened too long to what lies under the seal.',
     how: 'Runs past mercs to claw at the bearer. Its Occult touch builds up Dread.',
   },
+  ossuaryPriest: {
+    who: 'A Cantor who tends the Undercroft’s bones. It never lets the dead rest.',
+    how: 'Keeps behind the others. Raises a fallen body as a husk with a short rite, up to 3 at a time. A stun breaks the rite.',
+  },
+  titheTaker: {
+    who: 'A Penitent who collects the Church’s due, in kind.',
+    how: 'Fast. Grabs an item from the pack and runs for the way out. Kill it and the item falls.',
+  },
+  confessor: {
+    who: 'A Penitent who hears confessions with a chain, and absolves the sinner of what they carry.',
+    how: 'Its blow strips one worn item from a merc, the weapon first, until the next area.',
+  },
+  flagellant: {
+    who: 'A Penitent who scourges itself in the Church’s name.',
+    how: 'The more it is hurt, the harder it hits. Its lash leaves a Bleed. Kill it fast.',
+  },
   broodMother: {
     who: 'The Blight’s queen. The Marches’ crawlers are her children, sent up to keep the road shut.',
     how: 'Lays mites every few seconds. At half health she frenzies, lays more, and they hunt the bearer. Her brood dies with her.',

@@ -25,7 +25,11 @@ export type Kind =
   | 'crawler'
   | 'bloat'
   | 'broodMother'
-  | 'refugee';
+  | 'refugee'
+  | 'ossuaryPriest'
+  | 'titheTaker'
+  | 'confessor'
+  | 'flagellant';
 
 const KINDS = new Set<string>([
   'bearer',
@@ -45,6 +49,10 @@ const KINDS = new Set<string>([
   'bloat',
   'broodMother',
   'refugee',
+  'ossuaryPriest',
+  'titheTaker',
+  'confessor',
+  'flagellant',
 ]);
 
 export function isKind(kind: string): kind is Kind {
@@ -83,6 +91,10 @@ const OTHER_HIT: Record<OtherKind, number> = {
   bloat: 0.1,
   broodMother: 0.5,
   refugee: 1,
+  ossuaryPriest: 0.8,
+  titheTaker: 0.6,
+  confessor: 0.6,
+  flagellant: 0.55,
 };
 
 /**
@@ -189,6 +201,10 @@ const OTHER_SIZE: Record<OtherKind, number> = {
   bloat: 0.95,
   broodMother: 2.1,
   refugee: 0.78,
+  ossuaryPriest: 1,
+  titheTaker: 1,
+  confessor: 1,
+  flagellant: 1,
 };
 
 // How big a figure is drawn: its own size if it has one, else its kind's.
@@ -417,7 +433,11 @@ export function paperColor(kind: Kind, C: Palette): string {
     kind === 'penitent' ||
     kind === 'penitentSlinger' ||
     kind === 'cantor' ||
-    kind === 'hollowed'
+    kind === 'hollowed' ||
+    kind === 'ossuaryPriest' ||
+    kind === 'titheTaker' ||
+    kind === 'confessor' ||
+    kind === 'flagellant'
   ) {
     return C.penitent;
   }
@@ -539,9 +559,12 @@ interface Gear {
   bow?: { hand: V3; string: V3 };
   sling?: { hand: V3; angle: number };
   knife?: { hand: V3; dir: V3 };
-  staff?: { hand: V3 };
+  staff?: { hand: V3; tall?: boolean };
   claws?: { hand: V3; dir: V3 }[];
   tower?: { hand: V3 };
+  sack?: { at: V3 };
+  chain?: { hand: V3 };
+  whip?: { hand: V3; dir: V3 };
 }
 
 function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
@@ -611,7 +634,8 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     reach(sk, 'R', hand, v(-1, 1, 0));
     g.horn = { hand: sk.handR };
   }
-  if (u.kind === 'penitent') {
+  const keeper = u.kind === 'titheTaker' || u.kind === 'confessor' || u.kind === 'flagellant';
+  if (u.kind === 'penitent' || keeper) {
     let hand = add(sk.chest, v(14, 8, -8));
     if (a >= 0) {
       const ph = phases(a, 0.5, 0.65);
@@ -621,9 +645,22 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
     }
     reach(sk, 'R', hand, v(-1, 1, 0));
     const dir = a >= 0 && a < 0.5 ? v(0, 0, 1) : norm(sub(sk.handR, sk.elbowR));
-    g.knife = { hand: sk.handR, dir };
+    if (u.kind === 'flagellant') {
+      // A whip in place of the knife: it trails behind, then cracks forward.
+      g.whip = { hand: sk.handR, dir: a >= 0 && a < 0.5 ? v(-0.6, 0, 0.8) : v(1, 0, -0.2) };
+    } else {
+      g.knife = { hand: sk.handR, dir };
+    }
+    if (u.kind === 'titheTaker') {
+      // A large sack slung on the back.
+      g.sack = { at: add(sk.chest, v(-12, 0, -6)) };
+    }
+    if (u.kind === 'confessor') {
+      // A long chain hanging from the free hand.
+      g.chain = { hand: add(sk.chest, v(12, -8, -10)) };
+    }
   }
-  if (u.kind === 'cantor') {
+  if (u.kind === 'cantor' || u.kind === 'ossuaryPriest') {
     // The staff of the eye, held upright. The hymn lifts it high, then plants it.
     let hand = add(sk.chest, v(10, 10, -4));
     if (a >= 0) {
@@ -633,7 +670,7 @@ function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
       reach(sk, 'L', add(sk.head, v(8, -6, 6)), v(-1, -1, 0));
     }
     reach(sk, 'R', hand, v(-1, 1, 0));
-    g.staff = { hand: sk.handR };
+    g.staff = { hand: sk.handR, tall: u.kind === 'ossuaryPriest' };
   }
   if (u.kind === 'husk') {
     // Arms hang forward, reaching, as the drowned dead shamble. The blow
@@ -934,10 +971,11 @@ export function drawUnit(
   }
   if (gear.staff) {
     const h = gear.staff.hand;
+    const top = gear.staff.tall ? 80 : 44;
     const a = proj(add(h, v(0, 0, -40)));
-    const b = proj(add(h, v(0, 0, 44)));
+    const b = proj(add(h, v(0, 0, top)));
     // The Church's eye on top: a pale disc with a red pupil.
-    const eye = proj(add(h, v(0, 0, 50)));
+    const eye = proj(add(h, v(0, 0, top + 6)));
     parts.push({
       depth: avg(a, b) + 0.0006,
       draw: (c) => {
@@ -945,6 +983,47 @@ export function drawUnit(
         fill(c, hexAt(eye, 3.4), C.bone, ink);
         c.fillStyle = C.blood;
         c.fillRect(Math.round(eye.x) - 1, Math.round(eye.y) - 1, 2, 2);
+      },
+    });
+  }
+  if (gear.sack) {
+    // A sack bigger than the thief's back, tied at the neck.
+    const s0 = gear.sack.at;
+    const body = [
+      v(-8, -14, -20),
+      v(-8, 14, -20),
+      v(-14, 16, 10),
+      v(-12, 0, 24),
+      v(-14, -16, 10),
+    ].map((d) => proj(add(s0, d)));
+    parts.push({
+      depth: avg(...body) - 0.0006,
+      draw: (c) => {
+        fill(c, hull(body), C.cloth, ink);
+      },
+    });
+  }
+  if (gear.chain) {
+    // A long chain, hanging in links to the ground.
+    const h = gear.chain.hand;
+    const links = [0, 1, 2, 3, 4, 5].map((i) => proj(add(h, v(i % 2 ? 3 : -3, 0, -i * 9))));
+    parts.push({
+      depth: avg(...links) + 0.0006,
+      draw: (c) => {
+        for (let i = 1; i < links.length; i++) {
+          fill(c, taper(links[i - 1], links[i], 0.7, 0.7), C.bone, ink);
+        }
+      },
+    });
+  }
+  if (gear.whip) {
+    // A long thin lash.
+    const a = proj(gear.whip.hand);
+    const b = proj(add(gear.whip.hand, scale(gear.whip.dir, 34)));
+    parts.push({
+      depth: avg(a, b) + 0.0006,
+      draw: (c) => {
+        fill(c, taper(a, b, 0.6, 0.2), C.blood, ink);
       },
     });
   }
