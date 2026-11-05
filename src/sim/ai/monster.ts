@@ -6,6 +6,7 @@ import type Unit from '../unit';
 import type { Zone } from '../zone';
 import { engage, nearest } from './common';
 import flyerStep from './flyer';
+import raiserStep from './raiser';
 import thiefStep from './thief';
 
 /** What a monster goes for. */
@@ -246,6 +247,7 @@ export const MONSTER_STEPS: MonsterStep[] = [
   lureStep,
   thiefStep,
   flyerStep,
+  raiserStep,
   skillStep,
   supportStep,
   pursueStep,
