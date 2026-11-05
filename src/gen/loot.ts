@@ -434,6 +434,25 @@ const STAT_NAMES: Partial<Record<string, string>> = {
   crit: 'critical rate',
 };
 
+// Indexed by `Element`
+const ELEMENT_NAMES = [
+  'Neutral',
+  'Fire',
+  'Frost',
+  'Storm',
+  'Earth',
+  'Venom',
+  'Radiant',
+  'Occult',
+  'Spectral',
+];
+
+// 'sacredGround' reads as 'Sacred Ground'
+function spellName(id: string): string {
+  const words = id.replace(/([A-Z])/g, ' $1');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 const RACE_NAMES = [
   'Humans',
   'Beasts',
@@ -467,6 +486,12 @@ function describe(m: Modifier): string | null {
       const ranged: number = Range.Ranged;
       return `+${m.percent}% ${m.key === ranged ? 'ranged' : 'melee'} damage`;
     }
+  }
+  if ('defense' in m) {
+    return `Defense: ${ELEMENT_NAMES[m.defense] ?? 'Neutral'} ${m.level}`;
+  }
+  if ('spell' in m) {
+    return `${m.rank > 0 ? '+' : ''}${m.rank} to ${spellName(m.spell)}`;
   }
   return null;
 }

@@ -2,6 +2,7 @@ import { JOBS, JOB_KINDS, isJobKind } from '../content/jobs';
 import type RNG from '../core/rng';
 import type { Passive, Skill } from './skill';
 import type Unit from './unit';
+import { MAX_RANK } from './stats';
 
 // The build model of docs/design/16-builds.md: each job has 4 spells, known
 // from level 1. Shards raise a spell's rank, 1 per merc level. Each spell
@@ -28,7 +29,7 @@ export interface Build {
   upgrades: Upgrade[];
 }
 
-export const MAX_RANK = 10;
+export { MAX_RANK };
 
 /** The highest rank a spell may reach at a merc level. */
 export const rankCap = (level: number): number => Math.min(MAX_RANK, 1 + Math.floor(level / 2));

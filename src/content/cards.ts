@@ -227,7 +227,22 @@ export const GEMS: readonly ItemBase[] = [
   gem('opal', 'Opal', '+2 INT.', [{ base: 'int', add: 2 }]),
 ];
 
-export const CARDS: readonly ItemBase[] = [...Object.values(CARD_BY_MONSTER), ...GEMS];
+/**
+ * Cards for the bonus forms of items. They sit outside GEMS and the monster
+ * cards, because loot draws from those with `rng.pick`.
+ */
+export const BONUS_CARDS: readonly ItemBase[] = [
+  gem('emberGem', 'Ember Gem', 'Counts as Fire 2 for defense.', [
+    { defense: Element.Fire, level: 2 },
+  ]),
+  gem('healingCard', 'Healing Card', '+1 to Heal.', [{ spell: 'heal', rank: 1 }]),
+];
+
+export const CARDS: readonly ItemBase[] = [
+  ...Object.values(CARD_BY_MONSTER),
+  ...GEMS,
+  ...BONUS_CARDS,
+];
 
 /** A monster's card by its kind, for any unit's kind. */
 export const CARD_OF: ReadonlyMap<string, ItemBase> = new Map(Object.entries(CARD_BY_MONSTER));

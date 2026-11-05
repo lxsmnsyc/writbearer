@@ -78,13 +78,18 @@ export const enum Category {
   Kind = 5,
 }
 
+// The highest rank a spell may reach, with bonus ranks counted
+export const MAX_RANK = 10;
+
 export type Modifier =
   | { base: BaseStat; add: number }
   | { stat: DerivedStat; add?: number; percent?: number }
   | { amplify: Category; key: number; percent: number }
   | { reduce: Category; key: number; percent: number }
   // Worn gear: the wearer counts as this defense element (see defense-element.ts)
-  | { defense: Element; level: number };
+  | { defense: Element; level: number }
+  // Worn gear: +rank to one of the wearer's spells, by spell id (see rankOf)
+  | { spell: string; rank: number };
 
 export interface Job {
   name: string;
@@ -119,6 +124,8 @@ export interface StatResult {
   derived: Derived;
   amplify: Bonuses;
   reduce: Bonuses;
+  // Bonus ranks by spell id
+  spellRanks: Map<string, number>;
 }
 
 /**
@@ -132,6 +139,7 @@ export function deriveStats(input: StatInput): StatResult {
   const percents: Partial<Record<DerivedStat, number>> = {};
   const amplify: Bonuses = new Map();
   const reduce: Bonuses = new Map();
+  const spellRanks = new Map<string, number>();
 
   for (const m of modifiers) {
     if ('base' in m) {
@@ -145,6 +153,8 @@ export function deriveStats(input: StatInput): StatResult {
     } else if ('defense' in m) {
       // Handled by syncItemDefense in recalc
       continue;
+    } else if ('spell' in m) {
+      spellRanks.set(m.spell, (spellRanks.get(m.spell) ?? 0) + m.rank);
     } else {
       const key = bonusKey(m.reduce, m.key);
       reduce.set(key, (reduce.get(key) ?? 0) + m.percent);
@@ -182,5 +192,5 @@ export function deriveStats(input: StatInput): StatResult {
     derived[key] = key === 'manaRegen' || key === 'crit' ? value : Math.floor(value);
   }
 
-  return { base, derived, amplify, reduce };
+  return { base, derived, amplify, reduce, spellRanks };
 }
