@@ -2,6 +2,7 @@ import type Sim from '../sim/sim';
 import { EquipSlot, ItemType } from '../sim/item';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
+import { BOSSES } from '../content/bosses/index';
 import { type Kind, type RigUnit, hitFraction, isKind } from './rig';
 
 // Matches the simulation's recovery after a blow.
@@ -34,11 +35,20 @@ export interface View {
   dead: number;
 }
 
+// A boss drawn as another kind has its figure in its def.
+function bossFigures(): Record<string, { kind: Kind; size: number }> {
+  const figures: Record<string, { kind: Kind; size: number }> = {};
+  for (const [id, def] of BOSSES) {
+    if (def.view.kind !== id) {
+      figures[id] = def.view;
+    }
+  }
+  return figures;
+}
+
 // Bosses drawn as a larger figure of their kind.
 const FIGURE: Partial<Record<string, { kind: Kind; size: number }>> = {
-  gatekeeper: { kind: 'hollowSoldier', size: 1.8 },
-  abbess: { kind: 'cantor', size: 1.5 },
-  hollowedSaint: { kind: 'hollowed', size: 1.6 },
+  ...bossFigures(),
   // The bearer, grown into what it carried
   creditor: { kind: 'bearer', size: 1.9 },
 };

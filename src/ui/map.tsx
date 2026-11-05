@@ -11,6 +11,7 @@ import {
   type Reward,
 } from '../gen/graph';
 import { ICONS, type IconName } from './icons';
+import { BOSSES } from '../content/bosses/index';
 import { Panel } from './kit';
 
 interface Props {
@@ -53,6 +54,9 @@ const REWARD_ICON: Record<Reward, IconName> = {
 
 // An area's name on the map: a fight by its objective.
 const nameOf = (node: MapNode): string => {
+  if (node.kind === 'boss' && node.boss) {
+    return BOSSES.get(node.boss)?.name ?? NAME.boss;
+  }
   if (!node.objective) {
     return NAME[node.kind];
   }

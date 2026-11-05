@@ -193,7 +193,14 @@ function spawnStage(sim: Sim, stage: Stage): Unit | null {
   });
   // A boss stands a level above the layer's last packs would.
   return stage.boss
-    ? spawnBoss(sim, stage.biome, monsterLevel(stage.index) + 1, stage.boss.x, stage.boss.z)
+    ? spawnBoss(
+        sim,
+        stage.biome,
+        monsterLevel(stage.index) + 1,
+        stage.boss.x,
+        stage.boss.z,
+        stage.bossId,
+      )
     : null;
 }
 

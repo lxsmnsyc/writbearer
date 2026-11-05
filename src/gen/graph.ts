@@ -140,6 +140,8 @@ export interface MapNode {
   next: number[];
   // Where it lies on the layer's plan
   cell: Cell;
+  // The boss the last area holds, set when the map is rolled
+  boss?: string;
 }
 
 /**

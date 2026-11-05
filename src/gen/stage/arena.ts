@@ -19,7 +19,12 @@ const BOSS_CLEAR = 6;
  * is room to run from its blows. A few pillars or dead trees stand about,
  * and packs of the layer's own stray on the near side.
  */
-export default function generateArena(rng: RNG, index: number, biome: number): Stage {
+export default function generateArena(
+  rng: RNG,
+  index: number,
+  biome: number,
+  bossId?: string,
+): Stage {
   const width = BOSS_WIDTH;
   const depth = BOSS_DEPTH;
   const entrance = { x: 2.5, z: depth / 2 };
@@ -41,6 +46,7 @@ export default function generateArena(rng: RNG, index: number, biome: number): S
     roads: [],
     down: true,
     boss,
+    bossId,
   };
   const add = adder(stage, rng);
 

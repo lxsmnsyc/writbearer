@@ -1,4 +1,5 @@
 import { BESTIARY, ELEMENT_NAME, RACE_NAME } from '../content/bestiary';
+import { BOSSES } from '../content/bosses/index';
 import { BONUS_CARDS, CARDS, CARD_OF } from '../content/cards';
 import { BASES, BASE_BY_ID } from '../content/items';
 import { MONSTERS, type MonsterKind } from '../content/roster';
@@ -72,7 +73,7 @@ const sameMerc = (a: MetMerc, b: MetMerc): boolean =>
   a.name === b.name && a.job === b.job && a.traits.join() === b.traits.join();
 
 /** The kinds a monster entry is listed for, in the order they are met. */
-export const MONSTER_ORDER: readonly MonsterKind[] = [
+const KNOWN_ORDER: readonly MonsterKind[] = [
   'mite',
   'husk',
   'crawler',
@@ -100,6 +101,21 @@ export const MONSTER_ORDER: readonly MonsterKind[] = [
   'whisperer',
   'skulker',
 ];
+
+const isMonsterKind = (id: string): id is MonsterKind => Object.hasOwn(MONSTERS, id);
+
+// Bosses registered after the list above reach it here, in pool order.
+function listBosses(): MonsterKind[] {
+  const kinds: MonsterKind[] = [];
+  for (const id of BOSSES.keys()) {
+    if (isMonsterKind(id) && !KNOWN_ORDER.includes(id)) {
+      kinds.push(id);
+    }
+  }
+  return kinds;
+}
+
+export const MONSTER_ORDER: readonly MonsterKind[] = [...KNOWN_ORDER, ...listBosses()];
 
 const MONSTER_KINDS: ReadonlySet<string> = new Set(MONSTER_ORDER);
 

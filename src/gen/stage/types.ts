@@ -40,6 +40,8 @@ export interface AreaPlan {
   miniBoss?: MiniBossId;
   // Its own mutators, for those that change how it is laid out
   mutators?: readonly Mutator[];
+  // The boss of a layer's last area
+  boss?: string;
 }
 
 /**
@@ -73,8 +75,9 @@ export interface Stage {
   roads: Spot[][];
   // Whether the exit goes down to the next layer
   down: boolean;
-  // Where the boss stands
+  // Where the boss stands, and which boss it is
   boss?: Spot;
+  bossId?: string;
   // A Waystation's paymaster's post, where wages are paid and the vault opens
   station?: Spot;
   // Where a wandering merc waits by its fire, on stages that have one

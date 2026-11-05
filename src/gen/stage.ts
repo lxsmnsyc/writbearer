@@ -52,7 +52,7 @@ function buildArea(rng: RNG, index: number, plan: AreaPlan): Stage {
   // Mercs wait by the fires only in endless mode.
   const hires = plan.endless === true;
   if (leadsDown(index) || plan.kind === 'boss') {
-    return generateArena(rng, index, biome);
+    return generateArena(rng, index, biome, plan.boss);
   }
   if (plan.kind === 'camp') {
     return generateCamp(rng, index, plan.ahead, biome, hires, plan.sides);
