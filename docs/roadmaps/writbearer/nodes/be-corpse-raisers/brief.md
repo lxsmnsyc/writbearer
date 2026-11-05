@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 169000
 owns:
   - src/sim/raise.ts
   - src/sim/ai/raiser.ts

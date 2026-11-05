@@ -11,3 +11,5 @@ Design items with no node yet, from `COVERAGE.md`. Decide at a checkpoint whethe
 - Cleric parties with the Sellsword or the Duelist win the layer-1 boss only 5 and 7 of 24 seeds (roster-balance); `bosses.test` sums the layers, so it does not catch this. Tune in a later balance pass.
 - `e2e/orders.spec.ts` and the first `e2e/recruit.spec.ts` test failed once in a 4.4-minute full e2e run and passed alone and on rerun (roster-balance). Watch for flakes.
 - A `GameState` test harness (stubbed canvas) that calls `moveOn`, so hooks on area change (`restoreAll` from be-strippers) can be tested through the real path.
+- No game monster raises corpses yet: be-corpse-raisers left no `Template` flag or `SPAWN_STEPS` entry. The first raiser monster (the Summoner of doc 07, or the Ossuary Priest in be-monsters-deep) calls `markRaiser` from its own spawn step.
+- `pnpm test` failed once in 734 during the PR #26 review and passed on reruns; the failing test was not captured. Suspect `test/sim/concealment.test.ts` (5 s timeout, load-sensitive).
