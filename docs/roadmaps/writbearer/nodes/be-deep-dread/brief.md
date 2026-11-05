@@ -1,7 +1,7 @@
 ---
 id: be-deep-dread
 title: Dread and the unseen: Drowned Bell, Whisperer, Skulker
-status: active
+status: done
 priority: should
 type: feature
 story:
@@ -17,7 +17,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-05
-spent:
+spent: 196000
 owns:
   - src/content/monsters/hollowed.ts
   - src/content/monsters/dread-steps.ts
