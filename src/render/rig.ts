@@ -29,7 +29,9 @@ export type Kind =
   | 'ossuaryPriest'
   | 'titheTaker'
   | 'confessor'
-  | 'flagellant';
+  | 'flagellant'
+  | 'revenantKnight'
+  | 'gildedEffigy';
 
 const KINDS = new Set<string>([
   'bearer',
@@ -53,6 +55,8 @@ const KINDS = new Set<string>([
   'titheTaker',
   'confessor',
   'flagellant',
+  'revenantKnight',
+  'gildedEffigy',
 ]);
 
 export function isKind(kind: string): kind is Kind {
@@ -64,7 +68,9 @@ const hollowGuard = (kind: Kind): boolean =>
   kind === 'hollowSoldier' ||
   kind === 'hornBearer' ||
   kind === 'hollowArcher' ||
-  kind === 'hollowShieldbearer';
+  kind === 'hollowShieldbearer' ||
+  kind === 'revenantKnight' ||
+  kind === 'gildedEffigy';
 
 /** Kinds drawn as a Blight crawler, at their own size. */
 export const isCrawler = (kind: string): boolean =>
@@ -95,6 +101,8 @@ const OTHER_HIT: Record<OtherKind, number> = {
   titheTaker: 0.6,
   confessor: 0.6,
   flagellant: 0.55,
+  revenantKnight: 0.65,
+  gildedEffigy: 0.65,
 };
 
 /**
@@ -205,6 +213,8 @@ const OTHER_SIZE: Record<OtherKind, number> = {
   titheTaker: 1,
   confessor: 1,
   flagellant: 1,
+  revenantKnight: 1.15,
+  gildedEffigy: 1.1,
 };
 
 // How big a figure is drawn: its own size if it has one, else its kind's.
@@ -345,7 +355,7 @@ export function skeleton(u: RigUnit, time: number): Skeleton {
     (hollowGuard(u.kind) ? 4 : 0) +
     (u.kind === 'hollowed' ? 30 : 0) +
     (u.kind === 'husk' ? 12 : 0) +
-    strike * (u.kind === 'hollowSoldier' ? 14 : 8);
+    strike * (u.kind === 'hollowSoldier' || u.kind === 'revenantKnight' ? 14 : 8);
 
   const pelvis = v(0, 0, 46 + bob);
   const chest = v(lean * 0.6, 0, 72 + bob + breathe);
@@ -440,6 +450,12 @@ export function paperColor(kind: Kind, C: Palette): string {
     kind === 'flagellant'
   ) {
     return C.penitent;
+  }
+  if (kind === 'gildedEffigy') {
+    return C.gold;
+  }
+  if (kind === 'revenantKnight') {
+    return C.bone;
   }
   if (kind === 'refugee') {
     return C.cloth;
@@ -570,7 +586,7 @@ interface Gear {
 function animate(u: RigUnit, sk: Skeleton, time: number): Gear {
   const g: Gear = {};
   const a = u.atk;
-  if (u.kind === 'hollowSoldier') {
+  if (u.kind === 'hollowSoldier' || u.kind === 'revenantKnight' || u.kind === 'gildedEffigy') {
     // Both hands on the spear. Windup pulls it back, the strike lunges.
     let push = 0;
     if (a >= 0) {
@@ -852,10 +868,14 @@ export function drawUnit(
   }
   if (hollowGuard(u.kind)) {
     const ring = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2);
-    const band = ring.map((t) => proj(add(sk.head, v(Math.cos(t) * 7, Math.sin(t) * 7, 5))));
+    // The Effigy's crown is the signature: twice as wide and tall.
+    const big = u.kind === 'gildedEffigy' ? 1.9 : 1;
+    const band = ring.map((t) =>
+      proj(add(sk.head, v(Math.cos(t) * 7 * big, Math.sin(t) * 7 * big, 5))),
+    );
     const spikes = ring
       .filter((_, i) => i % 2 === 0)
-      .map((t) => proj(add(sk.head, v(Math.cos(t) * 7, Math.sin(t) * 7, 13))));
+      .map((t) => proj(add(sk.head, v(Math.cos(t) * 7 * big, Math.sin(t) * 7 * big, 8 + 5 * big))));
     parts.push({
       depth: H.depth + 0.0006,
       draw: (c) => {
@@ -1042,11 +1062,19 @@ export function drawUnit(
       },
     });
   }
+  // The Revenant is drawn pale and see-through.
+  const ghost = u.kind === 'revenantKnight' && !flash;
+  if (ghost) {
+    ctx.globalAlpha = 0.5;
+  }
   parts
     .sort((a, b) => a.depth - b.depth)
     .forEach((p) => {
       p.draw(ctx);
     });
+  if (ghost) {
+    ctx.globalAlpha = 1;
+  }
 }
 
 // The crawler walks on six legs in two alternating sets of three.
@@ -1192,6 +1220,8 @@ export function emissives(
     'hollowArcher',
     'hollowShieldbearer',
     'hornBearer',
+    'revenantKnight',
+    'gildedEffigy',
     'penitent',
     'penitentSlinger',
     'cantor',

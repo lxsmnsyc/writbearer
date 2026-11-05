@@ -28,6 +28,8 @@ export const MONSTERS = {
   titheTaker: CHURCH.titheTaker,
   confessor: CHURCH.confessor,
   flagellant: CHURCH.flagellant,
+  revenantKnight: OLD_KING.revenantKnight,
+  gildedEffigy: OLD_KING.gildedEffigy,
 } satisfies Record<string, Template>;
 
 export type MonsterKind = keyof typeof MONSTERS;

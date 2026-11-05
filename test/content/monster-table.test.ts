@@ -26,6 +26,8 @@ describe('monster table', () => {
       'titheTaker',
       'confessor',
       'flagellant',
+      'revenantKnight',
+      'gildedEffigy',
     ]);
   });
 });

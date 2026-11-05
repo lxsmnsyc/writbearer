@@ -5,6 +5,7 @@ import { markThief } from '../../sim/theft';
 import type Unit from '../../sim/unit';
 import type { Template } from '../jobs';
 import churchSteps from './church-steps';
+import guardSteps from './guard-steps';
 
 /** A template-flag step: reads a flag on the template and sets the unit up. */
 export type SpawnStep = (unit: Unit, template: Template, sim: Sim) => void;
@@ -34,4 +35,10 @@ function kidnapperFlag(unit: Unit, template: Template): void {
  * Steps spawnMonster runs, in order, after the unit is made. A node that adds
  * a template flag adds one module and one entry here.
  */
-export const SPAWN_STEPS: readonly SpawnStep[] = [thiefFlag, flyerFlag, kidnapperFlag, churchSteps];
+export const SPAWN_STEPS: readonly SpawnStep[] = [
+  thiefFlag,
+  flyerFlag,
+  kidnapperFlag,
+  churchSteps,
+  guardSteps,
+];

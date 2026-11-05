@@ -98,6 +98,7 @@ import GiShieldEchoes from '~icons/game-icons/shield-echoes';
 import GiShieldOpposition from '~icons/game-icons/shield-opposition';
 import GiShieldReflect from '~icons/game-icons/shield-reflect';
 import GiShoppingBag from '~icons/game-icons/shopping-bag';
+import GiStoneBust from '~icons/game-icons/stone-bust';
 import GiSkullCrack from '~icons/game-icons/skull-crack';
 import GiSkullCrossedBones from '~icons/game-icons/skull-crossed-bones';
 import GiSling from '~icons/game-icons/sling';
@@ -241,6 +242,8 @@ export const ICONS = {
   titheTaker: GiShoppingBag,
   confessor: GiChainMail,
   flagellant: GiBrokenBone,
+  revenantKnight: GiVisoredHelm,
+  gildedEffigy: GiStoneBust,
   // Places on the map
   combat: GiCrossedSwords,
   elite: GiSkullCrossedBones,
