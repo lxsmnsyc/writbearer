@@ -1,7 +1,7 @@
 ---
 id: be-kidnappers
 title: Kidnappers: grab the citizen and drag them off
-status: active
+status: done
 priority: should
 type: feature
 story:
