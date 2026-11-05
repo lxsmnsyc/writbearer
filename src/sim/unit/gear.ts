@@ -185,4 +185,27 @@ export function recalc(unit: Unit): void {
   unit.hp = Math.min(unit.hp, unit.derived.maxHp);
   unit.mana = Math.min(unit.mana, unit.derived.maxMana);
   syncItemDefense(unit, modifiers);
+  notifyRankChange(unit);
+}
+
+// Called when the bonus ranks gear gives a unit change. builds.ts registers
+// here to set its passive upgrades up again at the new rank.
+export const RANK_LISTENERS: ((unit: Unit) => void)[] = [];
+
+// The bonus ranks last seen, as text, so only a change notifies
+const seenRanks = new WeakMap<Unit, string>();
+
+function notifyRankChange(unit: Unit): void {
+  const parts: string[] = [];
+  for (const [id, rank] of unit.stats.spellRanks) {
+    parts.push(`${id}:${rank}`);
+  }
+  const sig = parts.toSorted().join(';');
+  if ((seenRanks.get(unit) ?? '') === sig) {
+    return;
+  }
+  seenRanks.set(unit, sig);
+  for (const listener of RANK_LISTENERS) {
+    listener(unit);
+  }
 }

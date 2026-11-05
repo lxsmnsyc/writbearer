@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 import { BONUS_CARDS } from '../../src/content/cards';
+import { EAGLE_EYE } from '../../src/content/ranger';
 import { JOBS } from '../../src/content/jobs';
-import { spawnMerc } from '../../src/content/roster';
+import { spawnBearer, spawnMerc, spawnMonster } from '../../src/content/roster';
 import { rankOf } from '../../src/content/skills';
 import { loadItem, saveItem } from '../../src/game/save';
 import { itemLines, plainItem } from '../../src/gen/loot';
-import { MAX_RANK, applyUpgrade } from '../../src/sim/builds';
+import { INTERCEPT } from '../../src/content/vanguard';
+import { MAX_RANK, type Upgrade, applyUpgrade } from '../../src/sim/builds';
 import { EquipSlot, type ItemBase, ItemType } from '../../src/sim/item';
 import Sim from '../../src/sim/sim';
 import type { Modifier } from '../../src/sim/stats';
@@ -132,5 +134,47 @@ describe('saving and tooltips', () => {
     }
     expect(mods.some((m) => 'defense' in m)).toBe(true);
     expect(mods.some((m) => 'spell' in m)).toBe(true);
+  });
+});
+
+describe('rank bonus reaches upgrades and spells', () => {
+  // A passive upgrade whose numbers scale with the setup rank
+  const REACH: Upgrade = {
+    id: 'testReach',
+    spell: 'heal',
+    name: 'Test Reach',
+    describe: () => '',
+    effect: EAGLE_EYE,
+  };
+
+  it('a passive upgrade is set up at the rank with gear and again when it is removed', () => {
+    const unit = cleric();
+    const reach = unit.kit.reach;
+    // The upgrade must be in the job's list to be found again
+    const list = JOBS.cleric.upgrades;
+    list.push(REACH);
+    onTestFinished(() => {
+      list.splice(list.indexOf(REACH), 1);
+    });
+    expect(applyUpgrade(unit, REACH)).toBeNull();
+    const base = unit.skillRank('heal');
+    expect(unit.kit.reach).toBeCloseTo(reach + 0.5 * base);
+    wear(unit, [{ spell: 'heal', rank: 2 }]);
+    expect(unit.kit.reach).toBeCloseTo(reach + 0.5 * (base + 2));
+    unit.unequip(EquipSlot.Accessory1);
+    expect(unit.kit.reach).toBeCloseTo(reach + 0.5 * base);
+  });
+
+  it('Intercept reads the bonus rank', () => {
+    const sim = new Sim(3);
+    const bearer = spawnBearer(sim, 0, 0);
+    bearer.kit.moveSpeed = 0;
+    const vanguard = spawnMerc(sim, 'vanguard', 10, 4.8, 0);
+    const foe = spawnMonster(sim, 'hollowSoldier', 5, -1, 0);
+    foe.target = bearer;
+    // Rank 1 reaches 4.5 tiles, rank 3 reaches 5
+    expect(INTERCEPT.wants(vanguard, null, sim)).toBe(false);
+    wear(vanguard, [{ spell: 'intercept', rank: 2 }]);
+    expect(INTERCEPT.wants(vanguard, null, sim)).toBe(true);
   });
 });

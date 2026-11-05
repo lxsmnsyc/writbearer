@@ -12,6 +12,7 @@ import {
 } from '../sim/ai';
 import { SimEvents } from '../sim/events';
 import { SkillMode } from '../sim/skill';
+import { effectiveRank } from '../sim/unit/casting';
 import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
 import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '../sim/morale';
@@ -384,7 +385,7 @@ export default function MercPanel(props: Props): JSX.Element {
                 <For each={props.unit.skills}>
                   {(skill) => (
                     <li class="well flex items-center gap-3 p-2">
-                      <Tip text={skill.describe(props.unit.skillRank(skill.id))}>
+                      <Tip text={skill.describe(effectiveRank(props.unit, skill.id))}>
                         {(anchor) => (
                           <span
                             {...anchor}

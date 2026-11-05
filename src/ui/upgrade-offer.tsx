@@ -3,6 +3,7 @@ import type Game from '../game/game';
 import { SHARD_CARD, type UpgradeOffer as UpgradeOfferData } from '../game/mastery';
 import { type Upgrade, buildFor, upgradeById } from '../sim/builds';
 import type { Skill } from '../sim/skill';
+import { effectiveRank } from '../sim/unit/casting';
 import type Unit from '../sim/unit';
 import { iconOr } from './icons';
 import { Icon, Notice, Panel } from './kit';
@@ -69,7 +70,7 @@ export default function UpgradeOffer(props: Props): JSX.Element {
                             <span class="text-sm font-semibold text-accent">{u().name}</span>
                             <span class="text-[11px] text-neutral-500">{spell()?.name}</span>
                             <span class="text-xs text-neutral-300">
-                              {u().describe(merc().skillRank(u().spell))}
+                              {u().describe(effectiveRank(merc(), u().spell))}
                             </span>
                           </>
                         )}

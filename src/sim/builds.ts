@@ -3,6 +3,8 @@ import type RNG from '../core/rng';
 import type { Passive, Skill } from './skill';
 import type Unit from './unit';
 import { MAX_RANK } from './stats';
+import { RANK_LISTENERS } from './unit/gear';
+import { effectiveRank } from './unit/casting';
 
 // The build model of docs/design/16-builds.md: each job has 4 spells, known
 // from level 1. Shards raise a spell's rank, 1 per merc level. Each spell
@@ -102,10 +104,20 @@ function startEffect(unit: Unit, upgrade: Upgrade): void {
     return;
   }
   unit.passives.get(upgrade.id)?.stop();
-  const life = upgrade.effect.setup(unit, unit.skillRank(upgrade.spell));
+  const life = upgrade.effect.setup(unit, effectiveRank(unit, upgrade.spell));
   unit.passives.set(upgrade.id, life);
   life.start();
 }
+
+// Gear that changes a spell's rank restarts the passive upgrades on it.
+RANK_LISTENERS.push((unit) => {
+  for (const id of unit.upgrades.values()) {
+    const upgrade = upgradeById(id);
+    if (upgrade) {
+      startEffect(unit, upgrade);
+    }
+  }
+});
 
 /** Why a unit cannot raise a spell now, or null if it can. */
 export function cannotRaise(unit: Unit, spell: string): string | null {

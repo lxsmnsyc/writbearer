@@ -1,5 +1,5 @@
 import { type CheckSkillRankEvent, SimEvents } from '../sim/events';
-import { MAX_RANK } from '../sim/stats';
+import { effectiveRank } from '../sim/unit/casting';
 import { Rank, Side } from '../sim/types';
 import type Unit from '../sim/unit';
 
@@ -10,15 +10,12 @@ export const isElite = (u: Unit): boolean => u.rank !== Rank.Normal;
 // The rank a unit uses a skill at: the learned rank, at least 1 while it is
 // being used, and what CheckSkillRank listeners add, such as a bonus rank.
 export function rankOf(u: Unit, id: string): number {
-  // Gear adds rank only to a spell the unit has
-  const learned = u.skillRank(id);
-  const bonus = learned > 0 ? (u.stats.spellRanks.get(id) ?? 0) : 0;
   const check: CheckSkillRankEvent = {
     id: 'CheckSkillRank',
     disabled: false,
     source: u,
     skill: id,
-    value: Math.min(MAX_RANK, Math.max(1, learned) + bonus),
+    value: Math.max(1, effectiveRank(u, id)),
   };
   u.sim.emit(SimEvents.CheckSkillRank, check);
   return check.value;

@@ -33,3 +33,13 @@
 ## Size
 
 - Estimated M, actual S to M.
+
+## Review fixes
+
+- `startEffect` (`src/sim/builds.ts`) sets passive upgrades up at `effectiveRank`. `recalc` (`src/sim/unit/gear.ts`) calls `RANK_LISTENERS` when the unit's bonus ranks change, and builds.ts restarts each upgrade effect then. `raise` and `cannotRaise` still use the learned rank.
+- `effectiveRank` and `bonusRank` in `src/sim/unit/casting.ts`; `rankOf` builds on `effectiveRank`.
+- UI shows the effective rank: spell panel "Rank 4 (+1)/cap", tooltips in the merc panel and the upgrade offer. Upgrade offer gating is unchanged (offers do not depend on rank; only the description text uses the effective rank).
+- Intercept in `src/content/vanguard.ts` reads `rankOf`.
+- `src/game/compendium.ts` counts and lists only droppable cards; `BONUS_CARDS` never drop.
+- Extra files outside owned paths (deviations): `src/sim/builds.ts`, `src/sim/unit/gear.ts`, `src/sim/unit/casting.ts`, `src/ui/spell-panel.tsx`, `src/ui/merc-panel.tsx`, `src/ui/upgrade-offer.tsx`, `src/content/vanguard.ts`, `src/game/compendium.ts`.
+- Tests added: a passive upgrade gets the bonus and updates on removal; Intercept reach reads the bonus. Fast check: 81 files, 777 tests pass.
