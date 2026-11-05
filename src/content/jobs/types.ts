@@ -24,6 +24,8 @@ export interface Template {
   thief?: boolean;
   // Flies: out of melee reach while aloft (src/sim/flight.ts)
   flies?: FlightStyle;
+  // Grabs a ward and drags it to an exit (src/sim/grab.ts)
+  kidnapper?: boolean;
   skills?: Skill[];
 }
 

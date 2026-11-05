@@ -1,3 +1,4 @@
+import { markKidnapper } from '../../sim/ai/kidnapper';
 import { makeFlyer } from '../../sim/flight';
 import type Sim from '../../sim/sim';
 import { markThief } from '../../sim/theft';
@@ -21,8 +22,15 @@ function flyerFlag(unit: Unit, template: Template): void {
   }
 }
 
+// A kidnapper template grabs a ward and drags it off.
+function kidnapperFlag(unit: Unit, template: Template): void {
+  if (template.kidnapper) {
+    markKidnapper(unit);
+  }
+}
+
 /**
  * Steps spawnMonster runs, in order, after the unit is made. A node that adds
  * a template flag adds one module and one entry here.
  */
-export const SPAWN_STEPS: readonly SpawnStep[] = [thiefFlag, flyerFlag];
+export const SPAWN_STEPS: readonly SpawnStep[] = [thiefFlag, flyerFlag, kidnapperFlag];
