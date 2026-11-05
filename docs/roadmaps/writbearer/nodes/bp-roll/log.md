@@ -1,0 +1,2 @@
+- Moved the four bosses to src/content/bosses/ as defs; bosses.ts kept as a barrel for old imports.
+- Boss rolled in rollMap on area(1, Map, BOSS_ROLL + layer); stored on the last MapNode; passed through AreaPlan.boss to Stage.bossId.

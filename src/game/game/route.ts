@@ -11,6 +11,7 @@ import {
 } from '../../gen/stage';
 import { type Cell, type LayerMap, type MapNode, generateLayerMap, seenAs } from '../../gen/graph';
 import { AREAS_PER_LAYER, LAYERS } from '../../gen/layers';
+import { BOSS_ROLL, rollBoss } from '../../content/bosses/index';
 import { type MiniBossId, miniBossesOf } from '../../content/minibosses';
 import { EVENT_BY_ID, pickEvent } from '../../content/events';
 import { seesAmbushes } from '../../content/jobs/warden/upgrades';
@@ -61,6 +62,12 @@ export function rollMap(g: GameState): void {
     g.endless || layer < TOWN_LAYERS,
     layer,
   );
+  // The boss is rolled apart from the map's own stream, so no node shifts.
+  g.map.columns[AREAS_PER_LAYER - 1][0].boss = rollBoss(
+    g.streams.area(1, Stream.Map, BOSS_ROLL + layer),
+    layer,
+    g.endless,
+  );
   g.path = [];
 }
 
@@ -100,6 +107,7 @@ export function buildStage(g: GameState, kind?: MapNode['kind']): Stage {
     objective: node?.objective && (g.options.objective ?? node.objective),
     biome: biome(g),
     endless: g.endless,
+    boss: node?.kind === 'boss' ? node.boss : undefined,
   };
   plan.sides = sidesAhead(g);
   // The director sets how much threat a fight holds, by the party's standing.
