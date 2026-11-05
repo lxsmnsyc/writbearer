@@ -1,5 +1,6 @@
 import type { Lifecycle } from '../../core/lifecycle';
 import { EquipSlot, type Item, itemModifiers, weaponOf } from '../item';
+import { syncItemDefense } from '../defense-element';
 import { MENDING, REFRESHING } from '../statuses';
 import { isStripped, restore, workingItems } from '../strip';
 import { type BaseStats, type Modifier, deriveStats } from '../stats';
@@ -167,7 +168,9 @@ export function refreshCards(unit: Unit): void {
  */
 export function recalc(unit: Unit): void {
   // A stripped weapon leaves the unit bare-handed
-  const held = isStripped(unit, EquipSlot.Weapon) ? undefined : unit.equipment.get(EquipSlot.Weapon);
+  const held = isStripped(unit, EquipSlot.Weapon)
+    ? undefined
+    : unit.equipment.get(EquipSlot.Weapon);
   const modifiers: Modifier[] = [];
   for (const source of RECALC_SOURCES) {
     modifiers.push(...source.modifiers(unit));
@@ -181,4 +184,5 @@ export function recalc(unit: Unit): void {
   });
   unit.hp = Math.min(unit.hp, unit.derived.maxHp);
   unit.mana = Math.min(unit.mana, unit.derived.maxMana);
+  syncItemDefense(unit, modifiers);
 }

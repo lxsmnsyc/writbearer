@@ -1,0 +1,1 @@
+- Implemented defense-element.ts, rebased becomes, added the defense modifier and the recalc sync. Fast check passes.
