@@ -1,7 +1,7 @@
 ---
 id: bp-possess
 title: Mind control, skill copy and buff theft
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

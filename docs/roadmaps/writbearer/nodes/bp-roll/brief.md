@@ -1,7 +1,7 @@
 ---
 id: bp-roll
 title: Boss registry, pool roll and map label
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
