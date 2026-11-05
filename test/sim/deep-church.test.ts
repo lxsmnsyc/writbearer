@@ -60,6 +60,32 @@ describe('the Ossuary Priest', () => {
   });
 });
 
+describe('the Priest’s husk', () => {
+  it('matches a spawned husk, so makeHusk cannot drift from spawnMonster', () => {
+    const sim = world();
+    spawnBearer(sim, 50, 30);
+    const priest = spawnMonster(sim, 'ossuaryPriest', 4, 10, 10);
+    priest.aware = true;
+    fall(spawnMonster(sim, 'penitent', 4, 12, 10));
+    for (let t = 0; t < 10; t += DT) {
+      sim.tick(DT);
+    }
+    const raised = raisedBy(priest)[0];
+    const spawned = spawnMonster(sim, 'husk', raised.level, 30, 30);
+    expect(raised.kind).toBe(spawned.kind);
+    expect(raised.name).toBe(spawned.name);
+    expect(raised.side).toBe(spawned.side);
+    expect(raised.rank).toBe(spawned.rank);
+    expect(raised.race).toBe(spawned.race);
+    expect(raised.element).toBe(spawned.element);
+    expect(raised.hunt).toBe(spawned.hunt);
+    expect(raised.modifiers).toEqual(spawned.modifiers);
+    expect(raised.skills.map((s) => s.id)).toEqual(spawned.skills.map((s) => s.id));
+    expect(raised.derived.maxHp).toBe(spawned.derived.maxHp);
+    expect(raised.derived.atkMax).toBe(spawned.derived.atkMax);
+  });
+});
+
 describe('the Tithe-Taker', () => {
   function pocketed(sim: Sim): { taken: () => number } {
     let n = 0;

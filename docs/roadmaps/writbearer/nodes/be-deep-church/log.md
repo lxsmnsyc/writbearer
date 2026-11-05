@@ -1,3 +1,4 @@
 - Worked from brief. Added four templates in church.ts, church-steps.ts spawn step, src/sim/berserk.ts, figures in rig.ts, packs in layer 2.
 - Import cycle spawn.ts <-> church-steps.ts rejected by lint (no-cycle): the husk is built in church-steps.ts instead of through spawnMonster.
 - Layer 2 pack change moved 3 stage snapshots (hashes only); updated.
+- Review fixes: removed the extra `!` in compendium.test.ts; added a test that a raised husk equals a spawned husk (kind, name, side, rank, race, element, hunt, modifiers, skills, maxHp, atkMax).

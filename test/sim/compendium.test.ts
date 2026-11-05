@@ -35,8 +35,7 @@ describe('the compendium', () => {
 
   it('keeps the Creditor nameless until it is beaten or has risen', () => {
     const c = book();
-    const creditor = (): Entry =>
-      section(c, 'Monsters').entries[MONSTER_ORDER.indexOf('creditor')]!;
+    const creditor = (): Entry => section(c, 'Monsters').entries[MONSTER_ORDER.indexOf('creditor')];
     expect(creditor().name).toBe('?');
     expect(creditor().lines[0]).toMatch(/bottom of the Hollow/);
     c.end('risen');
