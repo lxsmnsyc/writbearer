@@ -35,3 +35,5 @@ Not a fix node.
 ## Size
 
 - Estimated M, actual S.
+
+Landed as 7a705aa on batch/writbearer.
