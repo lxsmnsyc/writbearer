@@ -1,7 +1,7 @@
 ---
 id: cc-knockback
 title: Knockback and Immovable's immunity
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 71548
 owns:
   - src/sim/events/cc-knockback.ts
   - src/sim/knockback.ts

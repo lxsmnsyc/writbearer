@@ -33,3 +33,5 @@
 ## Size
 
 - Estimated M, actual M.
+
+Landed as 5379c48 on batch/writbearer.
