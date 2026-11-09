@@ -33,6 +33,8 @@ export interface Skill {
   // What it does at a rank
   describe: (rank: number) => string;
   cost: number;
+  // A cost in a job resource (src/sim/resource.ts), paid beside the mana
+  spends?: { resource: string; cost: number };
   cooldown: number;
   windup: number;
   recovery: number;

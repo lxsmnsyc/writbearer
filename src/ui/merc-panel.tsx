@@ -1,4 +1,4 @@
-import { For, type JSX, Show, createSignal } from 'solid-js';
+import { For, Index, type JSX, Show, createSignal, onCleanup } from 'solid-js';
 import type { IconName } from './icons';
 import {
   DEFAULT_TOGGLES,
@@ -16,6 +16,7 @@ import { effectiveRank } from '../sim/unit/casting';
 import { TRAIT_BY_ID } from '../content/traits';
 import { itemName } from '../gen/loot';
 import { MORALE_NAME, effectiveDiscipline, moraleOf, prioritiesFollowed } from '../sim/morale';
+import { resourcesOf } from '../sim/resource';
 import type Unit from '../sim/unit';
 import { isIconName } from './icons';
 import { Button, CloseMark, Icon, Meter, Segmented, Tabs, Tip } from './kit';
@@ -94,6 +95,14 @@ export default function MercPanel(props: Props): JSX.Element {
   const [tab, setTab] = createSignal<Tab>('orders');
   // Bumped when a skill or stat point is spent, so the panel reads the merc again.
   const [version, setVersion] = createSignal(0);
+  // Resources live outside the reactive graph, so read them again on a timer.
+  const [resources, setResources] = createSignal(resourcesOf(props.unit));
+  const timer = setInterval(() => {
+    setResources(resourcesOf(props.unit));
+  }, 100);
+  onCleanup(() => {
+    clearInterval(timer);
+  });
   const spent = (): void => {
     setVersion((v) => v + 1);
     props.onChange();
@@ -232,6 +241,19 @@ export default function MercPanel(props: Props): JSX.Element {
             color="var(--color-mana)"
           />
         </div>
+        <Index each={resources()}>
+          {(res) => (
+            <div>
+              <div class="flex justify-between">
+                <span>{res().name}</span>
+                <span>
+                  {Math.floor(res().amount)} / {res().max}
+                </span>
+              </div>
+              <Meter value={res().amount} max={res().max} color="var(--color-mana)" />
+            </div>
+          )}
+        </Index>
       </div>
 
       <div class="mb-4 flex flex-wrap gap-1.5 text-[11px]">
