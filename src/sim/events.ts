@@ -5,6 +5,7 @@ import type { StatusEventMap } from './events/statuses';
 import type { LifeEventMap } from './events/life';
 import type { CorpseEventMap } from './events/cc-corpses';
 import type { PossessEventMap } from './events/bp-possess';
+import type { KnockbackEventMap } from './events/cc-knockback';
 
 export type * from './events/hits';
 export type * from './events/skills';
@@ -12,6 +13,7 @@ export type * from './events/statuses';
 export type * from './events/life';
 export type * from './events/cc-corpses';
 export type * from './events/bp-possess';
+export type * from './events/cc-knockback';
 
 export const enum SimEvents {
   CheckHit = 'CheckHit',
@@ -39,6 +41,7 @@ export const enum SimEvents {
   UnitControlled = 'UnitControlled',
   UnitFreed = 'UnitFreed',
   SkillCopied = 'SkillCopied',
+  CheckKnockback = 'CheckKnockback',
 }
 
 /** Which event carries which shape, on which priority scale. Entries live in the group modules. */
@@ -50,4 +53,5 @@ export interface SimEventMap
     StatusEventMap,
     LifeEventMap,
     CorpseEventMap,
-    PossessEventMap {}
+    PossessEventMap,
+    KnockbackEventMap {}

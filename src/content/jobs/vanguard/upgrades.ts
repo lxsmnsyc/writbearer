@@ -1,11 +1,12 @@
-import type { Lifecycle } from '../../../core/lifecycle';
+import { type Lifecycle, MergedLifecycle } from '../../../core/lifecycle';
+import knockback from '../../../sim/knockback';
 import type { Upgrade } from '../../../sim/builds';
 import { SimEvents } from '../../../sim/events';
 import type Sim from '../../../sim/sim';
 import { ARROW_SPEED } from '../../../sim/sim';
 import { type Passive, type Skill, Targeting } from '../../../sim/skill';
 import type { StatusDef } from '../../../sim/status';
-import { DREAD, PETRIFY, SHIELD_WALL, STUN, SUNDERED } from '../../../sim/statuses';
+import { PETRIFY, SHIELD_WALL, STUN, SUNDERED } from '../../../sim/statuses';
 import { canTarget, hostiles } from '../../../sim/targeting';
 import {
   DamageFlags,
@@ -121,22 +122,6 @@ const CHARGE_STUN = 40;
 // How close to the dash an enemy must stand to be run through
 const CHARGE_WIDTH = 0.9;
 const CHARGE_PUSH = 1.5;
-const PUSH_STEP = 0.25;
-
-// Pushes `target` up to `distance` tiles along (dx, dz), stopping at a wall.
-function push(target: Unit, dx: number, dz: number, distance: number): void {
-  const d = Math.hypot(dx, dz) || 1;
-  const { nav } = target.sim;
-  for (let moved = PUSH_STEP; moved <= distance + 1e-9; moved += PUSH_STEP) {
-    const x = target.x + (dx / d) * PUSH_STEP;
-    const z = target.z + (dz / d) * PUSH_STEP;
-    if (nav && !nav.walkable(x, z)) {
-      return;
-    }
-    target.x = x;
-    target.z = z;
-  }
-}
 
 /**
  * Each enemy the dash passes through gets 40 stun buildup and is pushed 1.5
@@ -160,7 +145,9 @@ const charge: Partial<Skill> = {
       e.buildUp(STUN, u, CHARGE_STUN);
       // Aside is the perpendicular, on the side the enemy is on
       const side = across < 0 ? -1 : 1;
-      push(e, (lz / length) * side, (-lx / length) * side, CHARGE_PUSH);
+      const dx = (lz / length) * side;
+      const dz = (-lx / length) * side;
+      knockback(u, e, { x: e.x - dx, z: e.z - dz }, CHARGE_PUSH);
     }
   },
 };
@@ -285,19 +272,26 @@ const immovable: Partial<Skill> = {
   },
 };
 
-/** No stun, Petrify or Dread while Shield Wall stands. */
+/** No stun, Petrify, fear or knockback while Shield Wall stands. */
 const IMMOVABLE: Passive = {
   id: 'immovable',
   setup: (unit) =>
-    listen(unit.sim, SimEvents.CheckStatusDuration, ValuePriority.Post, (event) => {
-      if (
-        event.target === unit &&
-        (event.status === STUN || event.status === DREAD || event.status === PETRIFY) &&
-        unit.statuses.has(SHIELD_WALL.id)
-      ) {
-        event.disabled = true;
-      }
-    }),
+    new MergedLifecycle([
+      listen(unit.sim, SimEvents.CheckStatusDuration, ValuePriority.Post, (event) => {
+        if (
+          event.target === unit &&
+          (event.status === STUN || event.status === PETRIFY || event.status.flees) &&
+          unit.statuses.has(SHIELD_WALL.id)
+        ) {
+          event.disabled = true;
+        }
+      }),
+      listen(unit.sim, SimEvents.CheckKnockback, ValuePriority.Post, (event) => {
+        if (event.target === unit && unit.statuses.has(SHIELD_WALL.id)) {
+          event.disabled = true;
+        }
+      }),
+    ]),
 };
 
 const rampartTime = (rank: number): number => 4 + rank * 0.5;
@@ -540,7 +534,8 @@ const VANGUARD_UPGRADES: Upgrade[] = [
     id: 'immovable',
     spell: 'shieldWall',
     name: 'Immovable',
-    describe: () => `No stun, Petrify or Dread during it. Lasts ${IMMOVABLE_EXTRA} second longer.`,
+    describe: () =>
+      `No stun, Petrify, Dread or knockback during it. Lasts ${IMMOVABLE_EXTRA} second longer.`,
     patch: immovable,
     effect: IMMOVABLE,
   },
