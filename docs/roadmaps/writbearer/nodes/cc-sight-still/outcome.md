@@ -35,3 +35,5 @@
 ## Size
 
 - Estimated M, actual S to M.
+
+Landed as ffa3da9 on batch/writbearer.
