@@ -1,7 +1,7 @@
 ---
 id: cc-buffs
 title: Party buffs with a duration and weapon element buffs
-status: todo
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 109571
 owns:
   - src/sim/buffs.ts
   - src/sim/endow.ts

@@ -1,7 +1,7 @@
 ---
 id: cc-resource
 title: A second resource beside mana
-status: todo
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 164680
 owns:
   - src/sim/resource.ts
   - test/sim/resource.test.ts

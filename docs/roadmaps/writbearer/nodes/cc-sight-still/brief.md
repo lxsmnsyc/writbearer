@@ -1,7 +1,7 @@
 ---
 id: cc-sight-still
 title: Light radius as a stat and a standing-still timer
-status: todo
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 111612
 owns:
   - src/sim/light.ts
   - src/sim/still.ts

@@ -1,7 +1,7 @@
 ---
 id: cc-el-spectral
 title: Spectral status and Spectral attacks
-status: todo
+status: done
 priority: should
 type: feature
 outline: false
@@ -12,7 +12,7 @@ verify: pnpm vitest run test/sim/el-spectral.test.ts && pnpm vitest run test/sim
 exclusive: []
 gate: false
 added: 2026-11-04
-spent:
+spent: 117889
 owns:
   - src/sim/spectral.ts
   - test/sim/el-spectral.test.ts

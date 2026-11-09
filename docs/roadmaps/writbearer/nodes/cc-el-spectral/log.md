@@ -1,0 +1,3 @@
+- Unmoored threshold formula is copied into spectral.ts (statuses.ts imports spectral.ts, so no import back).
+- Table gives Spectral vs Neutral 1 = 90%, not 100% as the brief says (rAthena Ghost row). Left the table alone; test asserts 90.
+- Buildup needs ratio of a few hundred (ratio is a percent) or a Vanguard's magic hit deals 0.

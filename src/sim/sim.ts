@@ -5,6 +5,7 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import setupControl from './control';
 import setupCopy from './copy';
+import setupStill from './still';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
 import { allowed, canTarget, forbids } from './targeting';
@@ -17,6 +18,7 @@ import { DamageFlags, Range, Side } from './types';
 import type { HitOptions } from './unit';
 import type Unit from './unit';
 import { reveal } from './concealment';
+import Ground from './ground';
 
 // The fixed simulation step: 20 ticks per second.
 export const TICK = 0.05;
@@ -288,6 +290,8 @@ export default class Sim extends EventEngine<SimEventMap> {
   // Ground no body can stand on, such as a chasm. Unlike obstacles, it does
   // not block sight.
   readonly holes: { x: number; z: number; r: number }[] = [];
+  // What the ground answers about a point (cover, height, light)
+  readonly ground = new Ground();
 
   // The floor's far edges and near edges, in tiles, along x and z. Units
   // stay on the floor's rectangles. Infinite means no bounds.
@@ -321,6 +325,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     setupMechanics(this);
     setupControl(this);
     setupCopy(this);
+    setupStill(this);
   }
 
   /**

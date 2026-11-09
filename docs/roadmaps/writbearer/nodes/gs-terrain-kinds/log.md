@@ -1,0 +1,2 @@
+- Used per-kind tables KINDS (gen), EFFECTS (footing), PAINT (floor). Kept GROUND (counts per layer). RNG order unchanged; stage-snapshot passes.
+- Ground stub uses an eslint-disable for class-methods-use-this until real state arrives.

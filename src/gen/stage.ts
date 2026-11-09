@@ -31,7 +31,7 @@ export type { Prop, PropKind } from './stage/props';
 export { holesOf, navFor, rectOf, solidsOf } from './stage/reach';
 export type { KeyPoint } from './stage/spots';
 export { default as generateTomb } from './stage/tomb';
-export type { AreaPlan, Stage } from './stage/types';
+export type { AreaPlan, Ledge, Stage } from './stage/types';
 export type { Vault } from './stage/vault';
 export type { Mob, Wave } from './stage/waves';
 

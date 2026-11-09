@@ -1,5 +1,6 @@
 import { type CheckSkillCostEvent, SimEvents } from '../events';
 import type { Skill } from '../skill';
+import { amountOf, spend } from '../resource';
 import { MAX_RANK } from '../stats';
 import type Unit from '../unit';
 
@@ -34,7 +35,8 @@ export function canCast(unit: Unit, skill: Skill): boolean {
     unit.alive &&
     !unit.busy &&
     (unit.skillCooldowns.get(skill.id) ?? 0) <= 0 &&
-    unit.mana >= unit.skillCost(skill)
+    unit.mana >= unit.skillCost(skill) &&
+    (skill.spends === undefined || amountOf(unit, skill.spends.resource) >= skill.spends.cost)
   );
 }
 
@@ -51,7 +53,14 @@ export function startCast(unit: Unit, skill: Skill, target: Unit | null): boolea
     target,
   };
   unit.sim.emit(SimEvents.UnitSkillWindup, event);
-  return !event.disabled;
+  if (event.disabled) {
+    return false;
+  }
+  // The resource is paid next to the mana
+  if (skill.spends) {
+    spend(unit, skill.spends.resource, skill.spends.cost);
+  }
+  return true;
 }
 
 /** The rank learned in a skill, or 0. Monster skills count as rank 1. */
