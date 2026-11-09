@@ -1,7 +1,7 @@
 ---
 id: ie-item-roll
 title: Rare element and CheckItemRoll hook
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -14,7 +14,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 263298
 owns:
   - src/sim/events/ie-item-roll.ts
   - test/gen/item-roll.test.ts
