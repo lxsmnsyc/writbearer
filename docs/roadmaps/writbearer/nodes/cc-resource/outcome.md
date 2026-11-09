@@ -41,3 +41,5 @@
 
 - The panel's resource rows were not reactive. `merc-panel.tsx` now holds a `resources` signal refreshed from `resourcesOf` every 100 ms (cleared on cleanup) and renders it with `Index`. A resource granted after the panel opens appears. The HP and mana rows have no refresh of their own in this panel; I left them alone.
 - Panel check: the repo has no component test setup (vitest runs in node, no DOM). "Only for units that have one" holds because the rows come from `resourcesOf`, which is empty for a unit with no resources (tested), and `Index` over an empty list renders nothing. Not checked in a browser.
+
+Landed as 66ba4df on batch/writbearer.
