@@ -1,5 +1,6 @@
 import { EventPriority } from '../core/event-emitter';
 import { SimEvents } from '../sim/events';
+import { linksOf } from '../sim/link';
 import type Sim from '../sim/sim';
 import { CHILL } from '../sim/statuses';
 import { DamageFlags, DamageKind, DamagePriority, Element, Range, Side } from '../sim/types';
@@ -130,8 +131,6 @@ interface Held {
   unhit: number;
   // Herald: time since it last woke a pack
   heralded: number;
-  // Bound: those it shares its health with
-  bound: Unit[] | null;
   // Storm Enchanted: when it last threw a spark
   sparkAt: number;
   // Teleport: time since it last blinked
@@ -151,8 +150,9 @@ export default class Affixes {
   constructor(private readonly sim: Sim) {
     sim.on(SimEvents.UnitDamage, DamagePriority.Barrier, (e) => {
       this.wardOff(e.target, e);
-      this.share(e.target, e);
     });
+    // After the ward, so linked units share what the ward let through.
+    linksOf(sim);
     sim.on(SimEvents.UnitDamage, DamagePriority.Post, (e) => {
       if (e.value <= 0) {
         return;
@@ -220,7 +220,6 @@ export default class Affixes {
         heralded: 0,
         sparkAt: -Infinity,
         blinked: 0,
-        bound: null,
         aura: `aura:might:${this.auras++}`,
       };
       this.held.set(u, h);
@@ -250,14 +249,10 @@ export default class Affixes {
 
   /** Binds units so they share their health: a hit on any of them hurts all. */
   bind(units: readonly Unit[]): void {
-    const group = [...units];
-    for (const u of group) {
+    for (const u of units) {
       this.give(u, 'bound');
-      const h = this.held.get(u);
-      if (h) {
-        h.bound = group;
-      }
     }
+    linksOf(this.sim).link(units, { window: Infinity });
   }
 
   /** Lets a unit's ward refill only while `keeps` holds. */
@@ -281,26 +276,6 @@ export default class Affixes {
     h.ward -= taken;
     e.value -= taken;
     h.unhit = 0;
-  }
-
-  // A bound unit shares a hit with the rest of its group, each taking an
-  // even part. A hit passed on is not passed on again.
-  private share(u: Unit, e: { source: Unit; value: number; flags: number }): void {
-    const group = this.held.get(u)?.bound?.filter((b) => b.alive);
-    if (!group || group.length < 2 || (e.flags & DamageFlags.Redirected) !== 0 || e.value <= 0) {
-      return;
-    }
-    const part = e.value / group.length;
-    e.value = part;
-    for (const b of group) {
-      if (b !== u) {
-        e.source.hit(b, {
-          kind: DamageKind.True,
-          fixed: Math.max(1, Math.round(part)),
-          flags: DamageFlags.Redirected,
-        });
-      }
-    }
   }
 
   // A Storm Enchanted elite that is hit throws a spark at the nearest merc

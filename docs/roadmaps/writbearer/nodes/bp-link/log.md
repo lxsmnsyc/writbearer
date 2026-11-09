@@ -1,0 +1,1 @@
+- Moved share into src/sim/link.ts; bind wraps it.
