@@ -1,7 +1,7 @@
 ---
 id: gs-terrain-landmarks
 title: Distant landmarks
-status: active
+status: done
 priority: should
 type: feature
 outline: false

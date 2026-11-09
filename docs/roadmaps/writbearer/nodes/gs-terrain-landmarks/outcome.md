@@ -30,3 +30,5 @@
 ## Size
 
 - Estimated S, actual S.
+
+Landed as 21c0a67 on batch/writbearer.
