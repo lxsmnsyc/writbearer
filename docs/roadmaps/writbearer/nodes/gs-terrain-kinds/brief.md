@@ -1,7 +1,7 @@
 ---
 id: gs-terrain-kinds
 title: Terrain contract and ground kind tables
-status: todo
+status: active
 priority: should
 type: refactor
 outline: false

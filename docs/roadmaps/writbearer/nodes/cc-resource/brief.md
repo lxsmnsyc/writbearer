@@ -1,7 +1,7 @@
 ---
 id: cc-resource
 title: A second resource beside mana
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

@@ -1,7 +1,7 @@
 ---
 id: cc-afflictions
 title: Fear and curse from skills, and dispel
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

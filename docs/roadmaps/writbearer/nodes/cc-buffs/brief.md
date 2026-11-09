@@ -1,7 +1,7 @@
 ---
 id: cc-buffs
 title: Party buffs with a duration and weapon element buffs
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

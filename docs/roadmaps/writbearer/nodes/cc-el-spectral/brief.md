@@ -1,7 +1,7 @@
 ---
 id: cc-el-spectral
 title: Spectral status and Spectral attacks
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

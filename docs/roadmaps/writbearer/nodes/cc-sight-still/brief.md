@@ -1,7 +1,7 @@
 ---
 id: cc-sight-still
 title: Light radius as a stat and a standing-still timer
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
