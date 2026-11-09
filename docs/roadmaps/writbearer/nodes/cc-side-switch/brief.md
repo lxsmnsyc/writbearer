@@ -1,7 +1,7 @@
 ---
 id: cc-side-switch
 title: Monsters switching sides for a while
-status: active
+status: done
 priority: should
 type: feature
 outline: false
@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent:
+spent: 131932
 owns:
   - src/sim/ai/turned.ts
   - test/sim/turned.test.ts

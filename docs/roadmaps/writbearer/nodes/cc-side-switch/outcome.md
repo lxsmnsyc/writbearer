@@ -35,3 +35,5 @@
 ## Size
 
 - Estimated M, actual M.
+
+Landed as fc48f17 on batch/writbearer.
