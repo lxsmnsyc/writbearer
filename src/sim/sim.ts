@@ -419,7 +419,12 @@ export default class Sim extends EventEngine<SimEventMap> {
   living(side?: Side): Unit[] {
     const out: Unit[] = [];
     for (const u of this.units) {
-      if (u.alive && (side === undefined || u.side === side)) {
+      // A turned monster is no member of the party, though it fights for it
+      if (
+        u.alive &&
+        (side === undefined || u.side === side) &&
+        !(side === Side.Party && u.statuses.has('turned'))
+      ) {
         out.push(u);
       }
     }

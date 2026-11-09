@@ -1,0 +1,2 @@
+- Built on bp-possess: TURNED status and turn() in src/sim/control.ts, thinkTurned in src/sim/ai/turned.ts, dispatch in think.ts.
+- Counting: sim.living(Party) skips turned units; g.mercs() skips them; the game's kill listener skips fellTurned corpses.

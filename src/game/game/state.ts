@@ -250,7 +250,9 @@ export default class GameState {
 
   /** The mercs, alive or dead, in the order they joined. */
   mercs(): Unit[] {
-    return [...this.sim.units].filter((u) => u.side === Side.Party && u !== this.bearer);
+    return [...this.sim.units].filter(
+      (u) => u.side === Side.Party && u !== this.bearer && !u.statuses.has('turned'),
+    );
   }
 
   select(unit: Unit | null): void {

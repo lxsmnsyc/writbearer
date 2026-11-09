@@ -1,10 +1,11 @@
 import { EventPriority } from '../core/event-emitter';
 import type { Lifecycle } from '../core/lifecycle';
 import { Hunt } from './ai';
+import { TURNED_ID } from './ai/turned';
 import { SimEvents } from './events';
 import type Sim from './sim';
 import type { ActiveStatus, StatusDef } from './status';
-import { Side, ValuePriority } from './types';
+import { Rank, Side, ValuePriority } from './types';
 import type Unit from './unit';
 
 // How long a controlled merc fights for the monsters, in seconds.
@@ -105,13 +106,126 @@ export function control(by: Unit, merc: Unit, seconds = CONTROL_TIME): ActiveSta
   return merc.addStatus(CONTROLLED, by, seconds);
 }
 
+// How long a turned monster fights for the party, in seconds.
+export const TURN_TIME = 10;
+
+/** What a monster was before it was turned. */
+interface Before {
+  hunt: Hunt | undefined;
+  target: Unit | null;
+  aware: boolean;
+}
+
+const before = new WeakMap<Unit, Before>();
+// Turned monsters that died while turned
+const fallen = new WeakSet<Unit>();
+
+// Puts the monster back on its side with its hunt and target.
+function restore(unit: Unit): void {
+  const was = before.get(unit);
+  if (!was) {
+    return;
+  }
+  before.delete(unit);
+  unit.side = Side.Monster;
+  unit.hunt = was.hunt;
+  unit.aware = was.aware;
+  unit.cast = null;
+  unit.swing = -1;
+  unit.swingTarget = null;
+  // The old target comes back only if it is still a foe
+  const back = was.target?.alive && unit.sim.foes(unit.side).includes(was.target);
+  unit.target = back ? was.target : null;
+  unit.sim.emit(SimEvents.UnitFreed, { id: 'UnitFreed', disabled: false, source: unit });
+}
+
+function turnHold(status: ActiveStatus): Lifecycle {
+  const { unit } = status;
+  return {
+    start() {
+      before.set(unit, { hunt: unit.hunt, target: unit.target, aware: unit.aware });
+      unit.side = Side.Party;
+      unit.hunt = Hunt.Nearest;
+      unit.target = null;
+      unit.aware = true;
+      unit.cast = null;
+      unit.swing = -1;
+      unit.swingTarget = null;
+      unit.sim.emit(SimEvents.UnitControlled, {
+        id: 'UnitControlled',
+        disabled: false,
+        source: unit,
+        by: status.source,
+      });
+    },
+    stop() {
+      // A turned monster that dies is a monster's corpse, not a merc's
+      if (!unit.alive) {
+        fallen.add(unit);
+      }
+      restore(unit);
+    },
+  };
+}
+
 /**
- * Ends control on every unit, restoring side, orders and target. Call it
- * before anything that sorts units by side, such as a stage change or a save.
+ * A monster taken for a while. It fights for the party, counts as no party
+ * member and gives no kill credit or loot when it falls. Ends early if the
+ * one who turned it dies.
+ */
+export const TURNED: StatusDef = {
+  id: TURNED_ID,
+  name: 'Turned',
+  duration: TURN_TIME,
+  immunity: 0,
+  endsWithSource: true,
+  hostile: true,
+  setup: turnHold,
+};
+
+/**
+ * Turns a normal monster to the party's side for `seconds`. Returns the
+ * status, or null for a boss, an elite, a mini-boss, the bearer, a unit not
+ * of the monsters, or one already turned.
+ */
+export function turn(
+  sim: Sim,
+  monster: Unit,
+  seconds = TURN_TIME,
+  by: Unit | null = sim.bearer,
+): ActiveStatus | null {
+  if (!by) {
+    return null;
+  }
+  const { rank, named, still } = monster;
+  if (monster === sim.bearer || monster.side !== Side.Monster || rank !== Rank.Normal) {
+    return null;
+  }
+  if (named || still || monster.statuses.has(TURNED_ID)) {
+    return null;
+  }
+  return monster.addStatus(TURNED, by, seconds);
+}
+
+/** Whether the unit is a monster turned to the party now. */
+export function isTurned(unit: Unit): boolean {
+  return unit.statuses.has(TURNED_ID);
+}
+
+/** Whether the unit died while turned: its death gives no credit or loot. */
+export function fellTurned(unit: Unit): boolean {
+  return fallen.has(unit);
+}
+
+/**
+ * Ends control and turning on every unit, restoring side, orders and target.
+ * Call it before anything that sorts units by side, such as a stage change
+ * or a save.
  */
 export function freeControlled(sim: Sim): void {
   for (const u of sim.units) {
     u.removeStatus(CONTROLLED.id);
+    u.removeStatus(TURNED_ID);
   }
 }
 

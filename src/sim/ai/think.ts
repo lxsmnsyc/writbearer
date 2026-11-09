@@ -7,6 +7,7 @@ import sidestep from './dodge';
 import { drinkFromBelt, thinkMerc } from './merc';
 import { thinkMonster } from './monster';
 import { DEFAULT_TOGGLES } from './orders';
+import thinkTurned, { TURNED_ID } from './turned';
 import thinkWard from './ward';
 
 /** One unit's decision for this tick. Units mid-swing are committed to it. */
@@ -34,6 +35,9 @@ export default function think(sim: Sim, u: Unit, dt: number): void {
   }
   if (u.side === Side.Ward) {
     thinkWard(sim, u, dt);
+  } else if (u.side === Side.Party && u.statuses.has(TURNED_ID)) {
+    // A monster that fights for the party for a while
+    thinkTurned(sim, u, dt);
   } else if (u.side === Side.Party) {
     if (!sidestep(sim, u, dt)) {
       thinkMerc(sim, u, dt);

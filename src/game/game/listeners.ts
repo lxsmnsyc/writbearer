@@ -1,6 +1,7 @@
 // What the run hears from the simulation: heavy hits, deaths and kills.
 import { EventPriority } from '../../core/event-emitter';
 import { Stream } from '../../core/seed';
+import { fellTurned } from '../../sim/control';
 import { SimEvents } from '../../sim/events';
 import { DamageFlags, DamagePriority, Side } from '../../sim/types';
 import type Unit from '../../sim/unit';
@@ -68,7 +69,7 @@ export default function watchSim(g: GameState): void {
       );
     }
     // A broken horn post is no kill: it pays nothing and drops nothing.
-    if (event.source.side === Side.Monster && !event.source.still) {
+    if (event.source.side === Side.Monster && !event.source.still && !fellTurned(event.source)) {
       g.slain++;
       g.compendium.beat(event.source.kind);
       shareXp(g, event.source);
