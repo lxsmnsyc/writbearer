@@ -100,6 +100,10 @@ export default class Hazards {
         this.floor(sim, h);
         continue;
       }
+      if (h.kind === 'plate') {
+        // A plate has no beat: src/game/rocks.ts works it.
+        continue;
+      }
       const was = Math.floor((before + h.phase) / h.period);
       const now = Math.floor((this.clock + h.phase) / h.period);
       if (was !== now) {

@@ -6,6 +6,7 @@ import { dealBosses, leadLastWave } from './bosses';
 import { collapseFor } from './collapse';
 import { beyond, placeExits } from './exits';
 import { layGround } from './ground';
+import { layTrapField } from './hazards';
 import { markHunt, placeHorns, refugeesAt } from './objectives';
 import { placePacks } from './packs';
 import { adder, tallFor } from './props';
@@ -226,6 +227,17 @@ export function generateField(
     // at the vault's door.
     (stage.packs.find((p) => p.mini) ?? stage.packs[1]).key = 0;
     stage.reward = { ...stage.vault!.door };
+  }
+  // A trap field, but not in a Vault, which has its own ring of traps.
+  if (plan.objective !== 'vault') {
+    layTrapField(stage, rng, keep, [
+      ...stage.exits,
+      site,
+      lair,
+      cache,
+      ...(stage.reward ? [stage.reward] : []),
+      ...(stage.rites ?? []),
+    ]);
   }
   return stage;
 }

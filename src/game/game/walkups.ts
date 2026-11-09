@@ -8,6 +8,7 @@ import type { Gate } from '../../gen/stage';
 import { openGate } from '../../gen/stage';
 import type GameState from './state';
 import { PICK_REACH } from './pickups';
+import dropRocks from '../rocks';
 
 // The bearer pulls a lever from this close.
 const LEVER_REACH = 1.3;
@@ -52,7 +53,7 @@ function pullLevers(g: GameState): void {
 }
 
 /** Every walk-up prop, in the order they are worked each tick. */
-export const WALK_UPS: WalkUp[] = [takeKey, pullLevers];
+export const WALK_UPS: WalkUp[] = [takeKey, pullLevers, dropRocks];
 
 // Works every walk-up prop the living bearer stands at.
 export function workWalkUps(g: GameState): void {

@@ -49,6 +49,20 @@ export const HAZARD_LOOKS: Partial<Record<HazardKind, HazardLook>> = {
       ctx.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 2);
     }
   },
+  // A pressure plate: a worn slab with a cross cut in it
+  plate: (ctx, h, iso) => {
+    const r = 0.8;
+    fillPoly(
+      ctx,
+      [iso(h.x - r, h.z - r), iso(h.x + r, h.z - r), iso(h.x + r, h.z + r), iso(h.x - r, h.z + r)],
+      C.ink,
+      C.stoneB,
+    );
+    const c = iso(h.x, h.z);
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(Math.round(c.x) - 2, Math.round(c.y) - 1, 5, 1);
+    ctx.fillRect(Math.round(c.x), Math.round(c.y) - 2, 1, 3);
+  },
   vent,
 };
 
