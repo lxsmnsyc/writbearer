@@ -33,3 +33,4 @@
 ## Size
 
 - Estimated M, actual S. No registry edit and no listener were needed.
+Landed as da9c5bc on batch/writbearer.
