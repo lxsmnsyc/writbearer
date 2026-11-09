@@ -35,3 +35,5 @@ Open fight fields (not Vaults) hold a trap field 45% of the time: 2 to 3 rock pl
 ## Size
 
 - Estimated M, actual M.
+
+Landed as bbad10e on batch/writbearer.
