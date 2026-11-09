@@ -1,5 +1,6 @@
 import type { Patch, Prop, Stage } from '../gen/stage';
 import { WADING } from '../sim/statuses';
+import type { StatusDef } from '../sim/status';
 import type Sim from '../sim/sim';
 import { DamageFlags, DamageKind, Side } from '../sim/types';
 import type Unit from '../sim/unit';
@@ -17,6 +18,15 @@ const BLOSSOM_TOUCH = 0.9;
 export const BLOSSOM_REACH = 4;
 const BLOSSOM_SHARE = 0.3;
 
+// What each kind of patch does to whoever stands in it: a status it puts
+// on, or burning. A new kind adds a row.
+const EFFECTS: Record<Patch['kind'], { status?: StatusDef; burns?: boolean }> = {
+  water: { status: WADING },
+  embers: { burns: true },
+  deep: {},
+  grass: {},
+};
+
 const inPatch = (p: Patch, u: Unit): boolean => Math.hypot(u.x - p.x, u.z - p.z) <= p.r;
 
 export default class Footing {
@@ -32,9 +42,11 @@ export default class Footing {
         if (!inPatch(p, u)) {
           continue;
         }
-        if (p.kind === 'water') {
-          u.addStatus(WADING, u);
-        } else {
+        const effect = EFFECTS[p.kind];
+        if (effect.status) {
+          u.addStatus(effect.status, u);
+        }
+        if (effect.burns) {
           embers = true;
         }
       }

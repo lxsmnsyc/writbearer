@@ -1,6 +1,6 @@
 import RNG from '../core/rng';
 import { type Ground, LAYERS } from '../gen/layers';
-import type { Stage } from '../gen/stage';
+import type { Patch, Stage } from '../gen/stage';
 import { type Pt, pt } from './draw';
 
 export interface FloorImage {
@@ -23,6 +23,59 @@ const SHORE = '#7a828c';
 // Ground the embers have charred, and the dull red of its cracks
 const CHAR = '#141210';
 const CRACK = '#3a0808';
+
+// How a patch is marked once its ragged shape is filled: the shore and
+// glints of water, the cracks of embers. A new kind adds a row.
+interface Mark {
+  edge: Pt[];
+  x: number;
+  z: number;
+  r: number;
+  zoom: number;
+  rng: RNG;
+  at: (x: number, z: number) => Pt;
+}
+const PAINT: Record<
+  Patch['kind'],
+  { fill: string; mark: (ctx: CanvasRenderingContext2D, m: Mark) => void }
+> = {
+  water: {
+    fill: WATER,
+    mark(ctx, { edge, x, z, r, zoom, rng, at }) {
+      ctx.strokeStyle = SHORE;
+      ctx.beginPath();
+      edge.slice(10, 16).forEach((q, k) => {
+        if (k) {
+          ctx.lineTo(q.x, q.y);
+        } else {
+          ctx.moveTo(q.x, q.y);
+        }
+      });
+      ctx.stroke();
+      ctx.fillStyle = GLINT;
+      for (let i = 0; i < r * 4; i++) {
+        const a = rng.range(0, Math.PI * 2);
+        const c = at(x + Math.cos(a) * r * rng.range(0, 0.7), z + Math.sin(a) * r * 0.7);
+        ctx.fillRect(Math.round(c.x), Math.round(c.y), Math.ceil(rng.range(2, 5) * zoom), 1);
+      }
+    },
+  },
+  embers: {
+    fill: CHAR,
+    mark(ctx, { x, z, r, rng, at }) {
+      ctx.strokeStyle = CRACK;
+      for (let i = 0; i < r * 3; i++) {
+        const a = rng.range(0, Math.PI * 2);
+        const from = at(x + Math.cos(a) * r * 0.2, z + Math.sin(a) * r * 0.2);
+        const to = at(x + Math.cos(a) * r * 0.85, z + Math.sin(a) * r * 0.85);
+        line(ctx, from, to);
+      }
+    },
+  },
+  // Reserved kinds (nothing lays them yet) paint plain until their nodes give them a look
+  deep: { fill: CHAR, mark() {} },
+  grass: { fill: CHAR, mark() {} },
+};
 
 // Bare ground for the layers outside the city: earth on the surface, raw
 // rock on the chasm walls.
@@ -154,34 +207,10 @@ export function buildFloor(stage: Stage, zoom: number, seed: number): FloorImage
       const a = (k / wobble.length) * Math.PI * 2;
       return at(x + Math.cos(a) * p.r * w, z + Math.sin(a) * p.r * w);
     });
-    poly(edge, p.kind === 'water' ? WATER : CHAR);
+    const paint = PAINT[p.kind];
+    poly(edge, paint.fill);
     ctx.lineWidth = zoom;
-    if (p.kind === 'water') {
-      ctx.strokeStyle = SHORE;
-      ctx.beginPath();
-      edge.slice(10, 16).forEach((q, k) => {
-        if (k) {
-          ctx.lineTo(q.x, q.y);
-        } else {
-          ctx.moveTo(q.x, q.y);
-        }
-      });
-      ctx.stroke();
-      ctx.fillStyle = GLINT;
-      for (let i = 0; i < p.r * 4; i++) {
-        const a = rng.range(0, Math.PI * 2);
-        const c = at(x + Math.cos(a) * p.r * rng.range(0, 0.7), z + Math.sin(a) * p.r * 0.7);
-        ctx.fillRect(Math.round(c.x), Math.round(c.y), Math.ceil(rng.range(2, 5) * zoom), 1);
-      }
-    } else {
-      ctx.strokeStyle = CRACK;
-      for (let i = 0; i < p.r * 3; i++) {
-        const a = rng.range(0, Math.PI * 2);
-        const from = at(x + Math.cos(a) * p.r * 0.2, z + Math.sin(a) * p.r * 0.2);
-        const to = at(x + Math.cos(a) * p.r * 0.85, z + Math.sin(a) * p.r * 0.85);
-        line(ctx, from, to);
-      }
-    }
+    paint.mark(ctx, { edge, x, z, r: p.r, zoom, rng, at });
   }
 
   // The chasm: tiles of black, with a lip of rock along the far edges, where

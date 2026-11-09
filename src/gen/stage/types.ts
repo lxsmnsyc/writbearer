@@ -17,6 +17,13 @@ import type { KeyPoint } from './spots';
 import type { Vault } from './vault';
 import type { Mob, Wave } from './waves';
 
+/** A plateau of the given level, and the ramps that climb to it. */
+export interface Ledge {
+  rect: Rect;
+  level: number;
+  ramps: Rect[];
+}
+
 /** What an area is, and where each of its exits leads, north first. */
 export interface AreaPlan {
   kind: NodeKind | 'waystation' | 'tomb' | 'guild';
@@ -110,6 +117,8 @@ export interface Stage {
   chasm?: Spot[];
   // An open field's pools of water and patches of embers
   patches?: Patch[];
+  // Raised ground: a plateau and the ramps up to it. Absent in old saves.
+  ledges?: Ledge[];
   // Where an Escort's refugees wait at the start, one spot each
   refugees?: Spot[];
   // A Vault's strongroom: where its door is, whether the bearer holds its
