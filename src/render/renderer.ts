@@ -20,6 +20,7 @@ import drawHud from './draw/hud';
 import { type ItemLabel, LABEL_HEIGHT, drawItemLabels, drawItems } from './draw/items';
 import { drawCallout, drawEliteLabels, drawFigureLabels } from './draw/labels';
 import { drawLight, viewersOf } from './draw/light';
+import drawLandmarks from './landmarks';
 import { drawRings, drawSpots, drawTraps, drawWarnings, drawZones } from './draw/marks';
 import { drawCollapse, drawRites, drawSigil } from './draw/objectives';
 import drawQuarry from './draw/quarry';
@@ -250,6 +251,7 @@ export default class Renderer {
       drawSpots(scene, f);
     }
     drawGlow(scene, f, fog);
+    drawLandmarks(scene, f);
     drawHealth(scene, f, fog);
     // Snapped to the palette with no dither. A dither pattern fixed to the
     // floor shimmers over anything that moves across it, and the light has
