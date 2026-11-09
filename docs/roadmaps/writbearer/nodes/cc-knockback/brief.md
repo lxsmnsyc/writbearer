@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent: 71548
+spent: 115242
 owns:
   - src/sim/events/cc-knockback.ts
   - src/sim/knockback.ts
