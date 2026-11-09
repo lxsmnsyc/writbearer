@@ -1,7 +1,7 @@
 ---
 name: terrain
-version: 1
-status: draft
+version: 2
+status: frozen
 defined_by: gs-terrain-kinds
 ---
 

@@ -32,3 +32,5 @@
 - Estimated S, actual S.
 
 Landed as efdac1c on batch/writbearer.
+
+Deviation accepted: one-line `Ledge` type re-export in src/gen/stage.ts, outside the owned paths.
