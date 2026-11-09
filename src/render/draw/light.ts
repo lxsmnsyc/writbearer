@@ -1,4 +1,5 @@
 import { type Stage, rectOf } from '../../gen/stage';
+import { lightFrom } from '../../sim/light';
 import { Side } from '../../sim/types';
 import type { Light, Lighting } from '../light';
 import type { Frame } from '../renderer';
@@ -27,7 +28,7 @@ export interface Viewer {
 export function viewersOf(f: Frame): Viewer[] {
   const viewers = f.sim.living(Side.Party).map((u) => {
     const r = f.views.rig(u, f.alpha);
-    const radius = u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT;
+    const radius = lightFrom(u, u === f.sim.bearer ? BEARER_SIGHT : MERC_SIGHT);
     return { x: r.x, z: r.z, radius: f.dark ? radius * DARK_SHARE : radius };
   });
   // The safe places are lit: the Guild House, Waystations, Towns and Camps.
@@ -40,7 +41,8 @@ export function viewersOf(f: Frame): Viewer[] {
   // Once the seal breaks, the lantern burns on in the Creditor's hand.
   const focus = focusOf(f);
   if (focus && focus !== f.sim.bearer) {
-    viewers.push({ x: focus.x, z: focus.z, radius: BEARER_SIGHT });
+    const radius = f.sim.bearer ? lightFrom(f.sim.bearer, BEARER_SIGHT) : BEARER_SIGHT;
+    viewers.push({ x: focus.x, z: focus.z, radius });
   }
   return viewers;
 }

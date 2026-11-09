@@ -1,6 +1,7 @@
 import { Range, Rank, Side } from '../types';
 import type Sim from '../sim';
 import { TAUNTED } from '../statuses';
+import { noticeOf } from '../light';
 import { allowed, forbids } from '../targeting';
 import type Unit from '../unit';
 import type { Zone } from '../zone';
@@ -266,7 +267,7 @@ export function thinkMonster(sim: Sim, u: Unit, dt: number): void {
   if (!u.aware) {
     const noticed = party.some(
       (p) =>
-        u.distanceTo(p) <= u.kit.notice * (p === sim.bearer ? 1 : UNLIT_NOTICE) && sim.sees(u, p),
+        u.distanceTo(p) <= noticeOf(u, p, p === sim.bearer ? 1 : UNLIT_NOTICE) && sim.sees(u, p),
     );
     if (!noticed) {
       return;

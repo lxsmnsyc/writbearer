@@ -1,5 +1,6 @@
 import { affinity } from '../elements';
 import { SimEvents } from '../events';
+import { lightOf } from '../light';
 import { Shout, acting } from '../shout';
 import type Sim from '../sim';
 import { SkillMode } from '../skill';
@@ -158,7 +159,7 @@ export function thinkMerc(sim: Sim, u: Unit, dt: number): void {
       u,
       sim.living(Side.Monster).filter((e) => e.aware),
     );
-    if (threat && u.distanceTo(threat) <= u.kit.sight) {
+    if (threat && u.distanceTo(threat) <= lightOf(u)) {
       flee(u, threat, dt);
       return;
     }
@@ -200,8 +201,8 @@ export function thinkMerc(sim: Sim, u: Unit, dt: number): void {
     }
     // Only what the merc or the bearer can see: nothing behind a wall.
     return (
-      (u.distanceTo(e) <= u.kit.sight && sim.sees(u, e)) ||
-      (e.distanceTo(bearer) <= u.kit.sight && sim.sees(bearer, e))
+      (u.distanceTo(e) <= lightOf(u) && sim.sees(u, e)) ||
+      (e.distanceTo(bearer) <= lightOf(u) && sim.sees(bearer, e))
     );
   });
   const target = pick(u, toggles, bearer, enemies);

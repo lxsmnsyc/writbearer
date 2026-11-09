@@ -5,6 +5,7 @@ import { type SimEventMap, SimEvents } from './events';
 import setupMechanics from './mechanics';
 import setupControl from './control';
 import setupCopy from './copy';
+import setupStill from './still';
 import Nav, { type Rect, inRect, unionOf } from './nav';
 import type { Projectile } from './projectile';
 import { allowed, canTarget, forbids } from './targeting';
@@ -321,6 +322,7 @@ export default class Sim extends EventEngine<SimEventMap> {
     setupMechanics(this);
     setupControl(this);
     setupCopy(this);
+    setupStill(this);
   }
 
   /**
