@@ -1,5 +1,6 @@
 import { statusElement } from './defense-element';
 import { type CheckHitEvent, SimEvents, type UnitDamageEvent, type UnitHealEvent } from './events';
+import { UNMOORED } from './spectral';
 import type { BaseStat } from './stats';
 import type { ActiveStatus, StatusDef } from './status';
 import {
@@ -369,7 +370,7 @@ export const BLEED: StatusDef = {
   },
 };
 
-/** The status each element builds up. Spectral has none yet. */
+/** The status each element builds up. */
 export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Fire]: BURN,
   [Element.Frost]: CHILL,
@@ -378,4 +379,5 @@ export const ELEMENT_STATUS: Partial<Record<Element, StatusDef>> = {
   [Element.Venom]: POISON,
   [Element.Occult]: DREAD,
   [Element.Radiant]: SEAR,
+  [Element.Spectral]: UNMOORED,
 };
