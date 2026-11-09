@@ -1,7 +1,7 @@
 ---
 id: gs-terrain-hazards
 title: Falling rocks, pits and a trap field
-status: todo
+status: active
 priority: should
 type: feature
 outline: false

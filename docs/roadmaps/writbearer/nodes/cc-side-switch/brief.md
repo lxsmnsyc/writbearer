@@ -1,7 +1,7 @@
 ---
 id: cc-side-switch
 title: Monsters switching sides for a while
-status: todo
+status: active
 priority: should
 type: feature
 outline: false
