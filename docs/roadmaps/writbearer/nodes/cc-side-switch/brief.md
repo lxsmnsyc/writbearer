@@ -15,7 +15,7 @@ exclusive: []
 fulfilled_by:
 gate: false
 added: 2026-11-04
-spent: 131932
+spent: 144094
 owns:
   - src/sim/ai/turned.ts
   - test/sim/turned.test.ts
