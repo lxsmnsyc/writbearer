@@ -12,6 +12,7 @@ import { applyUpgrade, upgradeById } from '../sim/builds';
 import { isRested, markRested } from '../sim/corpse';
 import type { AffixRoll, EquipSlot, Item, ItemBase, Quality } from '../sim/item';
 import type Sim from '../sim/sim';
+import type { Element } from '../sim/types';
 import type { BaseStats, Modifier } from '../sim/stats';
 import type Unit from '../sim/unit';
 import type { Pack, Vault } from './inventory';
@@ -40,6 +41,9 @@ export interface ItemSave {
   uniqueValues?: number[];
   piece?: string;
   name?: string;
+  // Absent in older saves: no element
+  element?: Element;
+  elementLevel?: number;
   quantity: number;
 }
 
@@ -126,6 +130,8 @@ export function saveItem(item: Item): ItemSave {
     uniqueValues: item.uniqueValues && [...item.uniqueValues],
     piece: item.piece,
     name: item.name,
+    element: item.element,
+    elementLevel: item.elementLevel,
     quantity: item.quantity,
   };
 }
@@ -153,6 +159,8 @@ export function loadItem(s: ItemSave): Item | null {
     effect: def && s.uniqueValues ? def.effect?.(s.uniqueValues) : undefined,
     piece: s.piece,
     name: s.name,
+    element: s.element,
+    elementLevel: s.elementLevel,
     quantity: s.quantity,
   };
 }

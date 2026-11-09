@@ -7,6 +7,7 @@ import type { CorpseEventMap } from './events/cc-corpses';
 import type { PossessEventMap } from './events/bp-possess';
 import type { KnockbackEventMap } from './events/cc-knockback';
 import type { LinkEventMap } from './events/bp-link';
+import type { ItemRollEventMap } from './events/ie-item-roll';
 
 export type * from './events/hits';
 export type * from './events/skills';
@@ -16,6 +17,7 @@ export type * from './events/cc-corpses';
 export type * from './events/bp-possess';
 export type * from './events/cc-knockback';
 export type * from './events/bp-link';
+export type * from './events/ie-item-roll';
 
 export const enum SimEvents {
   CheckHit = 'CheckHit',
@@ -46,6 +48,7 @@ export const enum SimEvents {
   CheckKnockback = 'CheckKnockback',
   LinkRisen = 'LinkRisen',
   LinkSwapped = 'LinkSwapped',
+  CheckItemRoll = 'CheckItemRoll',
 }
 
 /** Which event carries which shape, on which priority scale. Entries live in the group modules. */
@@ -59,4 +62,5 @@ export interface SimEventMap
     CorpseEventMap,
     PossessEventMap,
     KnockbackEventMap,
-    LinkEventMap {}
+    LinkEventMap,
+    ItemRollEventMap {}

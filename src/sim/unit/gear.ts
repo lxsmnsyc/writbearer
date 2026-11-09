@@ -1,5 +1,6 @@
 import type { Lifecycle } from '../../core/lifecycle';
 import { EquipSlot, type Item, itemModifiers, weaponOf } from '../item';
+import elementEffect from '../item-element';
 import { syncItemDefense } from '../defense-element';
 import { MENDING, REFRESHING } from '../statuses';
 import { isStripped, restore, workingItems } from '../strip';
@@ -140,6 +141,11 @@ export function refreshCards(unit: Unit): void {
   for (const item of workingItems(unit)) {
     if (item.effect) {
       worn.set(`${item.uid}:unique`, item.effect);
+    }
+    // A Rare's element works while worn
+    const element = elementEffect(item);
+    if (element) {
+      worn.set(`${item.uid}:element`, element);
     }
     for (const [i, card] of item.cards.entries()) {
       if (card.socket?.setup) {

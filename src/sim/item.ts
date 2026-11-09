@@ -1,5 +1,6 @@
 import type { Lifecycle } from '../core/lifecycle';
 import type { Modifier, Weapon } from './stats';
+import type { Element } from './types';
 import type Unit from './unit';
 
 export const enum EquipSlot {
@@ -146,6 +147,10 @@ export interface Item {
   piece?: string;
   // A rare's rolled name, such as "Grave Fang"
   name?: string;
+  // A rare's element: the weapon's attack element, or an armor piece's defense element
+  element?: Element;
+  // The defense level of an armor piece's element, 1 or 2
+  elementLevel?: number;
   // Gold only
   quantity: number;
 }

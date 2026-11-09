@@ -84,7 +84,7 @@ export const REWARDS: Record<Reward, RewardDef> = {
       for (let i = 0; i < ARMS_ITEMS; i++) {
         const job = jobs.length > 0 ? rng.pick(jobs) : undefined;
         const atLeast = better && i === 0 ? Quality.Rare : Quality.Magic;
-        out.push(rollItem(rng, level, Rank.Elite, { atLeast, job }));
+        out.push(rollItem(rng, level, Rank.Elite, { atLeast, job }, g.sim));
       }
     },
   },
@@ -149,7 +149,7 @@ export function spoilsOf(
   better: boolean,
 ): Item[] {
   const gold = rollGold(rng, level);
-  const out = [rollItem(rng, level, Rank.Elite), gold, rollPotion(rng, level, 2)];
+  const out = [rollItem(rng, level, Rank.Elite, {}, g.sim), gold, rollPotion(rng, level, 2)];
   const more = better ? 2 : 1;
   REWARDS[reward].fill({ g, rng, level, better, more, gold, out });
   return out;

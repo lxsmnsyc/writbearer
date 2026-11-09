@@ -1,5 +1,6 @@
 import type RNG from '../core/rng';
 import { plainItem, potionStack, rollItem } from '../gen/loot';
+import type Sim from '../sim/sim';
 import { type Item, ItemType, Quality } from '../sim/item';
 import { Rank } from '../sim/types';
 import { GEMS } from './cards';
@@ -17,7 +18,7 @@ export interface Recipe {
   gold: number;
   // Items made, at the given item level. A Smith's Blessing makes none: it
   // goes into the pouch.
-  make: (rng: RNG, itemLevel: number) => Item[];
+  make: (rng: RNG, itemLevel: number, sim?: Sim) => Item[];
   // Materials made instead of items
   yields?: readonly [string, number][];
 }
@@ -94,8 +95,8 @@ export const RECIPES: readonly Recipe[] = [
       ['venomEssence', 1],
     ],
     gold: 60,
-    make: (rng, level) => [
-      rollItem(rng, level, Rank.Elite, { types: [ItemType.Weapon], atLeast: Quality.Magic }),
+    make: (rng, level, sim) => [
+      rollItem(rng, level, Rank.Elite, { types: [ItemType.Weapon], atLeast: Quality.Magic }, sim),
     ],
   },
   {
@@ -108,8 +109,8 @@ export const RECIPES: readonly Recipe[] = [
       ['occultEssence', 1],
     ],
     gold: 60,
-    make: (rng, level) => [
-      rollItem(rng, level, Rank.Elite, { types: ARMOR, atLeast: Quality.Magic }),
+    make: (rng, level, sim) => [
+      rollItem(rng, level, Rank.Elite, { types: ARMOR, atLeast: Quality.Magic }, sim),
     ],
   },
 ];

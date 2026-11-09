@@ -11,7 +11,10 @@ import {
   RARE_SECOND,
   TIERS,
 } from '../content/items';
-import type RNG from '../core/rng';
+import type { CheckItemRollEvent } from '../sim/events';
+import RNG, { hashSeed } from '../core/rng';
+import { SimEvents } from '../sim/events';
+import type Sim from '../sim/sim';
 import {
   type Affix,
   type Item,
@@ -25,7 +28,20 @@ import {
 } from '../sim/item';
 import type { Modifier } from '../sim/stats';
 import { Category } from '../sim/stats';
-import { Range, Rank } from '../sim/types';
+import { Element, Range, Rank } from '../sim/types';
+
+// Indexed by `Element`
+const ELEMENT_NAMES = [
+  'Neutral',
+  'Fire',
+  'Frost',
+  'Storm',
+  'Earth',
+  'Venom',
+  'Radiant',
+  'Occult',
+  'Spectral',
+];
 
 let nextUid = 1;
 
@@ -191,6 +207,7 @@ export function rollItem(
   itemLevel: number,
   rank: Rank = Rank.Normal,
   only: { types?: readonly ItemType[]; atLeast?: Quality; job?: string } = {},
+  sim?: Sim,
 ): Item {
   const bases = BASES.filter(
     (b) => b.level <= itemLevel && (!only.types || only.types.includes(b.type)),
@@ -199,7 +216,18 @@ export function rollItem(
   const made = bases.filter((b) => only.job !== undefined && b.jobs?.includes(only.job));
   const base = tierBase(rng.pick(made.length > 0 ? made : bases), itemLevel);
   const quality = Math.max(weighted(rng, QUALITY_WEIGHTS[rank]), only.atLeast ?? 0) as Quality;
-  const scale = BASE_SCALE[quality];
+  // Listeners may change the base roll bonus and a Rare's affix total
+  const check: CheckItemRollEvent = {
+    id: 'CheckItemRoll',
+    disabled: false,
+    base,
+    itemLevel,
+    quality,
+    scale: BASE_SCALE[quality],
+    affixCount: null,
+  };
+  sim?.emit(SimEvents.CheckItemRoll, check);
+  const scale = check.scale;
   const item: Item = {
     uid: nextUid++,
     base,
@@ -227,7 +255,8 @@ export function rollItem(
     pickAffixes(rng, item, 'suffix', both || !prefix ? 1 : 0, taken);
   } else if (quality === Quality.Rare) {
     // 3 to 6 affixes, at most 3 of each kind.
-    const total = rng.int(3, 6);
+    const drawn = rng.int(3, 6);
+    const total = check.affixCount === null ? drawn : Math.max(0, Math.min(6, check.affixCount));
     const prefixes = Math.min(3, rng.int(Math.max(0, total - 3), total));
     pickAffixes(rng, item, 'prefix', prefixes, taken);
     pickAffixes(rng, item, 'suffix', Math.min(3, total - prefixes), taken);
@@ -235,7 +264,36 @@ export function rollItem(
   }
   const cap = socketLimit(item);
   item.sockets = rng.chance(0.35) ? rng.int(1, Math.max(1, cap)) : 0;
+  if (quality === Quality.Rare) {
+    rollElement(rng, item);
+  }
   return item;
+}
+
+// What a Rare's element is drawn from.
+const RARE_ELEMENTS = [Element.Fire, Element.Frost, Element.Storm, Element.Earth, Element.Venom];
+const ELEMENT_CHANCE = 0.4;
+const ELEMENT_LEVEL_2 = 0.3;
+
+/**
+ * A Rare weapon may take an attack element and a Rare armor piece a defense
+ * element. It draws from a stream seeded by the item's own rolls, so the
+ * caller's stream does not move and every other item rolls as before.
+ */
+function rollElement(rng: RNG, item: Item): void {
+  const type = item.base.type;
+  const armor = type >= ItemType.Head && type <= ItemType.Boots;
+  if (type !== ItemType.Weapon && !armor) {
+    return;
+  }
+  const own = new RNG(hashSeed(rng.state, item.base.id, item.itemLevel, item.name ?? ''));
+  if (!own.chance(ELEMENT_CHANCE)) {
+    return;
+  }
+  item.element = own.pick(RARE_ELEMENTS);
+  if (armor) {
+    item.elementLevel = own.chance(ELEMENT_LEVEL_2) ? 2 : 1;
+  }
 }
 
 /** A pile of gold, more deeper in. `bounty` multiplies it, as Pocket Change does. */
@@ -271,11 +329,11 @@ export function potionStack(base: ItemBase, quantity: number): Item {
 }
 
 /** What a monster of this rank and level drops, if anything. */
-export function rollDrops(rng: RNG, itemLevel: number, rank: Rank, bounty = 1): Item[] {
+export function rollDrops(rng: RNG, itemLevel: number, rank: Rank, bounty = 1, sim?: Sim): Item[] {
   const out: Item[] = [];
   if (rng.chance(DROP_CHANCE[rank])) {
     for (let i = 0; i < DROP_COUNT[rank]; i++) {
-      out.push(rollItem(rng, itemLevel, rank));
+      out.push(rollItem(rng, itemLevel, rank, {}, sim));
     }
   }
   if (rng.chance(GOLD_CHANCE)) {
@@ -405,7 +463,9 @@ function unrefinedName(item: Item): string {
     return item.quantity > 1 ? `${item.base.name} ×${item.quantity}` : item.base.name;
   }
   if (item.quality >= Quality.Rare && item.name) {
-    return item.name;
+    return item.element === undefined
+      ? item.name
+      : `${item.name} (${ELEMENT_NAMES[item.element] ?? 'Neutral'})`;
   }
   const prefix = item.affixes
     .map((a) => AFFIXES.find((x) => x.id === a.id))
@@ -433,19 +493,6 @@ const STAT_NAMES: Partial<Record<string, string>> = {
   atkMin: 'attack',
   crit: 'critical rate',
 };
-
-// Indexed by `Element`
-const ELEMENT_NAMES = [
-  'Neutral',
-  'Fire',
-  'Frost',
-  'Storm',
-  'Earth',
-  'Venom',
-  'Radiant',
-  'Occult',
-  'Spectral',
-];
 
 // 'sacredGround' reads as 'Sacred Ground'
 function spellName(id: string): string {
@@ -537,6 +584,14 @@ export function itemLines(item: Item): string[] {
         lines.push(line);
       }
     }
+  }
+  if (item.element !== undefined) {
+    const word = ELEMENT_NAMES[item.element] ?? 'Neutral';
+    lines.push(
+      item.base.type === ItemType.Weapon
+        ? `Attacks with ${word}`
+        : `Defense: ${word} ${item.elementLevel ?? 1}`,
+    );
   }
   const socket = item.base.socket;
   if (socket) {

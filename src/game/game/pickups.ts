@@ -48,11 +48,15 @@ export function loot(g: GameState): void {
       const rng = g.streams.get(1, Stream.Loot);
       const level = 4 + g.stageIndex;
       if (p.holds) {
-        const extra = Array.from({ length: p.extra ?? 0 }, () => rollItem(rng, level, Rank.Elite));
+        const extra = Array.from({ length: p.extra ?? 0 }, () =>
+          rollItem(rng, level, Rank.Elite, {}, g.sim),
+        );
         g.scatter([...spoilsOf(g, p.holds, rng, level, p.better === true), ...extra], p);
         continue;
       }
-      const items = Array.from({ length: CHEST_ITEMS }, () => rollItem(rng, level, Rank.Elite));
+      const items = Array.from({ length: CHEST_ITEMS }, () =>
+        rollItem(rng, level, Rank.Elite, {}, g.sim),
+      );
       g.scatter([...items, rollGold(rng, level), rollPotion(rng, level, 2)], p);
     }
   }

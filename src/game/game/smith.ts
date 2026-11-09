@@ -88,7 +88,7 @@ export function socketItem(g: GameState, item: Item): string {
 
 /** The bench makes a recipe. Returns why it could not, or null. */
 export function craft(g: GameState, recipe: Recipe): string | null {
-  const why = craftRecipe(craftRng(g), g.pack, recipe, monsterLevel(g.stageIndex));
+  const why = craftRecipe(craftRng(g), g.pack, recipe, monsterLevel(g.stageIndex), g.sim);
   g.itemsChanged();
   return why;
 }

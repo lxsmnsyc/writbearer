@@ -4,6 +4,7 @@ import type { Recipe } from '../content/recipes';
 import type RNG from '../core/rng';
 import { potionStack, socketLimit } from '../gen/loot';
 import { type Item, ItemType, MAX_REFINE, refinable } from '../sim/item';
+import type Sim from '../sim/sim';
 import type Unit from '../sim/unit';
 import { isRested } from '../sim/corpse';
 import type { Pack } from './inventory';
@@ -88,12 +89,18 @@ export function cannotCraft(pack: Pack, recipe: Recipe): string | null {
 }
 
 /** Makes a recipe into the pack. Returns why it could not, or null. */
-export function craft(rng: RNG, pack: Pack, recipe: Recipe, itemLevel: number): string | null {
+export function craft(
+  rng: RNG,
+  pack: Pack,
+  recipe: Recipe,
+  itemLevel: number,
+  sim?: Sim,
+): string | null {
   const why = cannotCraft(pack, recipe);
   if (why) {
     return why;
   }
-  const made = recipe.make(rng, itemLevel);
+  const made = recipe.make(rng, itemLevel, sim);
   const refused = made.map((i) => pack.refuses(i)).find(Boolean);
   if (refused) {
     return refused;

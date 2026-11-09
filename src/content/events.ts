@@ -130,7 +130,7 @@ export const EVENTS: readonly EventDef[] = [
           label: 'Search the body',
           pick: () => {
             scene.give([
-              rollItem(scene.rng, scene.level + 2, Rank.Elite),
+              rollItem(scene.rng, scene.level + 2, Rank.Elite, {}, scene.sim),
               rollGold(scene.rng, scene.level + 2),
             ]);
             for (const m of mercsOf(scene.sim)) {
@@ -313,8 +313,8 @@ export const EVENTS: readonly EventDef[] = [
               m.hp = Math.max(1, m.hp - m.derived.maxHp * 0.25);
             }
             scene.give([
-              rollItem(scene.rng, scene.level + 1, Rank.Elite),
-              rollItem(scene.rng, scene.level + 1, Rank.Elite),
+              rollItem(scene.rng, scene.level + 1, Rank.Elite, {}, scene.sim),
+              rollItem(scene.rng, scene.level + 1, Rank.Elite, {}, scene.sim),
             ]);
             gather(scene.pack.materials, new Map([['iron', 2]]));
             return 'The rubble falls on the diggers twice before it gives. What it hid lies on the floor.';

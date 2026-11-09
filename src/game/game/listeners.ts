@@ -80,6 +80,7 @@ export default function watchSim(g: GameState): void {
             event.source.level,
             event.source.rank,
             event.source.bounty,
+            g.sim,
           ),
           ...rollCards(g.streams.get(1, Stream.Loot), event.source.kind, event.source.rank),
           ...[
